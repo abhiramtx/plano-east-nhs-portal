@@ -100,6 +100,13 @@ export default function Profile() {
   const onSubmit = (data: ProfileData) => {
     console.log('Form submitted with data:', data);
     console.log('Form errors:', form.formState.errors);
+    console.log('Form is valid:', form.formState.isValid);
+    
+    if (Object.keys(form.formState.errors).length > 0) {
+      console.log('Form has validation errors, not submitting');
+      return;
+    }
+    
     updateProfileMutation.mutate(data);
   };
 
@@ -245,6 +252,7 @@ export default function Profile() {
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={(e) => {
                     console.log('Button clicked');
+                    console.log('Current form values:', form.getValues());
                     e.preventDefault();
                     form.handleSubmit(onSubmit)(e);
                   }}

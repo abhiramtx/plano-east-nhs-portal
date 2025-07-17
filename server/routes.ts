@@ -90,8 +90,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/user-profile", async (req, res) => {
     try {
+      console.log("Received profile data:", req.body);
       const validatedData = insertUserProfileSchema.parse(req.body);
+      console.log("Validated profile data:", validatedData);
       const profile = await storage.upsertUserProfile(validatedData);
+      console.log("Saved profile:", profile);
       res.json(profile);
     } catch (error) {
       console.error("Profile validation error:", error);
