@@ -84,7 +84,7 @@ export default function Hours() {
 
   const handleFormSuccess = () => {
     setIsFormOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', user?.sub] });
+    queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''] });
   };
 
   return (

@@ -1,8 +1,8 @@
-# Art Club Hours Tracking Application
+# Wylie NAHS Hours Tracking Application
 
 ## Overview
 
-This is a comprehensive hours tracking application for art club participants built with React and TypeScript. Students can sign in with Google authentication, view their dashboard with service hours statistics, and submit/manage their service hours with proof of completion. The application features a clean, modern UI optimized for light mode display and includes comprehensive hours submission management.
+This is a comprehensive hours tracking application for Wylie NAHS (National Art Honor Society) participants built with React and TypeScript. Students can sign in with Google authentication, view their dashboard with service hours statistics, and submit/manage their service hours with proof of completion. The application features a clean, modern UI optimized for light mode display and includes comprehensive hours submission management. The application is structured with separate user interface and admin interface routes.
 
 ## User Preferences
 

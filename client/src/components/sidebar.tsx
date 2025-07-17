@@ -25,13 +25,13 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Hours", href: "/hours", icon: Clock },
-    { name: "Profile", href: "/profile", icon: UserIcon },
+    { name: "Dashboard", href: "/user_interface/dashboard", icon: LayoutDashboard },
+    { name: "Hours", href: "/user_interface/hours", icon: Clock },
+    { name: "Profile", href: "/user_interface/profile", icon: UserIcon },
   ];
 
   const isActive = (href: string) => {
-    return location === href || (href === "/dashboard" && location === "/");
+    return location === href || (href === "/user_interface/dashboard" && (location === "/" || location === "/user_interface"));
   };
 
   const closeMobileMenu = () => {
@@ -46,7 +46,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
           <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
             <Palette className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-semibold text-gray-900">Art Club</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Wylie NAHS</h1>
         </div>
       </div>
 

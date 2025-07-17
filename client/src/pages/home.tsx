@@ -93,8 +93,8 @@ export default function Home() {
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
               </div>
-              <h1 className="text-2xl font-semibold text-gray-900 mb-2">Art Club Hours Tracker</h1>
-              <p className="text-gray-600 text-sm">Sign in to track and manage your art club service hours</p>
+              <h1 className="text-2xl font-semibold text-gray-900 mb-2">Wylie NAHS Hours Tracker</h1>
+              <p className="text-gray-600 text-sm">Sign in to track and manage your NAHS service hours</p>
             </div>
 
             {/* Sign-In Buttons */}
