@@ -4,6 +4,7 @@ import { User, getCurrentUser } from "@/lib/firebase";
 import { Clock, TrendingUp, Calendar, Award, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -29,7 +30,7 @@ export default function Dashboard() {
     submissionCount: submissions.length,
   };
 
-  // Monthly data for chart
+  // Monthly data for chart - Initialize with some sample data points
   const monthlyData = [
     { month: "Jun", hours: 0 },
     { month: "Jul", hours: 0 },
@@ -44,6 +45,22 @@ export default function Dashboard() {
     { month: "Apr", hours: 0 },
     { month: "May", hours: 0 },
   ];
+
+  // Add some sample data if no submissions exist to show chart structure
+  if (submissions.length === 0) {
+    monthlyData[0].hours = 0;
+    monthlyData[1].hours = 0;
+    monthlyData[2].hours = 0;
+    monthlyData[3].hours = 0;
+    monthlyData[4].hours = 0;
+    monthlyData[5].hours = 0;
+    monthlyData[6].hours = 0;
+    monthlyData[7].hours = 0;
+    monthlyData[8].hours = 0;
+    monthlyData[9].hours = 0;
+    monthlyData[10].hours = 0;
+    monthlyData[11].hours = 0;
+  }
 
   // Calculate monthly hours from submissions
   submissions.forEach(sub => {
@@ -146,23 +163,47 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {monthlyData.map((data, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 text-sm text-gray-600">{data.month}</div>
-                      <div className="flex-1 bg-gray-200 rounded-full h-2 w-24">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${(data.hours / maxHours) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-sm font-medium text-gray-900 w-12 text-right">
-                      {data.hours.toFixed(1)}h
-                    </div>
-                  </div>
-                ))}
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis 
+                      dataKey="month" 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#6B7280' }}
+                    />
+                    <YAxis 
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: '#6B7280' }}
+                      domain={[0, 'dataMax + 1']}
+                    />
+                    <Tooltip 
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                              <p className="font-medium text-gray-900">{label}</p>
+                              <p className="text-blue-600">
+                                <span className="font-medium">{payload[0].value}</span> hours
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="hours" 
+                      stroke="#2563eb" 
+                      strokeWidth={3}
+                      dot={{ fill: '#2563eb', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, fill: '#2563eb' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
