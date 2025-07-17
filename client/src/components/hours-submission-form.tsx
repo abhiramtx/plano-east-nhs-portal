@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Upload, X } from "lucide-react";
 
-// Helper function to compress image
+// Helper function to compress image more aggressively
 const compressImage = (file: File): Promise<File> => {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
@@ -21,8 +21,8 @@ const compressImage = (file: File): Promise<File> => {
     const img = new Image();
     
     img.onload = () => {
-      // Calculate new dimensions (max 800px width/height)
-      const maxSize = 800;
+      // Calculate new dimensions (max 400px width/height for storage efficiency)
+      const maxSize = 400;
       let { width, height } = img;
       
       if (width > height) {
@@ -49,7 +49,7 @@ const compressImage = (file: File): Promise<File> => {
           lastModified: Date.now()
         });
         resolve(compressedFile);
-      }, 'image/jpeg', 0.8); // 80% quality
+      }, 'image/jpeg', 0.6); // 60% quality for smaller files
     };
     
     img.src = URL.createObjectURL(file);
@@ -145,11 +145,11 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
         return;
       }
 
-      // Check file size (2MB limit for better handling)
-      if (file.size > 2 * 1024 * 1024) {
+      // Check file size (1MB limit for better storage efficiency)
+      if (file.size > 1 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: "Please select an image smaller than 2MB",
+          description: "Please select an image smaller than 1MB",
           variant: "destructive",
         });
         return;
