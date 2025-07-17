@@ -88,9 +88,9 @@ export default function Hours() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 min-h-0">
+    <div className="flex-1 overflow-y-auto bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div>
@@ -116,9 +116,8 @@ export default function Hours() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4 lg:p-6">
-          {isLoading ? (
+      <div className="p-4 lg:p-6">
+        {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
@@ -205,7 +204,6 @@ export default function Hours() {
             )}
           </>
         )}
-        </div>
       </div>
     </div>
   );
