@@ -11,6 +11,9 @@ import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Tra
 import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
+// Helper function to convert email to storage key
+const emailToKey = (email: string) => email.replace(/\./g, ',');
+
 export default function Hours() {
   const [user, setUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -25,8 +28,8 @@ export default function Hours() {
   }, []);
 
   const { data: submissions = [], isLoading } = useQuery({
-    queryKey: ['/api/hours-submissions', user?.sub],
-    enabled: !!user?.sub,
+    queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''],
+    enabled: !!user?.email,
   });
 
   const deleteMutation = useMutation({
@@ -34,7 +37,7 @@ export default function Hours() {
       await apiRequest('DELETE', `/api/hours-submissions/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', user?.sub] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''] });
       toast({
         title: "Success",
         description: "Hours submission deleted successfully",

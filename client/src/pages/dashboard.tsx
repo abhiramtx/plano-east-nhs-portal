@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
+// Helper function to convert email to storage key
+const emailToKey = (email: string) => email.replace(/\./g, ',');
+
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
 
@@ -18,8 +21,8 @@ export default function Dashboard() {
 
   // Fetch user's hours submissions
   const { data: submissions = [] } = useQuery({
-    queryKey: ['/api/hours-submissions', user?.sub],
-    enabled: !!user?.sub,
+    queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''],
+    enabled: !!user?.email,
   });
 
   // Calculate statistics

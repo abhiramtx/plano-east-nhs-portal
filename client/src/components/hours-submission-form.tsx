@@ -68,6 +68,9 @@ interface HoursSubmissionFormProps {
   onSuccess: () => void;
 }
 
+// Helper function to convert email to storage key
+const emailToKey = (email: string) => email.replace(/\./g, ',');
+
 export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -76,7 +79,7 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      userId: user?.sub || "",
+      userId: user?.email ? emailToKey(user.email) : "",
       studentName: user?.name || "",
       description: "",
       date: "",

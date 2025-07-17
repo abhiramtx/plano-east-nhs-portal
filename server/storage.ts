@@ -43,7 +43,7 @@ export class MemStorage implements IStorage {
     const mockSubmissions = [
       {
         id: 1,
-        userId: "demo-user-123",
+        userId: "demo,student@gmail,com",
         studentName: "Demo Student",
         description: "Helped organize art supplies and cleaned brushes after painting session",
         date: new Date("2024-01-15"),
@@ -55,7 +55,7 @@ export class MemStorage implements IStorage {
       },
       {
         id: 2,
-        userId: "demo-user-123",
+        userId: "demo,student@gmail,com",
         studentName: "Demo Student",
         description: "Assisted with setting up art exhibition display and guided visitors",
         date: new Date("2024-01-20"),
@@ -65,13 +65,25 @@ export class MemStorage implements IStorage {
         createdAt: new Date("2024-01-20T14:30:00Z"),
         updatedAt: new Date("2024-01-20T14:30:00Z"),
       },
+      {
+        id: 3,
+        userId: "demo,student@gmail,com",
+        studentName: "Demo Student",
+        description: "Helped clean up after pottery workshop and arranged student artwork",
+        date: new Date("2024-02-05"),
+        hours: "1.5",
+        status: "approved" as const,
+        proofImageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
+        createdAt: new Date("2024-02-05T16:00:00Z"),
+        updatedAt: new Date("2024-02-05T16:00:00Z"),
+      },
     ];
 
     mockSubmissions.forEach(submission => {
       this.hoursSubmissions.set(submission.id, submission);
     });
     
-    this.currentSubmissionId = 3;
+    this.currentSubmissionId = 4;
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -159,6 +171,7 @@ export class MemStorage implements IStorage {
         id,
         userId: insertProfile.userId,
         goByFirstName: insertProfile.goByFirstName || null,
+        lastName: insertProfile.lastName || null,
         studentId: insertProfile.studentId || null,
         personalEmailAddress: insertProfile.personalEmailAddress || null,
         cellPhoneNumber: insertProfile.cellPhoneNumber || null,

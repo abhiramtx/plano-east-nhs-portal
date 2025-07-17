@@ -16,6 +16,7 @@ import { UserIcon, Save, Loader2 } from "lucide-react";
 
 const profileSchema = insertUserProfileSchema.extend({
   goByFirstName: z.string().optional(),
+  lastName: z.string().optional(),
   studentId: z.string().optional(),
   personalEmailAddress: z.string().email().optional().or(z.literal("")),
   cellPhoneNumber: z.string().optional(),
@@ -23,6 +24,9 @@ const profileSchema = insertUserProfileSchema.extend({
 });
 
 type ProfileData = z.infer<typeof profileSchema>;
+
+// Helper function to convert email to storage key
+const emailToKey = (email: string) => email.replace(/\./g, ',');
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
@@ -37,14 +41,15 @@ export default function Profile() {
   }, []);
 
   const { data: profile, isLoading } = useQuery({
-    queryKey: ['/api/user-profile', user?.sub],
-    enabled: !!user?.sub,
+    queryKey: ['/api/user-profile', user?.email ? emailToKey(user.email) : ''],
+    enabled: !!user?.email,
   });
 
   const form = useForm<ProfileData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       goByFirstName: "",
+      lastName: "",
       studentId: "",
       personalEmailAddress: "",
       cellPhoneNumber: "",
@@ -57,6 +62,7 @@ export default function Profile() {
     if (profile) {
       form.reset({
         goByFirstName: profile.goByFirstName || "",
+        lastName: profile.lastName || "",
         studentId: profile.studentId || "",
         personalEmailAddress: profile.personalEmailAddress || "",
         cellPhoneNumber: profile.cellPhoneNumber || "",
@@ -69,12 +75,12 @@ export default function Profile() {
     mutationFn: async (data: ProfileData) => {
       const payload = {
         ...data,
-        userId: user?.sub,
+        userId: user?.email ? emailToKey(user.email) : '',
       };
       return await apiRequest('PUT', '/api/user-profile', payload);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user-profile', user?.sub] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user-profile', user?.email ? emailToKey(user.email) : ''] });
       toast({
         title: "Success",
         description: "Profile updated successfully",
@@ -145,6 +151,19 @@ export default function Profile() {
                   />
                   {form.formState.errors.goByFirstName && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.goByFirstName.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    {...form.register("lastName")}
+                    placeholder="e.g., Smith"
+                    className="mt-1"
+                  />
+                  {form.formState.errors.lastName && (
+                    <p className="text-sm text-red-600 mt-1">{form.formState.errors.lastName.message}</p>
                   )}
                 </div>
 

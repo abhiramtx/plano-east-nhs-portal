@@ -25,6 +25,7 @@ export const userProfiles = pgTable("user_profiles", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().unique(),
   goByFirstName: text("go_by_first_name"),
+  lastName: text("last_name"),
   studentId: text("student_id"),
   personalEmailAddress: text("personal_email_address"),
   cellPhoneNumber: text("cell_phone_number"),
