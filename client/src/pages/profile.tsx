@@ -15,12 +15,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UserIcon, Save, Loader2 } from "lucide-react";
 
 const profileSchema = insertUserProfileSchema.extend({
-  goByFirstName: z.string().optional(),
-  lastName: z.string().optional(),
-  studentId: z.string().optional(),
-  personalEmailAddress: z.string().email().optional().or(z.literal("")),
-  cellPhoneNumber: z.string().optional(),
-  gradeLevel: z.string().optional(),
+  goByFirstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  studentId: z.string().min(1, "Student ID is required"),
+  personalEmailAddress: z.string().email("Valid email is required").min(1, "Email is required"),
+  cellPhoneNumber: z.string().min(1, "Cell phone number is required"),
+  gradeLevel: z.string().min(1, "Grade level is required"),
 });
 
 type ProfileData = z.infer<typeof profileSchema>;
@@ -142,7 +142,7 @@ export default function Profile() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="goByFirstName">Go-By First Name</Label>
+                  <Label htmlFor="goByFirstName">Go-By First Name *</Label>
                   <Input
                     id="goByFirstName"
                     {...form.register("goByFirstName")}
@@ -155,7 +155,7 @@ export default function Profile() {
                 </div>
 
                 <div>
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">Last Name *</Label>
                   <Input
                     id="lastName"
                     {...form.register("lastName")}
@@ -168,7 +168,7 @@ export default function Profile() {
                 </div>
 
                 <div>
-                  <Label htmlFor="studentId">Student ID</Label>
+                  <Label htmlFor="studentId">Student ID *</Label>
                   <Input
                     id="studentId"
                     {...form.register("studentId")}
@@ -182,7 +182,7 @@ export default function Profile() {
               </div>
 
               <div>
-                <Label htmlFor="personalEmailAddress">Personal Email Address</Label>
+                <Label htmlFor="personalEmailAddress">Personal Email Address *</Label>
                 <Input
                   id="personalEmailAddress"
                   type="email"
@@ -196,7 +196,7 @@ export default function Profile() {
               </div>
 
               <div>
-                <Label htmlFor="cellPhoneNumber">Cell Phone Number</Label>
+                <Label htmlFor="cellPhoneNumber">Cell Phone Number *</Label>
                 <Input
                   id="cellPhoneNumber"
                   type="tel"
@@ -210,7 +210,7 @@ export default function Profile() {
               </div>
 
               <div>
-                <Label htmlFor="gradeLevel">Grade Level</Label>
+                <Label htmlFor="gradeLevel">Grade Level *</Label>
                 <Select
                   value={form.watch("gradeLevel")}
                   onValueChange={(value) => form.setValue("gradeLevel", value)}

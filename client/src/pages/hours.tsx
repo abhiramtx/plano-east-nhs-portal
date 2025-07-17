@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye } from "lucide-react";
 import { HoursSubmissionForm } from "@/components/hours-submission-form";
+import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Helper function to convert email to storage key
@@ -88,7 +89,8 @@ export default function Hours() {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-gray-50">
+    <ProfileCompletionGuard user={user}>
+      <div className="flex-1 flex flex-col h-full bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
@@ -206,5 +208,6 @@ export default function Hours() {
         )}
       </div>
     </div>
+    </ProfileCompletionGuard>
   );
 }

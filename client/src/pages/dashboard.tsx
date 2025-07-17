@@ -5,6 +5,7 @@ import { Clock, TrendingUp, Calendar, Award, CheckCircle2, AlertCircle } from "l
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 
 // Helper function to convert email to storage key
 const emailToKey = (email: string) => email.replace(/\./g, ',');
@@ -77,6 +78,7 @@ export default function Dashboard() {
   const maxHours = Math.max(...monthlyData.map(d => d.hours), 4);
 
   return (
+    <ProfileCompletionGuard user={user}>
     <div className="flex-1 flex flex-col bg-gray-50 min-h-0">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
@@ -256,5 +258,6 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
+    </ProfileCompletionGuard>
   );
 }
