@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/sidebar";
 import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Hours from "@/pages/hours";
+import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 function Router({ user, onSignOut }: { user: User | null; onSignOut: () => void }) {
@@ -24,6 +25,7 @@ function Router({ user, onSignOut }: { user: User | null; onSignOut: () => void 
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/hours" component={Hours} />
+          <Route path="/profile" component={Profile} />
           <Route component={NotFound} />
         </Switch>
       </div>

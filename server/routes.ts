@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertHoursSubmissionSchema } from "@shared/schema";
+import { insertHoursSubmissionSchema, insertUserProfileSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Hours submissions routes
@@ -69,6 +69,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(submissions);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch all submissions" });
+    }
+  });
+
+  // User profile routes
+  app.get("/api/user-profile/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const profile = await storage.getUserProfile(userId);
+      
+      if (!profile) {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user profile" });
+    }
+  });
+
+  app.put("/api/user-profile", async (req, res) => {
+    try {
+      const validatedData = insertUserProfileSchema.parse(req.body);
+      const profile = await storage.upsertUserProfile(validatedData);
+      res.json(profile);
+    } catch (error) {
+      console.error("Profile validation error:", error);
+      res.status(400).json({ error: "Invalid profile data", details: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 

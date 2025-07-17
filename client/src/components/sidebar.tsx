@@ -27,6 +27,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Hours", href: "/hours", icon: Clock },
+    { name: "Profile", href: "/profile", icon: UserIcon },
   ];
 
   const isActive = (href: string) => {

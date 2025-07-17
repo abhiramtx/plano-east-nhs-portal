@@ -1,4 +1,4 @@
-import { users, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission } from "@shared/schema";
+import { users, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile } from "@shared/schema";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -14,19 +14,27 @@ export interface IStorage {
   updateHoursSubmission(id: number, updates: Partial<HoursSubmission>): Promise<HoursSubmission | undefined>;
   deleteHoursSubmission(id: number): Promise<boolean>;
   getAllHoursSubmissions(): Promise<HoursSubmission[]>;
+  
+  // User profiles
+  getUserProfile(userId: string): Promise<UserProfile | undefined>;
+  upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private hoursSubmissions: Map<number, HoursSubmission>;
+  private userProfiles: Map<string, UserProfile>;
   private currentUserId: number;
   private currentSubmissionId: number;
+  private currentProfileId: number;
 
   constructor() {
     this.users = new Map();
     this.hoursSubmissions = new Map();
+    this.userProfiles = new Map();
     this.currentUserId = 1;
     this.currentSubmissionId = 1;
+    this.currentProfileId = 1;
     this.seedMockData();
   }
 
@@ -125,6 +133,42 @@ export class MemStorage implements IStorage {
 
   async getAllHoursSubmissions(): Promise<HoursSubmission[]> {
     return Array.from(this.hoursSubmissions.values());
+  }
+
+  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+    return this.userProfiles.get(userId);
+  }
+
+  async upsertUserProfile(insertProfile: InsertUserProfile): Promise<UserProfile> {
+    const existingProfile = this.userProfiles.get(insertProfile.userId);
+    const now = new Date();
+    
+    if (existingProfile) {
+      // Update existing profile
+      const updatedProfile: UserProfile = {
+        ...existingProfile,
+        ...insertProfile,
+        updatedAt: now,
+      };
+      this.userProfiles.set(insertProfile.userId, updatedProfile);
+      return updatedProfile;
+    } else {
+      // Create new profile
+      const id = this.currentProfileId++;
+      const newProfile: UserProfile = {
+        id,
+        userId: insertProfile.userId,
+        goByFirstName: insertProfile.goByFirstName || null,
+        studentId: insertProfile.studentId || null,
+        personalEmailAddress: insertProfile.personalEmailAddress || null,
+        cellPhoneNumber: insertProfile.cellPhoneNumber || null,
+        gradeLevel: insertProfile.gradeLevel || null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      this.userProfiles.set(insertProfile.userId, newProfile);
+      return newProfile;
+    }
   }
 }
 
