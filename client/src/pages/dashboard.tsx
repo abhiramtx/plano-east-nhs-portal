@@ -79,7 +79,7 @@ export default function Dashboard() {
 
   return (
     <ProfileCompletionGuard user={user}>
-    <div className="flex-1 flex flex-col bg-gray-50 min-h-0">
+    <div className="flex-1 flex flex-col bg-white min-h-0">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
@@ -188,7 +188,7 @@ export default function Dashboard() {
                       content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                            <div className="bg-white p-3 border border-gray-200 rounded-lg">
                               <p className="font-medium text-gray-900">{label}</p>
                               <p className="text-blue-600">
                                 <span className="font-medium">{payload[0].value}</span> hours

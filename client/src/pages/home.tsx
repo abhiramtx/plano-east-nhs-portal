@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { User, signInWithGoogle, signInWithMockUser, handleSignOut, onAuthStateChanged, initializeAuth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { Paintbrush } from "lucide-react";
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -67,9 +68,9 @@ export default function Home() {
 
   if (initializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-white">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+          <div className="bg-white rounded-2xl border border-gray-200 p-8">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p className="text-gray-600">Initializing...</p>
@@ -81,17 +82,15 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-white">
       <div className="w-full max-w-md">
         {!user ? (
           // Sign-in Card
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 transition-all duration-300">
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 transition-all duration-300">
             {/* Header */}
             <div className="text-center mb-8">
               <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
+                <Paintbrush className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-2xl font-semibold text-gray-900 mb-2">Wylie NAHS Hours Tracker</h1>
               <p className="text-gray-600 text-sm">Sign in to track and manage your NAHS service hours</p>
@@ -107,7 +106,7 @@ export default function Home() {
               <div className="space-y-3">
                 <button
                   onClick={handleGoogleSignIn}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 flex items-center justify-center space-x-3 hover:bg-gray-50 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 flex items-center justify-center space-x-3 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
                 >
                   {/* Google Logo */}
                   <svg width="20" height="20" viewBox="0 0 24 24">

@@ -59,7 +59,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
               <div
                 className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
                   isActive(item.href)
-                    ? "bg-blue-50 text-blue-700 border-r-2 border-blue-500"
+                    ? "bg-blue-50 text-blue-700"
                     : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 }`}
                 onClick={closeMobileMenu}
@@ -115,7 +115,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
           variant="outline"
           size="sm"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="bg-white shadow-md"
+          className="bg-white border border-gray-200"
         >
           <Menu className="w-4 h-4" />
         </Button>

@@ -35,3 +35,10 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   }
 }
+
+@layer components {
+  .card {
+    @apply border border-gray-200 bg-white rounded-lg;
+    box-shadow: none !important;
+  }
+}

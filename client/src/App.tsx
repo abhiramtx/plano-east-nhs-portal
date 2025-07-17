@@ -18,7 +18,7 @@ function UserInterface({ user, onSignOut }: { user: User | null; onSignOut: () =
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-white">
       <Sidebar user={user} onSignOut={onSignOut} />
       <div className="flex-1 lg:ml-64 flex flex-col min-h-0">
         <Switch>
