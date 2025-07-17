@@ -1,7 +1,19 @@
 // Google OAuth configuration
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'demo-client-id';
-const GOOGLE_OAUTH_URL = 'https://accounts.google.com/oauth/authorize';
-const GOOGLE_SCOPE = 'openid email profile';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+// TypeScript declarations for Google Identity Services
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
 
 export interface User {
   email: string;
@@ -30,20 +42,56 @@ const notifyAuthListeners = (user: User | null) => {
   authListeners.forEach(listener => listener(user));
 };
 
-export const signInWithGoogle = () => {
-  // For demo purposes, simulate a successful sign-in
-  const mockUser: User = {
-    email: 'demo.user@gmail.com',
-    name: 'Demo User',
-    picture: 'https://images.unsplash.com/photo-1494790108755-2616b612b898?w=96&h=96&fit=crop&crop=face',
-    sub: 'demo-user-' + Date.now()
-  };
-  
-  // Simulate a brief loading delay
-  setTimeout(() => {
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    notifyAuthListeners(mockUser);
-  }, 1000);
+// Load Google Identity Services API
+const loadGoogleAPI = (): Promise<void> => {
+  return new Promise((resolve) => {
+    if (window.google && window.google.accounts) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.onload = () => resolve();
+    document.head.appendChild(script);
+  });
+};
+
+export const signInWithGoogle = async () => {
+  if (!GOOGLE_CLIENT_ID) {
+    console.error('Google Client ID not configured');
+    return;
+  }
+
+  await loadGoogleAPI();
+
+  // Initialize Google OAuth
+  window.google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse,
+  });
+
+  // Trigger the sign-in popup
+  window.google.accounts.id.prompt();
+};
+
+const handleCredentialResponse = (response: any) => {
+  try {
+    // Decode the JWT token to get user info
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    
+    const user: User = {
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+      sub: payload.sub
+    };
+
+    localStorage.setItem('user', JSON.stringify(user));
+    notifyAuthListeners(user);
+  } catch (error) {
+    console.error('Failed to process Google sign-in:', error);
+  }
 };
 
 export const handleSignOut = () => {

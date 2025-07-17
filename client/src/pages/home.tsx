@@ -28,15 +28,22 @@ export default function Home() {
     return () => unsubscribe();
   }, [toast]);
 
-  const handleGoogleSignIn = () => {
-    setLoading(true);
-    setError(null);
-    signInWithGoogle();
-    
-    // Reset loading state after the timeout in signInWithGoogle
-    setTimeout(() => {
+  const handleGoogleSignIn = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await signInWithGoogle();
+    } catch (error: any) {
+      console.error("Sign-in error:", error);
+      setError("Authentication failed. Please try again.");
+      toast({
+        title: "Sign-in failed",
+        description: error.message || "Authentication failed. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setLoading(false);
-    }, 1100);
+    }
   };
 
   const handleSignOutClick = async () => {
