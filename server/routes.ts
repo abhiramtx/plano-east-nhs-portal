@@ -17,11 +17,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/hours-submissions", async (req, res) => {
     try {
-      const validatedData = insertHoursSubmissionSchema.parse(req.body);
+      // Transform the date string to Date object before validation
+      const requestData = {
+        ...req.body,
+        date: new Date(req.body.date),
+      };
+      
+      const validatedData = insertHoursSubmissionSchema.parse(requestData);
       const submission = await storage.createHoursSubmission(validatedData);
       res.status(201).json(submission);
     } catch (error) {
-      res.status(400).json({ error: "Invalid submission data" });
+      console.error("Submission validation error:", error);
+      res.status(400).json({ error: "Invalid submission data", details: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 

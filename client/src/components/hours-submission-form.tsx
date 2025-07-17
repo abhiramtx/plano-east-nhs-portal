@@ -15,7 +15,7 @@ import { Upload, X } from "lucide-react";
 
 const formSchema = insertHoursSubmissionSchema.extend({
   date: z.string().min(1, "Date is required"),
-  hours: z.string().min(1, "Hours is required").transform(Number),
+  hours: z.string().min(1, "Hours is required"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -58,9 +58,11 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
 
       const submissionData = {
         ...data,
-        date: new Date(data.date),
+        date: new Date(data.date).toISOString(),
         proofImageUrl,
       };
+      
+
 
       return await apiRequest('/api/hours-submissions', {
         method: 'POST',
@@ -77,7 +79,8 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
       setImagePreview(null);
       onSuccess();
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Form submission error:", error);
       toast({
         title: "Error",
         description: "Failed to submit hours",
