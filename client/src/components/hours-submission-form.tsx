@@ -13,6 +13,49 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Upload, X } from "lucide-react";
 
+// Helper function to compress image
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    const img = new Image();
+    
+    img.onload = () => {
+      // Calculate new dimensions (max 800px width/height)
+      const maxSize = 800;
+      let { width, height } = img;
+      
+      if (width > height) {
+        if (width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        }
+      } else {
+        if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      canvas.toBlob((blob) => {
+        const compressedFile = new File([blob!], file.name, {
+          type: 'image/jpeg',
+          lastModified: Date.now()
+        });
+        resolve(compressedFile);
+      }, 'image/jpeg', 0.8); // 80% quality
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 const formSchema = insertHoursSubmissionSchema.extend({
   date: z.string().min(1, "Date is required"),
   hours: z.string().min(1, "Hours is required"),
@@ -48,11 +91,13 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
       // Convert file to base64 for mock storage (in real app, upload to storage service)
       let proofImageUrl = null;
       if (selectedFile) {
+        // Compress image before converting to base64
+        const compressedFile = await compressImage(selectedFile);
         const reader = new FileReader();
         const base64Promise = new Promise<string>((resolve) => {
           reader.onloadend = () => resolve(reader.result as string);
         });
-        reader.readAsDataURL(selectedFile);
+        reader.readAsDataURL(compressedFile);
         proofImageUrl = await base64Promise;
       }
 
@@ -97,11 +142,11 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
         return;
       }
 
-      // Check file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
+      // Check file size (2MB limit for better handling)
+      if (file.size > 2 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: "Please select an image smaller than 5MB",
+          description: "Please select an image smaller than 2MB",
           variant: "destructive",
         });
         return;
