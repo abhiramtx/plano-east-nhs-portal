@@ -73,6 +73,8 @@ Preferred communication style: Simple, everyday language.
 - **Requirements Tracking**: Added 15-hour March deadline tracking with progress bar and status indicators
 - **Developer Credit**: Added "Made by Abhiram" credit with mailto link in sidebar
 - **Interface Selection**: Redesigned interface selection page with modern card-based layout and better descriptions
+- **User Role System**: Added user_role field to database (0=student, 1=admin) with automatic default assignment
+- **Profile Completion UI**: Redesigned profile completion screen with modern gradient design and feature highlights
 
 ## Data Flow
 
