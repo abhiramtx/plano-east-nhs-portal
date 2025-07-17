@@ -77,9 +77,9 @@ export default function Dashboard() {
   const maxHours = Math.max(...monthlyData.map(d => d.hours), 4);
 
   return (
-    <div className="flex-1 overflow-auto bg-gray-50">
+    <div className="flex-1 flex flex-col bg-gray-50 min-h-0">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
             <div>
@@ -96,7 +96,7 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="p-4 lg:p-6">
+      <div className="flex-1 overflow-auto p-4 lg:p-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
           <Card>

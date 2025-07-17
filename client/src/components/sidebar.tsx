@@ -25,13 +25,13 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "Dashboard", href: "/user_interface/dashboard", icon: LayoutDashboard },
-    { name: "Hours", href: "/user_interface/hours", icon: Clock },
-    { name: "Profile", href: "/user_interface/profile", icon: UserIcon },
+    { name: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
+    { name: "Hours", href: "/student/hours", icon: Clock },
+    { name: "Profile", href: "/student/profile", icon: UserIcon },
   ];
 
   const isActive = (href: string) => {
-    return location === href || (href === "/user_interface/dashboard" && (location === "/" || location === "/user_interface"));
+    return location === href || (href === "/student/dashboard" && (location === "/" || location === "/student"));
   };
 
   const closeMobileMenu = () => {

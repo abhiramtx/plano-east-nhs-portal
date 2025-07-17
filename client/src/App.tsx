@@ -22,10 +22,10 @@ function UserInterface({ user, onSignOut }: { user: User | null; onSignOut: () =
       <Sidebar user={user} onSignOut={onSignOut} />
       <div className="flex-1 lg:ml-64 overflow-hidden">
         <Switch>
-          <Route path="/user_interface" component={Dashboard} />
-          <Route path="/user_interface/dashboard" component={Dashboard} />
-          <Route path="/user_interface/hours" component={Hours} />
-          <Route path="/user_interface/profile" component={Profile} />
+          <Route path="/student" component={Dashboard} />
+          <Route path="/student/dashboard" component={Dashboard} />
+          <Route path="/student/hours" component={Hours} />
+          <Route path="/student/profile" component={Profile} />
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/hours" component={Hours} />
@@ -51,10 +51,10 @@ function AdminInterface() {
 function Router({ user, onSignOut }: { user: User | null; onSignOut: () => void }) {
   return (
     <Switch>
-      <Route path="/user_interface/:rest*">
+      <Route path="/student/:rest*">
         <UserInterface user={user} onSignOut={onSignOut} />
       </Route>
-      <Route path="/user_interface">
+      <Route path="/student">
         <UserInterface user={user} onSignOut={onSignOut} />
       </Route>
       <Route path="/admin/:rest*" component={AdminInterface} />
@@ -69,7 +69,7 @@ function Router({ user, onSignOut }: { user: User | null; onSignOut: () => void 
               <p className="text-gray-600 mb-8">Choose your interface:</p>
               <div className="space-y-4">
                 <div>
-                  <a href="/user_interface" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                  <a href="/student" className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
                     Student Interface
                   </a>
                 </div>
