@@ -164,7 +164,7 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">March 2025 Requirement Status</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">March Requirement Status</h3>
                   <p className="text-sm text-gray-600">15 approved hours required by end of March</p>
                 </div>
                 <div className="text-right">

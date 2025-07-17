@@ -103,6 +103,19 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
           <LogOut className="w-4 h-4 mr-2" />
           Sign Out
         </Button>
+        
+        {/* Made by credit */}
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <p className="text-xs text-gray-500 text-center">
+            Made by{" "}
+            <a 
+              href="mailto:abhiram.vishnubho.1@mypisd.net"
+              className="text-blue-600 hover:text-blue-700 underline"
+            >
+              Abhiram
+            </a>
+          </p>
+        </div>
       </div>
     </>
   );
