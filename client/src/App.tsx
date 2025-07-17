@@ -26,6 +26,10 @@ function UserInterface({ user, onSignOut }: { user: User | null; onSignOut: () =
           <Route path="/user_interface/dashboard" component={Dashboard} />
           <Route path="/user_interface/hours" component={Hours} />
           <Route path="/user_interface/profile" component={Profile} />
+          <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/hours" component={Hours} />
+          <Route path="/profile" component={Profile} />
           <Route component={NotFound} />
         </Switch>
       </div>
@@ -50,7 +54,11 @@ function Router({ user, onSignOut }: { user: User | null; onSignOut: () => void 
       <Route path="/user_interface/:rest*">
         <UserInterface user={user} onSignOut={onSignOut} />
       </Route>
+      <Route path="/user_interface">
+        <UserInterface user={user} onSignOut={onSignOut} />
+      </Route>
       <Route path="/admin/:rest*" component={AdminInterface} />
+      <Route path="/admin" component={AdminInterface} />
       <Route path="/">
         {user ? (
           <UserInterface user={user} onSignOut={onSignOut} />
