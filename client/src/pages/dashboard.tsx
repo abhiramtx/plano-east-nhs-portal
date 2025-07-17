@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { User, getCurrentUser } from "@/lib/firebase";
-import { Clock, CheckCircle, Calendar } from "lucide-react";
+import { Clock, TrendingUp, Calendar, Award, CheckCircle2, AlertCircle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -12,13 +15,21 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Mock data for now - will be replaced with real data
+  // Fetch user's hours submissions
+  const { data: submissions = [] } = useQuery({
+    queryKey: ['/api/hours-submissions', user?.sub],
+    enabled: !!user?.sub,
+  });
+
+  // Calculate statistics
   const stats = {
-    verifiedFallHours: 0,
-    verifiedSpringHours: 0,
-    totalHours: 0,
+    totalHours: submissions.reduce((sum, sub) => sum + parseFloat(sub.hours), 0),
+    approvedHours: submissions.filter(sub => sub.status === 'approved').reduce((sum, sub) => sum + parseFloat(sub.hours), 0),
+    pendingHours: submissions.filter(sub => sub.status === 'pending').reduce((sum, sub) => sum + parseFloat(sub.hours), 0),
+    submissionCount: submissions.length,
   };
 
+  // Monthly data for chart
   const monthlyData = [
     { month: "Jun", hours: 0 },
     { month: "Jul", hours: 0 },
@@ -34,107 +45,170 @@ export default function Dashboard() {
     { month: "May", hours: 0 },
   ];
 
+  // Calculate monthly hours from submissions
+  submissions.forEach(sub => {
+    const month = new Date(sub.date).toLocaleString('default', { month: 'short' });
+    const monthData = monthlyData.find(m => m.month === month);
+    if (monthData && sub.status === 'approved') {
+      monthData.hours += parseFloat(sub.hours);
+    }
+  });
+
   const maxHours = Math.max(...monthlyData.map(d => d.hours), 4);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex-1 overflow-auto bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="bg-white border-b border-gray-200">
+        <div className="px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <nav className="text-sm text-gray-500 mb-2">
-                Student / Dashboard
-              </nav>
               <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600 mt-1">Welcome to your dashboard!</p>
+              <p className="text-gray-600 mt-1">Welcome back, {user?.name?.split(' ')[0]}!</p>
             </div>
-            <div className="bg-yellow-400 rounded-full p-4">
-              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-9 9a1 1 0 001.414 1.414L9 5.414V17a1 1 0 102 0V5.414l7.293 7.293a1 1 0 001.414-1.414l-9-9z"/>
-              </svg>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                <Award className="w-5 h-5 text-white" />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Success Message */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-green-100 rounded-full p-3">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">You're all set!</h2>
-            <p className="text-gray-600">
-              Your account has been activated and your registration has been filed. You can access your profile information on the sidebar.
-            </p>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="text-orange-500 mr-3">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-gray-900">{stats.verifiedFallHours}</p>
-                <p className="text-sm text-gray-600">VERIFIED FALL HOURS</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="text-purple-500 mr-3">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-gray-900">{stats.verifiedSpringHours}</p>
-                <p className="text-sm text-gray-600">VERIFIED SPRING HOURS</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="text-blue-500 mr-3">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold text-gray-900">{stats.totalHours}</p>
-                <p className="text-sm text-gray-600">HOURS ALL TIME</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Chart */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Hours Dedicated To Service Per Month</h3>
-          <div className="h-64">
-            <div className="flex items-end justify-between h-full">
-              {monthlyData.map((data, index) => (
-                <div key={index} className="flex flex-col items-center flex-1">
-                  <div className="w-full flex justify-center mb-2">
-                    <div
-                      className="bg-blue-200 rounded-t"
-                      style={{
-                        height: `${(data.hours / maxHours) * 200}px`,
-                        width: '20px',
-                        minHeight: '2px'
-                      }}
-                    />
-                  </div>
-                  <span className="text-sm text-gray-600">{data.month}</span>
+      {/* Main Content */}
+      <div className="p-6">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Hours</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalHours.toFixed(1)}</p>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="p-3 bg-blue-50 rounded-full">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Approved Hours</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.approvedHours.toFixed(1)}</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-full">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Pending Hours</p>
+                  <p className="text-2xl font-bold text-yellow-600">{stats.pendingHours.toFixed(1)}</p>
+                </div>
+                <div className="p-3 bg-yellow-50 rounded-full">
+                  <AlertCircle className="w-5 h-5 text-yellow-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Submissions</p>
+                  <p className="text-2xl font-bold text-purple-600">{stats.submissionCount}</p>
+                </div>
+                <div className="p-3 bg-purple-50 rounded-full">
+                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Monthly Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <span>Monthly Hours</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {monthlyData.map((data, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 text-sm text-gray-600">{data.month}</div>
+                      <div className="flex-1 bg-gray-200 rounded-full h-2 w-24">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(data.hours / maxHours) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="text-sm font-medium text-gray-900 w-12 text-right">
+                      {data.hours.toFixed(1)}h
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5 text-green-600" />
+                <span>Recent Submissions</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {submissions.slice(0, 5).map((submission, index) => (
+                  <div key={index} className="flex items-center justify-between py-2">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {submission.description}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(submission.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-900">
+                        {submission.hours}h
+                      </span>
+                      <Badge 
+                        variant={submission.status === 'approved' ? 'default' : 'secondary'}
+                        className={submission.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                      >
+                        {submission.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+                {submissions.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                    <p>No submissions yet</p>
+                    <p className="text-sm">Start by submitting your first hours!</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
