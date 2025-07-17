@@ -94,6 +94,19 @@ const handleCredentialResponse = (response: any) => {
   }
 };
 
+// Mock sign-in function for demo
+export const signInWithMockUser = () => {
+  const mockUser: User = {
+    email: 'demo.student@gmail.com',
+    name: 'Demo Student',
+    picture: 'https://images.unsplash.com/photo-1494790108755-2616b612b898?w=96&h=96&fit=crop&crop=face',
+    sub: 'demo-user-123'
+  };
+
+  localStorage.setItem('user', JSON.stringify(mockUser));
+  notifyAuthListeners(mockUser);
+};
+
 export const handleSignOut = () => {
   localStorage.removeItem('user');
   localStorage.removeItem('oauth_state');

@@ -1,8 +1,8 @@
-# Google Sign-In Demo Application
+# Art Club Hours Tracking Application
 
 ## Overview
 
-This is a simple Google Sign-In demo application built with React and TypeScript. The application demonstrates a clean authentication flow with a beautiful UI, displaying the user's email address after successful sign-in. It uses a simplified mock authentication system for demonstration purposes without requiring external API keys.
+This is a comprehensive hours tracking application for art club participants built with React and TypeScript. Students can sign in with Google authentication, view their dashboard with service hours statistics, and submit/manage their service hours with proof of completion. The application features a clean, modern UI optimized for light mode display and includes comprehensive hours submission management.
 
 ## User Preferences
 
@@ -18,9 +18,19 @@ Preferred communication style: Simple, everyday language.
 - **Framework**: React 18 with TypeScript
 - **Bundler**: Vite for fast development and optimized builds
 - **UI Components**: shadcn/ui component library built on Radix UI primitives
-- **Styling**: Tailwind CSS with CSS variables for theming
-- **Authentication**: Custom mock authentication system for demo purposes
-- **State Management**: Simple React state with localStorage persistence
+- **Styling**: Tailwind CSS with CSS variables for theming (light mode only)
+- **Authentication**: Mock Google OAuth with localStorage persistence
+- **State Management**: TanStack Query for server state, React state for UI state
+- **Form Management**: React Hook Form with Zod validation
+- **File Upload**: Base64 encoding for image proof storage (mock implementation)
+
+### Key Features
+- **Dashboard**: Overview of service hours with statistics and monthly chart
+- **Hours Submission**: Form to submit service hours with proof images
+- **Hours Management**: View, edit, and delete submitted hours
+- **Authentication**: Google sign-in integration (mock for demo)
+- **Navigation**: Clean navigation between dashboard and hours pages
+- **Responsive Design**: Mobile-friendly UI with proper breakpoints
 
 ## Key Components
 

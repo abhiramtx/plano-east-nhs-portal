@@ -1,4 +1,4 @@
-import { users, type User, type InsertUser } from "@shared/schema";
+import { users, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission } from "@shared/schema";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -7,15 +7,63 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // Hours submissions
+  getHoursSubmissions(userId: string): Promise<HoursSubmission[]>;
+  createHoursSubmission(submission: InsertHoursSubmission): Promise<HoursSubmission>;
+  updateHoursSubmission(id: number, updates: Partial<HoursSubmission>): Promise<HoursSubmission | undefined>;
+  deleteHoursSubmission(id: number): Promise<boolean>;
+  getAllHoursSubmissions(): Promise<HoursSubmission[]>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
-  currentId: number;
+  private hoursSubmissions: Map<number, HoursSubmission>;
+  private currentUserId: number;
+  private currentSubmissionId: number;
 
   constructor() {
     this.users = new Map();
-    this.currentId = 1;
+    this.hoursSubmissions = new Map();
+    this.currentUserId = 1;
+    this.currentSubmissionId = 1;
+    this.seedMockData();
+  }
+
+  private seedMockData() {
+    // Add some mock submissions for demo purposes
+    const mockSubmissions = [
+      {
+        id: 1,
+        userId: "demo-user-123",
+        studentName: "Demo Student",
+        description: "Helped organize art supplies and cleaned brushes after painting session",
+        date: new Date("2024-01-15"),
+        hours: "2.5",
+        status: "approved" as const,
+        proofImageUrl: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=300&fit=crop",
+        createdAt: new Date("2024-01-15T10:00:00Z"),
+        updatedAt: new Date("2024-01-15T10:00:00Z"),
+      },
+      {
+        id: 2,
+        userId: "demo-user-123",
+        studentName: "Demo Student",
+        description: "Assisted with setting up art exhibition display and guided visitors",
+        date: new Date("2024-01-20"),
+        hours: "3.0",
+        status: "pending" as const,
+        proofImageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
+        createdAt: new Date("2024-01-20T14:30:00Z"),
+        updatedAt: new Date("2024-01-20T14:30:00Z"),
+      },
+    ];
+
+    mockSubmissions.forEach(submission => {
+      this.hoursSubmissions.set(submission.id, submission);
+    });
+    
+    this.currentSubmissionId = 3;
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -29,10 +77,54 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentId++;
+    const id = this.currentUserId++;
     const user: User = { ...insertUser, id };
     this.users.set(id, user);
     return user;
+  }
+
+  async getHoursSubmissions(userId: string): Promise<HoursSubmission[]> {
+    return Array.from(this.hoursSubmissions.values()).filter(
+      (submission) => submission.userId === userId,
+    );
+  }
+
+  async createHoursSubmission(insertSubmission: InsertHoursSubmission): Promise<HoursSubmission> {
+    const id = this.currentSubmissionId++;
+    const now = new Date();
+    const submission: HoursSubmission = {
+      ...insertSubmission,
+      id,
+      status: insertSubmission.status || "pending",
+      proofImageUrl: insertSubmission.proofImageUrl || null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.hoursSubmissions.set(id, submission);
+    return submission;
+  }
+
+  async updateHoursSubmission(id: number, updates: Partial<HoursSubmission>): Promise<HoursSubmission | undefined> {
+    const submission = this.hoursSubmissions.get(id);
+    if (!submission) return undefined;
+    
+    const updatedSubmission: HoursSubmission = {
+      ...submission,
+      ...updates,
+      id, // Ensure id doesn't change
+      updatedAt: new Date(),
+    };
+    
+    this.hoursSubmissions.set(id, updatedSubmission);
+    return updatedSubmission;
+  }
+
+  async deleteHoursSubmission(id: number): Promise<boolean> {
+    return this.hoursSubmissions.delete(id);
+  }
+
+  async getAllHoursSubmissions(): Promise<HoursSubmission[]> {
+    return Array.from(this.hoursSubmissions.values());
   }
 }
 
