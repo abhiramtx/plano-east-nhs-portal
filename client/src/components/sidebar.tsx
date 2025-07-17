@@ -110,9 +110,9 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
             Made by{" "}
             <a 
               href="mailto:abhiram.vishnubho.1@mypisd.net"
-              className="text-blue-600 hover:text-blue-700 underline"
+              className="text-gray-500 font-bold hover:text-blue-700"
             >
-              Abhiram
+              Abhi :)
             </a>
           </p>
         </div>
