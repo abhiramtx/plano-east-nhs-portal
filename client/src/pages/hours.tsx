@@ -116,8 +116,9 @@ export default function Hours() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-4 lg:p-6">
-        {isLoading ? (
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4 lg:p-6">
+          {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
@@ -138,7 +139,7 @@ export default function Hours() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 lg:gap-6">
+              <div className="space-y-4 lg:space-y-6">
                 {submissions.map((submission: HoursSubmission) => (
                   <Card key={submission.id} className="overflow-hidden">
                     <CardContent className="p-4 lg:p-6">
@@ -204,6 +205,7 @@ export default function Hours() {
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );
