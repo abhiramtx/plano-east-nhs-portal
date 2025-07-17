@@ -77,10 +77,13 @@ export default function Profile() {
         ...data,
         userId: user?.email ? emailToKey(user.email) : '',
       };
-      console.log('Submitting profile data:', payload);
-      return await apiRequest('PUT', '/api/user-profile', payload);
+      console.log('Making API call with payload:', payload);
+      const response = await apiRequest('PUT', '/api/user-profile', payload);
+      console.log('API response:', response);
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Profile update successful:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/user-profile', user?.email ? emailToKey(user.email) : ''] });
       toast({
         title: "Success",
@@ -107,6 +110,7 @@ export default function Profile() {
       return;
     }
     
+    console.log('Calling updateProfileMutation.mutate with:', data);
     updateProfileMutation.mutate(data);
   };
 
@@ -149,7 +153,11 @@ export default function Profile() {
             </p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6"
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              console.log('Form onSubmit triggered');
+              form.handleSubmit(onSubmit)(e);
+            }} className="space-y-6"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -253,8 +261,11 @@ export default function Profile() {
                   onClick={(e) => {
                     console.log('Button clicked');
                     console.log('Current form values:', form.getValues());
+                    console.log('Form state:', form.formState);
                     e.preventDefault();
-                    form.handleSubmit(onSubmit)(e);
+                    const formData = form.getValues();
+                    console.log('Manual form submission with data:', formData);
+                    onSubmit(formData);
                   }}
                 >
                   {updateProfileMutation.isPending ? (
