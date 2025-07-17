@@ -1,4 +1,6 @@
-import { users, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile } from "@shared/schema";
+import { users, hoursSubmissions, userProfiles, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -20,169 +22,94 @@ export interface IStorage {
   upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private hoursSubmissions: Map<number, HoursSubmission>;
-  private userProfiles: Map<string, UserProfile>;
-  private currentUserId: number;
-  private currentSubmissionId: number;
-  private currentProfileId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.hoursSubmissions = new Map();
-    this.userProfiles = new Map();
-    this.currentUserId = 1;
-    this.currentSubmissionId = 1;
-    this.currentProfileId = 1;
-    this.seedMockData();
-  }
-
-  private seedMockData() {
-    // Add some mock submissions for demo purposes
-    const mockSubmissions = [
-      {
-        id: 1,
-        userId: "demo,student@gmail,com",
-        studentName: "Demo Student",
-        description: "Helped organize art supplies and cleaned brushes after painting session",
-        date: new Date("2024-01-15"),
-        hours: "2.5",
-        status: "approved" as const,
-        proofImageUrl: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=300&fit=crop",
-        createdAt: new Date("2024-01-15T10:00:00Z"),
-        updatedAt: new Date("2024-01-15T10:00:00Z"),
-      },
-      {
-        id: 2,
-        userId: "demo,student@gmail,com",
-        studentName: "Demo Student",
-        description: "Assisted with setting up art exhibition display and guided visitors",
-        date: new Date("2024-01-20"),
-        hours: "3.0",
-        status: "pending" as const,
-        proofImageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
-        createdAt: new Date("2024-01-20T14:30:00Z"),
-        updatedAt: new Date("2024-01-20T14:30:00Z"),
-      },
-      {
-        id: 3,
-        userId: "demo,student@gmail,com",
-        studentName: "Demo Student",
-        description: "Helped clean up after pottery workshop and arranged student artwork",
-        date: new Date("2024-02-05"),
-        hours: "1.5",
-        status: "approved" as const,
-        proofImageUrl: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
-        createdAt: new Date("2024-02-05T16:00:00Z"),
-        updatedAt: new Date("2024-02-05T16:00:00Z"),
-      },
-    ];
-
-    mockSubmissions.forEach(submission => {
-      this.hoursSubmissions.set(submission.id, submission);
-    });
-    
-    this.currentSubmissionId = 4;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async getHoursSubmissions(userId: string): Promise<HoursSubmission[]> {
-    return Array.from(this.hoursSubmissions.values()).filter(
-      (submission) => submission.userId === userId,
-    );
+    return await db
+      .select()
+      .from(hoursSubmissions)
+      .where(eq(hoursSubmissions.userId, userId))
+      .orderBy(hoursSubmissions.createdAt);
   }
 
   async createHoursSubmission(insertSubmission: InsertHoursSubmission): Promise<HoursSubmission> {
-    const id = this.currentSubmissionId++;
-    const now = new Date();
-    const submission: HoursSubmission = {
-      ...insertSubmission,
-      id,
-      status: insertSubmission.status || "pending",
-      proofImageUrl: insertSubmission.proofImageUrl || null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.hoursSubmissions.set(id, submission);
+    const [submission] = await db
+      .insert(hoursSubmissions)
+      .values(insertSubmission)
+      .returning();
     return submission;
   }
 
   async updateHoursSubmission(id: number, updates: Partial<HoursSubmission>): Promise<HoursSubmission | undefined> {
-    const submission = this.hoursSubmissions.get(id);
-    if (!submission) return undefined;
-    
-    const updatedSubmission: HoursSubmission = {
-      ...submission,
-      ...updates,
-      id, // Ensure id doesn't change
-      updatedAt: new Date(),
-    };
-    
-    this.hoursSubmissions.set(id, updatedSubmission);
-    return updatedSubmission;
+    const [submission] = await db
+      .update(hoursSubmissions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(hoursSubmissions.id, id))
+      .returning();
+    return submission || undefined;
   }
 
   async deleteHoursSubmission(id: number): Promise<boolean> {
-    return this.hoursSubmissions.delete(id);
+    const result = await db
+      .delete(hoursSubmissions)
+      .where(eq(hoursSubmissions.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   async getAllHoursSubmissions(): Promise<HoursSubmission[]> {
-    return Array.from(this.hoursSubmissions.values());
+    return await db
+      .select()
+      .from(hoursSubmissions)
+      .orderBy(hoursSubmissions.createdAt);
   }
 
   async getUserProfile(userId: string): Promise<UserProfile | undefined> {
-    return this.userProfiles.get(userId);
+    const [profile] = await db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, userId));
+    return profile || undefined;
   }
 
   async upsertUserProfile(insertProfile: InsertUserProfile): Promise<UserProfile> {
-    const existingProfile = this.userProfiles.get(insertProfile.userId);
-    const now = new Date();
+    // Try to find existing profile
+    const existingProfile = await this.getUserProfile(insertProfile.userId);
     
     if (existingProfile) {
       // Update existing profile
-      const updatedProfile: UserProfile = {
-        ...existingProfile,
-        ...insertProfile,
-        updatedAt: now,
-      };
-      this.userProfiles.set(insertProfile.userId, updatedProfile);
+      const [updatedProfile] = await db
+        .update(userProfiles)
+        .set({ ...insertProfile, updatedAt: new Date() })
+        .where(eq(userProfiles.userId, insertProfile.userId))
+        .returning();
       return updatedProfile;
     } else {
       // Create new profile
-      const id = this.currentProfileId++;
-      const newProfile: UserProfile = {
-        id,
-        userId: insertProfile.userId,
-        goByFirstName: insertProfile.goByFirstName || null,
-        lastName: insertProfile.lastName || null,
-        studentId: insertProfile.studentId || null,
-        personalEmailAddress: insertProfile.personalEmailAddress || null,
-        cellPhoneNumber: insertProfile.cellPhoneNumber || null,
-        gradeLevel: insertProfile.gradeLevel || null,
-        createdAt: now,
-        updatedAt: now,
-      };
-      this.userProfiles.set(insertProfile.userId, newProfile);
+      const [newProfile] = await db
+        .insert(userProfiles)
+        .values(insertProfile)
+        .returning();
       return newProfile;
     }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
