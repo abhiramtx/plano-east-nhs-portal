@@ -60,10 +60,10 @@ export default function Dashboard() {
     <div className="flex-1 overflow-auto bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="px-6 py-6">
+        <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Dashboard</h1>
               <p className="text-gray-600 mt-1">Welcome back, {user?.name?.split(' ')[0]}!</p>
             </div>
             <div className="flex items-center space-x-2">
@@ -76,9 +76,9 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -137,7 +137,7 @@ export default function Dashboard() {
         </div>
 
         {/* Monthly Chart */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">

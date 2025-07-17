@@ -19,7 +19,7 @@ function Router({ user, onSignOut }: { user: User | null; onSignOut: () => void 
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar user={user} onSignOut={onSignOut} />
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 lg:ml-64 overflow-hidden">
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />

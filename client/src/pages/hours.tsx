@@ -88,10 +88,10 @@ export default function Hours() {
     <div className="flex-1 overflow-auto bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="px-6 py-6">
-          <div className="flex items-center justify-between">
+        <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">Hours Management</h1>
+              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Hours Management</h1>
               <p className="text-gray-600 mt-1">Track and manage your service hours</p>
             </div>
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
@@ -113,7 +113,7 @@ export default function Hours() {
       </div>
 
       {/* Main Content */}
-      <div className="p-6">
+      <div className="p-4 lg:p-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -135,13 +135,13 @@ export default function Hours() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-6">
+              <div className="grid gap-4 lg:gap-6">
                 {submissions.map((submission: HoursSubmission) => (
                   <Card key={submission.id} className="overflow-hidden">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
+                    <CardContent className="p-4 lg:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
                         <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-3">
+                          <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
                             <Badge 
                               variant={submission.status === 'approved' ? 'default' : 'secondary'}
                               className={`${
@@ -173,7 +173,7 @@ export default function Hours() {
                               <img 
                                 src={submission.proofImageUrl} 
                                 alt="Proof of service" 
-                                className="w-32 h-32 object-cover rounded-lg border"
+                                className="w-24 h-24 lg:w-32 lg:h-32 object-cover rounded-lg border"
                               />
                             </div>
                           )}
