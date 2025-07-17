@@ -1,8 +1,6 @@
 import { ReactNode } from "react";
 import { User } from "@/lib/firebase";
 import { useProfileCompletion } from "@/hooks/use-profile-completion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, User as UserIcon } from "lucide-react";
 import { Link } from "wouter";
 
 interface ProfileCompletionGuardProps {
@@ -25,62 +23,66 @@ export function ProfileCompletionGuard({ user, children }: ProfileCompletionGuar
 
   if (!isProfileComplete) {
     return (
-      <div className="flex-1 flex flex-col bg-gray-50 min-h-0">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 flex-shrink-0">
-          <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Profile Required</h1>
-                <p className="text-gray-600 mt-1">Complete your profile to access the application</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="max-w-lg w-full">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white text-center">
+              <div className="flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mx-auto mb-4 backdrop-blur-sm">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
+              <h3 className="text-2xl font-bold mb-2">Welcome to NAHS!</h3>
+              <p className="text-blue-100">Let's set up your profile to get started</p>
+            </div>
+            
+            {/* Content */}
+            <div className="p-8 text-center">
+              <div className="mb-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-3">Complete Your Profile</h4>
+                <p className="text-gray-600 leading-relaxed">
+                  To access your dashboard and start tracking your art service hours, we need a few details about you first.
+                </p>
+              </div>
+              
+              {/* Features list */}
+              <div className="space-y-3 mb-8 text-left">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-sm text-gray-700">Track your service hours progress</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-sm text-gray-700">Submit hours with proof attachments</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-sm text-gray-700">Meet your 15-hour March requirement</span>
                 </div>
               </div>
+              
+              {/* Action button */}
+              <Link href="/student/profile" className="inline-flex items-center justify-center w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 font-medium shadow-lg">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Complete Profile Setup
+              </Link>
             </div>
           </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserIcon className="w-5 h-5" />
-                Complete Your Profile
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mx-auto mb-4">
-                  <AlertCircle className="w-8 h-8 text-red-600" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Information Required</h3>
-                <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                  To use the Wylie NAHS Hours Tracker, you must complete all required profile information. 
-                  This helps us track your service hours accurately and contact you when necessary.
-                </p>
-                <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Required Information:</h4>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• Go-By First Name</li>
-                    <li>• Last Name</li>
-                    <li>• Student ID</li>
-                    <li>• Personal Email Address</li>
-                    <li>• Cell Phone Number</li>
-                    <li>• Grade Level</li>
-                  </ul>
-                </div>
-                <Link href="/student/profile">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
-                    Complete Profile
-                  </button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     );
