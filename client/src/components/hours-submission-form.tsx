@@ -61,13 +61,8 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
         date: new Date(data.date).toISOString(),
         proofImageUrl,
       };
-      
 
-
-      return await apiRequest('/api/hours-submissions', {
-        method: 'POST',
-        body: submissionData,
-      });
+      return await apiRequest('POST', '/api/hours-submissions', submissionData);
     },
     onSuccess: () => {
       toast({
