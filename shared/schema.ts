@@ -30,6 +30,7 @@ export const userProfiles = pgTable("user_profiles", {
   personalEmailAddress: text("personal_email_address"),
   cellPhoneNumber: text("cell_phone_number"),
   gradeLevel: text("grade_level"),
+  userRole: integer("user_role").notNull().default(0), // 0 = student, 1 = admin
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
