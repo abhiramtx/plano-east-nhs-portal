@@ -77,6 +77,7 @@ export default function Profile() {
         ...data,
         userId: user?.email ? emailToKey(user.email) : '',
       };
+      console.log('Submitting profile data:', payload);
       return await apiRequest('PUT', '/api/user-profile', payload);
     },
     onSuccess: () => {
@@ -90,13 +91,15 @@ export default function Profile() {
       console.error("Profile update error:", error);
       toast({
         title: "Error",
-        description: "Failed to update profile",
+        description: "Failed to update profile. Please try again.",
         variant: "destructive",
       });
     }
   });
 
   const onSubmit = (data: ProfileData) => {
+    console.log('Form submitted with data:', data);
+    console.log('Form errors:', form.formState.errors);
     updateProfileMutation.mutate(data);
   };
 
@@ -139,7 +142,12 @@ export default function Profile() {
             </p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="goByFirstName">Go-By First Name *</Label>
@@ -235,6 +243,11 @@ export default function Profile() {
                   type="submit"
                   disabled={updateProfileMutation.isPending}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={(e) => {
+                    console.log('Button clicked');
+                    e.preventDefault();
+                    form.handleSubmit(onSubmit)(e);
+                  }}
                 >
                   {updateProfileMutation.isPending ? (
                     <>
