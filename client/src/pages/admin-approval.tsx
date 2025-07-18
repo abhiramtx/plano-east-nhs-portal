@@ -37,6 +37,7 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     queryKey: ['/api/admin-assignment', user.email],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/admin-assignment/${encodeURIComponent(user.email.replace(/\./g, ','))}`);
+      console.log('Admin assignment response:', response);
       return response;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
