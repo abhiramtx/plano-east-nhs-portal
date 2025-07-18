@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { User } from "@/lib/firebase";
-import { insertHoursSubmissionSchema } from "@shared/schema";
+import { insertHoursSubmissionSchema, HoursSubmission } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -72,26 +72,27 @@ type FormData = z.infer<typeof formSchema>;
 interface HoursSubmissionFormProps {
   user: User | null;
   onSuccess: () => void;
+  editingSubmission?: HoursSubmission | null;
 }
 
 // Helper function to convert email to storage key
 const emailToKey = (email: string) => email.replace(/\./g, ',');
 
-export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProps) {
+export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: HoursSubmissionFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(editingSubmission?.proofImageUrl || null);
   const { toast } = useToast();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       userId: user?.email ? emailToKey(user.email) : "",
-      activityName: "",
-      description: "",
-      date: "",
-      hours: "",
+      activityName: editingSubmission?.activityName || "",
+      description: editingSubmission?.description || "",
+      date: editingSubmission?.date || "",
+      hours: editingSubmission?.hours ? editingSubmission.hours.toString() : "",
       status: "pending",
-      proofImageUrl: null,
+      proofImageUrl: editingSubmission?.proofImageUrl || null,
     },
   });
 
@@ -113,15 +114,19 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
       const submissionData = {
         ...data,
         date: new Date(data.date).toISOString(),
-        proofImageUrl,
+        proofImageUrl: proofImageUrl || editingSubmission?.proofImageUrl,
       };
 
-      return await apiRequest('POST', '/api/hours-submissions', submissionData);
+      if (editingSubmission) {
+        return await apiRequest('PUT', `/api/hours-submissions/${editingSubmission.id}`, submissionData);
+      } else {
+        return await apiRequest('POST', '/api/hours-submissions', submissionData);
+      }
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Hours submission created successfully",
+        description: editingSubmission ? "Hours submission updated successfully" : "Hours submission created successfully",
       });
       form.reset();
       setSelectedFile(null);
@@ -132,7 +137,7 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
       console.error("Form submission error:", error);
       toast({
         title: "Error",
-        description: "Failed to submit hours",
+        description: editingSubmission ? "Failed to update hours" : "Failed to submit hours",
         variant: "destructive",
       });
     }

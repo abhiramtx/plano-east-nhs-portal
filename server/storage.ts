@@ -1,6 +1,6 @@
 import { users, hoursSubmissions, userProfiles, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -25,6 +25,7 @@ export interface IStorage {
   getAdminProfiles(): Promise<UserProfile[]>;
   promoteToAdmin(emailKey: string): Promise<UserProfile>;
   removeAdmin(emailKey: string): Promise<void>;
+  getAdminAssignment(adminEmail: string): Promise<UserProfile | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -163,6 +164,40 @@ export class DatabaseStorage implements IStorage {
       .update(userProfiles)
       .set({ userRole: 0, updatedAt: new Date() })
       .where(eq(userProfiles.userId, emailKey));
+  }
+
+  async getAdminAssignment(adminEmail: string): Promise<UserProfile | null> {
+    try {
+      // Get all students with pending submissions
+      const studentsWithPending = await db
+        .select({
+          userId: hoursSubmissions.userId,
+          count: sql<number>`count(*)`.as('count')
+        })
+        .from(hoursSubmissions)
+        .where(eq(hoursSubmissions.status, 'pending'))
+        .groupBy(hoursSubmissions.userId);
+      
+      if (studentsWithPending.length === 0) {
+        return null;
+      }
+      
+      // Simple round-robin assignment based on admin email hash
+      const adminIndex = adminEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const assignedStudentIndex = adminIndex % studentsWithPending.length;
+      const assignedUserId = studentsWithPending[assignedStudentIndex].userId;
+      
+      // Get the student profile
+      const [studentProfile] = await db
+        .select()
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, assignedUserId));
+      
+      return studentProfile || null;
+    } catch (error) {
+      console.error("Error getting admin assignment:", error);
+      return null;
+    }
   }
 }
 

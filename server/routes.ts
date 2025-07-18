@@ -44,8 +44,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/hours-submissions/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const updates = req.body;
-      const submission = await storage.updateHoursSubmission(id, updates);
+      
+      // Transform the date string to Date object if present
+      const requestData = {
+        ...req.body,
+        date: req.body.date ? new Date(req.body.date) : undefined,
+        status: 'pending', // Reset status to pending when edited
+        updatedAt: new Date(),
+      };
+      
+      // Remove undefined values
+      const cleanedData = Object.fromEntries(
+        Object.entries(requestData).filter(([_, value]) => value !== undefined)
+      );
+      
+      const submission = await storage.updateHoursSubmission(id, cleanedData);
       
       if (!submission) {
         return res.status(404).json({ error: "Submission not found" });
@@ -53,6 +66,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(submission);
     } catch (error) {
+      console.error("Update submission error:", error);
       res.status(500).json({ error: "Failed to update submission" });
     }
   });
@@ -141,6 +155,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       res.status(400).json({ error: "Failed to remove admin", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Admin assignment system
+  app.get("/api/admin-assignment/:adminEmail", async (req, res) => {
+    try {
+      const { adminEmail } = req.params;
+      const assignment = await storage.getAdminAssignment(adminEmail);
+      res.json(assignment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get admin assignment" });
     }
   });
 

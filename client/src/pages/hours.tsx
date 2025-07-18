@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye } from "lucide-react";
+import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit } from "lucide-react";
 import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -18,6 +18,8 @@ const emailToKey = (email: string) => email.replace(/\./g, ',');
 export default function Hours() {
   const [user, setUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingSubmission, setEditingSubmission] = useState<HoursSubmission | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<HoursSubmission | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -69,23 +71,29 @@ export default function Hours() {
       case 'approved':
         return 'bg-green-100 text-green-800';
       case 'rejected':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
         return 'bg-yellow-100 text-yellow-800';
     }
+  };
+
+  const handleEdit = (submission: HoursSubmission) => {
+    setEditingSubmission(submission);
+    setIsFormOpen(true);
+  };
+
+  const handleFormSuccess = () => {
+    setIsFormOpen(false);
+    setEditingSubmission(null);
+    queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''] });
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
-  };
-
-  const handleFormSuccess = () => {
-    setIsFormOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''] });
   };
 
   return (
@@ -108,9 +116,15 @@ export default function Hours() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Submit Service Hours</DialogTitle>
+                  <DialogTitle>
+                    {editingSubmission ? 'Edit Service Hours' : 'Submit Service Hours'}
+                  </DialogTitle>
                 </DialogHeader>
-                <HoursSubmissionForm user={user} onSuccess={handleFormSuccess} />
+                <HoursSubmissionForm 
+                  user={user} 
+                  onSuccess={handleFormSuccess} 
+                  editingSubmission={editingSubmission}
+                />
               </DialogContent>
             </Dialog>
           </div>
@@ -142,20 +156,16 @@ export default function Hours() {
             ) : (
               <div className="space-y-4 lg:space-y-6">
                 {submissions.map((submission: HoursSubmission) => (
-                  <Card key={submission.id} className="overflow-hidden">
+                  <Card key={submission.id} className={`overflow-hidden ${
+                    submission.status === 'rejected' ? 'border-red-200 bg-red-50' : ''
+                  }`}>
                     <CardContent className="p-4 lg:p-6">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
                             <Badge 
                               variant={submission.status === 'approved' ? 'default' : 'secondary'}
-                              className={`${
-                                submission.status === 'approved' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : submission.status === 'rejected'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}
+                              className={`${getStatusColor(submission.status)}`}
                             >
                               {getStatusIcon(submission.status)}
                               <span className="ml-1 capitalize">{submission.status}</span>
@@ -189,6 +199,24 @@ export default function Hours() {
                         </div>
                         
                         <div className="flex items-center space-x-2">
+                          {submission.proofImageUrl && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedSubmission(submission)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {(submission.status === 'pending' || submission.status === 'rejected') && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEdit(submission)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -207,6 +235,25 @@ export default function Hours() {
           </>
         )}
       </div>
+
+      {/* Image Modal */}
+      {selectedSubmission && selectedSubmission.proofImageUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="relative max-w-4xl max-h-[90vh] overflow-auto">
+            <button
+              onClick={() => setSelectedSubmission(null)}
+              className="absolute top-4 right-4 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-2 transition-colors"
+            >
+              <Eye className="w-6 h-6 text-white" />
+            </button>
+            <img
+              src={selectedSubmission.proofImageUrl}
+              alt="Proof of service"
+              className="max-w-full max-h-full rounded-lg"
+            />
+          </div>
+        </div>
+      )}
     </div>
     </ProfileCompletionGuard>
   );

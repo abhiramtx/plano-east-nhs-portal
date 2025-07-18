@@ -14,6 +14,7 @@ import NotFound from "@/pages/not-found";
 import { AdminDashboard } from "@/pages/admin-dashboard";
 import { AdminStudents } from "@/pages/admin-students";
 import { AdminManagement } from "@/pages/admin-management";
+import { AdminApproval } from "@/pages/admin-approval";
 
 function UserInterface({ user, onSignOut }: { user: User | null; onSignOut: () => void }) {
   if (!user) {
@@ -44,7 +45,7 @@ function AdminInterface() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('approval');
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
@@ -145,6 +146,20 @@ function AdminInterface() {
           
           <nav className="flex-1 px-4 py-4 space-y-1">
             <button
+              onClick={() => setCurrentPage('approval')}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                currentPage === 'approval' 
+                  ? 'bg-blue-50 text-blue-600' 
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Hours Approval</span>
+            </button>
+            
+            <button
               onClick={() => setCurrentPage('dashboard')}
               className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                 currentPage === 'dashboard' 
@@ -217,6 +232,7 @@ function AdminInterface() {
 
       {/* Main Content */}
       <div className="flex-1 lg:ml-64 flex flex-col min-h-0">
+        {currentPage === 'approval' && <AdminApproval user={user} />}
         {currentPage === 'dashboard' && <AdminDashboard user={user} />}
         {currentPage === 'students' && <AdminStudents user={user} />}
         {currentPage === 'admin-management' && <AdminManagement user={user} />}
