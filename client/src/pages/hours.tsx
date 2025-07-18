@@ -170,7 +170,7 @@ export default function Hours() {
                             </div>
                           </div>
                           
-                          <h3 className="font-medium text-gray-900 mb-2">{submission.studentName}</h3>
+                          <h3 className="font-medium text-gray-900 mb-2">{submission.activityName || submission.studentName}</h3>
                           <p className="text-gray-600 mb-4">{submission.description}</p>
                           
                           {submission.proofImageUrl && (

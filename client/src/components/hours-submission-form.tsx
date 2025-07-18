@@ -56,7 +56,13 @@ const compressImage = (file: File): Promise<File> => {
   });
 };
 
-const formSchema = insertHoursSubmissionSchema.extend({
+const formSchema = insertHoursSubmissionSchema.pick({
+  userId: true,
+  activityName: true,
+  description: true,
+  status: true,
+  proofImageUrl: true,
+}).extend({
   date: z.string().min(1, "Date is required"),
   hours: z.string().min(1, "Hours is required"),
 });
@@ -80,7 +86,7 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
     resolver: zodResolver(formSchema),
     defaultValues: {
       userId: user?.email ? emailToKey(user.email) : "",
-      studentName: user?.name || "",
+      activityName: "",
       description: "",
       date: "",
       hours: "",
@@ -179,15 +185,15 @@ export function HoursSubmissionForm({ user, onSuccess }: HoursSubmissionFormProp
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 lg:space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         <div>
-          <Label htmlFor="studentName">Student Name</Label>
+          <Label htmlFor="activityName">Activity Name</Label>
           <Input
-            id="studentName"
-            {...form.register("studentName")}
-            placeholder="Enter your full name"
+            id="activityName"
+            {...form.register("activityName")}
+            placeholder="Enter the activity name"
             className="mt-1"
           />
-          {form.formState.errors.studentName && (
-            <p className="text-sm text-red-600 mt-1">{form.formState.errors.studentName.message}</p>
+          {form.formState.errors.activityName && (
+            <p className="text-sm text-red-600 mt-1">{form.formState.errors.activityName.message}</p>
           )}
         </div>
 

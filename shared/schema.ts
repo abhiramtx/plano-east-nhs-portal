@@ -11,7 +11,9 @@ export const users = pgTable("users", {
 export const hoursSubmissions = pgTable("hours_submissions", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
-  studentName: text("student_name").notNull(),
+  activityName: text("activity_name"), // Changed from studentName to activityName
+  studentName: text("student_name").notNull(), // Auto-populated from profile
+  studentId: text("student_id"),
   description: text("description").notNull(),
   date: timestamp("date").notNull(),
   hours: decimal("hours", { precision: 4, scale: 2 }).notNull(),

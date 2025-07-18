@@ -17,10 +17,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/hours-submissions", async (req, res) => {
     try {
-      // Transform the date string to Date object before validation
+      // Get user profile to populate student info
+      const userProfile = await storage.getUserProfile(req.body.userId);
+      if (!userProfile) {
+        return res.status(400).json({ error: "User profile not found. Please complete your profile first." });
+      }
+
+      // Transform the date string to Date object and populate student info
       const requestData = {
         ...req.body,
         date: new Date(req.body.date),
+        // Add student info from profile
+        studentName: `${userProfile.goByFirstName} ${userProfile.lastName}`,
+        studentId: userProfile.studentId,
       };
       
       const validatedData = insertHoursSubmissionSchema.parse(requestData);
