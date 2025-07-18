@@ -40,7 +40,9 @@ export function AdminApproval({ user }: AdminApprovalProps) {
       console.log('Admin assignment response:', response);
       return response;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds for debugging
+    staleTime: 0, // Never use stale data
+    gcTime: 0, // Don't cache
   });
 
   // Get student's pending submissions
@@ -56,9 +58,13 @@ export function AdminApproval({ user }: AdminApprovalProps) {
       console.log('Fetching submissions for user:', apiUserId);
       const response = await apiRequest('GET', `/api/hours-submissions/${apiUserId}`);
       console.log('Submissions response:', response);
-      return Array.isArray(response) ? response.filter((sub: HoursSubmission) => sub.status === 'pending') : [];
+      const pendingSubmissions = Array.isArray(response) ? response.filter((sub: HoursSubmission) => sub.status === 'pending') : [];
+      console.log('Pending submissions:', pendingSubmissions);
+      return pendingSubmissions;
     },
     enabled: !!assignment?.userId,
+    staleTime: 0, // Never use stale data
+    gcTime: 0, // Don't cache
   });
 
   // Set assigned student and first submission
