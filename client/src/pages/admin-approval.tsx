@@ -47,7 +47,9 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     queryKey: ['/api/student-submissions', assignment?.userId],
     queryFn: async () => {
       if (!assignment?.userId) return [];
-      const response = await apiRequest('GET', `/api/hours-submissions/${assignment.userId}`);
+      // Convert email format for API call (dots to commas)
+      const apiUserId = assignment.userId.replace(/\./g, ',');
+      const response = await apiRequest('GET', `/api/hours-submissions/${apiUserId}`);
       return Array.isArray(response) ? response.filter((sub: HoursSubmission) => sub.status === 'pending') : [];
     },
     enabled: !!assignment?.userId,
