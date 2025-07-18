@@ -162,9 +162,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin-assignment/:adminEmail", async (req, res) => {
     try {
       const { adminEmail } = req.params;
+      console.log('Getting admin assignment for:', adminEmail);
       const assignment = await storage.getAdminAssignment(adminEmail);
+      console.log('Assignment result:', assignment);
       res.json(assignment);
     } catch (error) {
+      console.error('Admin assignment error:', error);
       res.status(500).json({ error: "Failed to get admin assignment" });
     }
   });
