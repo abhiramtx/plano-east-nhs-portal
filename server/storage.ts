@@ -183,12 +183,20 @@ export class DatabaseStorage implements IStorage {
         return null;
       }
       
-      // Simple round-robin assignment based on admin email hash
-      // Include current timestamp to ensure rotation over time
-      const adminIndex = adminEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const timeIndex = Math.floor(Date.now() / (30 * 1000)); // Change every 30 seconds
-      const assignedUserIndex = (adminIndex + timeIndex) % usersWithPending.length;
-      const assignedUserId = usersWithPending[assignedUserIndex].userId;
+      // Check if the admin has their own pending submissions
+      const adminHasPending = usersWithPending.some(user => user.userId === adminEmail);
+      
+      let assignedUserId: string;
+      
+      if (adminHasPending) {
+        // If admin has pending submissions, assign them their own submissions first
+        assignedUserId = adminEmail;
+      } else {
+        // Otherwise, assign based on round-robin
+        const adminIndex = adminEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const assignedUserIndex = adminIndex % usersWithPending.length;
+        assignedUserId = usersWithPending[assignedUserIndex].userId;
+      }
       
       // Get the user profile (could be student or admin)
       const [userProfile] = await db
