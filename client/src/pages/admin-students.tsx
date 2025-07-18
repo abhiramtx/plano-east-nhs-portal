@@ -29,7 +29,10 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   // Fetch all submissions to get student data
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ['/api/hours-submissions'],
-    queryFn: () => apiRequest('GET', '/api/hours-submissions'),
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/hours-submissions');
+      return Array.isArray(response) ? response : [];
+    },
   });
 
   // Group submissions by student

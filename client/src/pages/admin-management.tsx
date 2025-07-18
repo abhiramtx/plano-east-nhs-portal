@@ -38,7 +38,7 @@ export function AdminManagement({ user }: AdminManagementProps) {
     queryKey: ['/api/admin-profiles'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/admin-profiles');
-      return response;
+      return Array.isArray(response) ? response : [];
     },
   });
 
@@ -224,7 +224,7 @@ export function AdminManagement({ user }: AdminManagementProps) {
               </div>
             ) : (
               <div className="space-y-4">
-                {adminProfiles.map((profile: UserProfile) => (
+                {Array.isArray(adminProfiles) && adminProfiles.map((profile: UserProfile) => (
                   <div key={profile.userId} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex items-center space-x-3">
                       <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
