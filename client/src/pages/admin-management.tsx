@@ -38,8 +38,12 @@ export function AdminManagement({ user }: AdminManagementProps) {
     queryKey: ['/api/admin-profiles'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/admin-profiles');
+      console.log('Admin profiles response:', response);
+      console.log('Is array:', Array.isArray(response));
       return Array.isArray(response) ? response : [];
     },
+    staleTime: 0,
+    gcTime: 0,
   });
 
   // Add admin mutation
