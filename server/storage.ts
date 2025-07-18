@@ -26,6 +26,7 @@ export interface IStorage {
   promoteToAdmin(emailKey: string): Promise<UserProfile>;
   removeAdmin(emailKey: string): Promise<void>;
   getAdminAssignment(adminEmail: string): Promise<UserProfile | null>;
+  releaseAssignment(adminEmail: string, currentStudentId?: string): Promise<UserProfile | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -196,6 +197,42 @@ export class DatabaseStorage implements IStorage {
       return studentProfile || null;
     } catch (error) {
       console.error("Error getting admin assignment:", error);
+      return null;
+    }
+  }
+
+  async releaseAssignment(adminEmail: string, currentStudentId?: string): Promise<UserProfile | null> {
+    try {
+      // Get all students with pending submissions excluding the current one
+      const studentsWithPending = await db
+        .select({
+          userId: hoursSubmissions.userId,
+          count: sql<number>`count(*)`.as('count')
+        })
+        .from(hoursSubmissions)
+        .where(
+          currentStudentId 
+            ? sql`${hoursSubmissions.status} = 'pending' AND ${hoursSubmissions.userId} != ${currentStudentId}`
+            : eq(hoursSubmissions.status, 'pending')
+        )
+        .groupBy(hoursSubmissions.userId);
+      
+      if (studentsWithPending.length === 0) {
+        return null;
+      }
+      
+      // Get a new assignment (first available student)
+      const newAssignedUserId = studentsWithPending[0].userId;
+      
+      // Get the student profile
+      const [studentProfile] = await db
+        .select()
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, newAssignedUserId));
+      
+      return studentProfile || null;
+    } catch (error) {
+      console.error("Error releasing assignment:", error);
       return null;
     }
   }

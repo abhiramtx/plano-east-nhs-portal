@@ -169,6 +169,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/release-assignment", async (req, res) => {
+    try {
+      const { adminEmail, currentStudentId } = req.body;
+      const result = await storage.releaseAssignment(adminEmail, currentStudentId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to release assignment" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -17,7 +17,8 @@ import {
   GraduationCap,
   IdCard,
   Eye,
-  X
+  X,
+  UserX
 } from 'lucide-react';
 
 interface AdminApprovalProps {
@@ -82,6 +83,33 @@ export function AdminApproval({ user }: AdminApprovalProps) {
         variant: "destructive",
       });
     },
+  });
+
+  // Mutation for releasing assignment and getting a new one
+  const releaseMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', '/api/release-assignment', { 
+        adminEmail: user.email.replace(/\./g, ','),
+        currentStudentId: assignedStudent?.userId 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin-assignment'] });
+      setAssignedStudent(null);
+      setSelectedSubmission(null);
+      toast({
+        title: "Success",
+        description: "Assignment released. Getting new assignment...",
+      });
+    },
+    onError: (error) => {
+      console.error("Release error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to release assignment",
+        variant: "destructive",
+      });
+    }
   });
 
   const handleApprove = () => {
@@ -187,6 +215,18 @@ export function AdminApproval({ user }: AdminApprovalProps) {
                 <GraduationCap className="w-4 h-4 text-gray-400" />
                 <span className="text-gray-600">Grade: {assignedStudent?.gradeLevel}</span>
               </div>
+            </div>
+            <div className="mt-3">
+              <Button
+                onClick={() => releaseMutation.mutate()}
+                disabled={releaseMutation.isPending}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                <UserX className="w-4 h-4 mr-2" />
+                {releaseMutation.isPending ? 'Releasing...' : 'Release & Get New Assignment'}
+              </Button>
             </div>
           </div>
 
