@@ -37,8 +37,9 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     queryKey: ['/api/admin-assignment', user.email],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/admin-assignment/${encodeURIComponent(user.email.replace(/\./g, ','))}`);
-      console.log('Admin assignment response:', response);
-      return response;
+      const data = await response.json();
+      console.log('Admin assignment data:', data);
+      return data;
     },
     refetchInterval: 5000, // Refetch every 5 seconds for debugging
     staleTime: 0, // Never use stale data
@@ -57,8 +58,9 @@ export function AdminApproval({ user }: AdminApprovalProps) {
       const apiUserId = assignment.userId.replace(/\./g, ',');
       console.log('Fetching submissions for user:', apiUserId);
       const response = await apiRequest('GET', `/api/hours-submissions/${apiUserId}`);
-      console.log('Submissions response:', response);
-      const pendingSubmissions = Array.isArray(response) ? response.filter((sub: HoursSubmission) => sub.status === 'pending') : [];
+      const data = await response.json();
+      console.log('Submissions data:', data);
+      const pendingSubmissions = Array.isArray(data) ? data.filter((sub: HoursSubmission) => sub.status === 'pending') : [];
       console.log('Pending submissions:', pendingSubmissions);
       return pendingSubmissions;
     },

@@ -38,9 +38,10 @@ export function AdminManagement({ user }: AdminManagementProps) {
     queryKey: ['/api/admin-profiles'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/admin-profiles');
-      console.log('Admin profiles response:', response);
-      console.log('Is array:', Array.isArray(response));
-      return Array.isArray(response) ? response : [];
+      const data = await response.json();
+      console.log('Admin profiles data:', data);
+      console.log('Is array:', Array.isArray(data));
+      return Array.isArray(data) ? data : [];
     },
     staleTime: 0,
     gcTime: 0,
