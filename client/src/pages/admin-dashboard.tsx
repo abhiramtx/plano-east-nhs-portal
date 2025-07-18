@@ -32,7 +32,10 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
   // Fetch all submissions for admin review
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ['/api/hours-submissions'],
-    queryFn: () => apiRequest('GET', '/api/hours-submissions'),
+    queryFn: async () => {
+      const result = await apiRequest('GET', '/api/hours-submissions');
+      return Array.isArray(result) ? result : [];
+    },
   });
 
   // Update submission status mutation

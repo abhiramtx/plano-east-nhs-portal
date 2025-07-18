@@ -20,6 +20,11 @@ export interface IStorage {
   // User profiles
   getUserProfile(userId: string): Promise<UserProfile | undefined>;
   upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  
+  // Admin management
+  getAdminProfiles(): Promise<UserProfile[]>;
+  promoteToAdmin(emailKey: string): Promise<UserProfile>;
+  removeAdmin(emailKey: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -109,6 +114,55 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newProfile;
     }
+  }
+
+  async getAdminProfiles(): Promise<UserProfile[]> {
+    return await db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.userRole, 1))
+      .orderBy(userProfiles.createdAt);
+  }
+
+  async promoteToAdmin(emailKey: string): Promise<UserProfile> {
+    // First check if user profile exists
+    const existingProfile = await this.getUserProfile(emailKey);
+
+    if (existingProfile) {
+      // Update existing profile to admin
+      const [updatedProfile] = await db
+        .update(userProfiles)
+        .set({ userRole: 1, updatedAt: new Date() })
+        .where(eq(userProfiles.userId, emailKey))
+        .returning();
+      return updatedProfile;
+    } else {
+      // Create new profile with admin role
+      const [newProfile] = await db
+        .insert(userProfiles)
+        .values({
+          userId: emailKey,
+          userRole: 1,
+          goByFirstName: '',
+          lastName: '',
+          studentId: '',
+          gradeLevel: '',
+          gpa: '',
+          artTeacherName: '',
+          artTeacherEmail: '',
+          phoneNumber: '',
+          isProfileComplete: false
+        })
+        .returning();
+      return newProfile;
+    }
+  }
+
+  async removeAdmin(emailKey: string): Promise<void> {
+    await db
+      .update(userProfiles)
+      .set({ userRole: 0, updatedAt: new Date() })
+      .where(eq(userProfiles.userId, emailKey));
   }
 }
 

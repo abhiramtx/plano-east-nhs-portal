@@ -111,6 +111,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin management routes
+  app.get("/api/admin-profiles", async (req, res) => {
+    try {
+      const adminProfiles = await storage.getAdminProfiles();
+      res.json(adminProfiles);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch admin profiles" });
+    }
+  });
+
+  app.post("/api/admin-profiles", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      const result = await storage.promoteToAdmin(email);
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to add admin", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.delete("/api/admin-profiles/:emailKey", async (req, res) => {
+    try {
+      const { emailKey } = req.params;
+      const result = await storage.removeAdmin(emailKey);
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to remove admin", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

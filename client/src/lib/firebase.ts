@@ -18,8 +18,8 @@ declare global {
 export interface User {
   email: string;
   name: string;
-  picture?: string;
-  sub: string;
+  photoURL?: string;
+  sub?: string;
 }
 
 // Simple auth state management
@@ -153,4 +153,12 @@ export const handleOAuthCallback = async (code: string, state: string): Promise<
   notifyAuthListeners(mockUser);
   
   return mockUser;
+};
+
+// Auth object for compatibility with older Firebase patterns
+export const auth = {
+  onAuthStateChanged: (callback: (user: any) => void) => {
+    return onAuthStateChanged(callback);
+  },
+  signOut: handleSignOut
 };
