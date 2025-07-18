@@ -113,8 +113,8 @@ export function AdminStudents({ user }: AdminStudentsProps) {
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Student Management</h1>
-              <p className="text-gray-600 mt-1">Track student progress and manage requirements</p>
+              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Member Management</h1>
+              <p className="text-gray-600 mt-1">Track member progress and manage requirements (students & admins)</p>
             </div>
             <div className="flex items-center space-x-2">
               <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
@@ -132,7 +132,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
-              placeholder="Search students by name or ID..."
+              placeholder="Search members by name or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -146,7 +146,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Students</p>
+                  <p className="text-sm font-medium text-gray-600">Total Members</p>
                   <p className="text-2xl font-bold text-gray-900">{students.length}</p>
                 </div>
                 <div className="p-3 bg-blue-50 rounded-full">

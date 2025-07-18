@@ -200,9 +200,14 @@ export function AdminApproval({ user }: AdminApprovalProps) {
                 <User className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="font-medium text-gray-900">
-                  {assignedStudent?.goByFirstName} {assignedStudent?.lastName}
-                </h3>
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-medium text-gray-900">
+                    {assignedStudent?.goByFirstName} {assignedStudent?.lastName}
+                  </h3>
+                  {assignedStudent?.userRole === 1 && (
+                    <Badge variant="secondary" className="text-xs">Admin</Badge>
+                  )}
+                </div>
                 <p className="text-sm text-gray-500">{assignedStudent?.personalEmailAddress}</p>
               </div>
             </div>

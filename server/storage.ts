@@ -169,8 +169,8 @@ export class DatabaseStorage implements IStorage {
 
   async getAdminAssignment(adminEmail: string): Promise<UserProfile | null> {
     try {
-      // Get all students with pending submissions
-      const studentsWithPending = await db
+      // Get all users (students AND admins) with pending submissions
+      const usersWithPending = await db
         .select({
           userId: hoursSubmissions.userId,
           count: sql<number>`count(*)`.as('count')
@@ -179,58 +179,58 @@ export class DatabaseStorage implements IStorage {
         .where(eq(hoursSubmissions.status, 'pending'))
         .groupBy(hoursSubmissions.userId);
       
-      if (studentsWithPending.length === 0) {
+      if (usersWithPending.length === 0) {
         return null;
       }
       
       // Simple round-robin assignment based on admin email hash
       const adminIndex = adminEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const assignedStudentIndex = adminIndex % studentsWithPending.length;
-      const assignedUserId = studentsWithPending[assignedStudentIndex].userId;
+      const assignedUserIndex = adminIndex % usersWithPending.length;
+      const assignedUserId = usersWithPending[assignedUserIndex].userId;
       
-      // Get the student profile
-      const [studentProfile] = await db
+      // Get the user profile (could be student or admin)
+      const [userProfile] = await db
         .select()
         .from(userProfiles)
         .where(eq(userProfiles.userId, assignedUserId));
       
-      return studentProfile || null;
+      return userProfile || null;
     } catch (error) {
       console.error("Error getting admin assignment:", error);
       return null;
     }
   }
 
-  async releaseAssignment(adminEmail: string, currentStudentId?: string): Promise<UserProfile | null> {
+  async releaseAssignment(adminEmail: string, currentUserId?: string): Promise<UserProfile | null> {
     try {
-      // Get all students with pending submissions excluding the current one
-      const studentsWithPending = await db
+      // Get all users (students AND admins) with pending submissions excluding the current one
+      const usersWithPending = await db
         .select({
           userId: hoursSubmissions.userId,
           count: sql<number>`count(*)`.as('count')
         })
         .from(hoursSubmissions)
         .where(
-          currentStudentId 
-            ? sql`${hoursSubmissions.status} = 'pending' AND ${hoursSubmissions.userId} != ${currentStudentId}`
+          currentUserId 
+            ? sql`${hoursSubmissions.status} = 'pending' AND ${hoursSubmissions.userId} != ${currentUserId}`
             : eq(hoursSubmissions.status, 'pending')
         )
         .groupBy(hoursSubmissions.userId);
       
-      if (studentsWithPending.length === 0) {
+      if (usersWithPending.length === 0) {
         return null;
       }
       
-      // Get a new assignment (first available student)
-      const newAssignedUserId = studentsWithPending[0].userId;
+      // Get a new assignment (first available user)
+      const newAssignedUserId = usersWithPending[0].userId;
       
-      // Get the student profile
-      const [studentProfile] = await db
+      // Get the user profile (could be student or admin)
+      const [userProfile] = await db
         .select()
         .from(userProfiles)
         .where(eq(userProfiles.userId, newAssignedUserId));
       
-      return studentProfile || null;
+      return userProfile || null;
     } catch (error) {
       console.error("Error releasing assignment:", error);
       return null;
