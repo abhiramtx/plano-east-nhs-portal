@@ -184,8 +184,10 @@ export class DatabaseStorage implements IStorage {
       }
       
       // Simple round-robin assignment based on admin email hash
+      // Include current timestamp to ensure rotation over time
       const adminIndex = adminEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const assignedUserIndex = adminIndex % usersWithPending.length;
+      const timeIndex = Math.floor(Date.now() / (30 * 1000)); // Change every 30 seconds
+      const assignedUserIndex = (adminIndex + timeIndex) % usersWithPending.length;
       const assignedUserId = usersWithPending[assignedUserIndex].userId;
       
       // Get the user profile (could be student or admin)
