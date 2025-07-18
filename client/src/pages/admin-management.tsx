@@ -130,14 +130,14 @@ export function AdminManagement({ user }: AdminManagementProps) {
     <div className="flex-1 flex flex-col bg-white min-h-0">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
+        <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             <div>
               <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Admin Management</h1>
               <p className="text-gray-600 mt-1">Add or remove administrator privileges</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
                 <Settings className="w-5 h-5 text-white" />
               </div>
             </div>
