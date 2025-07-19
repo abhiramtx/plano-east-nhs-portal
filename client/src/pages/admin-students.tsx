@@ -656,11 +656,12 @@ export function AdminStudents({ user }: AdminStudentsProps) {
         </div>
       </div>
 
-      {/* Student Profile Full Page */}
+      {/* Student Profile Main Content Area */}
       {selectedStudent && (
-        <div className="fixed inset-0 bg-white z-50 overflow-auto">
-          <div className="min-h-full">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex z-50">
+          <div className="ml-64 flex-1 bg-white overflow-auto">
+            <div className="min-h-full">
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200">
               <div className="max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-4">
@@ -860,7 +861,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                                   View Proof
                                 </Button>
                               )}
-                              {submission.status === 'pending' && (
+                              {(submission.status === 'pending' || submission.status === 'rejected') && (
                                 <>
                                   <Button
                                     variant="outline"
@@ -872,6 +873,18 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                                     <Check className="w-4 h-4 mr-1" />
                                     Approve
                                   </Button>
+                                  {submission.status === 'rejected' && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => updateStatusMutation.mutate({ id: submission.id, status: 'pending' })}
+                                      disabled={updateStatusMutation.isPending}
+                                      className="text-yellow-600 hover:bg-yellow-50"
+                                    >
+                                      <Clock className="w-4 h-4 mr-1" />
+                                      Set Pending
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="outline"
                                     size="sm"
@@ -892,6 +905,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                   </div>
                 )}
               </div>
+            </div>
             </div>
           </div>
         </div>

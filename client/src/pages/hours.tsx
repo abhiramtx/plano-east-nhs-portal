@@ -156,9 +156,7 @@ export default function Hours() {
             ) : (
               <div className="space-y-4 lg:space-y-6">
                 {submissions.map((submission: HoursSubmission) => (
-                  <Card key={submission.id} className={`overflow-hidden ${
-                    submission.status === 'rejected' ? 'border-red-200 bg-red-50' : ''
-                  }`}>
+                  <Card key={submission.id}>
                     <CardContent className="p-4 lg:p-6">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
                         <div className="flex-1">
@@ -182,6 +180,13 @@ export default function Hours() {
                           
                           <h3 className="font-medium text-gray-900 mb-2">{submission.activityName || submission.studentName}</h3>
                           <p className="text-gray-600 mb-4">{submission.description}</p>
+                          
+                          {submission.status === 'rejected' && submission.rejectReason && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                              <p className="text-sm font-medium text-red-800 mb-1">Rejection Reason:</p>
+                              <p className="text-sm text-red-700">{submission.rejectReason}</p>
+                            </div>
+                          )}
                           
                           {submission.proofImageUrl && (
                             <div className="mb-4">
@@ -208,7 +213,7 @@ export default function Hours() {
                               <Eye className="w-4 h-4" />
                             </Button>
                           )}
-                          {(submission.status === 'pending' || submission.status === 'rejected') && (
+                          {submission.status === 'rejected' && (
                             <Button 
                               variant="outline" 
                               size="sm"

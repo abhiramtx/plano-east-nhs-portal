@@ -318,6 +318,17 @@ export function AdminApproval({ user }: AdminApprovalProps) {
                     <XCircle className="w-4 h-4 mr-2" />
                     Reject
                   </Button>
+                  {selectedSubmission?.status === 'rejected' && (
+                    <Button
+                      onClick={() => updateStatusMutation.mutate({ id: selectedSubmission.id, status: 'pending' })}
+                      disabled={updateStatusMutation.isPending}
+                      variant="outline"
+                      className="text-yellow-600 hover:bg-yellow-50 border-yellow-200"
+                    >
+                      <Clock className="w-4 h-4 mr-2" />
+                      Set Pending
+                    </Button>
+                  )}
                   <Button
                     onClick={handleApprove}
                     disabled={updateStatusMutation.isPending}
