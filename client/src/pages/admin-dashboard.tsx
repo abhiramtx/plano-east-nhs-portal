@@ -33,15 +33,17 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
   const { data: submissions = [], isLoading } = useQuery({
     queryKey: ['/api/hours-submissions'],
     queryFn: async () => {
-      const result = await apiRequest('GET', '/api/hours-submissions');
-      return Array.isArray(result) ? result : [];
+      const response = await apiRequest('GET', '/api/hours-submissions');
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
   // Update submission status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      return await apiRequest('PUT', `/api/hours-submissions/${id}`, { status });
+      const response = await apiRequest('PUT', `/api/hours-submissions/${id}`, { status });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions'] });
