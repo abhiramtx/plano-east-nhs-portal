@@ -310,25 +310,14 @@ export function AdminApproval({ user }: AdminApprovalProps) {
                 </h2>
                 <div className="flex space-x-3">
                   <Button
-                    onClick={() => setRejectingSubmission(selectedSubmission?.id || null)}
+                    onClick={() => updateStatusMutation.mutate({ id: selectedSubmission.id, status: 'pending' })}
                     disabled={updateStatusMutation.isPending}
                     variant="outline"
-                    className="text-red-600 hover:bg-red-50 border-red-200"
+                    className="text-yellow-600 hover:bg-yellow-50 border-yellow-200"
                   >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    Reject
+                    <Clock className="w-4 h-4 mr-2" />
+                    Pending
                   </Button>
-                  {selectedSubmission?.status === 'rejected' && (
-                    <Button
-                      onClick={() => updateStatusMutation.mutate({ id: selectedSubmission.id, status: 'pending' })}
-                      disabled={updateStatusMutation.isPending}
-                      variant="outline"
-                      className="text-yellow-600 hover:bg-yellow-50 border-yellow-200"
-                    >
-                      <Clock className="w-4 h-4 mr-2" />
-                      Set Pending
-                    </Button>
-                  )}
                   <Button
                     onClick={handleApprove}
                     disabled={updateStatusMutation.isPending}
@@ -336,6 +325,15 @@ export function AdminApproval({ user }: AdminApprovalProps) {
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Approve
+                  </Button>
+                  <Button
+                    onClick={() => setRejectingSubmission(selectedSubmission?.id || null)}
+                    disabled={updateStatusMutation.isPending}
+                    variant="outline"
+                    className="text-red-600 hover:bg-red-50 border-red-200"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Reject
                   </Button>
                 </div>
               </div>

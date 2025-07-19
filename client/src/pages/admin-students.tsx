@@ -658,10 +658,9 @@ export function AdminStudents({ user }: AdminStudentsProps) {
 
       {/* Student Profile Main Content Area */}
       {selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex z-50">
-          <div className="ml-64 flex-1 bg-white overflow-auto">
-            <div className="min-h-full">
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200">
+        <div className="fixed top-0 left-64 right-0 bottom-0 bg-white overflow-auto z-50">
+          <div className="min-h-full">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200">
               <div className="max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-4">
@@ -861,42 +860,36 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                                   View Proof
                                 </Button>
                               )}
-                              {(submission.status === 'pending' || submission.status === 'rejected') && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => updateStatusMutation.mutate({ id: submission.id, status: 'approved' })}
-                                    disabled={updateStatusMutation.isPending}
-                                    className="text-green-600 hover:bg-green-50"
-                                  >
-                                    <Check className="w-4 h-4 mr-1" />
-                                    Approve
-                                  </Button>
-                                  {submission.status === 'rejected' && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => updateStatusMutation.mutate({ id: submission.id, status: 'pending' })}
-                                      disabled={updateStatusMutation.isPending}
-                                      className="text-yellow-600 hover:bg-yellow-50"
-                                    >
-                                      <Clock className="w-4 h-4 mr-1" />
-                                      Set Pending
-                                    </Button>
-                                  )}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setRejectingSubmission(submission.id)}
-                                    disabled={updateStatusMutation.isPending}
-                                    className="text-red-600 hover:bg-red-50"
-                                  >
-                                    <XCircle className="w-4 h-4 mr-1" />
-                                    Reject
-                                  </Button>
-                                </>
-                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateStatusMutation.mutate({ id: submission.id, status: 'pending' })}
+                                disabled={updateStatusMutation.isPending}
+                                className="text-yellow-600 hover:bg-yellow-50"
+                              >
+                                <Clock className="w-4 h-4 mr-1" />
+                                Pending
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateStatusMutation.mutate({ id: submission.id, status: 'approved' })}
+                                disabled={updateStatusMutation.isPending}
+                                className="text-green-600 hover:bg-green-50"
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setRejectingSubmission(submission.id)}
+                                disabled={updateStatusMutation.isPending}
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Reject
+                              </Button>
                             </div>
                           </div>
                         </CardContent>
@@ -905,7 +898,6 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                   </div>
                 )}
               </div>
-            </div>
             </div>
           </div>
         </div>
