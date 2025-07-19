@@ -38,7 +38,6 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/admin-assignment/${encodeURIComponent(user.email.replace(/\./g, ','))}`);
       const data = await response.json();
-      console.log('Admin assignment data:', data);
       return data;
     },
     refetchInterval: 5000, // Refetch every 5 seconds for debugging
@@ -51,17 +50,13 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     queryKey: ['/api/student-submissions', assignment?.userId],
     queryFn: async () => {
       if (!assignment?.userId) {
-        console.log('No assignment userId, returning empty array');
         return [];
       }
       // Convert email format for API call (dots to commas)
       const apiUserId = assignment.userId.replace(/\./g, ',');
-      console.log('Fetching submissions for user:', apiUserId);
       const response = await apiRequest('GET', `/api/hours-submissions/${apiUserId}`);
       const data = await response.json();
-      console.log('Submissions data:', data);
       const pendingSubmissions = Array.isArray(data) ? data.filter((sub: HoursSubmission) => sub.status === 'pending') : [];
-      console.log('Pending submissions:', pendingSubmissions);
       return pendingSubmissions;
     },
     enabled: !!assignment?.userId,

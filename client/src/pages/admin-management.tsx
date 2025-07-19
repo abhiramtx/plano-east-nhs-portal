@@ -39,8 +39,6 @@ export function AdminManagement({ user }: AdminManagementProps) {
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/admin-profiles');
       const data = await response.json();
-      console.log('Admin profiles data:', data);
-      console.log('Is array:', Array.isArray(data));
       return Array.isArray(data) ? data : [];
     },
     staleTime: 0,
@@ -250,9 +248,19 @@ export function AdminManagement({ user }: AdminManagementProps) {
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center space-x-1 text-sm text-gray-500">
-                          <Mail className="w-4 h-4" />
-                          <span>{formatEmailFromKey(profile.userId)}</span>
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-1 text-sm text-gray-500">
+                            <Mail className="w-4 h-4" />
+                            <span className="font-medium">Google:</span>
+                            <span>{formatEmailFromKey(profile.userId)}</span>
+                          </div>
+                          {profile.personalEmailAddress && (
+                            <div className="flex items-center space-x-1 text-sm text-gray-500">
+                              <Mail className="w-4 h-4" />
+                              <span className="font-medium">Personal:</span>
+                              <span>{profile.personalEmailAddress}</span>
+                            </div>
+                          )}
                         </div>
                         {profile.studentId && (
                           <p className="text-sm text-gray-500">Student ID: {profile.studentId}</p>

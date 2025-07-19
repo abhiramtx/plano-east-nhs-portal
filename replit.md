@@ -62,6 +62,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### July 19, 2025
+- **Critical Bug Fixes**: Fixed major issues in admin approval system where pending submissions weren't displaying
+- **API Response Parsing**: Resolved JSON parsing issue in `apiRequest` function that was affecting all admin interfaces
+- **Admin Assignment System**: Fixed admin assignment workflow so admins can properly review submissions (including their own)
+- **Admin Management Enhancement**: Updated admin management interface to display both Google sign-up email and personal email addresses
+- **Debugging Cleanup**: Removed debugging console logs after confirming all systems are working correctly
+
 ### July 17, 2025
 - **Profile Completion System**: Implemented mandatory profile completion before accessing dashboard/hours
 - **Profile Form Fix**: Fixed form submission issues with enhanced debugging and proper event handling
