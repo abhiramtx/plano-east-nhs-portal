@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { User } from "@/lib/firebase";
 import { UserProfile, HoursSubmission } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,11 @@ import {
   AlertCircle,
   User as UserIcon,
   Filter,
-  X
+  X,
+  Calendar,
+  Eye,
+  Check,
+  XCircle
 } from "lucide-react";
 
 interface AdminStudentsProps {
@@ -37,11 +42,48 @@ interface FilterState {
 export function AdminStudents({ user }: AdminStudentsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [filters, setFilters] = useState<FilterState>({
     gradeLevels: [],
     requirementStatus: [],
     submissionStatus: [],
     userRoles: []
+  });
+  const { toast } = useToast();
+
+  // Fetch student's hours submissions when modal opens
+  const { data: studentSubmissions = [], isLoading: studentSubmissionsLoading } = useQuery({
+    queryKey: ['/api/hours-submissions', selectedStudent?.userId],
+    queryFn: async () => {
+      if (!selectedStudent?.userId) return [];
+      const response = await apiRequest('GET', `/api/hours-submissions/${selectedStudent.userId}`);
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!selectedStudent?.userId
+  });
+
+  // Mutation for updating submission status
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const response = await apiRequest('PUT', `/api/hours-submissions/${id}`, { status });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', selectedStudent?.userId] });
+      toast({
+        title: "Success",
+        description: "Submission status updated",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update submission status",
+        variant: "destructive",
+      });
+    }
   });
 
   // Fetch all submissions to get student data
@@ -171,6 +213,22 @@ export function AdminStudents({ user }: AdminStudentsProps) {
     }
   };
 
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved': return <CheckCircle2 className="w-3 h-3" />;
+      case 'rejected': return <XCircle className="w-3 h-3" />;
+      default: return <Clock className="w-3 h-3" />;
+    }
+  };
+
   // Fixed grade levels for high school
   const gradeLevels = ['9', '10', '11', '12'];
   const activeFilterCount = Object.values(filters).flat().length;
@@ -209,7 +267,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
     <div className="flex-1 flex bg-white min-h-0">
       {/* Filter Sidebar */}
       {showFilters && (
-        <div className="w-64 border-r border-gray-200 flex-shrink-0 bg-gray-50">
+        <div className="w-56 border-r border-gray-200 flex-shrink-0 bg-gray-50">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-gray-900 flex items-center gap-2">
@@ -488,7 +546,11 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                   {students.map((student: any, index: number) => {
                     const requirement = getRequirementStatus(student.approvedHours);
                     return (
-                      <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div 
+                        key={index} 
+                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer" 
+                        onClick={() => setSelectedStudent(student)}
+                      >
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-3">
@@ -577,6 +639,156 @@ export function AdminStudents({ user }: AdminStudentsProps) {
           </Card>
         </div>
       </div>
+
+      {/* Student Profile Modal */}
+      {selectedStudent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto w-full">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
+                    <UserIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      {selectedStudent.studentName}
+                    </h2>
+                    <div className="text-sm text-gray-500 space-y-1">
+                      <div>Google: {selectedStudent.email}</div>
+                      {selectedStudent.personalEmail && (
+                        <div>Personal: {selectedStudent.personalEmail}</div>
+                      )}
+                      <div>Grade: {selectedStudent.gradeLevel} | ID: {selectedStudent.studentId}</div>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedStudent(null)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Statistics */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-sm text-gray-600">Total Hours</p>
+                    <p className="text-xl font-bold text-gray-900">{selectedStudent.totalHours.toFixed(1)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-sm text-gray-600">Approved</p>
+                    <p className="text-xl font-bold text-green-600">{selectedStudent.approvedHours.toFixed(1)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-sm text-gray-600">Pending</p>
+                    <p className="text-xl font-bold text-yellow-600">{selectedStudent.pendingHours.toFixed(1)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <p className="text-sm text-gray-600">Submissions</p>
+                    <p className="text-xl font-bold text-gray-900">{selectedStudent.submissionCount}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Hours Submissions */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Hours Submissions</h3>
+                {studentSubmissionsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Loading submissions...</p>
+                  </div>
+                ) : studentSubmissions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Clock className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                    <p className="text-sm text-gray-600">No submissions yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {studentSubmissions.map((submission: HoursSubmission) => (
+                      <Card key={submission.id}>
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge className={getStatusBadgeColor(submission.status)}>
+                                  {getStatusIcon(submission.status)}
+                                  <span className="ml-1 capitalize">{submission.status}</span>
+                                </Badge>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(submission.date).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <h4 className="font-medium text-gray-900 mb-1">
+                                {submission.activityName || "Activity Name Not Provided"}
+                              </h4>
+                              <p className="text-sm text-gray-600 mb-2">{submission.description}</p>
+                              <div className="flex items-center gap-4 text-sm text-gray-500">
+                                <div className="flex items-center">
+                                  <Clock className="w-4 h-4 mr-1" />
+                                  {submission.hours} hours
+                                </div>
+                                <div className="flex items-center">
+                                  <Calendar className="w-4 h-4 mr-1" />
+                                  {new Date(submission.date).toLocaleDateString()}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2 ml-4">
+                              {submission.proofImageUrl && (
+                                <Button variant="outline" size="sm">
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  View Proof
+                                </Button>
+                              )}
+                              {submission.status === 'pending' && (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => updateStatusMutation.mutate({ id: submission.id, status: 'approved' })}
+                                    disabled={updateStatusMutation.isPending}
+                                    className="text-green-600 hover:bg-green-50"
+                                  >
+                                    <Check className="w-4 h-4 mr-1" />
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => updateStatusMutation.mutate({ id: submission.id, status: 'rejected' })}
+                                    disabled={updateStatusMutation.isPending}
+                                    className="text-red-600 hover:bg-red-50"
+                                  >
+                                    <XCircle className="w-4 h-4 mr-1" />
+                                    Reject
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

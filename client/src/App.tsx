@@ -45,7 +45,13 @@ function AdminInterface() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [currentPage, setCurrentPage] = useState('approval');
+  const [currentPage, setCurrentPage] = useState(() => {
+    const path = window.location.pathname;
+    if (path.includes('/admin/dashboard')) return 'dashboard';
+    if (path.includes('/admin/students')) return 'students';
+    if (path.includes('/admin/management')) return 'admin-management';
+    return 'approval';
+  });
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
@@ -146,7 +152,10 @@ function AdminInterface() {
           
           <nav className="flex-1 px-4 py-4 space-y-1">
             <button
-              onClick={() => setCurrentPage('approval')}
+              onClick={() => {
+                setCurrentPage('approval');
+                window.history.pushState({}, '', '/admin/approval');
+              }}
               className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                 currentPage === 'approval' 
                   ? 'bg-blue-50 text-blue-600' 
@@ -160,7 +169,10 @@ function AdminInterface() {
             </button>
             
             <button
-              onClick={() => setCurrentPage('dashboard')}
+              onClick={() => {
+                setCurrentPage('dashboard');
+                window.history.pushState({}, '', '/admin/dashboard');
+              }}
               className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                 currentPage === 'dashboard' 
                   ? 'bg-blue-50 text-blue-600' 
@@ -169,12 +181,16 @@ function AdminInterface() {
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M11 7h6" />
               </svg>
               <span>Dashboard</span>
             </button>
             
             <button
-              onClick={() => setCurrentPage('students')}
+              onClick={() => {
+                setCurrentPage('students');
+                window.history.pushState({}, '', '/admin/students');
+              }}
               className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                 currentPage === 'students' 
                   ? 'bg-blue-50 text-blue-600' 
@@ -188,7 +204,10 @@ function AdminInterface() {
             </button>
             
             <button
-              onClick={() => setCurrentPage('admin-management')}
+              onClick={() => {
+                setCurrentPage('admin-management');
+                window.history.pushState({}, '', '/admin/management');
+              }}
               className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                 currentPage === 'admin-management' 
                   ? 'bg-blue-50 text-blue-600' 
