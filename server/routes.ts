@@ -175,7 +175,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/release-assignment", async (req, res) => {
     try {
       const { adminEmail, currentStudentId } = req.body;
+      console.log('Release assignment request:', { adminEmail, currentStudentId });
       const result = await storage.releaseAssignment(adminEmail, currentStudentId);
+      console.log('Release result:', result);
       res.json(result);
     } catch (error) {
       res.status(500).json({ error: "Failed to release assignment" });

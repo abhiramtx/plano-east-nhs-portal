@@ -99,18 +99,27 @@ export function AdminApproval({ user }: AdminApprovalProps) {
   // Mutation for releasing assignment and getting a new one
   const releaseMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', '/api/release-assignment', { 
+      const response = await apiRequest('POST', '/api/release-assignment', { 
         adminEmail: user.email.replace(/\./g, ','),
         currentStudentId: assignedStudent?.userId 
       });
+      return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (newAssignment) => {
+      // If we got a new assignment, use it
+      if (newAssignment) {
+        setAssignedStudent(newAssignment);
+        setSelectedSubmission(null);
+        queryClient.invalidateQueries({ queryKey: ['/api/student-submissions'] });
+      } else {
+        // No new assignment available
+        setAssignedStudent(null);
+        setSelectedSubmission(null);
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/admin-assignment'] });
-      setAssignedStudent(null);
-      setSelectedSubmission(null);
       toast({
         title: "Success",
-        description: "Assignment released. Getting new assignment...",
+        description: newAssignment ? "Got new assignment!" : "No more assignments available",
       });
     },
     onError: (error) => {

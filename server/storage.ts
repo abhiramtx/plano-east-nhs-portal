@@ -1,6 +1,7 @@
 import { users, hoursSubmissions, userProfiles, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
+import { assignmentTracker } from "./assignment-tracker";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -183,20 +184,34 @@ export class DatabaseStorage implements IStorage {
         return null;
       }
       
-      // Check if the admin has their own pending submissions
-      const adminHasPending = usersWithPending.some(user => user.userId === adminEmail);
+      // Get the last assigned user for this admin
+      const lastAssignedUserId = assignmentTracker.getLastAssignment(adminEmail);
       
-      let assignedUserId: string;
-      
-      if (adminHasPending) {
-        // If admin has pending submissions, assign them their own submissions first
-        assignedUserId = adminEmail;
-      } else {
-        // Otherwise, assign based on round-robin
-        const adminIndex = adminEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const assignedUserIndex = adminIndex % usersWithPending.length;
-        assignedUserId = usersWithPending[assignedUserIndex].userId;
+      // Find available users excluding the last assigned one
+      let availableUsers = usersWithPending;
+      if (lastAssignedUserId) {
+        availableUsers = usersWithPending.filter(user => user.userId !== lastAssignedUserId);
+        
+        // If no other users available, include the last one again
+        if (availableUsers.length === 0) {
+          availableUsers = usersWithPending;
+        }
       }
+      
+      // Use round-robin to select the next user
+      const adminIndex = adminEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const assignedUserIndex = adminIndex % availableUsers.length;
+      const assignedUserId = availableUsers[assignedUserIndex].userId;
+      
+      console.log('Assignment logic:', {
+        adminEmail,
+        lastAssignedUserId,
+        availableUsers: availableUsers.map(u => u.userId),
+        selectedUser: assignedUserId
+      });
+      
+      // Track this assignment
+      assignmentTracker.setLastAssignment(adminEmail, assignedUserId);
       
       // Get the user profile (could be student or admin)
       const [userProfile] = await db
@@ -227,12 +242,19 @@ export class DatabaseStorage implements IStorage {
         )
         .groupBy(hoursSubmissions.userId);
       
+      console.log('Users with pending submissions for release:', usersWithPending);
+      console.log('Current user to exclude:', currentUserId);
+      
       if (usersWithPending.length === 0) {
         return null;
       }
       
-      // Get a new assignment (first available user)
-      const newAssignedUserId = usersWithPending[0].userId;
+      // Get a new assignment using round-robin based on admin email
+      const adminIndex = adminEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const assignedUserIndex = adminIndex % usersWithPending.length;
+      const newAssignedUserId = usersWithPending[assignedUserIndex].userId;
+      
+      console.log('Selected user for assignment:', newAssignedUserId);
       
       // Get the user profile (could be student or admin)
       const [userProfile] = await db
