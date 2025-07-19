@@ -108,10 +108,8 @@ export default function Hours() {
               <p className="text-gray-600 mt-1">Track and manage your service hours</p>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
-                <span className="text-white text-sm font-medium">
-                  {user?.email.split('@')[0].substring(0, 2).toUpperCase()}
-                </span>
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg">
+                <Plus className="w-5 h-5 text-white" />
               </div>
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>

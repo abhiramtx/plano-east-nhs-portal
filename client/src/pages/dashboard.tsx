@@ -89,10 +89,8 @@ export default function Dashboard() {
               <p className="text-gray-600 mt-1">Welcome back, {user?.name?.split(' ')[0]}!</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
-                <span className="text-white text-sm font-medium">
-                  {user?.email.split('@')[0].substring(0, 2).toUpperCase()}
-                </span>
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                <Award className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
