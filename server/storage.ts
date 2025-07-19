@@ -183,19 +183,21 @@ export class DatabaseStorage implements IStorage {
         return null;
       }
       
-      // Check if the admin has their own pending submissions
-      const adminHasPending = usersWithPending.some(user => user.userId === adminEmail);
+      // Prioritize non-admin users first, then use admin as fallback
+      const nonAdminUsers = usersWithPending.filter(user => user.userId !== adminEmail);
+      const adminUser = usersWithPending.find(user => user.userId === adminEmail);
       
       let assignedUserId: string;
       
-      if (adminHasPending) {
-        // If admin has pending submissions, assign them their own submissions first
+      if (nonAdminUsers.length > 0) {
+        // Assign to a non-admin user using simple rotation based on current time
+        const timeBasedIndex = Math.floor(Date.now() / 10000) % nonAdminUsers.length;
+        assignedUserId = nonAdminUsers[timeBasedIndex].userId;
+      } else if (adminUser) {
+        // Only assign to admin if no other users have pending submissions
         assignedUserId = adminEmail;
       } else {
-        // Otherwise, assign based on round-robin
-        const adminIndex = adminEmail.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const assignedUserIndex = adminIndex % usersWithPending.length;
-        assignedUserId = usersWithPending[assignedUserIndex].userId;
+        return null;
       }
       
       // Get the user profile (could be student or admin)
