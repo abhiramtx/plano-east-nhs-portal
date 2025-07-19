@@ -96,6 +96,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User profile routes
+  app.get("/api/user-profiles", async (req, res) => {
+    try {
+      const profiles = await storage.getAllUserProfiles();
+      res.json(profiles);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user profiles" });
+    }
+  });
+
   app.get("/api/user-profile/:userId", async (req, res) => {
     try {
       const { userId } = req.params;

@@ -18,6 +18,7 @@ export interface IStorage {
   getAllHoursSubmissions(): Promise<HoursSubmission[]>;
   
   // User profiles
+  getAllUserProfiles(): Promise<UserProfile[]>;
   getUserProfile(userId: string): Promise<UserProfile | undefined>;
   upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
   
@@ -86,6 +87,13 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(hoursSubmissions)
       .orderBy(hoursSubmissions.createdAt);
+  }
+
+  async getAllUserProfiles(): Promise<UserProfile[]> {
+    return await db
+      .select()
+      .from(userProfiles)
+      .orderBy(userProfiles.createdAt);
   }
 
   async getUserProfile(userId: string): Promise<UserProfile | undefined> {
