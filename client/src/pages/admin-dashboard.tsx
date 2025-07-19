@@ -39,6 +39,16 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
     },
   });
 
+  // Fetch all user profiles to get additional information
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['/api/user-profiles'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/user-profiles');
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
+  });
+
   // Update submission status mutation
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
@@ -222,6 +232,24 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                           <span className="text-sm text-gray-500">
                             {submission.studentName} (ID: {submission.studentId})
                           </span>
+                        </div>
+                        
+                        {/* Student Information */}
+                        <div className="text-sm text-gray-500 mb-3 space-y-1">
+                          {(() => {
+                            const profile = profiles.find(p => p.userId === submission.userId);
+                            return (
+                              <>
+                                <div>Google: {submission.userId}</div>
+                                {profile?.personalEmailAddress && (
+                                  <div>Personal: {profile.personalEmailAddress}</div>
+                                )}
+                                {profile?.gradeLevel && (
+                                  <div>Grade: {profile.gradeLevel}</div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                         
                         <h3 className="font-medium text-gray-900 mb-2">

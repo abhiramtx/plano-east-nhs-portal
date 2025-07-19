@@ -219,6 +219,7 @@ export function AdminApproval({ user }: AdminApprovalProps) {
                     <Badge variant="secondary" className="text-xs">Admin</Badge>
                   )}
                 </div>
+                <p className="text-sm text-gray-500">{assignedStudent?.userId}</p>
                 <p className="text-sm text-gray-500">{assignedStudent?.personalEmailAddress}</p>
               </div>
             </div>
