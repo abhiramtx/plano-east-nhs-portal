@@ -64,6 +64,10 @@ export function AdminStudents({ user }: AdminStudentsProps) {
 
   const isLoading = submissionsLoading || profilesLoading;
 
+  // Debug logging
+  console.log('Submissions:', submissions.length);
+  console.log('Profiles:', profiles.length);
+
   // Group submissions by student and merge with profile data
   const studentStats = submissions.reduce((acc: any, submission: HoursSubmission) => {
     const key = submission.userId;
@@ -112,9 +116,10 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   const allStudents = Object.values(studentStats);
   const filteredStudents = allStudents.filter((student: any) => {
     // Search filter
-    const matchesSearch = student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = searchTerm === '' || 
+      student.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.personalEmail?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Grade level filter
@@ -142,6 +147,11 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   });
 
   const students = filteredStudents;
+  
+  // Debug logging
+  console.log('All students:', allStudents.length);
+  console.log('Filtered students:', students.length);
+  console.log('Sample student:', allStudents[0]);
 
   // Helper functions
   const formatDate = (dateString: string) => {
