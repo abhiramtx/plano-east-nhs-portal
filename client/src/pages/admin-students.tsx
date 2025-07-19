@@ -143,18 +143,17 @@ export function AdminStudents({ user }: AdminStudentsProps) {
     return matchesSearch && matchesGrade && matchesRequirement && matchesSubmissionStatus && matchesRole;
   });
 
-  // TEMPORARY: Show all students for debugging
-  const students = allStudents;
+  const students = filteredStudents;
   
-  // Temporary debug
-  console.log('Data check:', {
-    submissions: submissions.length,
-    profiles: profiles.length,
-    allStudents: allStudents.length,
-    filteredStudents: students.length,
-    firstSubmission: submissions[0],
-    firstProfile: profiles[0]
-  });
+  // Debug filtering
+  if (allStudents.length > 0 && students.length === 0) {
+    console.log('All students filtered out:', {
+      totalStudents: allStudents.length,
+      filters,
+      searchTerm,
+      sampleStudent: allStudents[0]
+    });
+  }
 
   // Helper functions
   const formatDate = (dateString: string) => {
