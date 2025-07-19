@@ -27,6 +27,7 @@ export const hoursSubmissions = pgTable("hours_submissions", {
   hours: decimal("hours", { precision: 4, scale: 2 }).notNull(),
   proofImageUrl: text("proof_image_url"),
   status: text("status").default("pending").notNull(), // pending, approved, rejected
+  rejectReason: text("reject_reason"), // Reason for rejection
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

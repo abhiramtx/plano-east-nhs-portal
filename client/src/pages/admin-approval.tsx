@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { HoursSubmission, UserProfile } from '@shared/schema';
@@ -29,6 +31,8 @@ export function AdminApproval({ user }: AdminApprovalProps) {
   const [assignedStudent, setAssignedStudent] = useState<UserProfile | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<HoursSubmission | null>(null);
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [rejectingSubmission, setRejectingSubmission] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -76,12 +80,14 @@ export function AdminApproval({ user }: AdminApprovalProps) {
 
   // Mutation for approving/rejecting submissions
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      return apiRequest('PUT', `/api/hours-submissions/${id}`, { status });
+    mutationFn: async ({ id, status, rejectReason }: { id: number; status: string; rejectReason?: string }) => {
+      return apiRequest('PUT', `/api/hours-submissions/${id}`, { status, rejectReason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/student-submissions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions'] });
+      setRejectingSubmission(null);
+      setRejectReason("");
       toast({
         title: "Success",
         description: "Submission status updated successfully",
@@ -137,11 +143,15 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     }
   };
 
-  const handleReject = () => {
-    if (selectedSubmission) {
-      updateStatusMutation.mutate({ id: selectedSubmission.id, status: 'rejected' });
+  const handleReject = (submissionId: number) => {
+    if (rejectReason.trim()) {
+      updateStatusMutation.mutate({ 
+        id: submissionId, 
+        status: 'rejected', 
+        rejectReason: rejectReason.trim() 
+      });
       // Move to next submission or close
-      const currentIndex = studentSubmissions.findIndex(s => s.id === selectedSubmission.id);
+      const currentIndex = studentSubmissions.findIndex(s => s.id === submissionId);
       const nextSubmission = studentSubmissions[currentIndex + 1];
       if (nextSubmission) {
         setSelectedSubmission(nextSubmission);
@@ -300,7 +310,7 @@ export function AdminApproval({ user }: AdminApprovalProps) {
                 </h2>
                 <div className="flex space-x-3">
                   <Button
-                    onClick={handleReject}
+                    onClick={() => setRejectingSubmission(selectedSubmission?.id || null)}
                     disabled={updateStatusMutation.isPending}
                     variant="outline"
                     className="text-red-600 hover:bg-red-50 border-red-200"
@@ -423,6 +433,40 @@ export function AdminApproval({ user }: AdminApprovalProps) {
             />
           </div>
         </div>
+      )}
+
+      {/* Reject Reason Dialog */}
+      {rejectingSubmission && (
+        <Dialog open={!!rejectingSubmission} onOpenChange={() => setRejectingSubmission(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Submission</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Please provide a reason for rejecting this submission. This will be visible to the student.
+              </p>
+              <Textarea
+                placeholder="Enter rejection reason..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={3}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setRejectingSubmission(null)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => handleReject(rejectingSubmission)}
+                  disabled={!rejectReason.trim() || updateStatusMutation.isPending}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {updateStatusMutation.isPending ? "Rejecting..." : "Reject Submission"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

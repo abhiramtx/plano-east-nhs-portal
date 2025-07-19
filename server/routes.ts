@@ -45,26 +45,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Transform the date string to Date object if present
-      const requestData = {
-        ...req.body,
-        date: req.body.date ? new Date(req.body.date) : undefined,
-        status: 'pending', // Reset status to pending when edited
-        updatedAt: new Date(),
-      };
-      
-      // Remove undefined values
-      const cleanedData = Object.fromEntries(
-        Object.entries(requestData).filter(([_, value]) => value !== undefined)
-      );
-      
-      const submission = await storage.updateHoursSubmission(id, cleanedData);
-      
-      if (!submission) {
-        return res.status(404).json({ error: "Submission not found" });
+      // Check if this is a status update (approve/reject) or a regular edit
+      if (req.body.status && ['approved', 'rejected'].includes(req.body.status)) {
+        // Status update - don't reset to pending, preserve the new status
+        const updateData = {
+          status: req.body.status,
+          rejectReason: req.body.rejectReason || null,
+          updatedAt: new Date(),
+        };
+        
+        const submission = await storage.updateHoursSubmission(id, updateData);
+        
+        if (!submission) {
+          return res.status(404).json({ error: "Submission not found" });
+        }
+        
+        res.json(submission);
+      } else {
+        // Regular edit - reset status to pending
+        const requestData = {
+          ...req.body,
+          date: req.body.date ? new Date(req.body.date) : undefined,
+          status: 'pending', // Reset status to pending when edited
+          rejectReason: null, // Clear reject reason when edited
+          updatedAt: new Date(),
+        };
+        
+        // Remove undefined values
+        const cleanedData = Object.fromEntries(
+          Object.entries(requestData).filter(([_, value]) => value !== undefined)
+        );
+        
+        const submission = await storage.updateHoursSubmission(id, cleanedData);
+        
+        if (!submission) {
+          return res.status(404).json({ error: "Submission not found" });
+        }
+        
+        res.json(submission);
       }
-      
-      res.json(submission);
     } catch (error) {
       console.error("Update submission error:", error);
       res.status(500).json({ error: "Failed to update submission" });

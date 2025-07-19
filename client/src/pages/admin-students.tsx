@@ -4,6 +4,8 @@ import { User } from "@/lib/firebase";
 import { UserProfile, HoursSubmission } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +45,8 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [rejectingSubmission, setRejectingSubmission] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [filters, setFilters] = useState<FilterState>({
     gradeLevels: [],
     requirementStatus: [],
@@ -65,13 +69,15 @@ export function AdminStudents({ user }: AdminStudentsProps) {
 
   // Mutation for updating submission status
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const response = await apiRequest('PUT', `/api/hours-submissions/${id}`, { status });
+    mutationFn: async ({ id, status, rejectReason }: { id: number; status: string; rejectReason?: string }) => {
+      const response = await apiRequest('PUT', `/api/hours-submissions/${id}`, { status, rejectReason });
       return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', selectedStudent?.userId] });
+      setRejectingSubmission(null);
+      setRejectReason("");
       toast({
         title: "Success",
         description: "Submission status updated",
@@ -85,6 +91,16 @@ export function AdminStudents({ user }: AdminStudentsProps) {
       });
     }
   });
+
+  const handleReject = (submissionId: number) => {
+    if (rejectReason.trim()) {
+      updateStatusMutation.mutate({ 
+        id: submissionId, 
+        status: 'rejected', 
+        rejectReason: rejectReason.trim() 
+      });
+    }
+  };
 
   // Fetch all submissions to get student data
   const { data: submissions = [], isLoading: submissionsLoading } = useQuery({
@@ -567,7 +583,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                                 <div className="space-y-1 text-sm text-gray-600">
                                   <div className="flex items-center gap-1">
                                     <Mail className="w-3 h-3" />
-                                    <span>{student.email}</span>
+                                    <span>{student.email.replace(/,/g, '.')}</span>
                                   </div>
                                   {student.personalEmail && student.personalEmail !== student.email && (
                                     <div className="flex items-center gap-1">
@@ -640,64 +656,149 @@ export function AdminStudents({ user }: AdminStudentsProps) {
         </div>
       </div>
 
-      {/* Student Profile Modal */}
+      {/* Student Profile Full Page */}
       {selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto w-full">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
-                    <UserIcon className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      {selectedStudent.studentName}
-                    </h2>
-                    <div className="text-sm text-gray-500 space-y-1">
-                      <div>Google: {selectedStudent.email}</div>
-                      {selectedStudent.personalEmail && (
-                        <div>Personal: {selectedStudent.personalEmail}</div>
-                      )}
-                      <div>Grade: {selectedStudent.gradeLevel} | ID: {selectedStudent.studentId}</div>
+        <div className="fixed inset-0 bg-white z-50 overflow-auto">
+          <div className="min-h-full">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 border-b border-gray-200">
+              <div className="max-w-6xl mx-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
+                      <UserIcon className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-bold text-gray-900">
+                        {selectedStudent.studentName}
+                      </h1>
+                      <p className="text-gray-600">Student Profile & Hours Review</p>
                     </div>
                   </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedStudent(null)}
+                    className="bg-white"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Close Profile
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedStudent(null)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+
+                {/* Complete Profile Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium text-gray-600">Contact Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-blue-500" />
+                        <div>
+                          <p className="text-xs text-gray-500">Google Account</p>
+                          <p className="text-sm font-medium">{selectedStudent.email.replace(/,/g, '.')}</p>
+                        </div>
+                      </div>
+                      {selectedStudent.personalEmail && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-green-500" />
+                          <div>
+                            <p className="text-xs text-gray-500">Personal Email</p>
+                            <p className="text-sm font-medium">{selectedStudent.personalEmail}</p>
+                          </div>
+                        </div>
+                      )}
+                      {selectedStudent.phoneNumber && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-purple-500" />
+                          <div>
+                            <p className="text-xs text-gray-500">Phone Number</p>
+                            <p className="text-sm font-medium">{selectedStudent.phoneNumber}</p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium text-gray-600">Academic Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4 text-blue-500" />
+                        <div>
+                          <p className="text-xs text-gray-500">Grade Level</p>
+                          <p className="text-sm font-medium">Grade {selectedStudent.gradeLevel}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-4 h-4 flex items-center justify-center text-green-500 font-bold">#</span>
+                        <div>
+                          <p className="text-xs text-gray-500">Student ID</p>
+                          <p className="text-sm font-medium">{selectedStudent.studentId || 'Not provided'}</p>
+                        </div>
+                      </div>
+                      {selectedStudent.gpa && (
+                        <div className="flex items-center gap-2">
+                          <Award className="w-4 h-4 text-yellow-500" />
+                          <div>
+                            <p className="text-xs text-gray-500">GPA</p>
+                            <p className="text-sm font-medium">{selectedStudent.gpa}</p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium text-gray-600">NAHS Requirements</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-600">{selectedStudent.approvedHours.toFixed(1)}</p>
+                        <p className="text-xs text-gray-500">Approved Hours</p>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{width: `${Math.min((selectedStudent.approvedHours / 15) * 100, 100)}%`}}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-center text-gray-500">
+                        {selectedStudent.approvedHours >= 15 ? 'Requirements Met!' : `${(15 - selectedStudent.approvedHours).toFixed(1)} hours remaining`}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="max-w-6xl mx-auto p-6">
               {/* Statistics */}
-              <div className="grid grid-cols-4 gap-4 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <Card>
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-gray-600">Total Hours</p>
-                    <p className="text-xl font-bold text-gray-900">{selectedStudent.totalHours.toFixed(1)}</p>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-sm text-gray-600 mb-1">Total Hours</p>
+                    <p className="text-3xl font-bold text-gray-900">{selectedStudent.totalHours.toFixed(1)}</p>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-gray-600">Approved</p>
-                    <p className="text-xl font-bold text-green-600">{selectedStudent.approvedHours.toFixed(1)}</p>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-sm text-gray-600 mb-1">Approved</p>
+                    <p className="text-3xl font-bold text-green-600">{selectedStudent.approvedHours.toFixed(1)}</p>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-gray-600">Pending</p>
-                    <p className="text-xl font-bold text-yellow-600">{selectedStudent.pendingHours.toFixed(1)}</p>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-sm text-gray-600 mb-1">Pending</p>
+                    <p className="text-3xl font-bold text-yellow-600">{selectedStudent.pendingHours.toFixed(1)}</p>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardContent className="p-4 text-center">
-                    <p className="text-sm text-gray-600">Submissions</p>
-                    <p className="text-xl font-bold text-gray-900">{selectedStudent.submissionCount}</p>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-sm text-gray-600 mb-1">Submissions</p>
+                    <p className="text-3xl font-bold text-gray-900">{selectedStudent.submissionCount}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -735,7 +836,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                                 {submission.activityName || "Activity Name Not Provided"}
                               </h4>
                               <p className="text-sm text-gray-600 mb-2">{submission.description}</p>
-                              <div className="flex items-center gap-4 text-sm text-gray-500">
+                              <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
                                 <div className="flex items-center">
                                   <Clock className="w-4 h-4 mr-1" />
                                   {submission.hours} hours
@@ -745,6 +846,12 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                                   {new Date(submission.date).toLocaleDateString()}
                                 </div>
                               </div>
+                              {submission.status === 'rejected' && submission.rejectReason && (
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-2">
+                                  <p className="text-sm font-medium text-red-800 mb-1">Rejection Reason:</p>
+                                  <p className="text-sm text-red-700">{submission.rejectReason}</p>
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center space-x-2 ml-4">
                               {submission.proofImageUrl && (
@@ -768,7 +875,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => updateStatusMutation.mutate({ id: submission.id, status: 'rejected' })}
+                                    onClick={() => setRejectingSubmission(submission.id)}
                                     disabled={updateStatusMutation.isPending}
                                     className="text-red-600 hover:bg-red-50"
                                   >
@@ -788,6 +895,40 @@ export function AdminStudents({ user }: AdminStudentsProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Reject Reason Dialog */}
+      {rejectingSubmission && (
+        <Dialog open={!!rejectingSubmission} onOpenChange={() => setRejectingSubmission(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reject Submission</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Please provide a reason for rejecting this submission. This will be visible to the student.
+              </p>
+              <Textarea
+                placeholder="Enter rejection reason..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={3}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setRejectingSubmission(null)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => handleReject(rejectingSubmission)}
+                  disabled={!rejectReason.trim() || updateStatusMutation.isPending}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {updateStatusMutation.isPending ? "Rejecting..." : "Reject Submission"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

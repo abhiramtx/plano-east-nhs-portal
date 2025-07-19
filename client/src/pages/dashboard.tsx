@@ -272,26 +272,43 @@ export default function Dashboard() {
             <CardContent>
               <div className="space-y-4">
                 {submissions.slice(0, 5).map((submission, index) => (
-                  <div key={index} className="flex items-center justify-between py-2">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {submission.description}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(submission.date).toLocaleDateString()}
-                      </p>
+                  <div key={index} className="py-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {submission.description}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(submission.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-900">
+                          {submission.hours}h
+                        </span>
+                        <Badge 
+                          variant={submission.status === 'approved' ? 'default' : 'secondary'}
+                          className={
+                            submission.status === 'approved' 
+                              ? 'bg-green-100 text-green-800' 
+                              : submission.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }
+                        >
+                          {submission.status === 'approved' && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                          {submission.status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+                          {submission.status === 'rejected' && <AlertCircle className="w-3 h-3 mr-1" />}
+                          {submission.status}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-900">
-                        {submission.hours}h
-                      </span>
-                      <Badge 
-                        variant={submission.status === 'approved' ? 'default' : 'secondary'}
-                        className={submission.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
-                      >
-                        {submission.status}
-                      </Badge>
-                    </div>
+                    {submission.status === 'rejected' && submission.rejectReason && (
+                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-xs font-medium text-red-800 mb-1">Rejection Reason:</p>
+                        <p className="text-xs text-red-700">{submission.rejectReason}</p>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {submissions.length === 0 && (
