@@ -73,7 +73,11 @@ export function AdminStudents({ user }: AdminStudentsProps) {
         userId: submission.userId,
         studentName: submission.studentName,
         studentId: submission.studentId,
+        email: submission.userId, // User ID is the email
+        personalEmail: profile?.personalEmailAddress || '',
         gradeLevel: profile?.gradeLevel || 'N/A',
+        gpa: profile?.gpa || null,
+        phoneNumber: profile?.cellPhoneNumber || '',
         userRole: profile?.userRole || 0,
         isProfileComplete: profile?.isProfileComplete || false,
         totalHours: 0,
@@ -109,7 +113,9 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   const filteredStudents = allStudents.filter((student: any) => {
     // Search filter
     const matchesSearch = student.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.studentId?.toLowerCase().includes(searchTerm.toLowerCase());
+      student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.personalEmail?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Grade level filter
     const matchesGrade = filters.gradeLevels.length === 0 || 
@@ -159,8 +165,8 @@ export function AdminStudents({ user }: AdminStudentsProps) {
     }
   };
 
-  // Get unique values for filters
-  const availableGradeLevels = [...new Set(allStudents.map((s: any) => s.gradeLevel).filter(Boolean))].sort();
+  // Fixed grade levels for high school
+  const gradeLevels = ['9', '10', '11', '12'];
   const activeFilterCount = Object.values(filters).flat().length;
 
   // Filter handlers
@@ -232,7 +238,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-3">Grade Level</h4>
                 <div className="space-y-2">
-                  {availableGradeLevels.map(grade => (
+                  {gradeLevels.map(grade => (
                     <div key={grade} className="flex items-center space-x-2">
                       <Checkbox
                         id={`grade-${grade}`}
@@ -389,7 +395,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Search members by name or ID..."
+                placeholder="Search members by name, ID, or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -479,41 +485,70 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                       <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
-                                <UserIcon className="w-4 h-4 text-blue-600" />
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
+                                <UserIcon className="w-5 h-5 text-white" />
                               </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium text-gray-900">{student.studentName}</h3>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold text-gray-900">{student.studentName}</h3>
                                   {student.userRole === 1 && (
                                     <Badge className="bg-purple-100 text-purple-800 text-xs">Admin</Badge>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                  <span>Student ID: {student.studentId || 'N/A'}</span>
-                                  <span>•</span>
-                                  <span>Grade: {student.gradeLevel}</span>
+                                <div className="space-y-1 text-sm text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="w-3 h-3" />
+                                    <span>{student.email}</span>
+                                  </div>
+                                  {student.personalEmail && student.personalEmail !== student.email && (
+                                    <div className="flex items-center gap-1">
+                                      <Mail className="w-3 h-3" />
+                                      <span className="text-gray-500">Personal: {student.personalEmail}</span>
+                                    </div>
+                                  )}
+                                  {student.phoneNumber && (
+                                    <div className="flex items-center gap-1">
+                                      <Phone className="w-3 h-3" />
+                                      <span>{student.phoneNumber}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-medium">ID:</span>
+                                      <span>{student.studentId || 'N/A'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <GraduationCap className="w-3 h-3" />
+                                      <span>Grade {student.gradeLevel}</span>
+                                    </div>
+                                    {student.gpa && (
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-medium">GPA:</span>
+                                        <span>{student.gpa}</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
                             
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                              <div>
-                                <p className="text-gray-600">Total Hours</p>
-                                <p className="font-medium">{student.totalHours.toFixed(1)}</p>
+                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-gray-50 rounded-lg">
+                              <div className="text-center">
+                                <p className="text-xs text-gray-600 mb-1">Total Hours</p>
+                                <p className="font-semibold text-gray-900">{student.totalHours.toFixed(1)}</p>
                               </div>
-                              <div>
-                                <p className="text-gray-600">Approved</p>
-                                <p className="font-medium text-green-600">{student.approvedHours.toFixed(1)}</p>
+                              <div className="text-center">
+                                <p className="text-xs text-gray-600 mb-1">Approved</p>
+                                <p className="font-semibold text-green-600">{student.approvedHours.toFixed(1)}</p>
                               </div>
-                              <div>
-                                <p className="text-gray-600">Pending</p>
-                                <p className="font-medium text-yellow-600">{student.pendingHours.toFixed(1)}</p>
+                              <div className="text-center">
+                                <p className="text-xs text-gray-600 mb-1">Pending</p>
+                                <p className="font-semibold text-yellow-600">{student.pendingHours.toFixed(1)}</p>
                               </div>
-                              <div>
-                                <p className="text-gray-600">Submissions</p>
-                                <p className="font-medium">{student.submissionCount}</p>
+                              <div className="text-center">
+                                <p className="text-xs text-gray-600 mb-1">Submissions</p>
+                                <p className="font-semibold text-gray-900">{student.submissionCount}</p>
                               </div>
                             </div>
                           </div>
