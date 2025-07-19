@@ -8,6 +8,14 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+export const adminAssignments = pgTable("admin_assignments", {
+  id: serial("id").primaryKey(),
+  adminEmail: text("admin_email").notNull(),
+  assignedUserId: text("assigned_user_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const hoursSubmissions = pgTable("hours_submissions", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),

@@ -1,6 +1,6 @@
-import { users, hoursSubmissions, userProfiles, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile } from "@shared/schema";
+import { users, hoursSubmissions, userProfiles, adminAssignments, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile } from "@shared/schema";
 import { db } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -169,7 +169,41 @@ export class DatabaseStorage implements IStorage {
 
   async getAdminAssignment(adminEmail: string): Promise<UserProfile | null> {
     try {
-      // Get all users (students AND admins) with pending submissions
+      // Check if admin already has an assignment
+      const [existingAssignment] = await db
+        .select()
+        .from(adminAssignments)
+        .where(eq(adminAssignments.adminEmail, adminEmail));
+      
+      if (existingAssignment) {
+        // Return the existing assigned user if they still have pending submissions
+        const [pendingCheck] = await db
+          .select({ count: sql<number>`count(*)`.as('count') })
+          .from(hoursSubmissions)
+          .where(
+            and(
+              eq(hoursSubmissions.userId, existingAssignment.assignedUserId),
+              eq(hoursSubmissions.status, 'pending')
+            )
+          );
+        
+        if (pendingCheck.count > 0) {
+          // Get the user profile
+          const [userProfile] = await db
+            .select()
+            .from(userProfiles)
+            .where(eq(userProfiles.userId, existingAssignment.assignedUserId));
+          
+          return userProfile || null;
+        } else {
+          // Assignment no longer valid, delete it and reassign
+          await db
+            .delete(adminAssignments)
+            .where(eq(adminAssignments.adminEmail, adminEmail));
+        }
+      }
+      
+      // Get all users with pending submissions
       const usersWithPending = await db
         .select({
           userId: hoursSubmissions.userId,
@@ -183,16 +217,15 @@ export class DatabaseStorage implements IStorage {
         return null;
       }
       
-      // Prioritize non-admin users first, then use admin as fallback
+      // Prioritize non-admin users first
       const nonAdminUsers = usersWithPending.filter(user => user.userId !== adminEmail);
       const adminUser = usersWithPending.find(user => user.userId === adminEmail);
       
       let assignedUserId: string;
       
       if (nonAdminUsers.length > 0) {
-        // Assign to a random non-admin user
-        const randomIndex = Math.floor(Math.random() * nonAdminUsers.length);
-        assignedUserId = nonAdminUsers[randomIndex].userId;
+        // Assign to first non-admin user (stable assignment)
+        assignedUserId = nonAdminUsers[0].userId;
       } else if (adminUser) {
         // Only assign to admin if no other users have pending submissions
         assignedUserId = adminEmail;
@@ -200,7 +233,15 @@ export class DatabaseStorage implements IStorage {
         return null;
       }
       
-      // Get the user profile (could be student or admin)
+      // Create new assignment record
+      await db
+        .insert(adminAssignments)
+        .values({
+          adminEmail,
+          assignedUserId,
+        });
+      
+      // Get the user profile
       const [userProfile] = await db
         .select()
         .from(userProfiles)
@@ -215,7 +256,12 @@ export class DatabaseStorage implements IStorage {
 
   async releaseAssignment(adminEmail: string, currentUserId?: string): Promise<UserProfile | null> {
     try {
-      // Get all users (students AND admins) with pending submissions excluding the current one
+      // Delete current assignment
+      await db
+        .delete(adminAssignments)
+        .where(eq(adminAssignments.adminEmail, adminEmail));
+      
+      // Get all users with pending submissions excluding the current one
       const usersWithPending = await db
         .select({
           userId: hoursSubmissions.userId,
@@ -237,7 +283,15 @@ export class DatabaseStorage implements IStorage {
       const shuffledUsers = [...usersWithPending].sort(() => Math.random() - 0.5);
       const newAssignedUserId = shuffledUsers[0].userId;
       
-      // Get the user profile (could be student or admin)
+      // Create new assignment record
+      await db
+        .insert(adminAssignments)
+        .values({
+          adminEmail,
+          assignedUserId: newAssignedUserId,
+        });
+      
+      // Get the user profile
       const [userProfile] = await db
         .select()
         .from(userProfiles)
