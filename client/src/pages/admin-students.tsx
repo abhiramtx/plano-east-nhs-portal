@@ -146,14 +146,17 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   const students = filteredStudents;
   
   // Debug filtering
-  if (allStudents.length > 0 && students.length === 0) {
-    console.log('All students filtered out:', {
-      totalStudents: allStudents.length,
-      filters,
-      searchTerm,
-      sampleStudent: allStudents[0]
-    });
-  }
+  console.log('Admin Students Debug:', {
+    submissionsCount: submissions.length,
+    profilesCount: profiles.length,
+    allStudentsCount: allStudents.length,
+    filteredStudentsCount: students.length,
+    filters,
+    searchTerm,
+    firstSubmission: submissions[0],
+    firstProfile: profiles[0],
+    studentStatsKeys: Object.keys(studentStats)
+  });
 
   // Helper functions
   const formatDate = (dateString: string) => {
