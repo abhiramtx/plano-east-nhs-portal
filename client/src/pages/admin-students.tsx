@@ -64,10 +64,6 @@ export function AdminStudents({ user }: AdminStudentsProps) {
 
   const isLoading = submissionsLoading || profilesLoading;
 
-  // Debug logging
-  console.log('Submissions:', submissions.length);
-  console.log('Profiles:', profiles.length);
-
   // Group submissions by student and merge with profile data
   const studentStats = submissions.reduce((acc: any, submission: HoursSubmission) => {
     const key = submission.userId;
@@ -116,11 +112,12 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   const allStudents = Object.values(studentStats);
   const filteredStudents = allStudents.filter((student: any) => {
     // Search filter
-    const matchesSearch = searchTerm === '' || 
-      student.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.studentId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.personalEmail?.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      (student.studentName && student.studentName.toLowerCase().includes(searchLower)) ||
+      (student.studentId && student.studentId.toLowerCase().includes(searchLower)) ||
+      (student.email && student.email.toLowerCase().includes(searchLower)) ||
+      (student.personalEmail && student.personalEmail.toLowerCase().includes(searchLower));
     
     // Grade level filter
     const matchesGrade = filters.gradeLevels.length === 0 || 
@@ -146,12 +143,18 @@ export function AdminStudents({ user }: AdminStudentsProps) {
     return matchesSearch && matchesGrade && matchesRequirement && matchesSubmissionStatus && matchesRole;
   });
 
-  const students = filteredStudents;
+  // TEMPORARY: Show all students for debugging
+  const students = allStudents;
   
-  // Debug logging
-  console.log('All students:', allStudents.length);
-  console.log('Filtered students:', students.length);
-  console.log('Sample student:', allStudents[0]);
+  // Temporary debug
+  console.log('Data check:', {
+    submissions: submissions.length,
+    profiles: profiles.length,
+    allStudents: allStudents.length,
+    filteredStudents: students.length,
+    firstSubmission: submissions[0],
+    firstProfile: profiles[0]
+  });
 
   // Helper functions
   const formatDate = (dateString: string) => {
