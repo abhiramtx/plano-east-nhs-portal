@@ -49,7 +49,8 @@ export function AdminStudents({ user }: AdminStudentsProps) {
     queryKey: ['/api/hours-submissions'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/hours-submissions');
-      return Array.isArray(response) ? response : [];
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -58,7 +59,8 @@ export function AdminStudents({ user }: AdminStudentsProps) {
     queryKey: ['/api/user-profiles'],
     queryFn: async () => {
       const response = await apiRequest('GET', '/api/user-profiles');
-      return Array.isArray(response) ? response : [];
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
   });
 
@@ -145,18 +147,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
 
   const students = filteredStudents;
   
-  // Debug filtering
-  console.log('Admin Students Debug:', {
-    submissionsCount: submissions.length,
-    profilesCount: profiles.length,
-    allStudentsCount: allStudents.length,
-    filteredStudentsCount: students.length,
-    filters,
-    searchTerm,
-    firstSubmission: submissions[0],
-    firstProfile: profiles[0],
-    studentStatsKeys: Object.keys(studentStats)
-  });
+  // Remove debug logging since issue is fixed
 
   // Helper functions
   const formatDate = (dateString: string) => {
