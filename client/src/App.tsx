@@ -10,11 +10,13 @@ import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Hours from "@/pages/hours";
 import Profile from "@/pages/profile";
+import StudentHistory from "@/pages/student-history";
 import NotFound from "@/pages/not-found";
 import { AdminDashboard } from "@/pages/admin-dashboard";
 import { AdminStudents } from "@/pages/admin-students";
 import { AdminManagement } from "@/pages/admin-management";
 import { AdminApproval } from "@/pages/admin-approval";
+import { AdminDatabase } from "@/pages/admin-database";
 
 function UserInterface({ user, onSignOut }: { user: User | null; onSignOut: () => void }) {
   if (!user) {
@@ -29,10 +31,12 @@ function UserInterface({ user, onSignOut }: { user: User | null; onSignOut: () =
           <Route path="/student" component={Dashboard} />
           <Route path="/student/dashboard" component={Dashboard} />
           <Route path="/student/hours" component={Hours} />
+          <Route path="/student/history" component={StudentHistory} />
           <Route path="/student/profile" component={Profile} />
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/hours" component={Hours} />
+          <Route path="/history" component={StudentHistory} />
           <Route path="/profile" component={Profile} />
           <Route component={NotFound} />
         </Switch>
@@ -220,6 +224,23 @@ function AdminInterface() {
               </svg>
               <span>Admin Management</span>
             </button>
+            
+            <button
+              onClick={() => {
+                setCurrentPage('database');
+                window.history.pushState({}, '', '/admin/database');
+              }}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                currentPage === 'database' 
+                  ? 'bg-blue-50 text-blue-600' 
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+              </svg>
+              <span>Database</span>
+            </button>
           </nav>
           
           <div className="flex-shrink-0 p-4 border-t border-gray-200">
@@ -255,6 +276,7 @@ function AdminInterface() {
         {currentPage === 'dashboard' && <AdminDashboard user={user} />}
         {currentPage === 'students' && <AdminStudents user={user} />}
         {currentPage === 'admin-management' && <AdminManagement user={user} />}
+        {currentPage === 'database' && <AdminDatabase user={user} />}
       </div>
     </div>
   );

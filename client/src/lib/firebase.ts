@@ -95,21 +95,7 @@ const handleCredentialResponse = (response: any) => {
 };
 
 // Mock sign-in function for demo
-export const signInWithMockUser = (email?: string) => {
-  const isSecondUser = email === 'demouser2@gmail.com';
-  
-  const mockUser: User = {
-    email: isSecondUser ? 'demouser2@gmail.com' : 'demo.student@gmail.com',
-    name: isSecondUser ? 'Jane Smith' : 'Demo Student',
-    picture: isSecondUser 
-      ? 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=96&h=96&fit=crop&crop=face'
-      : 'https://images.unsplash.com/photo-1494790108755-2616b612b898?w=96&h=96&fit=crop&crop=face',
-    sub: isSecondUser ? 'demo-user-456' : 'demo-user-123'
-  };
-
-  localStorage.setItem('user', JSON.stringify(mockUser));
-  notifyAuthListeners(mockUser);
-};
+// Removed demo user functionality for production
 
 export const handleSignOut = () => {
   localStorage.removeItem('user');

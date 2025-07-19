@@ -210,6 +210,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Year-end management routes
+  app.get("/api/yearly-history/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const history = await storage.getUserYearlyHistory(userId);
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch yearly history" });
+    }
+  });
+
+  app.post("/api/archive-year", async (req, res) => {
+    try {
+      const { schoolYear } = req.body;
+      if (!schoolYear) {
+        return res.status(400).json({ error: "School year is required" });
+      }
+      
+      // Check date restriction (May 1st - August 1st)
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const mayFirst = new Date(currentYear, 4, 1); // May 1st (month is 0-indexed)
+      const augFirst = new Date(currentYear, 7, 1); // August 1st
+      
+      if (now < mayFirst || now > augFirst) {
+        return res.status(403).json({ 
+          error: "Database operations are only allowed between May 1st and August 1st" 
+        });
+      }
+      
+      await storage.archiveCurrentYear(schoolYear);
+      res.json({ success: true, message: "Year archived successfully" });
+    } catch (error) {
+      console.error("Archive year error:", error);
+      res.status(500).json({ error: "Failed to archive year" });
+    }
+  });
+
+  app.post("/api/wipe-database", async (req, res) => {
+    try {
+      // Check date restriction (May 1st - August 1st)
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const mayFirst = new Date(currentYear, 4, 1); // May 1st (month is 0-indexed)
+      const augFirst = new Date(currentYear, 7, 1); // August 1st
+      
+      if (now < mayFirst || now > augFirst) {
+        return res.status(403).json({ 
+          error: "Database wipe is only allowed between May 1st and August 1st" 
+        });
+      }
+      
+      await storage.wipeDatabaseForNewYear();
+      res.json({ success: true, message: "Database wiped successfully" });
+    } catch (error) {
+      console.error("Database wipe error:", error);
+      res.status(500).json({ error: "Failed to wipe database" });
+    }
+  });
+
+  app.post("/api/remove-demo-data", async (req, res) => {
+    try {
+      await storage.removeDemoData();
+      res.json({ success: true, message: "Demo data removed successfully" });
+    } catch (error) {
+      console.error("Remove demo data error:", error);
+      res.status(500).json({ error: "Failed to remove demo data" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

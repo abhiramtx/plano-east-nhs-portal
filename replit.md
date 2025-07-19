@@ -62,15 +62,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### July 19, 2025
-- **Critical Bug Fixes**: Fixed major issues in admin approval system where pending submissions weren't displaying
-- **API Response Parsing**: Resolved JSON parsing issue in `apiRequest` function that was affecting all admin interfaces
-- **Admin Assignment System**: Fixed admin assignment workflow so admins can properly review submissions (including their own)
-- **Admin Management Enhancement**: Updated admin management interface to display both Google sign-up email and personal email addresses
-- **Filtering System**: Implemented comprehensive filtering sidebar for admin students page with grade level (9-12), requirement status, submission status, and user role filters
-- **Enhanced Student Cards**: Added detailed student information including Google email, personal email, phone numbers, GPA, and improved card layouts with organized statistics
-- **Search Enhancement**: Extended search functionality to include email addresses alongside names and student IDs
-- **Debugging Cleanup**: Removed debugging console logs after confirming all systems are working correctly
+### July 19, 2025 - Year-End Database Management System
+- **Year-End Database Management**: Implemented comprehensive admin database wipe page restricted to May 1st - August 1st operations
+- **Historical Data Archiving**: Added yearly history tracking system that preserves student data before database wipes
+- **Student History Dashboard**: Created student history page showing past years' submissions, monthly charts, and requirement status
+- **Production Cleanup**: Removed all demo user functionality and demo buttons for production readiness
+- **Database Schema**: Added `yearly_history` table for long-term data preservation with JSON storage for submissions and monthly data
+- **API Infrastructure**: Built complete API system for archiving, wiping, and historical data retrieval
+- **Date Restrictions**: Implemented May 1st - August 1st window restriction for all destructive database operations
+- **Profile Update Fix**: Resolved profile update API error by removing deprecated profilePictureUrl field
+- **Navigation Enhancement**: Added History tab to student navigation with comprehensive yearly data views
 
 ### July 17, 2025
 - **Profile Completion System**: Implemented mandatory profile completion before accessing dashboard/hours

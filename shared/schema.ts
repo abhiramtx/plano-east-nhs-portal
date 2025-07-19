@@ -51,6 +51,19 @@ export const userProfiles = pgTable("user_profiles", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const yearlyHistory = pgTable("yearly_history", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  schoolYear: text("school_year").notNull(), // e.g., "2024-2025"
+  totalHours: decimal("total_hours", { precision: 6, scale: 2 }).notNull().default("0"),
+  approvedHours: decimal("approved_hours", { precision: 6, scale: 2 }).notNull().default("0"),
+  submissionCount: integer("submission_count").notNull().default(0),
+  requirementMet: boolean("requirement_met").notNull().default(false),
+  submissions: text("submissions").notNull(), // JSON string of all submissions
+  monthlyData: text("monthly_data").notNull(), // JSON string of monthly breakdown
+  archivedAt: timestamp("archived_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -68,9 +81,16 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
   updatedAt: true,
 });
 
+export const insertYearlyHistorySchema = createInsertSchema(yearlyHistory).omit({
+  id: true,
+  archivedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertHoursSubmission = z.infer<typeof insertHoursSubmissionSchema>;
 export type HoursSubmission = typeof hoursSubmissions.$inferSelect;
 export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertYearlyHistory = z.infer<typeof insertYearlyHistorySchema>;
+export type YearlyHistory = typeof yearlyHistory.$inferSelect;

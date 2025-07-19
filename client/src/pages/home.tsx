@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, signInWithGoogle, signInWithMockUser, handleSignOut, onAuthStateChanged, initializeAuth } from "@/lib/firebase";
+import { User, signInWithGoogle, handleSignOut, onAuthStateChanged, initializeAuth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Paintbrush } from "lucide-react";
 
@@ -118,29 +118,6 @@ export default function Home() {
                   <span className="text-gray-700 font-medium">Continue with Google</span>
                 </button>
                 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-white px-2 text-gray-500">or</span>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={signInWithMockUser}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
-                  >
-                    Demo User 1
-                  </button>
-                  <button
-                    onClick={() => signInWithMockUser('demouser2@gmail.com')}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
-                  >
-                    Demo User 2
-                  </button>
-                </div>
               </div>
             )}
 

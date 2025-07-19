@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Palette,
   Menu,
-  X
+  X,
+  History as HistoryIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,6 +28,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
   const navigation = [
     { name: "Dashboard", href: "/student/dashboard", icon: LayoutDashboard },
     { name: "Hours", href: "/student/hours", icon: Clock },
+    { name: "History", href: "/student/history", icon: HistoryIcon },
     { name: "Profile", href: "/student/profile", icon: UserIcon },
   ];
 

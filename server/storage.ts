@@ -1,4 +1,4 @@
-import { users, hoursSubmissions, userProfiles, adminAssignments, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile } from "@shared/schema";
+import { users, hoursSubmissions, userProfiles, adminAssignments, yearlyHistory, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile, type YearlyHistory, type InsertYearlyHistory } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 
@@ -28,6 +28,13 @@ export interface IStorage {
   removeAdmin(emailKey: string): Promise<void>;
   getAdminAssignment(adminEmail: string): Promise<UserProfile | null>;
   releaseAssignment(adminEmail: string, currentStudentId?: string): Promise<UserProfile | null>;
+  
+  // Year-end management
+  createYearlyHistory(history: InsertYearlyHistory): Promise<YearlyHistory>;
+  getUserYearlyHistory(userId: string): Promise<YearlyHistory[]>;
+  archiveCurrentYear(schoolYear: string): Promise<void>;
+  wipeDatabaseForNewYear(): Promise<void>;
+  removeDemoData(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -309,6 +316,102 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error releasing assignment:", error);
       return null;
+    }
+  }
+
+  // Year-end management methods
+  async createYearlyHistory(history: InsertYearlyHistory): Promise<YearlyHistory> {
+    const [result] = await db
+      .insert(yearlyHistory)
+      .values(history)
+      .returning();
+    return result;
+  }
+
+  async getUserYearlyHistory(userId: string): Promise<YearlyHistory[]> {
+    return await db
+      .select()
+      .from(yearlyHistory)
+      .where(eq(yearlyHistory.userId, userId))
+      .orderBy(yearlyHistory.schoolYear);
+  }
+
+  async archiveCurrentYear(schoolYear: string): Promise<void> {
+    // Get all user profiles
+    const profiles = await db.select().from(userProfiles);
+    
+    for (const profile of profiles) {
+      // Get all submissions for this user
+      const submissions = await db
+        .select()
+        .from(hoursSubmissions)
+        .where(eq(hoursSubmissions.userId, profile.userId));
+      
+      // Calculate stats
+      const totalHours = submissions.reduce((sum, sub) => sum + parseFloat(sub.hours), 0);
+      const approvedHours = submissions.filter(sub => sub.status === 'approved').reduce((sum, sub) => sum + parseFloat(sub.hours), 0);
+      const submissionCount = submissions.length;
+      const requirementMet = approvedHours >= 15;
+      
+      // Calculate monthly data
+      const monthlyData = Array.from({ length: 12 }, (_, i) => {
+        const month = new Date(2024, i).toLocaleString('default', { month: 'short' });
+        const monthSubmissions = submissions.filter(sub => {
+          const subDate = new Date(sub.date);
+          return subDate.getMonth() === i && sub.status === 'approved';
+        });
+        const monthHours = monthSubmissions.reduce((sum, sub) => sum + parseFloat(sub.hours), 0);
+        return { month, hours: monthHours };
+      });
+      
+      // Create yearly history record
+      await this.createYearlyHistory({
+        userId: profile.userId,
+        schoolYear,
+        totalHours: totalHours.toString(),
+        approvedHours: approvedHours.toString(),
+        submissionCount,
+        requirementMet,
+        submissions: JSON.stringify(submissions),
+        monthlyData: JSON.stringify(monthlyData),
+      });
+    }
+  }
+
+  async wipeDatabaseForNewYear(): Promise<void> {
+    // Delete all hours submissions
+    await db.delete(hoursSubmissions);
+    
+    // Delete all admin assignments
+    await db.delete(adminAssignments);
+    
+    // Reset profile completion status but keep profiles
+    await db
+      .update(userProfiles)
+      .set({ isProfileComplete: false, updatedAt: new Date() });
+  }
+
+  async removeDemoData(): Promise<void> {
+    const demoEmails = [
+      'demo,student@gmail,com',
+      'demouser2@gmail,com',
+      'vabhiram20092@gmail,com'
+    ];
+    
+    // Delete demo submissions
+    for (const email of demoEmails) {
+      await db.delete(hoursSubmissions).where(eq(hoursSubmissions.userId, email));
+    }
+    
+    // Delete demo profiles
+    for (const email of demoEmails) {
+      await db.delete(userProfiles).where(eq(userProfiles.userId, email));
+    }
+    
+    // Delete demo admin assignments
+    for (const email of demoEmails) {
+      await db.delete(adminAssignments).where(eq(adminAssignments.adminEmail, email));
+      await db.delete(adminAssignments).where(eq(adminAssignments.assignedUserId, email));
     }
   }
 }
