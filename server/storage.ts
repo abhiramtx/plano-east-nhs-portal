@@ -190,9 +190,9 @@ export class DatabaseStorage implements IStorage {
       let assignedUserId: string;
       
       if (nonAdminUsers.length > 0) {
-        // Assign to a non-admin user using simple rotation based on current time
-        const timeBasedIndex = Math.floor(Date.now() / 10000) % nonAdminUsers.length;
-        assignedUserId = nonAdminUsers[timeBasedIndex].userId;
+        // Assign to a random non-admin user
+        const randomIndex = Math.floor(Math.random() * nonAdminUsers.length);
+        assignedUserId = nonAdminUsers[randomIndex].userId;
       } else if (adminUser) {
         // Only assign to admin if no other users have pending submissions
         assignedUserId = adminEmail;
@@ -233,13 +233,9 @@ export class DatabaseStorage implements IStorage {
         return null;
       }
       
-      // Try to get a different user than the admin first
-      let newAssignedUserId = usersWithPending[0].userId;
-      
-      // If first user is the admin and there are other options, pick the second one
-      if (newAssignedUserId === adminEmail && usersWithPending.length > 1) {
-        newAssignedUserId = usersWithPending[1].userId;
-      }
+      // Randomize the order and pick the first user that's not excluded
+      const shuffledUsers = [...usersWithPending].sort(() => Math.random() - 0.5);
+      const newAssignedUserId = shuffledUsers[0].userId;
       
       // Get the user profile (could be student or admin)
       const [userProfile] = await db
