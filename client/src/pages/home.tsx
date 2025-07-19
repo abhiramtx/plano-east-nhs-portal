@@ -127,12 +127,20 @@ export default function Home() {
                   </div>
                 </div>
                 
-                <button
-                  onClick={signInWithMockUser}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
-                >
-                  Try Demo (Mock User)
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={signInWithMockUser}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+                  >
+                    Demo User 1
+                  </button>
+                  <button
+                    onClick={() => signInWithMockUser('demouser2@gmail.com')}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2"
+                  >
+                    Demo User 2
+                  </button>
+                </div>
               </div>
             )}
 
