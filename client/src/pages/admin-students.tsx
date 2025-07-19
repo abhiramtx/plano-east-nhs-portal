@@ -140,6 +140,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
         phoneNumber: profile?.cellPhoneNumber || '',
         userRole: profile?.userRole || 0,
         isProfileComplete: profile?.isProfileComplete || false,
+        profilePictureUrl: profile?.profilePictureUrl || null,
         totalHours: 0,
         approvedHours: 0,
         pendingHours: 0,
@@ -570,8 +571,16 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-3">
-                              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
-                                <UserIcon className="w-5 h-5 text-white" />
+                              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full overflow-hidden">
+                                {student.profilePictureUrl ? (
+                                  <img 
+                                    src={student.profilePictureUrl} 
+                                    alt={student.studentName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <UserIcon className="w-5 h-5 text-white" />
+                                )}
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
@@ -617,7 +626,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                               </div>
                             </div>
                             
-                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 bg-gray-50 rounded-lg">
+                            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-4 p-3 border rounded-lg">
                               <div className="text-center">
                                 <p className="text-xs text-gray-600 mb-1">Total Hours</p>
                                 <p className="font-semibold text-gray-900">{student.totalHours.toFixed(1)}</p>
@@ -664,8 +673,16 @@ export function AdminStudents({ user }: AdminStudentsProps) {
               <div className="max-w-6xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
-                      <UserIcon className="w-8 h-8 text-white" />
+                    <div className="flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full overflow-hidden">
+                      {selectedStudent.profilePictureUrl ? (
+                        <img 
+                          src={selectedStudent.profilePictureUrl} 
+                          alt={selectedStudent.studentName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <UserIcon className="w-8 h-8 text-white" />
+                      )}
                     </div>
                     <div>
                       <h1 className="text-2xl font-bold text-gray-900">

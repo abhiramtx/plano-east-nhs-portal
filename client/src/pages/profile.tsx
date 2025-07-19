@@ -76,6 +76,8 @@ export default function Profile() {
       const payload = {
         ...data,
         userId: user?.email ? emailToKey(user.email) : '',
+        profilePictureUrl: user?.picture || null,
+        isProfileComplete: true,
       };
       console.log('Making API call with payload:', payload);
       const response = await apiRequest('PUT', '/api/user-profile', payload);
