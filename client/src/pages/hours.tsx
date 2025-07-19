@@ -102,18 +102,24 @@ export default function Hours() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Hours Management</h1>
               <p className="text-gray-600 mt-1">Track and manage your service hours</p>
             </div>
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Submit Hours
-                </Button>
-              </DialogTrigger>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
+                <span className="text-white text-sm font-medium">
+                  {user?.email.split('@')[0].substring(0, 2).toUpperCase()}
+                </span>
+              </div>
+              <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Submit Hours
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>
@@ -126,7 +132,8 @@ export default function Hours() {
                   editingSubmission={editingSubmission}
                 />
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            </div>
           </div>
         </div>
       </div>

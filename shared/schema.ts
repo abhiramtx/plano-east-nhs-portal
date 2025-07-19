@@ -45,7 +45,6 @@ export const userProfiles = pgTable("user_profiles", {
   artTeacherName: text("art_teacher_name"),
   artTeacherEmail: text("art_teacher_email"),
   phoneNumber: text("phone_number"),
-  profilePictureUrl: text("profile_picture_url"),
   isProfileComplete: boolean("is_profile_complete").default(false),
   userRole: integer("user_role").notNull().default(0), // 0 = student, 1 = admin
   createdAt: timestamp("created_at").defaultNow().notNull(),

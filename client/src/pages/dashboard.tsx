@@ -89,8 +89,10 @@ export default function Dashboard() {
               <p className="text-gray-600 mt-1">Welcome back, {user?.name?.split(' ')[0]}!</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                <Award className="w-5 h-5 text-white" />
+              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
+                <span className="text-white text-sm font-medium">
+                  {user?.email.split('@')[0].substring(0, 2).toUpperCase()}
+                </span>
               </div>
             </div>
           </div>
@@ -270,11 +272,11 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-80 overflow-y-auto">
                 {submissions.slice(0, 5).map((submission, index) => (
                   <div key={index} className="py-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {submission.description}
                         </p>
@@ -282,7 +284,7 @@ export default function Dashboard() {
                           {new Date(submission.date).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 flex-shrink-0">
                         <span className="text-sm font-medium text-gray-900">
                           {submission.hours}h
                         </span>

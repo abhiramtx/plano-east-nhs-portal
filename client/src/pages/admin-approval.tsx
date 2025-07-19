@@ -217,16 +217,10 @@ export function AdminApproval({ user }: AdminApprovalProps) {
           {/* Student Info */}
           <div className="p-4 border-b border-gray-200 bg-white">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full overflow-hidden">
-                {assignedStudent?.profilePictureUrl ? (
-                  <img 
-                    src={assignedStudent.profilePictureUrl} 
-                    alt={`${assignedStudent.goByFirstName} ${assignedStudent.lastName}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-5 h-5 text-white" />
-                )}
+              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
+                <span className="text-white text-sm font-medium">
+                  {assignedStudent?.userId.split('@')[0].substring(0, 2).toUpperCase()}
+                </span>
               </div>
               <div>
                 <div className="flex items-center space-x-2">
