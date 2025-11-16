@@ -1,4 +1,4 @@
-import { users, hoursSubmissions, userProfiles, adminAssignments, yearlyHistory, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile, type YearlyHistory, type InsertYearlyHistory } from "@shared/schema";
+import { users, hoursSubmissions, userProfiles, adminAssignments, yearlyHistory, projects, type User, type InsertUser, type HoursSubmission, type InsertHoursSubmission, type UserProfile, type InsertUserProfile, type YearlyHistory, type InsertYearlyHistory, type Project, type InsertProject } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 
@@ -21,6 +21,12 @@ export interface IStorage {
   getAllUserProfiles(): Promise<UserProfile[]>;
   getUserProfile(userId: string): Promise<UserProfile | undefined>;
   upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  
+  // Projects
+  getUserProjects(userId: string): Promise<Project[]>;
+  createProject(project: InsertProject): Promise<Project>;
+  updateProject(id: number, updates: Partial<Project>): Promise<Project | undefined>;
+  deleteProject(id: number): Promise<boolean>;
   
   // Admin management
   getAdminProfiles(): Promise<UserProfile[]>;
@@ -131,6 +137,39 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return newProfile;
     }
+  }
+
+  async getUserProjects(userId: string): Promise<Project[]> {
+    return await db
+      .select()
+      .from(projects)
+      .where(eq(projects.userId, userId))
+      .orderBy(projects.createdAt);
+  }
+
+  async createProject(insertProject: InsertProject): Promise<Project> {
+    const [project] = await db
+      .insert(projects)
+      .values(insertProject)
+      .returning();
+    return project;
+  }
+
+  async updateProject(id: number, updates: Partial<Project>): Promise<Project | undefined> {
+    const [project] = await db
+      .update(projects)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(projects.id, id))
+      .returning();
+    return project || undefined;
+  }
+
+  async deleteProject(id: number): Promise<boolean> {
+    const result = await db
+      .delete(projects)
+      .where(eq(projects.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   async getAdminProfiles(): Promise<UserProfile[]> {

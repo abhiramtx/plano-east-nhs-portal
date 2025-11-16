@@ -64,6 +64,18 @@ export const yearlyHistory = pgTable("yearly_history", {
   archivedAt: timestamp("archived_at").defaultNow().notNull(),
 });
 
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  projectName: text("project_name").notNull(),
+  role: text("role").notNull(),
+  completionDate: text("completion_date").notNull(), // e.g., "December 2024"
+  description: text("description"),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -86,6 +98,12 @@ export const insertYearlyHistorySchema = createInsertSchema(yearlyHistory).omit(
   archivedAt: true,
 });
 
+export const insertProjectSchema = createInsertSchema(projects).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertHoursSubmission = z.infer<typeof insertHoursSubmissionSchema>;
@@ -94,3 +112,5 @@ export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type InsertYearlyHistory = z.infer<typeof insertYearlyHistorySchema>;
 export type YearlyHistory = typeof yearlyHistory.$inferSelect;
+export type InsertProject = z.infer<typeof insertProjectSchema>;
+export type Project = typeof projects.$inferSelect;
