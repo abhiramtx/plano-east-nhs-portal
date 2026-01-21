@@ -1,154 +1,92 @@
-// Google OAuth configuration
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+import { initializeApp } from "firebase/app";
+import { 
+  getAuth, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut as firebaseSignOut,
+  onAuthStateChanged as firebaseOnAuthStateChanged,
+  type User as FirebaseUser
+} from "firebase/auth";
 
-// TypeScript declarations for Google Identity Services
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: any) => void;
-          prompt: () => void;
-        };
-      };
-    };
-  }
-}
+const firebaseConfig = {
+  apiKey: "AIzaSyBldNhs1GNNJtJtRgJqn1JuD0sYGFVMJWI",
+  authDomain: "volunteerio-893c1.firebaseapp.com",
+  projectId: "volunteerio-893c1",
+  storageBucket: "volunteerio-893c1.firebasestorage.app",
+  messagingSenderId: "1088273269747",
+  appId: "1:1088273269747:web:fd30fa3f6d2ced011e0886",
+  measurementId: "G-Z4J4ZJ4VMC"
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 export interface User {
   email: string;
   name: string;
   photoURL?: string;
-  sub?: string;
+  uid?: string;
 }
 
-// Simple auth state management
 let currentUser: User | null = null;
 let authListeners: ((user: User | null) => void)[] = [];
-
-export const onAuthStateChanged = (callback: (user: User | null) => void) => {
-  authListeners.push(callback);
-  // Call immediately with current state
-  callback(currentUser);
-  
-  // Return unsubscribe function
-  return () => {
-    authListeners = authListeners.filter(listener => listener !== callback);
-  };
-};
 
 const notifyAuthListeners = (user: User | null) => {
   currentUser = user;
   authListeners.forEach(listener => listener(user));
 };
 
-// Load Google Identity Services API
-const loadGoogleAPI = (): Promise<void> => {
-  return new Promise((resolve) => {
-    if (window.google && window.google.accounts) {
-      resolve();
-      return;
-    }
+const firebaseUserToUser = (fbUser: FirebaseUser | null): User | null => {
+  if (!fbUser || !fbUser.email) return null;
+  return {
+    email: fbUser.email,
+    name: fbUser.displayName || fbUser.email.split('@')[0],
+    photoURL: fbUser.photoURL || undefined,
+    uid: fbUser.uid
+  };
+};
 
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.onload = () => resolve();
-    document.head.appendChild(script);
-  });
+export const onAuthStateChanged = (callback: (user: User | null) => void) => {
+  authListeners.push(callback);
+  callback(currentUser);
+  
+  return () => {
+    authListeners = authListeners.filter(listener => listener !== callback);
+  };
 };
 
 export const signInWithGoogle = async () => {
-  if (!GOOGLE_CLIENT_ID) {
-    console.error('Google Client ID not configured');
-    return;
-  }
-
-  await loadGoogleAPI();
-
-  // Initialize Google OAuth
-  window.google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleCredentialResponse,
-  });
-
-  // Trigger the sign-in popup
-  window.google.accounts.id.prompt();
-};
-
-const handleCredentialResponse = (response: any) => {
   try {
-    // Decode the JWT token to get user info
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    
-    const user: User = {
-      email: payload.email,
-      name: payload.name,
-      picture: payload.picture,
-      sub: payload.sub
-    };
-
-    localStorage.setItem('user', JSON.stringify(user));
-    notifyAuthListeners(user);
+    const result = await signInWithPopup(auth, googleProvider);
+    const user = firebaseUserToUser(result.user);
+    if (user) {
+      notifyAuthListeners(user);
+    }
+    return user;
   } catch (error) {
-    console.error('Failed to process Google sign-in:', error);
+    console.error('Failed to sign in with Google:', error);
+    throw error;
   }
 };
 
-// Mock sign-in function for demo
-// Removed demo user functionality for production
-
-export const handleSignOut = () => {
-  localStorage.removeItem('user');
-  localStorage.removeItem('oauth_state');
-  notifyAuthListeners(null);
-  return Promise.resolve();
+export const handleSignOut = async () => {
+  try {
+    await firebaseSignOut(auth);
+    notifyAuthListeners(null);
+  } catch (error) {
+    console.error('Failed to sign out:', error);
+    throw error;
+  }
 };
 
 export const getCurrentUser = (): User | null => {
   return currentUser;
 };
 
-// Initialize auth state from localStorage
 export const initializeAuth = () => {
-  const storedUser = localStorage.getItem('user');
-  if (storedUser) {
-    try {
-      const user = JSON.parse(storedUser);
-      notifyAuthListeners(user);
-    } catch (error) {
-      console.error('Failed to parse stored user:', error);
-      localStorage.removeItem('user');
-    }
-  }
-};
-
-// Handle OAuth callback
-export const handleOAuthCallback = async (code: string, state: string): Promise<User> => {
-  const storedState = localStorage.getItem('oauth_state');
-  if (state !== storedState) {
-    throw new Error('Invalid state parameter');
-  }
-  
-  // For demo purposes, we'll simulate a successful OAuth flow
-  // In a real app, you'd exchange the code for tokens on your backend
-  const mockUser: User = {
-    email: 'demo@example.com',
-    name: 'Demo User',
-    picture: 'https://via.placeholder.com/96',
-    sub: 'demo-user-id'
-  };
-  
-  localStorage.setItem('user', JSON.stringify(mockUser));
-  localStorage.removeItem('oauth_state');
-  notifyAuthListeners(mockUser);
-  
-  return mockUser;
-};
-
-// Auth object for compatibility with older Firebase patterns
-export const auth = {
-  onAuthStateChanged: (callback: (user: any) => void) => {
-    return onAuthStateChanged(callback);
-  },
-  signOut: handleSignOut
+  firebaseOnAuthStateChanged(auth, (fbUser) => {
+    const user = firebaseUserToUser(fbUser);
+    notifyAuthListeners(user);
+  });
 };
