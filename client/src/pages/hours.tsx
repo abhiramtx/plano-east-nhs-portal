@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getCurrentUser } from "@/lib/firebase";
-import { HoursSubmission } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { User, getCurrentUser, getUserSubmissions, deleteSubmission, HoursSubmission } from "@/lib/firebase";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,16 +11,12 @@ import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-// Helper function to convert email to storage key
-const emailToKey = (email: string) => email.replace(/\./g, ',');
-
 export default function Hours() {
   const [user, setUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSubmission, setEditingSubmission] = useState<HoursSubmission | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<HoursSubmission | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -30,17 +25,20 @@ export default function Hours() {
     }
   }, []);
 
-  const { data: submissions = [], isLoading } = useQuery({
-    queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''],
-    enabled: !!user?.email,
+  const userEmail = user?.email || '';
+
+  const { data: submissions = [], isLoading } = useQuery<HoursSubmission[]>({
+    queryKey: ['firebase-user-submissions', userEmail],
+    queryFn: () => getUserSubmissions(userEmail),
+    enabled: !!userEmail,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest('DELETE', `/api/hours-submissions/${id}`);
+    mutationFn: async (id: string) => {
+      await deleteSubmission(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', userEmail] });
       toast({
         title: "Success",
         description: "Hours submission deleted successfully",
@@ -85,7 +83,7 @@ export default function Hours() {
   const handleFormSuccess = () => {
     setIsFormOpen(false);
     setEditingSubmission(null);
-    queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''] });
+    queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', userEmail] });
   };
 
   const formatDate = (dateString: string) => {
@@ -99,7 +97,6 @@ export default function Hours() {
   return (
     <ProfileCompletionGuard user={user}>
       <div className="flex-1 flex flex-col h-full bg-white">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
@@ -136,7 +133,6 @@ export default function Hours() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -183,7 +179,7 @@ export default function Hours() {
                             </div>
                           </div>
                           
-                          <h3 className="font-medium text-gray-900 mb-2">{submission.activityName || submission.studentName}</h3>
+                          <h3 className="font-medium text-gray-900 mb-2">{submission.activityName || submission.userEmail}</h3>
                           <p className="text-gray-600 mb-4">{submission.description}</p>
                           
                           {submission.status === 'rejected' && submission.rejectReason && (
@@ -246,7 +242,6 @@ export default function Hours() {
         )}
       </div>
 
-      {/* Image Modal */}
       {selectedSubmission && selectedSubmission.proofImageUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="relative max-w-4xl max-h-[90vh] overflow-auto">

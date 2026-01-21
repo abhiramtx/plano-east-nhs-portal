@@ -127,6 +127,11 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     }
   }, [userClubData, onClubSelected]);
 
+  const filteredClubs = clubs.filter(club => 
+    club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    club.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (userClubLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -138,11 +143,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   if (userClubData?.club && userClubData?.membership) {
     return null;
   }
-
-  const filteredClubs = clubs.filter(club => 
-    club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    club.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const handleCreateClub = () => {
     if (!newClub.name.trim()) {

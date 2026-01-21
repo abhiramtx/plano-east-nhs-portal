@@ -3,9 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { User } from "@/lib/firebase";
-import { insertHoursSubmissionSchema, HoursSubmission } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { User, HoursSubmission, createSubmission, updateSubmission } from "@/lib/firebase";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +12,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Upload, X } from "lucide-react";
 
-// Helper function to compress image more aggressively
 const compressImage = (file: File): Promise<File> => {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas');
@@ -21,7 +19,6 @@ const compressImage = (file: File): Promise<File> => {
     const img = new Image();
     
     img.onload = () => {
-      // Calculate new dimensions (max 400px width/height for storage efficiency)
       const maxSize = 400;
       let { width, height } = img;
       
@@ -40,7 +37,6 @@ const compressImage = (file: File): Promise<File> => {
       canvas.width = width;
       canvas.height = height;
       
-      // Draw and compress
       ctx.drawImage(img, 0, 0, width, height);
       
       canvas.toBlob((blob) => {
@@ -49,20 +45,16 @@ const compressImage = (file: File): Promise<File> => {
           lastModified: Date.now()
         });
         resolve(compressedFile);
-      }, 'image/jpeg', 0.6); // 60% quality for smaller files
+      }, 'image/jpeg', 0.6);
     };
     
     img.src = URL.createObjectURL(file);
   });
 };
 
-const formSchema = insertHoursSubmissionSchema.pick({
-  userId: true,
-  activityName: true,
-  description: true,
-  status: true,
-  proofImageUrl: true,
-}).extend({
+const formSchema = z.object({
+  activityName: z.string().min(1, "Activity name is required"),
+  description: z.string().min(1, "Description is required"),
   date: z.string().min(1, "Date is required"),
   hours: z.string().min(1, "Hours is required"),
 });
@@ -73,12 +65,10 @@ interface HoursSubmissionFormProps {
   user: User | null;
   onSuccess: () => void;
   editingSubmission?: HoursSubmission | null;
+  clubId?: string;
 }
 
-// Helper function to convert email to storage key
-const emailToKey = (email: string) => email.replace(/\./g, ',');
-
-export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: HoursSubmissionFormProps) {
+export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId }: HoursSubmissionFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(editingSubmission?.proofImageUrl || null);
   const { toast } = useToast();
@@ -86,22 +76,17 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: Hour
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      userId: user?.email ? emailToKey(user.email) : "",
       activityName: editingSubmission?.activityName || "",
       description: editingSubmission?.description || "",
-      date: editingSubmission?.date || "",
+      date: editingSubmission?.date ? editingSubmission.date.split('T')[0] : "",
       hours: editingSubmission?.hours ? editingSubmission.hours.toString() : "",
-      status: "pending",
-      proofImageUrl: editingSubmission?.proofImageUrl || null,
     },
   });
 
   const submitMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // Convert file to base64 for mock storage (in real app, upload to storage service)
-      let proofImageUrl = null;
+      let proofImageUrl = editingSubmission?.proofImageUrl;
       if (selectedFile) {
-        // Compress image before converting to base64
         const compressedFile = await compressImage(selectedFile);
         const reader = new FileReader();
         const base64Promise = new Promise<string>((resolve) => {
@@ -111,16 +96,29 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: Hour
         proofImageUrl = await base64Promise;
       }
 
-      const submissionData = {
-        ...data,
-        date: new Date(data.date).toISOString(),
-        proofImageUrl: proofImageUrl || editingSubmission?.proofImageUrl,
-      };
+      const now = new Date().toISOString();
 
       if (editingSubmission) {
-        return await apiRequest('PUT', `/api/hours-submissions/${editingSubmission.id}`, submissionData);
+        await updateSubmission(editingSubmission.id, {
+          activityName: data.activityName,
+          description: data.description,
+          date: new Date(data.date).toISOString(),
+          hours: parseFloat(data.hours),
+          proofImageUrl: proofImageUrl,
+          status: 'pending',
+        });
       } else {
-        return await apiRequest('POST', '/api/hours-submissions', submissionData);
+        await createSubmission({
+          clubId: clubId || '',
+          userEmail: user?.email || '',
+          userName: user?.name || '',
+          hours: parseFloat(data.hours),
+          description: data.description,
+          activityName: data.activityName,
+          date: new Date(data.date).toISOString(),
+          proofImageUrl: proofImageUrl,
+          createdAt: now,
+        });
       }
     },
     onSuccess: () => {
@@ -131,6 +129,8 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: Hour
       form.reset();
       setSelectedFile(null);
       setImagePreview(null);
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-submissions'] });
       onSuccess();
     },
     onError: (error) => {
@@ -146,7 +146,6 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: Hour
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Check file type
       if (!file.type.startsWith('image/')) {
         toast({
           title: "Invalid file type",
@@ -156,7 +155,6 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: Hour
         return;
       }
 
-      // Check file size (1MB limit for better storage efficiency)
       if (file.size > 1 * 1024 * 1024) {
         toast({
           title: "File too large",
@@ -168,7 +166,6 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: Hour
 
       setSelectedFile(file);
       
-      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
@@ -249,10 +246,10 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: Hour
       <div>
         <Label>Proof of Service (Optional)</Label>
         <p className="text-sm text-gray-600 mb-3">
-          Upload a photo as proof of your service (JPG or PNG, max 5MB)
+          Upload a photo as proof of your service (JPG or PNG, max 1MB)
         </p>
         
-        {!selectedFile ? (
+        {!selectedFile && !imagePreview ? (
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
             <input
               type="file"
@@ -283,7 +280,9 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission }: Hour
             >
               <X className="w-4 h-4" />
             </button>
-            <p className="text-sm text-gray-600 mt-2">{selectedFile.name}</p>
+            {selectedFile && (
+              <p className="text-sm text-gray-600 mt-2">{selectedFile.name}</p>
+            )}
           </div>
         )}
       </div>

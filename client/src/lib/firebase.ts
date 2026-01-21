@@ -82,6 +82,10 @@ export interface HoursSubmission {
   description: string;
   proofImageUrl?: string;
   status: string;
+  date: string;
+  activityName?: string;
+  rejectReason?: string;
+  createdAt: string;
   submittedAt: Date;
   reviewedAt?: Date;
   reviewedBy?: string;
@@ -318,12 +322,20 @@ export const getClubSubmissions = async (clubId: string): Promise<HoursSubmissio
   })) as HoursSubmission[];
 };
 
-export const getUserSubmissions = async (userEmail: string, clubId: string): Promise<HoursSubmission[]> => {
-  const q = query(
-    collection(db, "submissions"),
-    where("userEmail", "==", userEmail),
-    where("clubId", "==", clubId)
-  );
+export const getUserSubmissions = async (userEmail: string, clubId?: string): Promise<HoursSubmission[]> => {
+  let q;
+  if (clubId) {
+    q = query(
+      collection(db, "submissions"),
+      where("userEmail", "==", userEmail),
+      where("clubId", "==", clubId)
+    );
+  } else {
+    q = query(
+      collection(db, "submissions"),
+      where("userEmail", "==", userEmail)
+    );
+  }
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
     id: doc.id,

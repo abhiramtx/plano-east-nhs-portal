@@ -1,14 +1,11 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User, getCurrentUser } from "@/lib/firebase";
+import { User, getCurrentUser, getUserSubmissions, HoursSubmission } from "@/lib/firebase";
 import { Clock, TrendingUp, Calendar, Award, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
-import type { HoursSubmission } from "@shared/schema";
-
-const emailToKey = (email: string) => email.replace(/\./g, ',');
 
 export default function Dashboard() {
   const [user, setUser] = useState<User | null>(null);
@@ -20,20 +17,21 @@ export default function Dashboard() {
     }
   }, []);
 
+  const userEmail = user?.email || '';
+
   const { data: submissions = [] } = useQuery<HoursSubmission[]>({
-    queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''],
-    enabled: !!user?.email,
+    queryKey: ['firebase-user-submissions', userEmail],
+    queryFn: () => getUserSubmissions(userEmail),
+    enabled: !!userEmail,
   });
 
-  // Calculate statistics
   const stats = {
-    totalHours: submissions.reduce((sum, sub) => sum + parseFloat(sub.hours), 0),
-    approvedHours: submissions.filter(sub => sub.status === 'approved').reduce((sum, sub) => sum + parseFloat(sub.hours), 0),
-    pendingHours: submissions.filter(sub => sub.status === 'pending').reduce((sum, sub) => sum + parseFloat(sub.hours), 0),
+    totalHours: submissions.reduce((sum, sub) => sum + sub.hours, 0),
+    approvedHours: submissions.filter(sub => sub.status === 'approved').reduce((sum, sub) => sum + sub.hours, 0),
+    pendingHours: submissions.filter(sub => sub.status === 'pending').reduce((sum, sub) => sum + sub.hours, 0),
     submissionCount: submissions.length,
   };
 
-  // Monthly data for chart - Initialize with some sample data points
   const monthlyData = [
     { month: "Jun", hours: 0 },
     { month: "Jul", hours: 0 },
@@ -49,28 +47,11 @@ export default function Dashboard() {
     { month: "May", hours: 0 },
   ];
 
-  // Add some sample data if no submissions exist to show chart structure
-  if (submissions.length === 0) {
-    monthlyData[0].hours = 0;
-    monthlyData[1].hours = 0;
-    monthlyData[2].hours = 0;
-    monthlyData[3].hours = 0;
-    monthlyData[4].hours = 0;
-    monthlyData[5].hours = 0;
-    monthlyData[6].hours = 0;
-    monthlyData[7].hours = 0;
-    monthlyData[8].hours = 0;
-    monthlyData[9].hours = 0;
-    monthlyData[10].hours = 0;
-    monthlyData[11].hours = 0;
-  }
-
-  // Calculate monthly hours from submissions
   submissions.forEach(sub => {
     const month = new Date(sub.date).toLocaleString('default', { month: 'short' });
     const monthData = monthlyData.find(m => m.month === month);
     if (monthData && sub.status === 'approved') {
-      monthData.hours += parseFloat(sub.hours);
+      monthData.hours += sub.hours;
     }
   });
 
@@ -79,7 +60,6 @@ export default function Dashboard() {
   return (
     <ProfileCompletionGuard user={user}>
     <div className="flex-1 flex flex-col bg-white min-h-0">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
@@ -96,9 +76,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-auto p-4 lg:p-6">
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
           <Card>
             <CardContent className="p-6">
@@ -157,7 +135,6 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Requirements Status */}
         <div className="mb-6 lg:mb-8">
           <Card>
             <CardContent className="p-6">
@@ -187,7 +164,6 @@ export default function Dashboard() {
                 </div>
               </div>
               
-              {/* Progress Bar */}
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-gray-600">Progress</span>
@@ -206,7 +182,6 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Monthly Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           <Card>
             <CardHeader>
