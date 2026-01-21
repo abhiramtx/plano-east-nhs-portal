@@ -1,10 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertHoursSubmissionSchema, insertUserProfileSchema, insertProjectSchema } from "@shared/schema";
+import { insertHoursSubmissionSchema, insertUserProfileSchema, insertProjectSchema, insertClubSchema, insertClubMembershipSchema, insertServiceRequestSchema, insertServiceParticipantSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Hours submissions routes
   app.get("/api/hours-submissions/:userId", async (req, res) => {
     try {
       const { userId } = req.params;
@@ -17,21 +16,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/hours-submissions", async (req, res) => {
     try {
-      // Get user profile to populate student info
       const userProfile = await storage.getUserProfile(req.body.userId);
       if (!userProfile) {
         return res.status(400).json({ error: "User profile not found. Please complete your profile first." });
       }
-
-      // Transform the date string to Date object and populate student info
+      const membership = await storage.getUserClubMembership(req.body.userId);
       const requestData = {
         ...req.body,
         date: new Date(req.body.date),
-        // Add student info from profile
         studentName: `${userProfile.goByFirstName} ${userProfile.lastName}`,
         studentId: userProfile.studentId,
+        clubId: membership?.clubId || null,
       };
-      
       const validatedData = insertHoursSubmissionSchema.parse(requestData);
       const submission = await storage.createHoursSubmission(validatedData);
       res.status(201).json(submission);
@@ -44,44 +40,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/hours-submissions/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
-      // Check if this is a status update (approve/reject) or a regular edit
       if (req.body.status && ['approved', 'rejected'].includes(req.body.status)) {
-        // Status update - don't reset to pending, preserve the new status
         const updateData = {
           status: req.body.status,
           rejectReason: req.body.rejectReason || null,
           updatedAt: new Date(),
         };
-        
         const submission = await storage.updateHoursSubmission(id, updateData);
-        
-        if (!submission) {
-          return res.status(404).json({ error: "Submission not found" });
-        }
-        
+        if (!submission) return res.status(404).json({ error: "Submission not found" });
         res.json(submission);
       } else {
-        // Regular edit - reset status to pending
         const requestData = {
           ...req.body,
           date: req.body.date ? new Date(req.body.date) : undefined,
-          status: 'pending', // Reset status to pending when edited
-          rejectReason: null, // Clear reject reason when edited
+          status: 'pending',
+          rejectReason: null,
           updatedAt: new Date(),
         };
-        
-        // Remove undefined values
-        const cleanedData = Object.fromEntries(
-          Object.entries(requestData).filter(([_, value]) => value !== undefined)
-        );
-        
+        const cleanedData = Object.fromEntries(Object.entries(requestData).filter(([_, value]) => value !== undefined));
         const submission = await storage.updateHoursSubmission(id, cleanedData);
-        
-        if (!submission) {
-          return res.status(404).json({ error: "Submission not found" });
-        }
-        
+        if (!submission) return res.status(404).json({ error: "Submission not found" });
         res.json(submission);
       }
     } catch (error) {
@@ -94,11 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteHoursSubmission(id);
-      
-      if (!success) {
-        return res.status(404).json({ error: "Submission not found" });
-      }
-      
+      if (!success) return res.status(404).json({ error: "Submission not found" });
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete submission" });
@@ -114,7 +88,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User profile routes
   app.get("/api/user-profiles", async (req, res) => {
     try {
       const profiles = await storage.getAllUserProfiles();
@@ -128,11 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const profile = await storage.getUserProfile(userId);
-      
-      if (!profile) {
-        return res.status(404).json({ error: "Profile not found" });
-      }
-      
+      if (!profile) return res.status(404).json({ error: "Profile not found" });
       res.json(profile);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch user profile" });
@@ -141,11 +110,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/user-profile", async (req, res) => {
     try {
-      console.log("Received profile data:", req.body);
       const validatedData = insertUserProfileSchema.parse(req.body);
-      console.log("Validated profile data:", validatedData);
       const profile = await storage.upsertUserProfile(validatedData);
-      console.log("Saved profile:", profile);
       res.json(profile);
     } catch (error) {
       console.error("Profile validation error:", error);
@@ -153,12 +119,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Project routes
   app.get("/api/projects/:userId", async (req, res) => {
     try {
       const { userId } = req.params;
-      const projects = await storage.getUserProjects(userId);
-      res.json(projects);
+      const projectsList = await storage.getUserProjects(userId);
+      res.json(projectsList);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch projects" });
     }
@@ -179,11 +144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.updateProject(id, req.body);
-      
-      if (!project) {
-        return res.status(404).json({ error: "Project not found" });
-      }
-      
+      if (!project) return res.status(404).json({ error: "Project not found" });
       res.json(project);
     } catch (error) {
       console.error("Project update error:", error);
@@ -195,18 +156,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteProject(id);
-      
-      if (!success) {
-        return res.status(404).json({ error: "Project not found" });
-      }
-      
+      if (!success) return res.status(404).json({ error: "Project not found" });
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete project" });
     }
   });
 
-  // Admin management routes
   app.get("/api/admin-profiles", async (req, res) => {
     try {
       const adminProfiles = await storage.getAdminProfiles();
@@ -219,9 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin-profiles", async (req, res) => {
     try {
       const { email } = req.body;
-      if (!email) {
-        return res.status(400).json({ error: "Email is required" });
-      }
+      if (!email) return res.status(400).json({ error: "Email is required" });
       const result = await storage.promoteToAdmin(email);
       res.json(result);
     } catch (error) {
@@ -232,20 +186,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin-profiles/:emailKey", async (req, res) => {
     try {
       const { emailKey } = req.params;
-      const result = await storage.removeAdmin(emailKey);
-      res.json(result);
+      await storage.removeAdmin(emailKey);
+      res.json({ success: true });
     } catch (error) {
       res.status(400).json({ error: "Failed to remove admin", message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
-  // Admin assignment system
   app.get("/api/admin-assignment/:adminEmail", async (req, res) => {
     try {
       const { adminEmail } = req.params;
-      console.log('Getting admin assignment for:', adminEmail);
       const assignment = await storage.getAdminAssignment(adminEmail);
-      console.log('Assignment result:', assignment);
       res.json(assignment);
     } catch (error) {
       console.error('Admin assignment error:', error);
@@ -263,7 +214,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Year-end management routes
   app.get("/api/yearly-history/:userId", async (req, res) => {
     try {
       const { userId } = req.params;
@@ -277,22 +227,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/archive-year", async (req, res) => {
     try {
       const { schoolYear } = req.body;
-      if (!schoolYear) {
-        return res.status(400).json({ error: "School year is required" });
-      }
-      
-      // Check date restriction (May 1st - August 1st)
+      if (!schoolYear) return res.status(400).json({ error: "School year is required" });
       const now = new Date();
       const currentYear = now.getFullYear();
-      const mayFirst = new Date(currentYear, 4, 1); // May 1st (month is 0-indexed)
-      const augFirst = new Date(currentYear, 7, 1); // August 1st
-      
+      const mayFirst = new Date(currentYear, 4, 1);
+      const augFirst = new Date(currentYear, 7, 1);
       if (now < mayFirst || now > augFirst) {
-        return res.status(403).json({ 
-          error: "Database operations are only allowed between May 1st and August 1st" 
-        });
+        return res.status(403).json({ error: "Database operations are only allowed between May 1st and August 1st" });
       }
-      
       await storage.archiveCurrentYear(schoolYear);
       res.json({ success: true, message: "Year archived successfully" });
     } catch (error) {
@@ -303,18 +245,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/wipe-database", async (req, res) => {
     try {
-      // Check date restriction (May 1st - August 1st)
       const now = new Date();
       const currentYear = now.getFullYear();
-      const mayFirst = new Date(currentYear, 4, 1); // May 1st (month is 0-indexed)
-      const augFirst = new Date(currentYear, 7, 1); // August 1st
-      
+      const mayFirst = new Date(currentYear, 4, 1);
+      const augFirst = new Date(currentYear, 7, 1);
       if (now < mayFirst || now > augFirst) {
-        return res.status(403).json({ 
-          error: "Database wipe is only allowed between May 1st and August 1st" 
-        });
+        return res.status(403).json({ error: "Database wipe is only allowed between May 1st and August 1st" });
       }
-      
       await storage.wipeDatabaseForNewYear();
       res.json({ success: true, message: "Database wiped successfully" });
     } catch (error) {
@@ -333,7 +270,388 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
+  app.get("/api/clubs", async (req, res) => {
+    try {
+      const clubsList = await storage.getAllClubs();
+      res.json(clubsList);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch clubs" });
+    }
+  });
 
+  app.get("/api/clubs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const club = await storage.getClub(id);
+      if (!club) return res.status(404).json({ error: "Club not found" });
+      res.json(club);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch club" });
+    }
+  });
+
+  app.post("/api/clubs", async (req, res) => {
+    try {
+      const existingClub = await storage.getClubByName(req.body.name);
+      if (existingClub) return res.status(400).json({ error: "Club name already exists" });
+      const existingMembership = await storage.getUserClubMembership(req.body.creatorEmail);
+      if (existingMembership) return res.status(400).json({ error: "You are already a member of another club" });
+      const validatedData = insertClubSchema.parse(req.body);
+      const club = await storage.createClub(validatedData);
+      await storage.createClubMembership({ clubId: club.id, userEmail: req.body.creatorEmail, role: 'admin' });
+      const profile = await storage.getUserProfile(req.body.creatorEmail);
+      if (profile) {
+        await storage.upsertUserProfile({ ...profile, currentClubId: club.id });
+      }
+      res.status(201).json(club);
+    } catch (error) {
+      console.error("Club creation error:", error);
+      res.status(400).json({ error: "Invalid club data", details: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.put("/api/clubs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const club = await storage.updateClub(id, req.body);
+      if (!club) return res.status(404).json({ error: "Club not found" });
+      res.json(club);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update club" });
+    }
+  });
+
+  app.delete("/api/clubs/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteClub(id);
+      if (!success) return res.status(404).json({ error: "Club not found" });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete club" });
+    }
+  });
+
+  app.get("/api/clubs/:id/members", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const members = await storage.getClubMemberships(id);
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch club members" });
+    }
+  });
+
+  app.post("/api/clubs/:id/join", async (req, res) => {
+    try {
+      const clubId = parseInt(req.params.id);
+      const { userEmail, password } = req.body;
+      const club = await storage.getClub(clubId);
+      if (!club) return res.status(404).json({ error: "Club not found" });
+      if (club.isPrivate && club.password !== password) {
+        return res.status(403).json({ error: "Incorrect password" });
+      }
+      const existingMembership = await storage.getUserClubMembership(userEmail);
+      if (existingMembership) return res.status(400).json({ error: "You are already a member of another club" });
+      const membership = await storage.createClubMembership({ clubId, userEmail, role: 'member' });
+      const profile = await storage.getUserProfile(userEmail);
+      if (profile) {
+        await storage.upsertUserProfile({ ...profile, currentClubId: clubId });
+      }
+      res.status(201).json(membership);
+    } catch (error) {
+      console.error("Join club error:", error);
+      res.status(400).json({ error: "Failed to join club" });
+    }
+  });
+
+  app.post("/api/clubs/:id/leave", async (req, res) => {
+    try {
+      const clubId = parseInt(req.params.id);
+      const { userEmail } = req.body;
+      const membership = await storage.getClubMembershipByEmailAndClub(userEmail, clubId);
+      if (!membership) return res.status(404).json({ error: "Membership not found" });
+      await storage.deleteClubMembership(membership.id);
+      const profile = await storage.getUserProfile(userEmail);
+      if (profile) {
+        await storage.upsertUserProfile({ ...profile, currentClubId: null });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to leave club" });
+    }
+  });
+
+  app.post("/api/clubs/:id/kick", async (req, res) => {
+    try {
+      const clubId = parseInt(req.params.id);
+      const { userEmail, adminEmail } = req.body;
+      const adminMembership = await storage.getClubMembershipByEmailAndClub(adminEmail, clubId);
+      if (!adminMembership || adminMembership.role !== 'admin') {
+        return res.status(403).json({ error: "Only admins can kick members" });
+      }
+      const membership = await storage.getClubMembershipByEmailAndClub(userEmail, clubId);
+      if (!membership) return res.status(404).json({ error: "Member not found" });
+      await storage.deleteClubMembership(membership.id);
+      const profile = await storage.getUserProfile(userEmail);
+      if (profile) {
+        await storage.upsertUserProfile({ ...profile, currentClubId: null });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to kick member" });
+    }
+  });
+
+  app.get("/api/user-club/:userEmail", async (req, res) => {
+    try {
+      const { userEmail } = req.params;
+      const membership = await storage.getUserClubMembership(userEmail);
+      if (!membership) return res.json(null);
+      const club = await storage.getClub(membership.clubId);
+      res.json({ membership, club });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user club" });
+    }
+  });
+
+  app.get("/api/leaderboard/clubs", async (req, res) => {
+    try {
+      const period = (req.query.period as string) || 'all';
+      const clubsList = await storage.getClubLeaderboard(period);
+      res.json(clubsList);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch club leaderboard" });
+    }
+  });
+
+  app.get("/api/leaderboard/members/:clubId", async (req, res) => {
+    try {
+      const clubId = parseInt(req.params.clubId);
+      const members = await storage.getMemberLeaderboard(clubId);
+      res.json(members);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch member leaderboard" });
+    }
+  });
+
+  app.get("/api/service-requests", async (req, res) => {
+    try {
+      const requests = await storage.getAllServiceRequests();
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch service requests" });
+    }
+  });
+
+  app.get("/api/service-requests/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const request = await storage.getServiceRequest(id);
+      if (!request) return res.status(404).json({ error: "Service request not found" });
+      res.json(request);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch service request" });
+    }
+  });
+
+  app.post("/api/service-requests", async (req, res) => {
+    try {
+      const validatedData = insertServiceRequestSchema.parse({
+        ...req.body,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate) : null,
+      });
+      const request = await storage.createServiceRequest(validatedData);
+      res.status(201).json(request);
+    } catch (error) {
+      console.error("Service request creation error:", error);
+      res.status(400).json({ error: "Invalid service request data", details: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.put("/api/service-requests/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const request = await storage.updateServiceRequest(id, req.body);
+      if (!request) return res.status(404).json({ error: "Service request not found" });
+      res.json(request);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update service request" });
+    }
+  });
+
+  app.delete("/api/service-requests/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteServiceRequest(id);
+      if (!success) return res.status(404).json({ error: "Service request not found" });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete service request" });
+    }
+  });
+
+  app.get("/api/service-requests/:id/participants", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const participants = await storage.getServiceParticipants(id);
+      res.json(participants);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch participants" });
+    }
+  });
+
+  app.post("/api/service-requests/:id/join", async (req, res) => {
+    try {
+      const serviceRequestId = parseInt(req.params.id);
+      const { userEmail, userName } = req.body;
+      const membership = await storage.getUserClubMembership(userEmail);
+      const participant = await storage.createServiceParticipant({
+        serviceRequestId,
+        userEmail,
+        userName,
+        clubId: membership?.clubId || null,
+      });
+      res.status(201).json(participant);
+    } catch (error) {
+      console.error("Join service request error:", error);
+      res.status(400).json({ error: "Failed to join service request" });
+    }
+  });
+
+  app.post("/api/service-participants/:id/approve", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { hoursAwarded, requesterEmail } = req.body;
+      const participant = await storage.getServiceParticipant(id);
+      if (!participant) return res.status(404).json({ error: "Participant not found" });
+      const serviceRequest = await storage.getServiceRequest(participant.serviceRequestId);
+      if (!serviceRequest) return res.status(404).json({ error: "Service request not found" });
+      if (serviceRequest.requesterEmail !== requesterEmail) {
+        return res.status(403).json({ error: "Only the requester can approve hours" });
+      }
+      const updatedParticipant = await storage.updateServiceParticipant(id, {
+        hoursAwarded: hoursAwarded.toString(),
+        hoursApproved: true,
+        completedAt: new Date(),
+      });
+      if (updatedParticipant && updatedParticipant.clubId) {
+        const profile = await storage.getUserProfile(updatedParticipant.userEmail);
+        const bonusMultiplier = serviceRequest.isHighNeedArea ? 1.5 : 1;
+        const bonusHours = serviceRequest.isHighNeedArea ? (parseFloat(hoursAwarded) * 0.5).toString() : "0";
+        await storage.createHoursSubmission({
+          userId: updatedParticipant.userEmail,
+          clubId: updatedParticipant.clubId,
+          activityName: serviceRequest.title,
+          studentName: profile ? `${profile.goByFirstName} ${profile.lastName}` : updatedParticipant.userName,
+          studentId: profile?.studentId || null,
+          description: `Service request: ${serviceRequest.description}`,
+          date: new Date(),
+          hours: hoursAwarded.toString(),
+          status: 'approved',
+          serviceRequestId: serviceRequest.id,
+          isHighNeedArea: serviceRequest.isHighNeedArea || false,
+          bonusHoursAwarded: bonusHours,
+          locationLat: serviceRequest.locationLat,
+          locationLng: serviceRequest.locationLng,
+        });
+      }
+      res.json(updatedParticipant);
+    } catch (error) {
+      console.error("Approve hours error:", error);
+      res.status(500).json({ error: "Failed to approve hours" });
+    }
+  });
+
+  app.delete("/api/service-participants/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteServiceParticipant(id);
+      if (!success) return res.status(404).json({ error: "Participant not found" });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove participant" });
+    }
+  });
+
+  app.get("/api/high-need-areas", async (req, res) => {
+    try {
+      const areas = await storage.getAllHighNeedAreas();
+      res.json(areas);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch high need areas" });
+    }
+  });
+
+  app.post("/api/high-need-areas", async (req, res) => {
+    try {
+      const area = await storage.createHighNeedArea(req.body);
+      res.status(201).json(area);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to create high need area" });
+    }
+  });
+
+  app.get("/api/settings", async (req, res) => {
+    try {
+      const settings = await storage.getAllAppSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch settings" });
+    }
+  });
+
+  app.get("/api/settings/:key", async (req, res) => {
+    try {
+      const { key } = req.params;
+      const setting = await storage.getAppSetting(key);
+      res.json(setting || { settingKey: key, settingValue: '' });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch setting" });
+    }
+  });
+
+  app.put("/api/settings", async (req, res) => {
+    try {
+      const { settingKey, settingValue, settingType, description } = req.body;
+      const setting = await storage.upsertAppSetting({ settingKey, settingValue, settingType, description });
+      res.json(setting);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update setting" });
+    }
+  });
+
+  app.get("/api/territories", async (req, res) => {
+    try {
+      const clubsList = await storage.getAllClubs();
+      const territories = clubsList.map(club => ({
+        id: club.id,
+        name: club.name,
+        color: club.color,
+        x: parseFloat(club.territoryX),
+        y: parseFloat(club.territoryY),
+        radius: Math.max(20, Math.sqrt(parseFloat(club.totalApprovedHours) + parseFloat(club.bonusHours) - parseFloat(club.decayedHours)) * 10),
+        totalHours: parseFloat(club.totalApprovedHours) + parseFloat(club.bonusHours) - parseFloat(club.decayedHours),
+        rawHours: parseFloat(club.totalApprovedHours),
+        bonusHours: parseFloat(club.bonusHours),
+        decayedHours: parseFloat(club.decayedHours),
+      }));
+      res.json(territories);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch territories" });
+    }
+  });
+
+  app.post("/api/apply-decay", async (req, res) => {
+    try {
+      await storage.applyTerritoryDecay();
+      res.json({ success: true, message: "Decay applied successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to apply decay" });
+    }
+  });
+
+  const httpServer = createServer(app);
   return httpServer;
 }

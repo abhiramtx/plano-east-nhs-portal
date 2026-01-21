@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
+import type { HoursSubmission } from "@shared/schema";
 
-// Helper function to convert email to storage key
 const emailToKey = (email: string) => email.replace(/\./g, ',');
 
 export default function Dashboard() {
@@ -20,8 +20,7 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Fetch user's hours submissions
-  const { data: submissions = [] } = useQuery({
+  const { data: submissions = [] } = useQuery<HoursSubmission[]>({
     queryKey: ['/api/hours-submissions', user?.email ? emailToKey(user.email) : ''],
     enabled: !!user?.email,
   });

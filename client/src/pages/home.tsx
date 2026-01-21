@@ -167,10 +167,9 @@ export default function Home() {
             {/* User Info Card */}
             <div className="bg-gray-50 rounded-xl p-6 mb-6">
               <div className="flex items-center space-x-4">
-                {/* User Avatar */}
-                {user.picture ? (
+                {user.photoURL ? (
                   <img 
-                    src={user.picture} 
+                    src={user.photoURL} 
                     alt="Profile" 
                     className="w-12 h-12 rounded-full"
                   />
