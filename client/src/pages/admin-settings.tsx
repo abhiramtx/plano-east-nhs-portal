@@ -1,15 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User } from "@/lib/firebase";
+import { User, AdminSettings as AdminSettingsType, getAdminSettings, updateAdminSettings } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, Settings, Eye, EyeOff, Clock, MapPin } from "lucide-react";
-import type { AppSetting } from "@shared/schema";
+import { Save, Settings, Eye, Clock, MapPin } from "lucide-react";
 
 interface AdminSettingsProps {
   user: User;
@@ -17,41 +16,38 @@ interface AdminSettingsProps {
 
 export function AdminSettings({ user }: AdminSettingsProps) {
   const { toast } = useToast();
+  const [showStudentId, setShowStudentId] = useState(true);
+  const [showGradeLevel, setShowGradeLevel] = useState(true);
+  const [showGpa, setShowGpa] = useState(true);
+  const [showPhone, setShowPhone] = useState(true);
+  const [decayRate, setDecayRate] = useState('1');
+  const [maxDecay, setMaxDecay] = useState('10');
+  const [bonusMultiplier, setBonusMultiplier] = useState('1.5');
 
-  const { data: settings = [] } = useQuery<AppSetting[]>({
-    queryKey: ['/api/settings'],
+  const { data: settings, isLoading } = useQuery<AdminSettingsType | null>({
+    queryKey: ['firebase-admin-settings'],
+    queryFn: getAdminSettings,
   });
 
-  const getSettingValue = (key: string, defaultValue: string = '') => {
-    const setting = settings.find(s => s.settingKey === key);
-    return setting?.settingValue || defaultValue;
-  };
+  useEffect(() => {
+    if (settings) {
+      setShowStudentId(settings.showStudentId ?? true);
+      setShowGradeLevel(settings.showGradeLevel ?? true);
+      setShowGpa(settings.showGpa ?? true);
+      setShowPhone(settings.showPhone ?? true);
+      setDecayRate(settings.decayRate?.toString() ?? '1');
+      setMaxDecay(settings.maxDecay?.toString() ?? '10');
+      setBonusMultiplier(settings.bonusMultiplier?.toString() ?? '1.5');
+    }
+  }, [settings]);
 
-  const getBooleanSetting = (key: string, defaultValue: boolean = true) => {
-    const value = getSettingValue(key, defaultValue.toString());
-    return value === 'true';
-  };
-
-  const [showStudentId, setShowStudentId] = useState(getBooleanSetting('show_student_id', true));
-  const [showGradeLevel, setShowGradeLevel] = useState(getBooleanSetting('show_grade_level', true));
-  const [showGpa, setShowGpa] = useState(getBooleanSetting('show_gpa', true));
-  const [showPhone, setShowPhone] = useState(getBooleanSetting('show_phone', true));
-  const [decayRate, setDecayRate] = useState(getSettingValue('decay_rate', '1'));
-  const [maxDecay, setMaxDecay] = useState(getSettingValue('max_decay', '10'));
-  const [bonusMultiplier, setBonusMultiplier] = useState(getSettingValue('bonus_multiplier', '1.5'));
-
-  const updateSettingMutation = useMutation({
-    mutationFn: async ({ key, value, type }: { key: string; value: string; type: string }) => {
-      const res = await apiRequest('PUT', '/api/settings', {
-        settingKey: key,
-        settingValue: value,
-        settingType: type,
-      });
-      return await res.json();
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (updates: Partial<AdminSettingsType>) => {
+      await updateAdminSettings(updates, user.email || '');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/settings'] });
-      toast({ title: "Setting updated", description: "Your changes have been saved." });
+      queryClient.invalidateQueries({ queryKey: ['firebase-admin-settings'] });
+      toast({ title: "Settings updated", description: "Your changes have been saved." });
     },
     onError: (error: any) => {
       toast({ title: "Failed to update", description: error.message, variant: "destructive" });
@@ -59,16 +55,20 @@ export function AdminSettings({ user }: AdminSettingsProps) {
   });
 
   const handleSaveVisibility = () => {
-    updateSettingMutation.mutate({ key: 'show_student_id', value: showStudentId.toString(), type: 'boolean' });
-    updateSettingMutation.mutate({ key: 'show_grade_level', value: showGradeLevel.toString(), type: 'boolean' });
-    updateSettingMutation.mutate({ key: 'show_gpa', value: showGpa.toString(), type: 'boolean' });
-    updateSettingMutation.mutate({ key: 'show_phone', value: showPhone.toString(), type: 'boolean' });
+    updateSettingsMutation.mutate({
+      showStudentId,
+      showGradeLevel,
+      showGpa,
+      showPhone,
+    });
   };
 
   const handleSaveDecay = () => {
-    updateSettingMutation.mutate({ key: 'decay_rate', value: decayRate, type: 'number' });
-    updateSettingMutation.mutate({ key: 'max_decay', value: maxDecay, type: 'number' });
-    updateSettingMutation.mutate({ key: 'bonus_multiplier', value: bonusMultiplier, type: 'number' });
+    updateSettingsMutation.mutate({
+      decayRate: parseFloat(decayRate) || 1,
+      maxDecay: parseFloat(maxDecay) || 10,
+      bonusMultiplier: parseFloat(bonusMultiplier) || 1.5,
+    });
   };
 
   return (
@@ -137,7 +137,7 @@ export function AdminSettings({ user }: AdminSettingsProps) {
             </div>
             <Button 
               onClick={handleSaveVisibility}
-              disabled={updateSettingMutation.isPending}
+              disabled={updateSettingsMutation.isPending}
               className="w-full"
             >
               <Save className="w-4 h-4 mr-2" />
@@ -188,7 +188,7 @@ export function AdminSettings({ user }: AdminSettingsProps) {
             </div>
             <Button 
               onClick={handleSaveDecay}
-              disabled={updateSettingMutation.isPending}
+              disabled={updateSettingsMutation.isPending}
               className="w-full"
             >
               <Save className="w-4 h-4 mr-2" />

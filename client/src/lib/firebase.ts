@@ -130,6 +130,10 @@ export interface AdminSettings {
   showGradeLevel: boolean;
   showEmail: boolean;
   showPhone: boolean;
+  showGpa: boolean;
+  decayRate: number;
+  maxDecay: number;
+  bonusMultiplier: number;
   customFields: string[];
   updatedAt: Date;
   updatedBy: string;
@@ -569,6 +573,10 @@ export const updateAdminSettings = async (updates: Partial<AdminSettings>, updat
       showGradeLevel: true,
       showEmail: true,
       showPhone: false,
+      showGpa: true,
+      decayRate: 1,
+      maxDecay: 10,
+      bonusMultiplier: 1.5,
       customFields: [],
       ...updates,
       updatedAt: Timestamp.fromDate(now),
