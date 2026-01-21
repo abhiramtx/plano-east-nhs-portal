@@ -1,8 +1,8 @@
-# Wylie NAHS Hours Tracking Application
+# VolunteerClub.io - Volunteer Territory Game Platform
 
 ## Overview
 
-This is a comprehensive hours tracking application for Wylie NAHS (National Art Honor Society) participants built with React and TypeScript. Students can sign in with Google authentication, view their dashboard with service hours statistics, and submit/manage their service hours with proof of completion. The application features a clean, modern UI optimized for light mode display and includes comprehensive hours submission management. The application is structured with separate user interface and admin interface routes.
+VolunteerClub.io is a gamified volunteer tracking platform where clubs compete for territory by logging volunteer hours. The application features Firebase Authentication and Firestore for all data storage, a world map visualization with service request markers, comprehensive leaderboards, and territory mechanics. Volunteers can join clubs, log hours, create and join service requests, and compete globally. The application is structured with separate volunteer interface and admin interface routes.
 
 ## User Preferences
 
@@ -28,17 +28,26 @@ Preferred communication style: Simple, everyday language.
 - **Dashboard**: Overview of service hours with statistics and monthly chart
 - **Hours Submission**: Form to submit service hours with proof images
 - **Hours Management**: View, edit, and delete submitted hours
-- **Authentication**: Google sign-in integration (mock for demo)
-- **Navigation**: Clean navigation between dashboard and hours pages
+- **Service Requests**: Create and join volunteer service opportunities with location markers
+- **World Map**: Interactive territory visualization with club markers and service request pins
+- **Leaderboards**: Global club rankings with territory mechanics
+- **Club System**: Join or create clubs, manage members, track collective hours
+- **Authentication**: Google sign-in via Firebase Authentication
+- **Navigation**: Clean navigation between dashboard, hours, service requests, and map pages
 - **Responsive Design**: Mobile-friendly UI with proper breakpoints
 
 ## Key Components
 
 ### Database Layer
-- **ORM**: Drizzle ORM with PostgreSQL dialect
-- **Connection**: Neon Database serverless PostgreSQL
-- **Migrations**: Managed through drizzle-kit
-- **Schema**: Centralized in `shared/schema.ts` with Zod validation
+- **Primary**: Firebase Firestore for all volunteer-facing data
+- **Collections**: clubs, memberships, hoursSubmissions, serviceRequests, serviceRequestParticipants, settings, users
+- **Legacy**: Drizzle ORM with PostgreSQL for admin-only features
+- **Schema**: Firebase types in `client/src/lib/firebase.ts`, PostgreSQL in `shared/schema.ts`
+
+### Security Considerations
+- Service request participant management enforces creator-only access via authenticated user verification
+- Note: For production, Firestore security rules should be configured in Firebase Console to enforce server-side authorization
+- Hours awarding and participant removal require matching authenticated user email with request creator
 
 ### Authentication System
 - **Provider**: Firebase Authentication
@@ -61,6 +70,18 @@ Preferred communication style: Simple, everyday language.
 - **CORS**: Configured for cross-origin requests
 
 ## Recent Changes
+
+### January 21, 2026 - Service Requests Feature & Firebase Full Migration
+- **Service Requests System**: Complete CRUD for volunteer service opportunities
+  - Create requests with title, description, location, hours offered, contact info
+  - Join requests as a volunteer participant
+  - Manage participants (view joiners, kick, award hours) for request creators only
+  - Location picker with interactive world map integration
+- **World Map Enhancement**: Added service request markers with popup cards and join button
+- **Admin Settings Migration**: Migrated from Express API to Firebase Firestore
+- **Security**: Mandatory creator verification for participant management using authenticated user
+- **AdminSettings Extended**: Added showGpa, decayRate, maxDecay, bonusMultiplier fields
+- **Firebase Types**: Added ServiceRequest, ServiceRequestParticipant types and CRUD functions
 
 ### November 16, 2025 - 404 Page Redesign & Projects Portfolio Feature
 - **404 Page Modernization**: Complete redesign with glassmorphism effects, animated floating elements, gradient backgrounds, and interactive hover states

@@ -111,7 +111,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                 onJoinRequest={(request) => joinMutation.mutate(request)}
                 joinedRequestIds={joinedRequestIds}
                 height="500px"
-                interactive={false}
+                interactive={true}
               />
             </CardContent>
           </Card>

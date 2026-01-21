@@ -529,7 +529,24 @@ export const joinServiceRequest = async (requestId: string, userEmail: string, u
   };
 };
 
-export const updateParticipant = async (participantId: string, updates: Partial<ServiceRequestParticipant>): Promise<void> => {
+export const updateParticipant = async (
+  participantId: string, 
+  updates: Partial<ServiceRequestParticipant>,
+  verifyCreator: { requestId: string }
+): Promise<void> => {
+  const authenticatedUser = getCurrentUser();
+  if (!authenticatedUser?.email) {
+    throw new Error("You must be logged in to perform this action");
+  }
+  const requestDoc = await getDoc(doc(db, "serviceRequests", verifyCreator.requestId));
+  if (!requestDoc.exists()) {
+    throw new Error("Service request not found");
+  }
+  const requestData = requestDoc.data();
+  if (requestData.creatorEmail !== authenticatedUser.email) {
+    throw new Error("Only the request creator can modify participants");
+  }
+  
   const docRef = doc(db, "serviceRequestParticipants", participantId);
   const updateData: any = { ...updates };
   if (updates.approvedAt) {
@@ -538,7 +555,23 @@ export const updateParticipant = async (participantId: string, updates: Partial<
   await updateDoc(docRef, updateData);
 };
 
-export const removeParticipant = async (participantId: string): Promise<void> => {
+export const removeParticipant = async (
+  participantId: string,
+  verifyCreator: { requestId: string }
+): Promise<void> => {
+  const authenticatedUser = getCurrentUser();
+  if (!authenticatedUser?.email) {
+    throw new Error("You must be logged in to perform this action");
+  }
+  const requestDoc = await getDoc(doc(db, "serviceRequests", verifyCreator.requestId));
+  if (!requestDoc.exists()) {
+    throw new Error("Service request not found");
+  }
+  const requestData = requestDoc.data();
+  if (requestData.creatorEmail !== authenticatedUser.email) {
+    throw new Error("Only the request creator can remove participants");
+  }
+  
   await deleteDoc(doc(db, "serviceRequestParticipants", participantId));
 };
 
@@ -547,13 +580,37 @@ export const removeParticipant = async (participantId: string): Promise<void> =>
 export const getAdminSettings = async (): Promise<AdminSettings | null> => {
   const docRef = doc(db, "settings", "admin");
   const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) return null;
+  if (!docSnap.exists()) {
+    return {
+      id: 'admin',
+      showStudentId: true,
+      showGradeLevel: true,
+      showEmail: true,
+      showPhone: false,
+      showGpa: true,
+      decayRate: 1,
+      maxDecay: 10,
+      bonusMultiplier: 1.5,
+      customFields: [],
+      updatedAt: new Date(),
+      updatedBy: '',
+    };
+  }
   const data = docSnap.data();
   return {
     id: docSnap.id,
-    ...data,
+    showStudentId: data.showStudentId ?? true,
+    showGradeLevel: data.showGradeLevel ?? true,
+    showEmail: data.showEmail ?? true,
+    showPhone: data.showPhone ?? false,
+    showGpa: data.showGpa ?? true,
+    decayRate: data.decayRate ?? 1,
+    maxDecay: data.maxDecay ?? 10,
+    bonusMultiplier: data.bonusMultiplier ?? 1.5,
+    customFields: data.customFields ?? [],
     updatedAt: toDate(data.updatedAt),
-  } as AdminSettings;
+    updatedBy: data.updatedBy ?? '',
+  };
 };
 
 export const updateAdminSettings = async (updates: Partial<AdminSettings>, updatedBy: string): Promise<void> => {

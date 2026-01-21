@@ -147,10 +147,13 @@ export default function ServiceRequests() {
 
   const awardHoursMutation = useMutation({
     mutationFn: async ({ participantId, hours }: { participantId: string; hours: number }) => {
+      if (!selectedRequest) throw new Error("No request selected");
       await updateParticipant(participantId, {
         status: 'completed',
         hoursAwarded: hours,
         approvedAt: new Date(),
+      }, {
+        requestId: selectedRequest.id,
       });
     },
     onSuccess: () => {
@@ -165,7 +168,10 @@ export default function ServiceRequests() {
 
   const kickParticipantMutation = useMutation({
     mutationFn: async (participantId: string) => {
-      await removeParticipant(participantId);
+      if (!selectedRequest) throw new Error("No request selected");
+      await removeParticipant(participantId, {
+        requestId: selectedRequest.id,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['firebase-request-participants'] });
