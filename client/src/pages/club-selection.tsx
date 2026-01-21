@@ -442,13 +442,15 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 }
 
 function ServiceRequestsView({ userEmail }: { userEmail: string }) {
+  const actualEmail = userEmail.replace(/,/g, '.');
+  
   const { data: requests = [] } = useQuery<any[]>({
     queryKey: ['/api/service-requests'],
   });
 
   const joinMutation = useMutation({
     mutationFn: async (requestId: number) => {
-      const res = await apiRequest('POST', `/api/service-requests/${requestId}/join`, { userEmail });
+      const res = await apiRequest('POST', `/api/service-requests/${requestId}/join`, { userEmail: actualEmail });
       return await res.json();
     },
     onSuccess: () => {

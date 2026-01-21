@@ -60,10 +60,15 @@ export function WorldMap({
 
     clubs.forEach(club => {
       if (club.latitude && club.longitude) {
-        const lat = parseFloat(club.latitude);
-        const lng = parseFloat(club.longitude);
-        const totalHours = parseFloat(club.totalApprovedHours) + parseFloat(club.bonusHours) - parseFloat(club.decayedHours);
-        const radius = Math.max(20, Math.sqrt(totalHours) * 5);
+        const lat = parseFloat(String(club.latitude));
+        const lng = parseFloat(String(club.longitude));
+        if (isNaN(lat) || isNaN(lng)) return;
+        
+        const approved = parseFloat(String(club.totalApprovedHours || "0"));
+        const bonus = parseFloat(String(club.bonusHours || "0"));
+        const decayed = parseFloat(String(club.decayedHours || "0"));
+        const totalHours = approved + bonus - decayed;
+        const radius = Math.max(20, Math.sqrt(Math.max(0, totalHours)) * 5);
         
         const circle = L.circleMarker([lat, lng], {
           radius: radius,
