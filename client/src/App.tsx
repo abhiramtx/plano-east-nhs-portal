@@ -37,6 +37,22 @@ function VolunteerInterface({
   onLeaveClub: () => void;
 }) {
   const [, setLocation] = useLocation();
+  const userEmail = user.email?.replace(/\./g, ',') || '';
+
+  const handleLeaveClubClick = async () => {
+    try {
+      const res = await fetch(`/api/clubs/${club.id}/leave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userEmail }),
+      });
+      if (res.ok) {
+        onLeaveClub();
+      }
+    } catch (error) {
+      console.error('Failed to leave club:', error);
+    }
+  };
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -52,7 +68,7 @@ function VolunteerInterface({
         club={club} 
         membership={membership}
         onSignOut={onSignOut}
-        onLeaveClub={onLeaveClub}
+        onLeaveClub={handleLeaveClubClick}
       />
       <div className="flex-1 lg:ml-64 flex flex-col min-h-0 overflow-auto">
         <Switch>

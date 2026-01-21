@@ -103,8 +103,8 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-gray-900" />
               </div>
               <div>
                 <p className="text-sm text-gray-500">Approved Hours</p>
@@ -117,8 +117,8 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-yellow-600" />
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-gray-900" />
               </div>
               <div>
                 <p className="text-sm text-gray-500">Pending Hours</p>
@@ -131,8 +131,8 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-gray-900" />
               </div>
               <div>
                 <p className="text-sm text-gray-500">Members</p>
@@ -145,8 +145,8 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-gray-900" />
               </div>
               <div>
                 <p className="text-sm text-gray-500">Territory Size</p>

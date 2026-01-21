@@ -88,7 +88,7 @@ export default function Dashboard() {
               <p className="text-gray-600 mt-1">Welcome back, {user?.name?.split(' ')[0]}!</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-lg">
                 <Award className="w-5 h-5 text-white" />
               </div>
             </div>
@@ -107,8 +107,8 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-gray-600">Total Hours</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-blue-50 rounded-full">
-                  <Clock className="w-5 h-5 text-blue-600" />
+                <div className="p-3 bg-gray-100 rounded-full">
+                  <Clock className="w-5 h-5 text-gray-900" />
                 </div>
               </div>
             </CardContent>
@@ -121,8 +121,8 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-gray-600">Approved Hours</p>
                   <p className="text-2xl font-bold text-green-600">{stats.approvedHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-green-50 rounded-full">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <div className="p-3 bg-gray-100 rounded-full">
+                  <CheckCircle2 className="w-5 h-5 text-gray-900" />
                 </div>
               </div>
             </CardContent>
@@ -135,8 +135,8 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-gray-600">Pending Hours</p>
                   <p className="text-2xl font-bold text-yellow-600">{stats.pendingHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-yellow-50 rounded-full">
-                  <AlertCircle className="w-5 h-5 text-yellow-600" />
+                <div className="p-3 bg-gray-100 rounded-full">
+                  <AlertCircle className="w-5 h-5 text-gray-900" />
                 </div>
               </div>
             </CardContent>
@@ -149,8 +149,8 @@ export default function Dashboard() {
                   <p className="text-sm font-medium text-gray-600">Submissions</p>
                   <p className="text-2xl font-bold text-purple-600">{stats.submissionCount}</p>
                 </div>
-                <div className="p-3 bg-purple-50 rounded-full">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                <div className="p-3 bg-gray-100 rounded-full">
+                  <TrendingUp className="w-5 h-5 text-gray-900" />
                 </div>
               </div>
             </CardContent>

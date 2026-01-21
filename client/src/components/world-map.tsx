@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useRef, useEffect, useState, type WheelEvent, type MouseEvent, type SyntheticEvent } from 'react';
+import worldMapImage from '@assets/stock_images/simple_gray_world_ma_ce22fbf4.jpg';
 import type { Club } from '@shared/schema';
 
 interface WorldMapProps {
@@ -18,140 +17,192 @@ export function WorldMap({
   height = '400px',
   interactive = true 
 }: WorldMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.CircleMarker[]>([]);
-  const selectedMarkerRef = useRef<L.Marker | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
-  useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
+  const latLngToPixel = (lat: number, lng: number) => {
+    const x = ((lng + 180) / 360) * imageSize.width;
+    const y = ((90 - lat) / 180) * imageSize.height;
+    return { x, y };
+  };
 
-    mapInstance.current = L.map(mapRef.current, {
-      center: [20, 0],
-      zoom: 2,
-      minZoom: 2,
-      maxZoom: 18,
-      worldCopyJump: true,
-    });
+  const pixelToLatLng = (x: number, y: number) => {
+    const lng = (x / imageSize.width) * 360 - 180;
+    const lat = 90 - (y / imageSize.height) * 180;
+    return { lat, lng };
+  };
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-      subdomains: 'abcd',
-    }).addTo(mapInstance.current);
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = Math.min(Math.max(transform.scale * delta, 0.5), 5);
+    setTransform(prev => ({ ...prev, scale: newScale }));
+  };
 
-    if (interactive && onLocationSelect) {
-      mapInstance.current.on('click', (e: L.LeafletMouseEvent) => {
-        onLocationSelect(e.latlng.lat, e.latlng.lng);
-      });
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button === 0) {
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
     }
+  };
 
-    return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
-      }
-    };
-  }, [interactive, onLocationSelect]);
-
-  useEffect(() => {
-    if (!mapInstance.current) return;
-
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
-
-    clubs.forEach(club => {
-      if (club.latitude && club.longitude) {
-        const lat = parseFloat(String(club.latitude));
-        const lng = parseFloat(String(club.longitude));
-        if (isNaN(lat) || isNaN(lng)) return;
-        
-        const approved = parseFloat(String(club.totalApprovedHours || "0"));
-        const bonus = parseFloat(String(club.bonusHours || "0"));
-        const decayed = parseFloat(String(club.decayedHours || "0"));
-        const totalHours = approved + bonus - decayed;
-        const radius = Math.max(20, Math.sqrt(Math.max(0, totalHours)) * 5);
-        
-        const circle = L.circleMarker([lat, lng], {
-          radius: radius,
-          fillColor: club.color,
-          color: club.color,
-          weight: 2,
-          opacity: 0.8,
-          fillOpacity: 0.4,
-        }).addTo(mapInstance.current!);
-
-        circle.bindPopup(`
-          <div style="text-align: center;">
-            <strong style="font-size: 14px;">${club.name}</strong><br/>
-            <span style="color: #666;">${totalHours.toFixed(1)} hours</span>
-          </div>
-        `);
-
-        markersRef.current.push(circle);
-      }
-    });
-  }, [clubs]);
-
-  useEffect(() => {
-    if (!mapInstance.current) return;
-
-    if (selectedMarkerRef.current) {
-      selectedMarkerRef.current.remove();
-      selectedMarkerRef.current = null;
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      setTransform(prev => ({
+        ...prev,
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      }));
     }
+  };
 
-    if (selectedLocation) {
-      const icon = L.divIcon({
-        className: 'custom-marker',
-        html: '<div style="width: 24px; height: 24px; background: black; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-      });
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
-      selectedMarkerRef.current = L.marker([selectedLocation.lat, selectedLocation.lng], { icon })
-        .addTo(mapInstance.current);
+  const handleClick = (e: React.MouseEvent) => {
+    if (!interactive || !onLocationSelect || isDragging || !containerRef.current) return;
+    
+    const rect = containerRef.current.getBoundingClientRect();
+    const clickX = (e.clientX - rect.left - transform.x) / transform.scale;
+    const clickY = (e.clientY - rect.top - transform.y) / transform.scale;
+    
+    const { lat, lng } = pixelToLatLng(clickX, clickY);
+    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      onLocationSelect(lat, lng);
     }
-  }, [selectedLocation]);
+  };
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setImageSize({ width: e.currentTarget.naturalWidth, height: e.currentTarget.naturalHeight });
+  };
 
   return (
     <div 
-      ref={mapRef} 
-      style={{ height, width: '100%', borderRadius: '8px', zIndex: 1 }}
-    />
+      ref={containerRef}
+      className="relative overflow-hidden bg-gray-100 rounded-lg cursor-grab active:cursor-grabbing"
+      style={{ height }}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onClick={handleClick}
+    >
+      <div
+        style={{
+          transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+          transformOrigin: '0 0',
+          transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+        }}
+        className="relative"
+      >
+        <img 
+          src={worldMapImage} 
+          alt="World Map" 
+          className="max-w-none select-none"
+          style={{ filter: 'grayscale(100%)' }}
+          draggable={false}
+          onLoad={handleImageLoad}
+        />
+        
+        {imageSize.width > 0 && clubs.map(club => {
+          if (!club.latitude || !club.longitude) return null;
+          const lat = parseFloat(String(club.latitude));
+          const lng = parseFloat(String(club.longitude));
+          if (isNaN(lat) || isNaN(lng)) return null;
+          
+          const { x, y } = latLngToPixel(lat, lng);
+          const approved = parseFloat(String(club.totalApprovedHours || "0"));
+          const bonus = parseFloat(String(club.bonusHours || "0"));
+          const decayed = parseFloat(String(club.decayedHours || "0"));
+          const totalHours = Math.max(0, approved + bonus - decayed);
+          const radius = Math.max(15, Math.sqrt(totalHours) * 3);
+          
+          return (
+            <div
+              key={club.id}
+              className="absolute rounded-full border-2 border-black"
+              style={{
+                left: x - radius,
+                top: y - radius,
+                width: radius * 2,
+                height: radius * 2,
+                backgroundColor: club.color || '#000',
+                opacity: 0.6,
+              }}
+              title={`${club.name}: ${totalHours.toFixed(1)} hours`}
+            />
+          );
+        })}
+        
+        {selectedLocation && imageSize.width > 0 && (() => {
+          const { x, y } = latLngToPixel(selectedLocation.lat, selectedLocation.lng);
+          return (
+            <div
+              className="absolute w-6 h-6 -ml-3 -mt-3 bg-black rounded-full border-2 border-white shadow-lg"
+              style={{ left: x, top: y }}
+            />
+          );
+        })()}
+      </div>
+      
+      <div className="absolute bottom-2 right-2 flex space-x-1">
+        <button
+          className="w-8 h-8 bg-white rounded shadow flex items-center justify-center text-lg font-bold hover:bg-gray-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTransform(prev => ({ ...prev, scale: Math.min(prev.scale * 1.2, 5) }));
+          }}
+        >
+          +
+        </button>
+        <button
+          className="w-8 h-8 bg-white rounded shadow flex items-center justify-center text-lg font-bold hover:bg-gray-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTransform(prev => ({ ...prev, scale: Math.max(prev.scale / 1.2, 0.5) }));
+          }}
+        >
+          −
+        </button>
+        <button
+          className="w-8 h-8 bg-white rounded shadow flex items-center justify-center text-xs hover:bg-gray-100"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTransform({ x: 0, y: 0, scale: 1 });
+          }}
+        >
+          Reset
+        </button>
+      </div>
+    </div>
   );
 }
 
-interface LocationPickerProps {
+export function LocationPicker({ 
+  value, 
+  onChange 
+}: { 
   value?: { lat: number; lng: number } | null;
   onChange: (lat: number, lng: number) => void;
-}
-
-export function LocationPicker({ value, onChange }: LocationPickerProps) {
-  const [showMap, setShowMap] = useState(false);
-
+}) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setShowMap(!showMap)}
-          className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 transition-colors"
-        >
-          {showMap ? 'Hide Map' : 'Select Location on Map'}
-        </button>
-        {value && (
-          <span className="text-sm text-gray-600">
-            {value.lat.toFixed(4)}, {value.lng.toFixed(4)}
-          </span>
-        )}
-      </div>
-      {showMap && (
-        <WorldMap
-          selectedLocation={value}
-          onLocationSelect={onChange}
-          height="250px"
-          interactive={true}
-        />
+      <p className="text-sm text-gray-500">Click on the map to select a location</p>
+      <WorldMap
+        selectedLocation={value}
+        onLocationSelect={onChange}
+        height="250px"
+        interactive={true}
+      />
+      {value && (
+        <p className="text-sm text-gray-600">
+          Selected: {value.lat.toFixed(4)}, {value.lng.toFixed(4)}
+        </p>
       )}
     </div>
   );

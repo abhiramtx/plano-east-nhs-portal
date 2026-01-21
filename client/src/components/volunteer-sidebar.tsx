@@ -23,7 +23,6 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
     { path: "/volunteer/hours", icon: Clock, label: "Log Hours" },
     { path: "/volunteer/map", icon: Map, label: "Territory Map" },
     { path: "/volunteer/leaderboard", icon: Trophy, label: "Leaderboard" },
-    { path: "/volunteer/services", icon: HandHeart, label: "Service Requests" },
     { path: "/volunteer/club", icon: Globe, label: "My Club" },
     { path: "/volunteer/profile", icon: UserIcon, label: "Profile" },
   ];

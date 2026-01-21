@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { User } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -112,8 +112,13 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     );
   }
 
+  useEffect(() => {
+    if (userClubData?.club && userClubData?.membership) {
+      onClubSelected(userClubData.club, userClubData.membership);
+    }
+  }, [userClubData, onClubSelected]);
+
   if (userClubData?.club && userClubData?.membership) {
-    onClubSelected(userClubData.club, userClubData.membership);
     return null;
   }
 
