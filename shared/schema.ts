@@ -16,12 +16,12 @@ export const clubs = pgTable("clubs", {
   isPrivate: boolean("is_private").default(false).notNull(),
   password: text("password"),
   creatorEmail: text("creator_email").notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 6 }),
+  longitude: decimal("longitude", { precision: 10, scale: 6 }),
   totalApprovedHours: decimal("total_approved_hours", { precision: 10, scale: 2 }).default("0").notNull(),
   bonusHours: decimal("bonus_hours", { precision: 10, scale: 2 }).default("0").notNull(),
   lastActivityAt: timestamp("last_activity_at").defaultNow().notNull(),
   decayedHours: decimal("decayed_hours", { precision: 10, scale: 2 }).default("0").notNull(),
-  territoryX: decimal("territory_x", { precision: 10, scale: 4 }).default("0").notNull(),
-  territoryY: decimal("territory_y", { precision: 10, scale: 4 }).default("0").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -197,8 +197,6 @@ export const insertClubSchema = createInsertSchema(clubs).omit({
   bonusHours: true,
   decayedHours: true,
   lastActivityAt: true,
-  territoryX: true,
-  territoryY: true,
   createdAt: true,
   updatedAt: true,
 });

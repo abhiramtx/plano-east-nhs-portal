@@ -10,7 +10,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, Plus, Users, ArrowRight, Lock, Search, Trophy, LogOut } from "lucide-react";
+import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, HandHeart, MapPin, Trophy, Home } from "lucide-react";
+import { LocationPicker } from "@/components/world-map";
 import type { Club, ClubMembership } from "@shared/schema";
 
 interface ClubSelectionProps {
@@ -38,7 +39,10 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     isPrivate: false,
     password: "",
     color: CLUB_COLORS[Math.floor(Math.random() * CLUB_COLORS.length)],
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
+  const [showServiceRequests, setShowServiceRequests] = useState(false);
 
   const userEmail = user.email?.replace(/\./g, ',') || '';
 
@@ -53,11 +57,14 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const createClubMutation = useMutation({
     mutationFn: async (clubData: typeof newClub) => {
       const res = await apiRequest('POST', '/api/clubs', {
-        ...clubData,
+        name: clubData.name,
+        description: clubData.description,
+        isPrivate: clubData.isPrivate,
+        password: clubData.password,
+        color: clubData.color,
+        latitude: clubData.latitude?.toString() || null,
+        longitude: clubData.longitude?.toString() || null,
         creatorEmail: userEmail,
-        territoryX: (Math.random() * 800).toString(),
-        territoryY: (Math.random() * 600).toString(),
-        lastActivityAt: new Date(),
       });
       return await res.json() as Club;
     },
@@ -166,21 +173,39 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           <p className="text-xl text-gray-600">Join an existing club or create your own to start competing</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <Card 
             className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-black"
             onClick={() => setCreateDialogOpen(true)}
           >
             <CardHeader className="text-center">
-              <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Plus className="w-8 h-8 text-white" />
+              <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Plus className="w-7 h-7 text-white" />
               </div>
-              <CardTitle>Create a Club</CardTitle>
-              <CardDescription>Start your own volunteer club and lead your team to victory</CardDescription>
+              <CardTitle className="text-lg">Create a Club</CardTitle>
+              <CardDescription className="text-sm">Start your own volunteer club</CardDescription>
             </CardHeader>
             <CardContent className="text-center">
-              <Button className="bg-black text-white hover:bg-gray-800">
-                Create Club <ArrowRight className="w-4 h-4 ml-2" />
+              <Button className="bg-black text-white hover:bg-gray-800 w-full">
+                Create <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card 
+            className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-black"
+            onClick={() => setShowServiceRequests(true)}
+          >
+            <CardHeader className="text-center">
+              <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <HandHeart className="w-7 h-7 text-white" />
+              </div>
+              <CardTitle className="text-lg">Service Requests</CardTitle>
+              <CardDescription className="text-sm">Find volunteer opportunities</CardDescription>
+            </CardHeader>
+            <CardContent className="text-center">
+              <Button className="bg-black text-white hover:bg-gray-800 w-full">
+                Browse <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </CardContent>
           </Card>
@@ -324,6 +349,17 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 />
               </div>
             )}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                Club Location
+              </Label>
+              <p className="text-sm text-gray-500">Click on the map to set your club's location</p>
+              <LocationPicker
+                value={newClub.latitude && newClub.longitude ? { lat: newClub.latitude, lng: newClub.longitude } : null}
+                onChange={(lat, lng) => setNewClub({ ...newClub, latitude: lat, longitude: lng })}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
@@ -374,6 +410,91 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {showServiceRequests && (
+        <div className="fixed inset-0 bg-white z-50 overflow-auto">
+          <nav className="bg-white border-b border-gray-200 sticky top-0">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center h-16">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
+                    <HandHeart className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-gray-900">Service Requests</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowServiceRequests(false)}
+                >
+                  <Home className="w-4 h-4 mr-2" />
+                  Back to Clubs
+                </Button>
+              </div>
+            </div>
+          </nav>
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <ServiceRequestsView userEmail={userEmail} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ServiceRequestsView({ userEmail }: { userEmail: string }) {
+  const { data: requests = [] } = useQuery<any[]>({
+    queryKey: ['/api/service-requests'],
+  });
+
+  const joinMutation = useMutation({
+    mutationFn: async (requestId: number) => {
+      const res = await apiRequest('POST', `/api/service-requests/${requestId}/join`, { userEmail });
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-requests'] });
+    }
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-gray-900">Available Volunteer Opportunities</h2>
+        <p className="text-gray-600">Browse and join service requests from organizations</p>
+      </div>
+      
+      {requests.length === 0 ? (
+        <Card className="p-12 text-center">
+          <HandHeart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No service requests yet</h3>
+          <p className="text-gray-500">Check back later for volunteer opportunities</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {requests.map((request: any) => (
+            <Card key={request.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="text-lg">{request.title}</CardTitle>
+                <CardDescription>{request.organizationName}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-4">{request.description}</p>
+                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                  <span>{request.hoursOffered} hours offered</span>
+                  <span>{request.volunteersNeeded} volunteers needed</span>
+                </div>
+                <Button 
+                  className="w-full bg-black text-white hover:bg-gray-800"
+                  onClick={() => joinMutation.mutate(request.id)}
+                  disabled={joinMutation.isPending}
+                >
+                  Sign Up to Volunteer
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
