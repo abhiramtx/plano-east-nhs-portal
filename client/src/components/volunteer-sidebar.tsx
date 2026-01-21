@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { User } from "@/lib/firebase";
+import { User, Club, Membership } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Globe, LayoutDashboard, Clock, Map, Trophy, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft } from "lucide-react";
-import type { Club, ClubMembership } from "@shared/schema";
 
 interface VolunteerSidebarProps {
   user: User;
   club: Club;
-  membership: ClubMembership;
+  membership: Membership;
   onSignOut: () => void;
   onLeaveClub: () => void;
 }
@@ -80,7 +79,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{club.name}</p>
                 <p className="text-xs text-gray-500">
-                  {parseFloat(club.totalApprovedHours).toFixed(1)} total hours
+                  {club.totalApprovedHours.toFixed(1)} total hours
                 </p>
               </div>
             </div>

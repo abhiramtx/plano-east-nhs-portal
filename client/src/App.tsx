@@ -4,7 +4,17 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { User, onAuthStateChanged, initializeAuth, handleSignOut, auth } from "@/lib/firebase";
+import { 
+  User, 
+  onAuthStateChanged, 
+  initializeAuth, 
+  handleSignOut, 
+  auth,
+  getUserMembership,
+  deleteMembershipByUserAndClub,
+  Club,
+  Membership
+} from "@/lib/firebase";
 import { VolunteerSidebar } from "@/components/volunteer-sidebar";
 import Landing from "@/pages/landing";
 import ClubSelection from "@/pages/club-selection";
@@ -21,7 +31,6 @@ import { AdminStudents } from "@/pages/admin-students";
 import { AdminManagement } from "@/pages/admin-management";
 import { AdminApproval } from "@/pages/admin-approval";
 import { AdminDatabase } from "@/pages/admin-database";
-import type { Club, ClubMembership } from "@shared/schema";
 
 function VolunteerInterface({ 
   user, 
@@ -32,23 +41,16 @@ function VolunteerInterface({
 }: { 
   user: User; 
   club: Club; 
-  membership: ClubMembership;
+  membership: Membership;
   onSignOut: () => void;
   onLeaveClub: () => void;
 }) {
   const [, setLocation] = useLocation();
-  const userEmail = user.email?.replace(/\./g, ',') || '';
 
   const handleLeaveClubClick = async () => {
     try {
-      const res = await fetch(`/api/clubs/${club.id}/leave`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userEmail }),
-      });
-      if (res.ok) {
-        onLeaveClub();
-      }
+      await deleteMembershipByUserAndClub(user.email || '', club.id);
+      onLeaveClub();
     } catch (error) {
       console.error('Failed to leave club:', error);
     }
@@ -232,7 +234,7 @@ function App() {
   const [initializing, setInitializing] = useState(true);
   const [clubChecked, setClubChecked] = useState(false);
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
-  const [membership, setMembership] = useState<ClubMembership | null>(null);
+  const [membership, setMembership] = useState<Membership | null>(null);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -249,8 +251,7 @@ function App() {
 
   useEffect(() => {
     if (user?.email && !clubChecked) {
-      fetch(`/api/user-club/${encodeURIComponent(user.email)}`)
-        .then(res => res.ok ? res.json() : null)
+      getUserMembership(user.email)
         .then(data => {
           if (data && data.club && data.membership) {
             setSelectedClub(data.club);
@@ -271,7 +272,7 @@ function App() {
     setLocation('/');
   };
 
-  const handleClubSelected = (club: Club, clubMembership: ClubMembership) => {
+  const handleClubSelected = (club: Club, clubMembership: Membership) => {
     setSelectedClub(club);
     setMembership(clubMembership);
     setLocation('/volunteer/dashboard');

@@ -1,20 +1,28 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User } from "@/lib/firebase";
+import { 
+  User, 
+  Club, 
+  Membership, 
+  HoursSubmission,
+  getMemberships,
+  getClubSubmissions,
+  deleteMembershipByUserAndClub,
+  deleteMembership
+} from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, MapPin, Globe } from "lucide-react";
-import type { Club, ClubMembership, HoursSubmission } from "@shared/schema";
+import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe } from "lucide-react";
 
 interface ClubDashboardProps {
   user: User;
   club: Club;
-  membership: ClubMembership;
+  membership: Membership;
   onLeaveClub: () => void;
 }
 
@@ -22,27 +30,27 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
   const { toast } = useToast();
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [kickDialogOpen, setKickDialogOpen] = useState(false);
-  const [memberToKick, setMemberToKick] = useState<ClubMembership | null>(null);
+  const [memberToKick, setMemberToKick] = useState<Membership | null>(null);
   
-  const userEmail = user.email?.replace(/\./g, ',') || '';
+  const userEmail = user.email || '';
   const isAdmin = membership.role === 'admin';
 
-  const { data: members = [] } = useQuery<ClubMembership[]>({
-    queryKey: ['/api/clubs', club.id, 'members'],
+  const { data: members = [] } = useQuery<Membership[]>({
+    queryKey: ['firebase-club-members', club.id],
+    queryFn: () => getMemberships(club.id),
   });
 
   const { data: clubSubmissions = [] } = useQuery<HoursSubmission[]>({
-    queryKey: ['/api/hours-submissions'],
-    select: (data) => data.filter(s => s.clubId === club.id),
+    queryKey: ['firebase-club-submissions', club.id],
+    queryFn: () => getClubSubmissions(club.id),
   });
 
   const leaveClubMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('POST', `/api/clubs/${club.id}/leave`, { userEmail });
-      return await res.json();
+      await deleteMembershipByUserAndClub(userEmail, club.id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user-club', userEmail] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-club', userEmail] });
       toast({ title: "Left club", description: "You have left the club." });
       onLeaveClub();
     },
@@ -52,12 +60,11 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
   });
 
   const kickMemberMutation = useMutation({
-    mutationFn: async (memberEmail: string) => {
-      const res = await apiRequest('POST', `/api/clubs/${club.id}/kick`, { userEmail: memberEmail, adminEmail: userEmail });
-      return await res.json();
+    mutationFn: async (memberId: string) => {
+      await deleteMembership(memberId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clubs', club.id, 'members'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-members', club.id] });
       setKickDialogOpen(false);
       toast({ title: "Member removed", description: "The member has been removed from the club." });
     },
@@ -66,9 +73,14 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
     }
   });
 
-  const approvedHours = clubSubmissions.filter(s => s.status === 'approved').reduce((sum, s) => sum + parseFloat(s.hours), 0);
-  const pendingHours = clubSubmissions.filter(s => s.status === 'pending').reduce((sum, s) => sum + parseFloat(s.hours), 0);
-  const totalSubmissions = clubSubmissions.length;
+  const approvedHours = clubSubmissions.filter(s => s.status === 'approved').reduce((sum, s) => sum + s.hours, 0);
+  const pendingHours = clubSubmissions.filter(s => s.status === 'pending').reduce((sum, s) => sum + s.hours, 0);
+
+  const getMemberApprovedHours = (memberEmail: string) => {
+    return clubSubmissions
+      .filter(s => s.userEmail === memberEmail && s.status === 'approved')
+      .reduce((sum, s) => sum + s.hours, 0);
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -151,7 +163,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
               <div>
                 <p className="text-sm text-gray-500">Territory Size</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {Math.max(20, Math.sqrt(parseFloat(club.totalApprovedHours)) * 10).toFixed(0)}
+                  {Math.max(20, Math.sqrt(club.totalApprovedHours) * 10).toFixed(0)}
                 </p>
               </div>
             </div>
@@ -197,7 +209,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                       <div>
                         <div className="flex items-center space-x-2">
                           <p className="font-medium text-gray-900">
-                            {member.userEmail.replace(/,/g, '.')}
+                            {member.userEmail}
                           </p>
                           {member.role === 'admin' && (
                             <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
@@ -211,7 +223,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                           )}
                         </div>
                         <p className="text-sm text-gray-500">
-                          {parseFloat(member.totalApprovedHours).toFixed(1)} approved hours
+                          {getMemberApprovedHours(member.userEmail).toFixed(1)} approved hours
                         </p>
                       </div>
                     </div>
@@ -244,7 +256,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
             <CardContent>
               <div className="space-y-3">
                 {[...members]
-                  .sort((a, b) => parseFloat(b.totalApprovedHours) - parseFloat(a.totalApprovedHours))
+                  .sort((a, b) => getMemberApprovedHours(b.userEmail) - getMemberApprovedHours(a.userEmail))
                   .map((member, index) => (
                     <div 
                       key={member.id}
@@ -262,13 +274,13 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                       </div>
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">
-                          {member.userEmail.replace(/,/g, '.')}
+                          {member.userEmail}
                           {member.userEmail === userEmail && " (You)"}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-gray-900">
-                          {parseFloat(member.totalApprovedHours).toFixed(1)}
+                          {getMemberApprovedHours(member.userEmail).toFixed(1)}
                         </p>
                         <p className="text-xs text-gray-500">hours</p>
                       </div>
@@ -342,7 +354,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
           <DialogHeader>
             <DialogTitle>Remove Member?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove {memberToKick?.userEmail.replace(/,/g, '.')} from the club?
+              Are you sure you want to remove {memberToKick?.userEmail} from the club?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -351,7 +363,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
             </Button>
             <Button 
               variant="destructive"
-              onClick={() => memberToKick && kickMemberMutation.mutate(memberToKick.userEmail)}
+              onClick={() => memberToKick && kickMemberMutation.mutate(memberToKick.id)}
               disabled={kickMemberMutation.isPending}
             >
               {kickMemberMutation.isPending ? "Removing..." : "Remove Member"}

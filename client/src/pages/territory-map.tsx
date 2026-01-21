@@ -4,30 +4,28 @@ import { Trophy, MapPin, Clock, TrendingUp, Users } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { WorldMap } from "@/components/world-map";
-import type { Club, HighNeedArea } from "@shared/schema";
+import { getClubs, getLeaderboard, Club } from "@/lib/firebase";
 
 interface TerritoryMapProps {
-  currentClubId?: number;
+  currentClubId?: string;
 }
 
 export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const [leaderboardPeriod, setLeaderboardPeriod] = useState("all");
 
   const { data: clubs = [] } = useQuery<Club[]>({
-    queryKey: ['/api/clubs'],
+    queryKey: ['firebase-clubs'],
+    queryFn: getClubs,
     refetchInterval: 30000,
   });
 
-  const { data: highNeedAreas = [] } = useQuery<HighNeedArea[]>({
-    queryKey: ['/api/high-need-areas'],
-  });
-
   const { data: leaderboardClubs = [] } = useQuery<Club[]>({
-    queryKey: ['/api/leaderboard/clubs', leaderboardPeriod],
+    queryKey: ['firebase-leaderboard'],
+    queryFn: getLeaderboard,
   });
 
   const calculateTotalHours = (club: Club) => {
-    return parseFloat(club.totalApprovedHours) + parseFloat(club.bonusHours) - parseFloat(club.decayedHours);
+    return club.totalApprovedHours + club.bonusHours - club.decayedHours;
   };
 
   const currentClub = clubs.find(c => c.id === currentClubId);
@@ -86,7 +84,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             </Card>
             <Card className="p-4 text-center">
               <MapPin className="w-6 h-6 mx-auto text-gray-600 mb-2" />
-              <p className="text-2xl font-bold text-gray-900">{highNeedAreas.length}</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
               <p className="text-sm text-gray-500">High-Need Areas</p>
             </Card>
           </div>
@@ -149,25 +147,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
               </Tabs>
             </CardContent>
           </Card>
-
-          {highNeedAreas.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-red-500" />
-                  High-Need Areas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {highNeedAreas.slice(0, 5).map((area) => (
-                  <div key={area.id} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                    <span className="font-medium text-gray-900">{area.name}</span>
-                    <span className="text-sm text-red-600">{parseFloat(area.bonusMultiplier || "1.5").toFixed(1)}x bonus</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>

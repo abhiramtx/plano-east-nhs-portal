@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, type WheelEvent, type MouseEvent, type SyntheticEvent } from 'react';
 import worldMapImage from '@assets/stock_images/simple_gray_world_ma_ce22fbf4.jpg';
-import type { Club } from '@shared/schema';
+import { Club } from '@/lib/firebase';
 
 interface WorldMapProps {
   clubs?: Club[];

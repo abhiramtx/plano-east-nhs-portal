@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User } from "@/lib/firebase";
+import { 
+  User, 
+  getClubs, 
+  getUserMembership, 
+  createClub, 
+  createMembership,
+  Club as FirebaseClub,
+  Membership as FirebaseMembership
+} from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,11 +20,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, HandHeart, MapPin, Trophy, Home } from "lucide-react";
 import { LocationPicker } from "@/components/world-map";
-import type { Club, ClubMembership } from "@shared/schema";
 
 interface ClubSelectionProps {
   user: User;
-  onClubSelected: (club: Club, membership: ClubMembership) => void;
+  onClubSelected: (club: FirebaseClub, membership: FirebaseMembership) => void;
   onSignOut: () => void;
 }
 
@@ -29,7 +36,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const { toast } = useToast();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
-  const [selectedClub, setSelectedClub] = useState<Club | null>(null);
+  const [selectedClub, setSelectedClub] = useState<FirebaseClub | null>(null);
   const [joinPassword, setJoinPassword] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -44,41 +51,45 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   });
   const [showServiceRequests, setShowServiceRequests] = useState(false);
 
-  const userEmail = user.email?.replace(/\./g, ',') || '';
+  const userEmail = user.email || '';
 
-  const { data: userClubData, isLoading: userClubLoading } = useQuery<{ membership: ClubMembership; club: Club } | null>({
-    queryKey: ['/api/user-club', userEmail],
+  const { data: userClubData, isLoading: userClubLoading } = useQuery({
+    queryKey: ['firebase-user-club', userEmail],
+    queryFn: () => getUserMembership(userEmail),
+    enabled: !!userEmail,
   });
 
-  const { data: clubs = [], isLoading: clubsLoading } = useQuery<Club[]>({
-    queryKey: ['/api/clubs'],
+  const { data: clubs = [], isLoading: clubsLoading } = useQuery({
+    queryKey: ['firebase-clubs'],
+    queryFn: getClubs,
   });
 
   const createClubMutation = useMutation({
     mutationFn: async (clubData: typeof newClub) => {
-      const res = await apiRequest('POST', '/api/clubs', {
+      const club = await createClub({
         name: clubData.name,
         description: clubData.description,
         isPrivate: clubData.isPrivate,
         password: clubData.password,
         color: clubData.color,
-        latitude: clubData.latitude?.toString() || null,
-        longitude: clubData.longitude?.toString() || null,
+        latitude: clubData.latitude || undefined,
+        longitude: clubData.longitude || undefined,
         creatorEmail: userEmail,
       });
-      return await res.json() as Club;
+      const membership = await createMembership({
+        clubId: club.id,
+        userEmail: userEmail,
+        userName: user.name || userEmail.split('@')[0],
+        role: 'admin',
+      });
+      return { club, membership };
     },
-    onSuccess: async (club: Club) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clubs'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/user-club', userEmail] });
+    onSuccess: async ({ club, membership }) => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-club', userEmail] });
       setCreateDialogOpen(false);
       toast({ title: "Club created!", description: `${club.name} is ready to grow.` });
-      const res = await fetch(`/api/clubs/${club.id}/members`);
-      const membership = await res.json() as ClubMembership[];
-      const userMembership = membership.find(m => m.userEmail === userEmail);
-      if (userMembership) {
-        onClubSelected(club, userMembership);
-      }
+      onClubSelected(club, membership);
     },
     onError: (error: any) => {
       toast({ title: "Failed to create club", description: error.message, variant: "destructive" });
@@ -86,18 +97,24 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   });
 
   const joinClubMutation = useMutation({
-    mutationFn: async ({ clubId, password }: { clubId: number; password?: string }) => {
-      const res = await apiRequest('POST', `/api/clubs/${clubId}/join`, { userEmail, password });
-      return await res.json() as ClubMembership;
+    mutationFn: async ({ club, password }: { club: FirebaseClub; password?: string }) => {
+      if (club.isPrivate && club.password !== password) {
+        throw new Error("Incorrect password");
+      }
+      const membership = await createMembership({
+        clubId: club.id,
+        userEmail: userEmail,
+        userName: user.name || userEmail.split('@')[0],
+        role: 'member',
+      });
+      return { club, membership };
     },
-    onSuccess: async (membership: ClubMembership) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clubs'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/user-club', userEmail] });
+    onSuccess: async ({ club, membership }) => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-club', userEmail] });
       setJoinDialogOpen(false);
       toast({ title: "Joined club!", description: "Welcome to the team!" });
-      if (selectedClub) {
-        onClubSelected(selectedClub, membership);
-      }
+      onClubSelected(club, membership);
     },
     onError: (error: any) => {
       toast({ title: "Failed to join club", description: error.message, variant: "destructive" });
@@ -135,18 +152,18 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     createClubMutation.mutate(newClub);
   };
 
-  const handleJoinClub = (club: Club) => {
+  const handleJoinClub = (club: FirebaseClub) => {
     setSelectedClub(club);
     if (club.isPrivate) {
       setJoinDialogOpen(true);
     } else {
-      joinClubMutation.mutate({ clubId: club.id });
+      joinClubMutation.mutate({ club });
     }
   };
 
   const confirmJoin = () => {
     if (selectedClub) {
-      joinClubMutation.mutate({ clubId: selectedClub.id, password: joinPassword });
+      joinClubMutation.mutate({ club: selectedClub, password: joinPassword });
     }
   };
 
@@ -270,7 +287,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       <div className="flex items-center space-x-4">
                         <div className="text-right">
                           <p className="text-sm font-medium text-gray-900">
-                            {parseFloat(club.totalApprovedHours).toFixed(1)} hrs
+                            {club.totalApprovedHours.toFixed(1)} hrs
                           </p>
                           <p className="text-xs text-gray-500">total hours</p>
                         </div>
@@ -438,7 +455,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
             </div>
           </nav>
           <div className="max-w-7xl mx-auto px-4 py-8">
-            <ServiceRequestsView userEmail={userEmail} />
+            <ServiceRequestsView />
           </div>
         </div>
       )}
@@ -446,23 +463,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   );
 }
 
-function ServiceRequestsView({ userEmail }: { userEmail: string }) {
-  const actualEmail = userEmail.replace(/,/g, '.');
-  
-  const { data: requests = [] } = useQuery<any[]>({
-    queryKey: ['/api/service-requests'],
-  });
-
-  const joinMutation = useMutation({
-    mutationFn: async (requestId: number) => {
-      const res = await apiRequest('POST', `/api/service-requests/${requestId}/join`, { userEmail: actualEmail });
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/service-requests'] });
-    }
-  });
-
+function ServiceRequestsView() {
   return (
     <div className="space-y-6">
       <div className="text-center mb-8">
@@ -470,38 +471,11 @@ function ServiceRequestsView({ userEmail }: { userEmail: string }) {
         <p className="text-gray-600">Browse and join service requests from organizations</p>
       </div>
       
-      {requests.length === 0 ? (
-        <Card className="p-12 text-center">
-          <HandHeart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No service requests yet</h3>
-          <p className="text-gray-500">Check back later for volunteer opportunities</p>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {requests.map((request: any) => (
-            <Card key={request.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-lg">{request.title}</CardTitle>
-                <CardDescription>{request.organizationName}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">{request.description}</p>
-                <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                  <span>{request.hoursOffered} hours offered</span>
-                  <span>{request.volunteersNeeded} volunteers needed</span>
-                </div>
-                <Button 
-                  className="w-full bg-black text-white hover:bg-gray-800"
-                  onClick={() => joinMutation.mutate(request.id)}
-                  disabled={joinMutation.isPending}
-                >
-                  Sign Up to Volunteer
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <Card className="p-12 text-center">
+        <HandHeart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No service requests yet</h3>
+        <p className="text-gray-500">Check back later for volunteer opportunities</p>
+      </Card>
     </div>
   );
 }
