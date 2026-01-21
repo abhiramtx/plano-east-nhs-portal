@@ -93,13 +93,46 @@ export interface HoursSubmission {
 
 export interface ServiceRequest {
   id: string;
-  clubId: string;
   title: string;
   description: string;
   hoursOffered: number;
   createdBy: string;
-  status: string;
+  creatorName: string;
+  creatorEmail: string;
+  contactEmail: string;
+  contactPhone?: string;
+  organizationName?: string;
+  location: string;
+  latitude?: number;
+  longitude?: number;
+  status: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  maxParticipants?: number;
+  dateTime?: string;
+  requirements?: string;
   createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ServiceRequestParticipant {
+  id: string;
+  requestId: string;
+  userEmail: string;
+  userName: string;
+  status: 'joined' | 'approved' | 'rejected' | 'completed';
+  hoursAwarded?: number;
+  joinedAt: Date;
+  approvedAt?: Date;
+}
+
+export interface AdminSettings {
+  id: string;
+  showStudentId: boolean;
+  showGradeLevel: boolean;
+  showEmail: boolean;
+  showPhone: boolean;
+  customFields: string[];
+  updatedAt: Date;
+  updatedBy: string;
 }
 
 export interface UserProfile {
@@ -375,38 +408,173 @@ export const deleteSubmission = async (submissionId: string): Promise<void> => {
 
 // ============ SERVICE REQUESTS ============
 
-export const getServiceRequests = async (clubId: string): Promise<ServiceRequest[]> => {
-  const q = query(collection(db, "serviceRequests"), where("clubId", "==", clubId));
+export const getAllServiceRequests = async (): Promise<ServiceRequest[]> => {
+  const querySnapshot = await getDocs(collection(db, "serviceRequests"));
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    createdAt: toDate(doc.data().createdAt),
+    updatedAt: toDate(doc.data().updatedAt),
+  })) as ServiceRequest[];
+};
+
+export const getOpenServiceRequests = async (): Promise<ServiceRequest[]> => {
+  const q = query(collection(db, "serviceRequests"), where("status", "==", "open"));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
     createdAt: toDate(doc.data().createdAt),
+    updatedAt: toDate(doc.data().updatedAt),
   })) as ServiceRequest[];
 };
 
-export const createServiceRequest = async (data: Omit<ServiceRequest, 'id' | 'createdAt' | 'status'>): Promise<ServiceRequest> => {
+export const getMyServiceRequests = async (email: string): Promise<ServiceRequest[]> => {
+  const q = query(collection(db, "serviceRequests"), where("creatorEmail", "==", email));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    createdAt: toDate(doc.data().createdAt),
+    updatedAt: toDate(doc.data().updatedAt),
+  })) as ServiceRequest[];
+};
+
+export const getServiceRequest = async (requestId: string): Promise<ServiceRequest | null> => {
+  const docRef = doc(db, "serviceRequests", requestId);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) return null;
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+  } as ServiceRequest;
+};
+
+export const createServiceRequest = async (data: Omit<ServiceRequest, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<ServiceRequest> => {
   const now = new Date();
   const docRef = await addDoc(collection(db, "serviceRequests"), {
     ...data,
     status: "open",
     createdAt: Timestamp.fromDate(now),
+    updatedAt: Timestamp.fromDate(now),
   });
   return {
     id: docRef.id,
     ...data,
     status: "open",
     createdAt: now,
+    updatedAt: now,
   };
 };
 
 export const updateServiceRequest = async (requestId: string, updates: Partial<ServiceRequest>): Promise<void> => {
   const docRef = doc(db, "serviceRequests", requestId);
-  await updateDoc(docRef, updates);
+  await updateDoc(docRef, {
+    ...updates,
+    updatedAt: Timestamp.fromDate(new Date()),
+  });
 };
 
 export const deleteServiceRequest = async (requestId: string): Promise<void> => {
   await deleteDoc(doc(db, "serviceRequests", requestId));
+};
+
+// ============ SERVICE REQUEST PARTICIPANTS ============
+
+export const getRequestParticipants = async (requestId: string): Promise<ServiceRequestParticipant[]> => {
+  const q = query(collection(db, "serviceRequestParticipants"), where("requestId", "==", requestId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    joinedAt: toDate(doc.data().joinedAt),
+    approvedAt: doc.data().approvedAt ? toDate(doc.data().approvedAt) : undefined,
+  })) as ServiceRequestParticipant[];
+};
+
+export const getUserParticipations = async (userEmail: string): Promise<ServiceRequestParticipant[]> => {
+  const q = query(collection(db, "serviceRequestParticipants"), where("userEmail", "==", userEmail));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    joinedAt: toDate(doc.data().joinedAt),
+    approvedAt: doc.data().approvedAt ? toDate(doc.data().approvedAt) : undefined,
+  })) as ServiceRequestParticipant[];
+};
+
+export const joinServiceRequest = async (requestId: string, userEmail: string, userName: string): Promise<ServiceRequestParticipant> => {
+  const now = new Date();
+  const docRef = await addDoc(collection(db, "serviceRequestParticipants"), {
+    requestId,
+    userEmail,
+    userName,
+    status: "joined",
+    joinedAt: Timestamp.fromDate(now),
+  });
+  return {
+    id: docRef.id,
+    requestId,
+    userEmail,
+    userName,
+    status: "joined",
+    joinedAt: now,
+  };
+};
+
+export const updateParticipant = async (participantId: string, updates: Partial<ServiceRequestParticipant>): Promise<void> => {
+  const docRef = doc(db, "serviceRequestParticipants", participantId);
+  const updateData: any = { ...updates };
+  if (updates.approvedAt) {
+    updateData.approvedAt = Timestamp.fromDate(updates.approvedAt);
+  }
+  await updateDoc(docRef, updateData);
+};
+
+export const removeParticipant = async (participantId: string): Promise<void> => {
+  await deleteDoc(doc(db, "serviceRequestParticipants", participantId));
+};
+
+// ============ ADMIN SETTINGS ============
+
+export const getAdminSettings = async (): Promise<AdminSettings | null> => {
+  const docRef = doc(db, "settings", "admin");
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) return null;
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    ...data,
+    updatedAt: toDate(data.updatedAt),
+  } as AdminSettings;
+};
+
+export const updateAdminSettings = async (updates: Partial<AdminSettings>, updatedBy: string): Promise<void> => {
+  const docRef = doc(db, "settings", "admin");
+  const docSnap = await getDoc(docRef);
+  const now = new Date();
+  
+  if (docSnap.exists()) {
+    await updateDoc(docRef, {
+      ...updates,
+      updatedAt: Timestamp.fromDate(now),
+      updatedBy,
+    });
+  } else {
+    await setDoc(docRef, {
+      showStudentId: true,
+      showGradeLevel: true,
+      showEmail: true,
+      showPhone: false,
+      customFields: [],
+      ...updates,
+      updatedAt: Timestamp.fromDate(now),
+      updatedBy,
+    });
+  }
 };
 
 // ============ USER PROFILES ============

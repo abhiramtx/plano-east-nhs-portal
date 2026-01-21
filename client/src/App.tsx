@@ -86,8 +86,8 @@ function VolunteerInterface({
           <Route path="/volunteer/leaderboard">
             <TerritoryMap currentClubId={club.id} />
           </Route>
-          <Route path="/volunteer/services">
-            <ServiceRequests user={user} />
+          <Route path="/volunteer/service-requests">
+            <ServiceRequests />
           </Route>
           <Route path="/volunteer/club">
             <ClubDashboard 
