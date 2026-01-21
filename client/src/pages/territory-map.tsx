@@ -1,17 +1,32 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Trophy, MapPin, Clock, TrendingUp, Users } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Trophy, MapPin, Clock, TrendingUp, Users, Megaphone } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { WorldMap } from "@/components/world-map";
-import { getClubs, getLeaderboard, Club } from "@/lib/firebase";
+import { 
+  getClubs, 
+  getLeaderboard, 
+  Club, 
+  ServiceRequest,
+  getOpenServiceRequests,
+  getUserParticipations,
+  joinServiceRequest,
+  ServiceRequestParticipant,
+  getCurrentUser,
+} from "@/lib/firebase";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface TerritoryMapProps {
   currentClubId?: string;
 }
 
 export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
+  const { toast } = useToast();
   const [leaderboardPeriod, setLeaderboardPeriod] = useState("all");
+  const user = getCurrentUser();
+  const userEmail = user?.email || '';
 
   const { data: clubs = [] } = useQuery<Club[]>({
     queryKey: ['firebase-clubs'],
@@ -23,6 +38,35 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     queryKey: ['firebase-leaderboard'],
     queryFn: getLeaderboard,
   });
+
+  const { data: serviceRequests = [] } = useQuery<ServiceRequest[]>({
+    queryKey: ['firebase-open-service-requests'],
+    queryFn: getOpenServiceRequests,
+    refetchInterval: 30000,
+  });
+
+  const { data: myParticipations = [] } = useQuery<ServiceRequestParticipant[]>({
+    queryKey: ['firebase-my-participations', userEmail],
+    queryFn: () => getUserParticipations(userEmail),
+    enabled: !!userEmail,
+  });
+
+  const joinedRequestIds = myParticipations.map(p => p.requestId);
+
+  const joinMutation = useMutation({
+    mutationFn: async (request: ServiceRequest) => {
+      return await joinServiceRequest(request.id, userEmail, user?.name || userEmail.split('@')[0]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-my-participations'] });
+      toast({ title: "Joined!", description: "You've successfully joined this service request." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to join", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const requestsWithLocation = serviceRequests.filter(r => r.latitude && r.longitude);
 
   const calculateTotalHours = (club: Club) => {
     return club.totalApprovedHours + club.bonusHours - club.decayedHours;
@@ -63,6 +107,9 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             <CardContent className="p-0">
               <WorldMap 
                 clubs={clubs}
+                serviceRequests={requestsWithLocation}
+                onJoinRequest={(request) => joinMutation.mutate(request)}
+                joinedRequestIds={joinedRequestIds}
                 height="500px"
                 interactive={false}
               />
@@ -83,9 +130,9 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
               <p className="text-sm text-gray-500">Total Hours</p>
             </Card>
             <Card className="p-4 text-center">
-              <MapPin className="w-6 h-6 mx-auto text-gray-600 mb-2" />
-              <p className="text-2xl font-bold text-gray-900">0</p>
-              <p className="text-sm text-gray-500">High-Need Areas</p>
+              <Megaphone className="w-6 h-6 mx-auto text-gray-600 mb-2" />
+              <p className="text-2xl font-bold text-gray-900">{requestsWithLocation.length}</p>
+              <p className="text-sm text-gray-500">Service Requests</p>
             </Card>
           </div>
         </div>

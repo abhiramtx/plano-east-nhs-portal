@@ -1,19 +1,29 @@
 import { useRef, useEffect, useState, type WheelEvent, type MouseEvent, type SyntheticEvent } from 'react';
-import worldMapImage from '@assets/stock_images/simple_gray_world_ma_ce22fbf4.jpg';
-import { Club } from '@/lib/firebase';
+import worldMapImage from '@assets/world_map_gray.png';
+import { Club, ServiceRequest } from '@/lib/firebase';
+import { MapPin, Clock, Building, Plus, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 interface WorldMapProps {
   clubs?: Club[];
+  serviceRequests?: ServiceRequest[];
   selectedLocation?: { lat: number; lng: number } | null;
   onLocationSelect?: (lat: number, lng: number) => void;
+  onJoinRequest?: (request: ServiceRequest) => void;
+  joinedRequestIds?: string[];
   height?: string;
   interactive?: boolean;
 }
 
 export function WorldMap({ 
   clubs = [], 
+  serviceRequests = [],
   selectedLocation, 
   onLocationSelect, 
+  onJoinRequest,
+  joinedRequestIds = [],
   height = '400px',
   interactive = true 
 }: WorldMapProps) {
@@ -22,6 +32,7 @@ export function WorldMap({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [selectedRequestPopup, setSelectedRequestPopup] = useState<ServiceRequest | null>(null);
 
   const latLngToPixel = (lat: number, lng: number) => {
     const x = ((lng + 180) / 360) * imageSize.width;
@@ -139,6 +150,33 @@ export function WorldMap({
           );
         })}
         
+        {imageSize.width > 0 && serviceRequests.map(request => {
+          if (!request.latitude || !request.longitude) return null;
+          const lat = parseFloat(String(request.latitude));
+          const lng = parseFloat(String(request.longitude));
+          if (isNaN(lat) || isNaN(lng)) return null;
+          
+          const { x, y } = latLngToPixel(lat, lng);
+          const isJoined = joinedRequestIds.includes(request.id);
+          
+          return (
+            <div
+              key={request.id}
+              className="absolute cursor-pointer group"
+              style={{ left: x - 12, top: y - 24 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedRequestPopup(selectedRequestPopup?.id === request.id ? null : request);
+              }}
+            >
+              <MapPin 
+                className={`w-6 h-6 ${isJoined ? 'text-green-600' : 'text-gray-800'} drop-shadow-md hover:scale-110 transition-transform`}
+                fill={isJoined ? '#22c55e' : '#374151'}
+              />
+            </div>
+          );
+        })}
+        
         {selectedLocation && imageSize.width > 0 && (() => {
           const { x, y } = latLngToPixel(selectedLocation.lat, selectedLocation.lng);
           return (
@@ -149,6 +187,74 @@ export function WorldMap({
           );
         })()}
       </div>
+
+      {selectedRequestPopup && imageSize.width > 0 && (() => {
+        const lat = parseFloat(String(selectedRequestPopup.latitude));
+        const lng = parseFloat(String(selectedRequestPopup.longitude));
+        if (isNaN(lat) || isNaN(lng)) return null;
+        
+        const { x, y } = latLngToPixel(lat, lng);
+        const popupX = x * transform.scale + transform.x;
+        const popupY = y * transform.scale + transform.y;
+        const isJoined = joinedRequestIds.includes(selectedRequestPopup.id);
+        
+        return (
+          <Card 
+            className="absolute w-72 shadow-xl z-50 bg-white"
+            style={{ 
+              left: Math.min(Math.max(popupX + 20, 10), containerRef.current ? containerRef.current.offsetWidth - 300 : 200),
+              top: Math.min(Math.max(popupY - 60, 10), containerRef.current ? containerRef.current.offsetHeight - 200 : 100),
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader className="pb-2 relative">
+              <button
+                className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded"
+                onClick={() => setSelectedRequestPopup(null)}
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <CardTitle className="text-base pr-6">{selectedRequestPopup.title}</CardTitle>
+              {selectedRequestPopup.organizationName && (
+                <p className="text-xs text-gray-500 flex items-center">
+                  <Building className="w-3 h-3 mr-1" />
+                  {selectedRequestPopup.organizationName}
+                </p>
+              )}
+            </CardHeader>
+            <CardContent className="pt-0 space-y-3">
+              <p className="text-sm text-gray-600 line-clamp-2">{selectedRequestPopup.description}</p>
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {selectedRequestPopup.hoursOffered} hours
+                </Badge>
+                <span className="text-xs text-gray-500 flex items-center">
+                  <MapPin className="w-3 h-3 mr-1" />
+                  {selectedRequestPopup.location}
+                </span>
+              </div>
+              {onJoinRequest && !isJoined && (
+                <Button 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    onJoinRequest(selectedRequestPopup);
+                    setSelectedRequestPopup(null);
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Join This Request
+                </Button>
+              )}
+              {isJoined && (
+                <Badge className="w-full justify-center py-2" variant="secondary">
+                  Already Joined
+                </Badge>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
       
       <div className="absolute bottom-2 right-2 flex space-x-1">
         <button
