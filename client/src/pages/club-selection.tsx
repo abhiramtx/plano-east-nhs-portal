@@ -104,6 +104,12 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     }
   });
 
+  useEffect(() => {
+    if (userClubData?.club && userClubData?.membership) {
+      onClubSelected(userClubData.club, userClubData.membership);
+    }
+  }, [userClubData, onClubSelected]);
+
   if (userClubLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -111,12 +117,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       </div>
     );
   }
-
-  useEffect(() => {
-    if (userClubData?.club && userClubData?.membership) {
-      onClubSelected(userClubData.club, userClubData.membership);
-    }
-  }, [userClubData, onClubSelected]);
 
   if (userClubData?.club && userClubData?.membership) {
     return null;
