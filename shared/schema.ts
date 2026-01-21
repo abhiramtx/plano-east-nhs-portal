@@ -196,6 +196,9 @@ export const insertClubSchema = createInsertSchema(clubs).omit({
   totalApprovedHours: true,
   bonusHours: true,
   decayedHours: true,
+  lastActivityAt: true,
+  territoryX: true,
+  territoryY: true,
   createdAt: true,
   updatedAt: true,
 });
