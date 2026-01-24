@@ -1,5 +1,5 @@
-import { useRef, useState, useCallback } from 'react';
-import Map, { Marker, NavigationControl, MapRef } from 'react-map-gl/maplibre';
+import { useRef, useState, useCallback, useEffect } from 'react';
+import Map, { Marker, NavigationControl, MapRef, Source, Layer } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Club, ServiceRequest } from '@/lib/firebase';
 import { MapPin, Clock, Building, Plus, X, Users } from 'lucide-react';
@@ -8,6 +8,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
+
+function hexToRgb(hex: string): [number, number, number] {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result 
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+    : [100, 100, 255];
+}
+
+function createCirclePolygon(lng: number, lat: number, radiusKm: number, segments: number = 64): number[][] {
+  const coords: number[][] = [];
+  const earthRadiusKm = 6371;
+  
+  for (let i = 0; i <= segments; i++) {
+    const angle = (i / segments) * 2 * Math.PI;
+    const latOffset = (radiusKm / earthRadiusKm) * (180 / Math.PI) * Math.cos(angle);
+    const lngOffset = (radiusKm / earthRadiusKm) * (180 / Math.PI) * Math.sin(angle) / Math.cos(lat * Math.PI / 180);
+    coords.push([lng + lngOffset, lat + latOffset]);
+  }
+  
+  return coords;
+}
 
 interface WorldMapProps {
   clubs?: Club[];
@@ -42,12 +63,12 @@ export function WorldMap({
     zoom: 1.5
   });
 
-  const calculateTerritoryRadius = (club: Club) => {
+  const calculateTerritoryRadiusKm = (club: Club) => {
     const approved = parseFloat(String(club.totalApprovedHours || "0"));
     const bonus = parseFloat(String(club.bonusHours || "0"));
     const decayed = parseFloat(String(club.decayedHours || "0"));
     const totalHours = Math.max(0, approved + bonus - decayed);
-    return Math.max(20, Math.sqrt(totalHours) * 8);
+    return Math.max(50, Math.sqrt(totalHours) * 30 + 50);
   };
 
   const handleMapClick = useCallback((e: any) => {
@@ -59,6 +80,36 @@ export function WorldMap({
   const handleMarkerClick = (request: ServiceRequest, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedRequestPopup(selectedRequestPopup?.id === request.id ? null : request);
+  };
+
+  const territoriesGeoJson = {
+    type: 'FeatureCollection' as const,
+    features: clubs
+      .filter(club => club.latitude && club.longitude)
+      .map(club => {
+        const lat = parseFloat(String(club.latitude));
+        const lng = parseFloat(String(club.longitude));
+        if (isNaN(lat) || isNaN(lng)) return null;
+        
+        const radiusKm = calculateTerritoryRadiusKm(club);
+        const rgb = hexToRgb(club.color);
+        
+        return {
+          type: 'Feature' as const,
+          properties: {
+            id: club.id,
+            name: club.name,
+            color: club.color,
+            fillColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.35)`,
+            strokeColor: club.color,
+          },
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [createCirclePolygon(lng, lat, radiusKm)]
+          }
+        };
+      })
+      .filter((f): f is NonNullable<typeof f> => f !== null)
   };
 
   return (
@@ -79,13 +130,34 @@ export function WorldMap({
       >
         <NavigationControl position="bottom-right" showCompass={false} />
         
+        {showTerritories && territoriesGeoJson.features.length > 0 && (
+          <Source id="territories" type="geojson" data={territoriesGeoJson}>
+            <Layer
+              id="territory-fill"
+              type="fill"
+              paint={{
+                'fill-color': ['get', 'fillColor'],
+                'fill-opacity': 0.6
+              }}
+            />
+            <Layer
+              id="territory-outline"
+              type="line"
+              paint={{
+                'line-color': ['get', 'strokeColor'],
+                'line-width': 2,
+                'line-opacity': 0.8
+              }}
+            />
+          </Source>
+        )}
+        
         {showTerritories && clubs.map(club => {
           if (!club.latitude || !club.longitude) return null;
           const lat = parseFloat(String(club.latitude));
           const lng = parseFloat(String(club.longitude));
           if (isNaN(lat) || isNaN(lng)) return null;
           
-          const radius = calculateTerritoryRadius(club);
           const approved = parseFloat(String(club.totalApprovedHours || "0"));
           const bonus = parseFloat(String(club.bonusHours || "0"));
           const decayed = parseFloat(String(club.decayedHours || "0"));
@@ -105,48 +177,33 @@ export function WorldMap({
                 onMouseLeave={() => setHoveredClubId(null)}
               >
                 <div 
-                  className="absolute rounded-full animate-pulse"
+                  className="relative flex items-center justify-center rounded-full transition-transform hover:scale-110"
                   style={{ 
-                    width: radius * 3, 
-                    height: radius * 3,
-                    background: `radial-gradient(circle, ${club.color}60 0%, ${club.color}20 70%, transparent 100%)`,
-                    animationDuration: '3s'
-                  }}
-                />
-                <div 
-                  className="absolute rounded-full"
-                  style={{ 
-                    width: radius, 
-                    height: radius,
-                    backgroundColor: `${club.color}66`,
-                    border: `2px solid ${club.color}`,
-                    boxShadow: `0 0 20px ${club.color}80`
-                  }}
-                />
-                <div 
-                  className="relative flex items-center justify-center rounded-full"
-                  style={{ 
-                    width: 28, 
-                    height: 28,
+                    width: 32, 
+                    height: 32,
                     backgroundColor: club.color,
                     border: '3px solid white',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                    boxShadow: `0 0 20px ${club.color}80, 0 2px 8px rgba(0,0,0,0.5)`
                   }}
                 >
-                  <Users className="w-3.5 h-3.5 text-white" />
+                  <Users className="w-4 h-4 text-white" />
                 </div>
                 
                 {isHovered && (
                   <div 
-                    className="absolute left-10 top-1/2 -translate-y-1/2 bg-black/95 rounded-lg px-3 py-2 whitespace-nowrap z-50 border border-white/20"
-                    style={{ minWidth: 120 }}
+                    className="absolute left-12 top-1/2 -translate-y-1/2 bg-black/95 rounded-lg px-4 py-3 whitespace-nowrap z-50 border border-white/20 shadow-xl"
+                    style={{ minWidth: 140 }}
                   >
-                    <p className="text-white text-sm font-semibold truncate max-w-32">
+                    <p className="text-white text-sm font-semibold truncate max-w-40">
                       {club.name}
                     </p>
-                    <p className="text-gray-400 text-xs">
-                      {totalHours.toFixed(1)} hours
+                    <p className="text-gray-400 text-xs mt-1">
+                      {totalHours.toFixed(1)} volunteer hours
                     </p>
+                    <div 
+                      className="w-full h-1 rounded-full mt-2"
+                      style={{ backgroundColor: club.color }}
+                    />
                   </div>
                 )}
               </div>

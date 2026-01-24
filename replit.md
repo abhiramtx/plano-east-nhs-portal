@@ -71,6 +71,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 24, 2026 - Territory Game System & Map Upgrade
+- **Map Library Upgrade**: Switched from react-simple-maps to react-map-gl with MapLibre GL for Google Maps-like rendering
+- **Map Style**: Using CARTO Dark Matter (no labels) for clean territory visualization
+- **Territory System**: Clubs now display as shaded circular regions that grow based on volunteer hours
+  - Territory radius formula: sqrt(totalHours) * 30 + 50 km
+  - Territories rendered as GeoJSON polygons with club color fill (35% opacity) and border
+  - Overlapping territories create visual competition between clubs
+- **Club Markers**: Center pin with Users icon, glow effect, hover tooltip showing name and hours
+- **Service Requests**: White map pins for opportunities, green when joined
+
 ### January 24, 2026 - Major UI/UX Redesign
 - **Landing Page Redesign**: Complete overhaul with:
   - 100vh sections with smooth scroll navigation
