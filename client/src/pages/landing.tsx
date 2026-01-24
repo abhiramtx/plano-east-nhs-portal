@@ -127,27 +127,26 @@ export default function Landing({ onSignIn }: LandingProps) {
       </nav>
 
       <section className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div 
-            className="absolute top-[20%] left-[15%] w-[500px] h-[500px] rounded-full blur-[120px] opacity-40"
-            style={{ 
-              background: 'radial-gradient(circle, rgba(59,130,246,0.5) 0%, transparent 70%)',
-              transform: `translate(${scrollY * 0.1}px, ${scrollY * 0.05}px)` 
-            }}
+            className="absolute top-[15%] left-[10%] w-[400px] h-[400px] rounded-full blur-[100px] opacity-50 animate-float-slow"
+            style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.6) 0%, transparent 70%)' }}
           />
           <div 
-            className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] rounded-full blur-[100px] opacity-40"
-            style={{ 
-              background: 'radial-gradient(circle, rgba(168,85,247,0.5) 0%, transparent 70%)',
-              transform: `translate(-${scrollY * 0.1}px, -${scrollY * 0.05}px)` 
-            }}
+            className="absolute bottom-[15%] right-[10%] w-[350px] h-[350px] rounded-full blur-[90px] opacity-50 animate-float-medium"
+            style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.6) 0%, transparent 70%)' }}
           />
           <div 
-            className="absolute top-[50%] left-[50%] w-[300px] h-[300px] rounded-full blur-[80px] opacity-30"
-            style={{ 
-              background: 'radial-gradient(circle, rgba(34,197,94,0.5) 0%, transparent 70%)',
-              transform: `translate(-50%, -50%) scale(${1 + scrollY * 0.001})` 
-            }}
+            className="absolute top-[40%] right-[30%] w-[250px] h-[250px] rounded-full blur-[80px] opacity-40 animate-float-fast"
+            style={{ background: 'radial-gradient(circle, rgba(34,197,94,0.5) 0%, transparent 70%)' }}
+          />
+          <div 
+            className="absolute bottom-[40%] left-[25%] w-[200px] h-[200px] rounded-full blur-[70px] opacity-30 animate-float-medium"
+            style={{ background: 'radial-gradient(circle, rgba(236,72,153,0.5) 0%, transparent 70%)' }}
+          />
+          <div 
+            className="absolute top-[60%] left-[60%] w-[180px] h-[180px] rounded-full blur-[60px] opacity-35 animate-float-slow"
+            style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, transparent 70%)' }}
           />
         </div>
         
@@ -202,7 +201,12 @@ export default function Landing({ onSignIn }: LandingProps) {
         
         <div className="max-w-7xl mx-auto w-full">
           <AnimatedSection className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">Why VolunteerClub?</h2>
+            <div className="inline-block mb-4">
+              <span className="text-sm font-medium text-gray-500 uppercase tracking-widest">Features</span>
+            </div>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white">
+              Why <span className="relative inline-block">VolunteerClub<span className="absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 rounded-full"></span></span>?
+            </h2>
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
               Turn your volunteer efforts into a competitive game that benefits everyone.
             </p>
@@ -210,8 +214,8 @@ export default function Landing({ onSignIn }: LandingProps) {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <AnimatedSection delay={100}>
-              <div className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-500 hover:scale-105 hover:bg-white/[0.07]">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-500 h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6">
                   <MapPin className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-semibold mb-3 text-white">Claim Territories</h3>
@@ -222,8 +226,8 @@ export default function Landing({ onSignIn }: LandingProps) {
             </AnimatedSection>
             
             <AnimatedSection delay={200}>
-              <div className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-500 hover:scale-105 hover:bg-white/[0.07]">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-500 h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
                   <Users className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-semibold mb-3 text-white">Join or Create Clubs</h3>
@@ -234,8 +238,8 @@ export default function Landing({ onSignIn }: LandingProps) {
             </AnimatedSection>
             
             <AnimatedSection delay={300}>
-              <div className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-500 hover:scale-105 hover:bg-white/[0.07]">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div className="group p-8 rounded-3xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-500 h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center mb-6">
                   <Trophy className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-semibold mb-3 text-white">Climb Leaderboards</h3>
@@ -270,12 +274,12 @@ export default function Landing({ onSignIn }: LandingProps) {
                 { num: "04", title: "Expand & Compete", desc: "Watch your club's territory grow on the map. Compete with other clubs for dominance." },
               ].map((step, i) => (
                 <AnimatedSection key={step.num} delay={i * 100}>
-                  <div className="flex items-start space-x-6 group">
-                    <div className="flex-shrink-0 w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-white/30 group-hover:bg-white/10 transition-all">
-                      <span className="text-2xl font-bold text-white/50 group-hover:text-white transition-colors">{step.num}</span>
+                  <div className="flex items-start space-x-6">
+                    <div className="flex-shrink-0 w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10">
+                      <span className="text-2xl font-bold text-white/50">{step.num}</span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold mb-2 text-white group-hover:text-blue-400 transition-colors">{step.title}</h3>
+                      <h3 className="text-xl font-semibold mb-2 text-white">{step.title}</h3>
                       <p className="text-gray-400">{step.desc}</p>
                     </div>
                   </div>

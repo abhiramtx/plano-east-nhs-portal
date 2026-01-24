@@ -439,7 +439,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       </div>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-white/10 text-white">
+        <DialogContent className="sm:max-w-md bg-black border-white/10 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white">Create Your Club</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -465,6 +465,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 value={newClub.description}
                 onChange={(e) => setNewClub({ ...newClub, description: e.target.value })}
                 className="bg-white/5 border-white/10 text-white"
+                rows={3}
               />
             </div>
             <div className="space-y-2">
@@ -473,9 +474,14 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 {CLUB_COLORS.map((color) => (
                   <button
                     key={color}
-                    className={`w-8 h-8 rounded-lg transition-transform ${newClub.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110' : ''}`}
+                    type="button"
+                    className={`w-9 h-9 rounded-xl transition-all cursor-pointer ${newClub.color === color ? 'ring-2 ring-white scale-110' : 'hover:scale-105'}`}
                     style={{ backgroundColor: color }}
-                    onClick={() => setNewClub({ ...newClub, color })}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setNewClub({ ...newClub, color });
+                    }}
                   />
                 ))}
               </div>
@@ -506,17 +512,19 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-gray-300">
                 <MapPin className="w-4 h-4" />
-                Club Location
+                Club Location (Optional)
               </Label>
               <p className="text-sm text-gray-500">Click on the map to set your club's location</p>
-              <LocationPicker
-                value={newClub.latitude && newClub.longitude ? { lat: newClub.latitude, lng: newClub.longitude } : null}
-                onChange={(lat, lng) => setNewClub({ ...newClub, latitude: lat, longitude: lng })}
-              />
+              <div className="rounded-xl overflow-hidden border border-white/10">
+                <LocationPicker
+                  value={newClub.latitude && newClub.longitude ? { lat: newClub.latitude, lng: newClub.longitude } : null}
+                  onChange={(lat, lng) => setNewClub({ ...newClub, latitude: lat, longitude: lng })}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="border-white/10 text-gray-300">
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="border-white/10 text-gray-300 hover:bg-white/5">
               Cancel
             </Button>
             <Button 

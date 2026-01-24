@@ -356,75 +356,71 @@ export function LocationPicker({
   value?: { lat: number; lng: number } | null;
   onChange: (lat: number, lng: number) => void;
 }) {
-  const [position, setPosition] = useState({ coordinates: [0, 20] as [number, number], zoom: 1 });
-  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
 
-  const handleClick = (event: React.MouseEvent<SVGSVGElement>) => {
-    const svg = event.currentTarget;
-    const rect = svg.getBoundingClientRect();
+  const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!mapRef.current) return;
+    
+    const rect = mapRef.current.getBoundingClientRect();
     const relX = event.clientX - rect.left;
     const relY = event.clientY - rect.top;
     
-    const lng = ((relX / rect.width) * 360 - 180 - position.coordinates[0]) / position.zoom + position.coordinates[0];
-    const lat = 90 - ((relY / rect.height) * 180) - (position.coordinates[1] - 20);
+    const lng = (relX / rect.width) * 360 - 180;
+    const lat = 90 - (relY / rect.height) * 180;
     
-    const clampedLat = Math.max(-85, Math.min(85, lat));
+    const clampedLat = Math.max(-70, Math.min(80, lat));
     const clampedLng = Math.max(-180, Math.min(180, lng));
     
     onChange(clampedLat, clampedLng);
   };
 
   return (
-    <div className="space-y-2" ref={containerRef}>
+    <div className="space-y-2">
       <p className="text-sm text-gray-400">Click on the map to select a location</p>
-      <div className="relative overflow-hidden bg-gray-900 rounded-xl" style={{ height: '250px' }}>
+      <div 
+        ref={mapRef}
+        className="relative overflow-hidden bg-black rounded-xl cursor-crosshair" 
+        style={{ height: '180px' }}
+        onClick={handleMapClick}
+      >
         <ComposableMap
-          projection="geoMercator"
+          projection="geoEquirectangular"
           projectionConfig={{
-            scale: 100,
-            center: [0, 30]
+            scale: 80,
+            center: [0, 10]
           }}
-          style={{ width: '100%', height: '100%' }}
-          onClick={handleClick}
+          style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
         >
-          <ZoomableGroup
-            zoom={position.zoom}
-            center={position.coordinates}
-            onMoveEnd={(pos) => setPosition(pos)}
-            minZoom={1}
-            maxZoom={8}
-          >
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="#1e293b"
-                    stroke="#334155"
-                    strokeWidth={0.5}
-                    style={{
-                      default: { outline: 'none', cursor: 'crosshair' },
-                      hover: { fill: '#334155', outline: 'none', cursor: 'crosshair' },
-                      pressed: { outline: 'none' },
-                    }}
-                  />
-                ))
-              }
-            </Geographies>
-            
-            {value && (
-              <Marker coordinates={[value.lng, value.lat]}>
-                <circle r={10} fill="white" fillOpacity={0.3} className="animate-ping" />
-                <circle r={6} fill="white" stroke="white" strokeWidth={2} />
-              </Marker>
-            )}
-          </ZoomableGroup>
+          <Geographies geography={geoUrl}>
+            {({ geographies }) =>
+              geographies.map((geo) => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill="#1e293b"
+                  stroke="#334155"
+                  strokeWidth={0.5}
+                  style={{
+                    default: { outline: 'none' },
+                    hover: { outline: 'none' },
+                    pressed: { outline: 'none' },
+                  }}
+                />
+              ))
+            }
+          </Geographies>
+          
+          {value && (
+            <Marker coordinates={[value.lng, value.lat]}>
+              <circle r={8} fill="white" fillOpacity={0.4} />
+              <circle r={5} fill="white" />
+            </Marker>
+          )}
         </ComposableMap>
       </div>
       {value && (
         <p className="text-sm text-gray-500">
-          Selected: {value.lat.toFixed(4)}, {value.lng.toFixed(4)}
+          Selected: {value.lat.toFixed(2)}, {value.lng.toFixed(2)}
         </p>
       )}
     </div>
