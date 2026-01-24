@@ -21,6 +21,7 @@ import ClubSelection from "@/pages/club-selection";
 import ClubDashboard from "@/pages/club-dashboard";
 import TerritoryMap from "@/pages/territory-map";
 import ServiceRequests from "@/pages/service-requests";
+import MyRequests from "@/pages/my-requests";
 import Dashboard from "@/pages/dashboard";
 import Hours from "@/pages/hours";
 import Profile from "@/pages/profile";
@@ -88,6 +89,9 @@ function VolunteerInterface({
           </Route>
           <Route path="/volunteer/service-requests">
             <ServiceRequests />
+          </Route>
+          <Route path="/volunteer/my-requests">
+            <MyRequests />
           </Route>
           <Route path="/volunteer/club">
             <ClubDashboard 

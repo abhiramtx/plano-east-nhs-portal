@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { User, Club, Membership } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import { Globe, LayoutDashboard, Clock, Map, Trophy, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, Megaphone } from "lucide-react";
+import { Globe, LayoutDashboard, Clock, Map, Trophy, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, ClipboardList } from "lucide-react";
 
 interface VolunteerSidebarProps {
   user: User;
@@ -20,7 +20,8 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
   const navItems = [
     { path: "/volunteer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/volunteer/hours", icon: Clock, label: "Log Hours" },
-    { path: "/volunteer/service-requests", icon: Megaphone, label: "Service Requests" },
+    { path: "/volunteer/service-requests", icon: HandHeart, label: "Find Opportunities" },
+    { path: "/volunteer/my-requests", icon: ClipboardList, label: "My Requests" },
     { path: "/volunteer/map", icon: Map, label: "Territory Map" },
     { path: "/volunteer/leaderboard", icon: Trophy, label: "Leaderboard" },
     { path: "/volunteer/club", icon: Globe, label: "My Club" },

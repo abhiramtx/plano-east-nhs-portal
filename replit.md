@@ -71,6 +71,29 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 24, 2026 - Major UI/UX Redesign
+- **Landing Page Redesign**: Complete overhaul with:
+  - 100vh sections with smooth scroll navigation
+  - Black background with gradient accents and parallax effects
+  - Scroll animations using IntersectionObserver
+  - Animated hero section with gradient text
+- **Club Selection Page Reorganization**:
+  - Tabbed interface separating Clubs vs Service Requests
+  - Dark theme with glassmorphism cards
+  - Integrated service request browsing and joining
+- **World Map Improvements**:
+  - Enhanced territory visualization with glow effects and pulsing animations
+  - Hover states and club tooltips
+  - Dark theme with improved contrast
+  - Fixed drag/click detection for better UX
+- **My Requests Page**: New dedicated page for managing created service requests
+  - Full CRUD for service requests
+  - Participant management with stats (total, pending, completed)
+  - Award hours and kick participants
+  - Form validation for required fields
+- **Territory Map Page**: Updated with stat cards and improved leaderboard styling
+- **Navigation Updates**: Added "My Requests" link, renamed "Service Requests" to "Find Opportunities"
+
 ### January 21, 2026 - Service Requests Feature & Firebase Full Migration
 - **Service Requests System**: Complete CRUD for volunteer service opportunities
   - Create requests with title, description, location, hours offered, contact info

@@ -7,7 +7,13 @@ import {
   createClub, 
   createMembership,
   Club as FirebaseClub,
-  Membership as FirebaseMembership
+  Membership as FirebaseMembership,
+  getOpenServiceRequests,
+  ServiceRequest,
+  joinServiceRequest,
+  getUserParticipations,
+  ServiceRequestParticipant,
+  getCurrentUser,
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -18,7 +24,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, HandHeart, MapPin, Trophy, Home } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, HandHeart, MapPin, Trophy, Clock, Building, Phone, Mail, ExternalLink } from "lucide-react";
 import { LocationPicker } from "@/components/world-map";
 
 interface ClubSelectionProps {
@@ -39,6 +46,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const [selectedClub, setSelectedClub] = useState<FirebaseClub | null>(null);
   const [joinPassword, setJoinPassword] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeSection, setActiveSection] = useState<'clubs' | 'services'>('clubs');
   
   const [newClub, setNewClub] = useState({
     name: "",
@@ -49,7 +57,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     latitude: null as number | null,
     longitude: null as number | null,
   });
-  const [showServiceRequests, setShowServiceRequests] = useState(false);
 
   const userEmail = user.email || '';
 
@@ -63,6 +70,19 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     queryKey: ['firebase-clubs'],
     queryFn: getClubs,
   });
+
+  const { data: serviceRequests = [], isLoading: requestsLoading } = useQuery<ServiceRequest[]>({
+    queryKey: ['firebase-open-service-requests'],
+    queryFn: getOpenServiceRequests,
+  });
+
+  const { data: myParticipations = [] } = useQuery<ServiceRequestParticipant[]>({
+    queryKey: ['firebase-my-participations', userEmail],
+    queryFn: () => getUserParticipations(userEmail),
+    enabled: !!userEmail,
+  });
+
+  const joinedRequestIds = myParticipations.map(p => p.requestId);
 
   const createClubMutation = useMutation({
     mutationFn: async (clubData: typeof newClub) => {
@@ -121,6 +141,19 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     }
   });
 
+  const joinRequestMutation = useMutation({
+    mutationFn: async (request: ServiceRequest) => {
+      return await joinServiceRequest(request.id, userEmail, user.name || userEmail.split('@')[0]);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-my-participations'] });
+      toast({ title: "Joined!", description: "You've successfully joined this service request." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to join", description: error.message, variant: "destructive" });
+    }
+  });
+
   useEffect(() => {
     if (userClubData?.club && userClubData?.membership) {
       onClubSelected(userClubData.club, userClubData.membership);
@@ -132,10 +165,16 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     club.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const filteredRequests = serviceRequests.filter(req =>
+    req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    req.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    req.organizationName?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (userClubLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
       </div>
     );
   }
@@ -168,19 +207,19 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-black text-white">
+      <nav className="bg-black/50 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
-                <Globe className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                <Globe className="w-6 h-6 text-black" />
               </div>
-              <span className="text-xl font-bold text-gray-900">VolunteerClub</span>
+              <span className="text-xl font-bold">VolunteerClub</span>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{user.email}</span>
-              <Button variant="outline" size="sm" onClick={onSignOut}>
+              <span className="text-sm text-gray-400 hidden sm:block">{user.email}</span>
+              <Button variant="outline" size="sm" onClick={onSignOut} className="border-white/20 text-white hover:bg-white/10">
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </Button>
@@ -191,158 +230,250 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Choose Your Path</h1>
-          <p className="text-xl text-gray-600">Join an existing club or create your own to start competing</p>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Choose Your Path</h1>
+          <p className="text-xl text-gray-400">Join a club to compete, or find service opportunities</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-black"
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            <CardHeader className="text-center">
-              <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <Plus className="w-7 h-7 text-white" />
-              </div>
-              <CardTitle className="text-lg">Create a Club</CardTitle>
-              <CardDescription className="text-sm">Start your own volunteer club</CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button className="bg-black text-white hover:bg-gray-800 w-full">
-                Create <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex bg-white/5 rounded-2xl p-1 border border-white/10">
+            <button
+              onClick={() => setActiveSection('clubs')}
+              className={`px-6 py-3 rounded-xl font-medium transition-all ${
+                activeSection === 'clubs' 
+                  ? 'bg-white text-black' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Users className="w-5 h-5 inline-block mr-2" />
+              Clubs
+            </button>
+            <button
+              onClick={() => setActiveSection('services')}
+              className={`px-6 py-3 rounded-xl font-medium transition-all ${
+                activeSection === 'services' 
+                  ? 'bg-white text-black' 
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <HandHeart className="w-5 h-5 inline-block mr-2" />
+              Service Requests
+            </button>
+          </div>
+        </div>
 
-          <Card 
-            className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-black"
-            onClick={() => setShowServiceRequests(true)}
-          >
-            <CardHeader className="text-center">
-              <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <HandHeart className="w-7 h-7 text-white" />
-              </div>
-              <CardTitle className="text-lg">Service Requests</CardTitle>
-              <CardDescription className="text-sm">Find volunteer opportunities</CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <Button className="bg-black text-white hover:bg-gray-800 w-full">
-                Browse <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="relative mb-8">
+          <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500" />
+          <Input
+            placeholder={activeSection === 'clubs' ? "Search clubs..." : "Search service requests..."}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-12 rounded-xl"
+          />
+        </div>
 
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
+        {activeSection === 'clubs' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card 
+                className="cursor-pointer bg-gradient-to-br from-blue-500/20 to-purple-500/20 border-white/10 hover:border-white/30 transition-all hover:scale-[1.02]"
+                onClick={() => setCreateDialogOpen(true)}
+              >
+                <CardHeader className="text-center py-8">
+                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Plus className="w-8 h-8 text-black" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Create a Club</CardTitle>
+                  <CardDescription className="text-gray-400">Start your own volunteer club and invite friends</CardDescription>
+                </CardHeader>
+                <CardContent className="text-center pb-8">
+                  <Button className="bg-white text-black hover:bg-gray-200">
+                    Create <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/5 border-white/10">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
                     <Users className="w-5 h-5" />
                     Join a Club
                   </CardTitle>
-                  <CardDescription>Find and join an existing club</CardDescription>
-                </div>
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                  <Input
-                    placeholder="Search clubs..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-64"
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {clubsLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
-                </div>
-              ) : filteredClubs.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  {searchQuery ? "No clubs match your search" : "No clubs yet. Be the first to create one!"}
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {filteredClubs.map((club) => (
-                    <div 
-                      key={club.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div 
-                          className="w-12 h-12 rounded-xl flex items-center justify-center"
-                          style={{ backgroundColor: club.color }}
-                        >
-                          <Trophy className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-gray-900">{club.name}</h3>
-                            {club.isPrivate && <Lock className="w-4 h-4 text-gray-400" />}
-                          </div>
-                          <p className="text-sm text-gray-500 line-clamp-1">{club.description || "No description"}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900">
-                            {club.totalApprovedHours.toFixed(1)} hrs
-                          </p>
-                          <p className="text-xs text-gray-500">total hours</p>
-                        </div>
-                        <Button 
-                          size="sm"
-                          onClick={() => handleJoinClub(club)}
-                          disabled={joinClubMutation.isPending}
-                        >
-                          {club.isPrivate ? <Lock className="w-4 h-4 mr-1" /> : null}
-                          Join
-                        </Button>
-                      </div>
+                  <CardDescription className="text-gray-400">
+                    {clubs.length} clubs available
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {clubsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  ) : filteredClubs.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      {searchQuery ? "No clubs match your search" : "No clubs yet. Be the first!"}
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                      {filteredClubs.map((club) => (
+                        <div 
+                          key={club.id}
+                          className="flex items-center justify-between p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div 
+                              className="w-12 h-12 rounded-xl flex items-center justify-center"
+                              style={{ backgroundColor: club.color }}
+                            >
+                              <Trophy className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-white">{club.name}</h3>
+                                {club.isPrivate && <Lock className="w-4 h-4 text-gray-400" />}
+                              </div>
+                              <p className="text-sm text-gray-500 line-clamp-1">{club.description || "No description"}</p>
+                            </div>
+                          </div>
+                          <Button 
+                            size="sm"
+                            onClick={() => handleJoinClub(club)}
+                            disabled={joinClubMutation.isPending}
+                            className="bg-white text-black hover:bg-gray-200"
+                          >
+                            Join
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'services' && (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <p className="text-gray-400">
+                Browse volunteer opportunities from organizations. You don't need to join a club to help!
+              </p>
+            </div>
+            
+            {requestsLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              </div>
+            ) : filteredRequests.length === 0 ? (
+              <Card className="bg-white/5 border-white/10 p-12 text-center">
+                <HandHeart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No service requests yet</h3>
+                <p className="text-gray-500">Check back later for volunteer opportunities</p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredRequests.map((request) => {
+                  const isJoined = joinedRequestIds.includes(request.id);
+                  return (
+                    <Card key={request.id} className="bg-white/5 border-white/10 hover:border-white/20 transition-all">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <CardTitle className="text-lg text-white">{request.title}</CardTitle>
+                            {request.organizationName && (
+                              <p className="text-sm text-gray-500 flex items-center mt-1">
+                                <Building className="w-4 h-4 mr-1" />
+                                {request.organizationName}
+                              </p>
+                            )}
+                          </div>
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {request.hoursOffered}h
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-sm text-gray-400 line-clamp-2">{request.description}</p>
+                        
+                        {request.location && (
+                          <p className="text-sm text-gray-500 flex items-center">
+                            <MapPin className="w-4 h-4 mr-1" />
+                            {request.location}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center justify-between pt-2">
+                          {request.contactEmail && (
+                            <a 
+                              href={`mailto:${request.contactEmail}`}
+                              className="text-sm text-blue-400 hover:text-blue-300 flex items-center"
+                            >
+                              <Mail className="w-4 h-4 mr-1" />
+                              Contact
+                            </a>
+                          )}
+                          
+                          {isJoined ? (
+                            <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                              Joined
+                            </Badge>
+                          ) : (
+                            <Button 
+                              size="sm"
+                              onClick={() => joinRequestMutation.mutate(request)}
+                              disabled={joinRequestMutation.isPending}
+                              className="bg-white text-black hover:bg-gray-200"
+                            >
+                              Join Request
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-gray-900 border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle>Create Your Club</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Create Your Club</DialogTitle>
+            <DialogDescription className="text-gray-400">
               Start a new volunteer club and invite your friends
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Club Name</Label>
+              <Label htmlFor="name" className="text-gray-300">Club Name</Label>
               <Input
                 id="name"
                 placeholder="Enter club name"
                 value={newClub.name}
                 onChange={(e) => setNewClub({ ...newClub, name: e.target.value })}
+                className="bg-white/5 border-white/10 text-white"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-gray-300">Description</Label>
               <Textarea
                 id="description"
                 placeholder="What's your club about?"
                 value={newClub.description}
                 onChange={(e) => setNewClub({ ...newClub, description: e.target.value })}
+                className="bg-white/5 border-white/10 text-white"
               />
             </div>
             <div className="space-y-2">
-              <Label>Club Color</Label>
+              <Label className="text-gray-300">Club Color</Label>
               <div className="flex flex-wrap gap-2">
                 {CLUB_COLORS.map((color) => (
                   <button
                     key={color}
-                    className={`w-8 h-8 rounded-lg transition-transform ${newClub.color === color ? 'ring-2 ring-black ring-offset-2 scale-110' : ''}`}
+                    className={`w-8 h-8 rounded-lg transition-transform ${newClub.color === color ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-900 scale-110' : ''}`}
                     style={{ backgroundColor: color }}
                     onClick={() => setNewClub({ ...newClub, color })}
                   />
@@ -351,7 +482,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Private Club</Label>
+                <Label className="text-gray-300">Private Club</Label>
                 <p className="text-sm text-gray-500">Require a password to join</p>
               </div>
               <Switch
@@ -361,18 +492,19 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
             </div>
             {newClub.isPrivate && (
               <div className="space-y-2">
-                <Label htmlFor="password">Club Password</Label>
+                <Label htmlFor="password" className="text-gray-300">Club Password</Label>
                 <Input
                   id="password"
                   type="password"
                   placeholder="Set a password"
                   value={newClub.password}
                   onChange={(e) => setNewClub({ ...newClub, password: e.target.value })}
+                  className="bg-white/5 border-white/10 text-white"
                 />
               </div>
             )}
             <div className="space-y-2">
-              <Label className="flex items-center gap-2">
+              <Label className="flex items-center gap-2 text-gray-300">
                 <MapPin className="w-4 h-4" />
                 Club Location
               </Label>
@@ -384,13 +516,13 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="border-white/10 text-gray-300">
               Cancel
             </Button>
             <Button 
               onClick={handleCreateClub}
               disabled={createClubMutation.isPending}
-              className="bg-black text-white hover:bg-gray-800"
+              className="bg-white text-black hover:bg-gray-200"
             >
               {createClubMutation.isPending ? "Creating..." : "Create Club"}
             </Button>
@@ -399,83 +531,40 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       </Dialog>
 
       <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-gray-900 border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle>Join {selectedClub?.name}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Join {selectedClub?.name}</DialogTitle>
+            <DialogDescription className="text-gray-400">
               This club is private. Enter the password to join.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="joinPassword">Password</Label>
+              <Label htmlFor="joinPassword" className="text-gray-300">Password</Label>
               <Input
                 id="joinPassword"
                 type="password"
                 placeholder="Enter club password"
                 value={joinPassword}
                 onChange={(e) => setJoinPassword(e.target.value)}
+                className="bg-white/5 border-white/10 text-white"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setJoinDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setJoinDialogOpen(false)} className="border-white/10 text-gray-300">
               Cancel
             </Button>
             <Button 
               onClick={confirmJoin}
               disabled={joinClubMutation.isPending}
-              className="bg-black text-white hover:bg-gray-800"
+              className="bg-white text-black hover:bg-gray-200"
             >
               {joinClubMutation.isPending ? "Joining..." : "Join Club"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {showServiceRequests && (
-        <div className="fixed inset-0 bg-white z-50 overflow-auto">
-          <nav className="bg-white border-b border-gray-200 sticky top-0">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
-                    <HandHeart className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xl font-bold text-gray-900">Service Requests</span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowServiceRequests(false)}
-                >
-                  <Home className="w-4 h-4 mr-2" />
-                  Back to Clubs
-                </Button>
-              </div>
-            </div>
-          </nav>
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <ServiceRequestsView />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ServiceRequestsView() {
-  return (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-gray-900">Available Volunteer Opportunities</h2>
-        <p className="text-gray-600">Browse and join service requests from organizations</p>
-      </div>
-      
-      <Card className="p-12 text-center">
-        <HandHeart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No service requests yet</h3>
-        <p className="text-gray-500">Check back later for volunteer opportunities</p>
-      </Card>
     </div>
   );
 }
