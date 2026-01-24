@@ -1,12 +1,13 @@
-import { useRef, useState } from 'react';
-import { ComposableMap, Geographies, Geography, ZoomableGroup, Marker } from 'react-simple-maps';
+import { useRef, useState, useCallback } from 'react';
+import Map, { Marker, NavigationControl, MapRef } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { Club, ServiceRequest } from '@/lib/firebase';
 import { MapPin, Clock, Building, Plus, X, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
 
 interface WorldMapProps {
   clubs?: Club[];
@@ -31,227 +32,178 @@ export function WorldMap({
   interactive = true,
   showTerritories = true,
 }: WorldMapProps) {
+  const mapRef = useRef<MapRef>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ coordinates: [0, 20] as [number, number], zoom: 1 });
   const [selectedRequestPopup, setSelectedRequestPopup] = useState<ServiceRequest | null>(null);
-  const [hoveredClub, setHoveredClub] = useState<Club | null>(null);
-  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
-
-  const handleMoveEnd = (position: { coordinates: [number, number]; zoom: number }) => {
-    setPosition(position);
-  };
-
-  const handleMapClick = (event: React.MouseEvent<SVGSVGElement>) => {
-    if (!interactive || !onLocationSelect || !containerRef.current) return;
-    
-    const svg = event.currentTarget;
-    const point = svg.createSVGPoint();
-    point.x = event.clientX;
-    point.y = event.clientY;
-    
-    const rect = svg.getBoundingClientRect();
-    const relX = event.clientX - rect.left;
-    const relY = event.clientY - rect.top;
-    
-    const lng = ((relX / rect.width) * 360 - 180) / position.zoom + position.coordinates[0];
-    const lat = (90 - (relY / rect.height) * 180) / position.zoom + position.coordinates[1] - 90;
-    
-    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-      onLocationSelect(lat, lng);
-    }
-  };
+  const [hoveredClubId, setHoveredClubId] = useState<string | null>(null);
+  const [viewState, setViewState] = useState({
+    longitude: 0,
+    latitude: 20,
+    zoom: 1.5
+  });
 
   const calculateTerritoryRadius = (club: Club) => {
     const approved = parseFloat(String(club.totalApprovedHours || "0"));
     const bonus = parseFloat(String(club.bonusHours || "0"));
     const decayed = parseFloat(String(club.decayedHours || "0"));
     const totalHours = Math.max(0, approved + bonus - decayed);
-    return Math.max(5, Math.sqrt(totalHours) * 2);
+    return Math.max(20, Math.sqrt(totalHours) * 8);
   };
 
-  const handleMarkerClick = (request: ServiceRequest, event: React.MouseEvent) => {
-    event.stopPropagation();
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (rect) {
-      setPopupPosition({
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
-      });
-    }
+  const handleMapClick = useCallback((e: any) => {
+    if (!interactive || !onLocationSelect) return;
+    const { lngLat } = e;
+    onLocationSelect(lngLat.lat, lngLat.lng);
+  }, [interactive, onLocationSelect]);
+
+  const handleMarkerClick = (request: ServiceRequest, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedRequestPopup(selectedRequestPopup?.id === request.id ? null : request);
   };
 
   return (
     <div 
       ref={containerRef}
-      className="relative overflow-hidden bg-gray-900 rounded-xl"
+      className="relative overflow-hidden bg-black rounded-xl"
       style={{ height }}
     >
-      <ComposableMap
-        projection="geoMercator"
-        projectionConfig={{
-          scale: 140,
-          center: [0, 30]
-        }}
-        style={{ width: '100%', height: '100%' }}
+      <Map
+        ref={mapRef}
+        {...viewState}
+        onMove={evt => setViewState(evt.viewState)}
         onClick={handleMapClick}
+        mapStyle={MAP_STYLE}
+        style={{ width: '100%', height: '100%' }}
+        attributionControl={false}
+        cursor={interactive && onLocationSelect ? 'crosshair' : 'grab'}
       >
-        <ZoomableGroup
-          zoom={position.zoom}
-          center={position.coordinates}
-          onMoveEnd={handleMoveEnd}
-          minZoom={1}
-          maxZoom={8}
-        >
-          <Geographies geography={geoUrl}>
-            {({ geographies }) =>
-              geographies.map((geo) => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill="#1e293b"
-                  stroke="#334155"
-                  strokeWidth={0.5}
-                  style={{
-                    default: { outline: 'none' },
-                    hover: { fill: '#334155', outline: 'none' },
-                    pressed: { outline: 'none' },
+        <NavigationControl position="bottom-right" showCompass={false} />
+        
+        {showTerritories && clubs.map(club => {
+          if (!club.latitude || !club.longitude) return null;
+          const lat = parseFloat(String(club.latitude));
+          const lng = parseFloat(String(club.longitude));
+          if (isNaN(lat) || isNaN(lng)) return null;
+          
+          const radius = calculateTerritoryRadius(club);
+          const approved = parseFloat(String(club.totalApprovedHours || "0"));
+          const bonus = parseFloat(String(club.bonusHours || "0"));
+          const decayed = parseFloat(String(club.decayedHours || "0"));
+          const totalHours = Math.max(0, approved + bonus - decayed);
+          const isHovered = hoveredClubId === club.id;
+          
+          return (
+            <Marker 
+              key={club.id} 
+              longitude={lng} 
+              latitude={lat}
+              anchor="center"
+            >
+              <div 
+                className="relative flex items-center justify-center cursor-pointer"
+                onMouseEnter={() => setHoveredClubId(club.id)}
+                onMouseLeave={() => setHoveredClubId(null)}
+              >
+                <div 
+                  className="absolute rounded-full animate-pulse"
+                  style={{ 
+                    width: radius * 3, 
+                    height: radius * 3,
+                    background: `radial-gradient(circle, ${club.color}60 0%, ${club.color}20 70%, transparent 100%)`,
+                    animationDuration: '3s'
                   }}
                 />
-              ))
-            }
-          </Geographies>
-          
-          {showTerritories && clubs.map(club => {
-            if (!club.latitude || !club.longitude) return null;
-            const lat = parseFloat(String(club.latitude));
-            const lng = parseFloat(String(club.longitude));
-            if (isNaN(lat) || isNaN(lng)) return null;
-            
-            const radius = calculateTerritoryRadius(club);
-            const approved = parseFloat(String(club.totalApprovedHours || "0"));
-            const bonus = parseFloat(String(club.bonusHours || "0"));
-            const decayed = parseFloat(String(club.decayedHours || "0"));
-            const totalHours = Math.max(0, approved + bonus - decayed);
-            
-            return (
-              <Marker 
-                key={club.id} 
-                coordinates={[lng, lat]}
-                onMouseEnter={() => setHoveredClub(club)}
-                onMouseLeave={() => setHoveredClub(null)}
-              >
-                <defs>
-                  <radialGradient id={`gradient-${club.id}`} cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor={club.color} stopOpacity="0.6" />
-                    <stop offset="70%" stopColor={club.color} stopOpacity="0.2" />
-                    <stop offset="100%" stopColor={club.color} stopOpacity="0" />
-                  </radialGradient>
-                  <filter id={`glow-${club.id}`} x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                    <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                </defs>
-                <circle
-                  r={radius * 3}
-                  fill={`url(#gradient-${club.id})`}
-                  className="animate-pulse"
-                  style={{ animationDuration: '3s' }}
+                <div 
+                  className="absolute rounded-full"
+                  style={{ 
+                    width: radius, 
+                    height: radius,
+                    backgroundColor: `${club.color}66`,
+                    border: `2px solid ${club.color}`,
+                    boxShadow: `0 0 20px ${club.color}80`
+                  }}
                 />
-                <circle
-                  r={radius}
-                  fill={club.color}
-                  fillOpacity={0.4}
-                  stroke={club.color}
-                  strokeWidth={1}
-                  filter={`url(#glow-${club.id})`}
-                />
-                <circle
-                  r={8}
-                  fill={club.color}
-                  stroke="white"
-                  strokeWidth={2}
-                  style={{ cursor: 'pointer' }}
-                />
-                <Users 
-                  x={-4} 
-                  y={-4} 
-                  width={8} 
-                  height={8} 
-                  color="white"
-                />
-                {hoveredClub?.id === club.id && (
-                  <g>
-                    <rect
-                      x={15}
-                      y={-20}
-                      width={120}
-                      height={40}
-                      rx={6}
-                      fill="rgba(0,0,0,0.9)"
-                    />
-                    <text x={25} y={-2} fill="white" fontSize={10} fontWeight="600">
-                      {club.name.length > 15 ? club.name.slice(0, 15) + '...' : club.name}
-                    </text>
-                    <text x={25} y={12} fill="#9ca3af" fontSize={8}>
+                <div 
+                  className="relative flex items-center justify-center rounded-full"
+                  style={{ 
+                    width: 28, 
+                    height: 28,
+                    backgroundColor: club.color,
+                    border: '3px solid white',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                  }}
+                >
+                  <Users className="w-3.5 h-3.5 text-white" />
+                </div>
+                
+                {isHovered && (
+                  <div 
+                    className="absolute left-10 top-1/2 -translate-y-1/2 bg-black/95 rounded-lg px-3 py-2 whitespace-nowrap z-50 border border-white/20"
+                    style={{ minWidth: 120 }}
+                  >
+                    <p className="text-white text-sm font-semibold truncate max-w-32">
+                      {club.name}
+                    </p>
+                    <p className="text-gray-400 text-xs">
                       {totalHours.toFixed(1)} hours
-                    </text>
-                  </g>
+                    </p>
+                  </div>
                 )}
-              </Marker>
-            );
-          })}
-          
-          {serviceRequests.map(request => {
-            if (!request.latitude || !request.longitude) return null;
-            const lat = parseFloat(String(request.latitude));
-            const lng = parseFloat(String(request.longitude));
-            if (isNaN(lat) || isNaN(lng)) return null;
-            
-            const isJoined = joinedRequestIds.includes(request.id);
-            
-            return (
-              <Marker 
-                key={request.id} 
-                coordinates={[lng, lat]}
-                onClick={(e) => handleMarkerClick(request, e as unknown as React.MouseEvent)}
-              >
-                <g style={{ cursor: 'pointer' }} className="group">
-                  <circle r={12} fill="transparent" />
-                  <path
-                    d="M12 0C7.58 0 4 3.58 4 8c0 5.5 8 14 8 14s8-8.5 8-14c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"
-                    transform="translate(-12, -22) scale(1)"
-                    fill={isJoined ? '#22c55e' : '#ffffff'}
-                    stroke={isJoined ? '#16a34a' : '#e5e5e5'}
-                    strokeWidth={1}
-                  />
-                </g>
-              </Marker>
-            );
-          })}
-          
-          {selectedLocation && (
-            <Marker coordinates={[selectedLocation.lng, selectedLocation.lat]}>
-              <circle r={12} fill="white" fillOpacity={0.3} className="animate-ping" />
-              <circle r={8} fill="white" stroke="white" strokeWidth={2} />
+              </div>
             </Marker>
-          )}
-        </ZoomableGroup>
-      </ComposableMap>
+          );
+        })}
+        
+        {serviceRequests.map(request => {
+          if (!request.latitude || !request.longitude) return null;
+          const lat = parseFloat(String(request.latitude));
+          const lng = parseFloat(String(request.longitude));
+          if (isNaN(lat) || isNaN(lng)) return null;
+          
+          const isJoined = joinedRequestIds.includes(request.id);
+          
+          return (
+            <Marker 
+              key={request.id} 
+              longitude={lng} 
+              latitude={lat}
+              anchor="bottom"
+            >
+              <div 
+                className="cursor-pointer transform hover:scale-110 transition-transform"
+                onClick={(e) => handleMarkerClick(request, e)}
+              >
+                <MapPin 
+                  className="w-8 h-8 drop-shadow-lg" 
+                  fill={isJoined ? '#22c55e' : '#ffffff'} 
+                  color={isJoined ? '#16a34a' : '#000000'}
+                  strokeWidth={1.5}
+                />
+              </div>
+            </Marker>
+          );
+        })}
+        
+        {selectedLocation && (
+          <Marker 
+            longitude={selectedLocation.lng} 
+            latitude={selectedLocation.lat}
+            anchor="center"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 w-8 h-8 -translate-x-1/2 -translate-y-1/2 bg-white/30 rounded-full animate-ping" />
+              <div className="w-5 h-5 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full border-2 border-white shadow-lg" />
+            </div>
+          </Marker>
+        )}
+      </Map>
 
       {selectedRequestPopup && (() => {
         const isJoined = joinedRequestIds.includes(selectedRequestPopup.id);
         
         return (
           <Card 
-            className="absolute w-80 shadow-2xl z-50 bg-gray-900/95 border-white/20 text-white backdrop-blur-xl"
-            style={{ 
-              left: Math.min(Math.max(popupPosition.x + 20, 10), containerRef.current ? containerRef.current.offsetWidth - 340 : 200),
-              top: Math.min(Math.max(popupPosition.y - 80, 10), containerRef.current ? containerRef.current.offsetHeight - 220 : 100),
-            }}
+            className="absolute top-4 left-4 w-80 shadow-2xl z-50 bg-black/95 border-white/20 text-white backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <CardHeader className="pb-2 relative">
@@ -305,42 +257,12 @@ export function WorldMap({
         );
       })()}
       
-      <div className="absolute bottom-4 right-4 flex space-x-2">
-        <button
-          className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white font-bold hover:bg-white/20 transition-colors border border-white/10"
-          onClick={(e) => {
-            e.stopPropagation();
-            setPosition(prev => ({ ...prev, zoom: Math.min(prev.zoom * 1.5, 8) }));
-          }}
-        >
-          +
-        </button>
-        <button
-          className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white font-bold hover:bg-white/20 transition-colors border border-white/10"
-          onClick={(e) => {
-            e.stopPropagation();
-            setPosition(prev => ({ ...prev, zoom: Math.max(prev.zoom / 1.5, 1) }));
-          }}
-        >
-          −
-        </button>
-        <button
-          className="px-4 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white text-sm hover:bg-white/20 transition-colors border border-white/10"
-          onClick={(e) => {
-            e.stopPropagation();
-            setPosition({ coordinates: [0, 20], zoom: 1 });
-          }}
-        >
-          Reset
-        </button>
-      </div>
-      
-      <div className="absolute top-4 left-4 flex flex-col space-y-2">
-        <div className="flex items-center space-x-2 bg-black/50 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10">
+      <div className="absolute top-4 right-4 flex flex-col space-y-2">
+        <div className="flex items-center space-x-2 bg-black/70 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10">
           <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
           <span className="text-xs text-white">Club Territories</span>
         </div>
-        <div className="flex items-center space-x-2 bg-black/50 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10">
+        <div className="flex items-center space-x-2 bg-black/70 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10">
           <MapPin className="w-3 h-3 text-white" fill="white" />
           <span className="text-xs text-white">Service Requests</span>
         </div>
@@ -356,67 +278,45 @@ export function LocationPicker({
   value?: { lat: number; lng: number } | null;
   onChange: (lat: number, lng: number) => void;
 }) {
-  const mapRef = useRef<HTMLDivElement>(null);
+  const [viewState, setViewState] = useState({
+    longitude: value?.lng || 0,
+    latitude: value?.lat || 20,
+    zoom: 1
+  });
 
-  const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!mapRef.current) return;
-    
-    const rect = mapRef.current.getBoundingClientRect();
-    const relX = event.clientX - rect.left;
-    const relY = event.clientY - rect.top;
-    
-    const lng = (relX / rect.width) * 360 - 180;
-    const lat = 90 - (relY / rect.height) * 180;
-    
-    const clampedLat = Math.max(-70, Math.min(80, lat));
-    const clampedLng = Math.max(-180, Math.min(180, lng));
-    
-    onChange(clampedLat, clampedLng);
-  };
+  const handleMapClick = useCallback((e: any) => {
+    const { lngLat } = e;
+    onChange(lngLat.lat, lngLat.lng);
+  }, [onChange]);
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-gray-400">Click on the map to select a location</p>
       <div 
-        ref={mapRef}
-        className="relative overflow-hidden bg-black rounded-xl cursor-crosshair" 
+        className="relative overflow-hidden bg-black rounded-xl" 
         style={{ height: '180px' }}
-        onClick={handleMapClick}
       >
-        <ComposableMap
-          projection="geoEquirectangular"
-          projectionConfig={{
-            scale: 80,
-            center: [0, 10]
-          }}
-          style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
+        <Map
+          {...viewState}
+          onMove={evt => setViewState(evt.viewState)}
+          onClick={handleMapClick}
+          mapStyle={MAP_STYLE}
+          style={{ width: '100%', height: '100%' }}
+          attributionControl={false}
+          cursor="crosshair"
         >
-          <Geographies geography={geoUrl}>
-            {({ geographies }) =>
-              geographies.map((geo) => (
-                <Geography
-                  key={geo.rsmKey}
-                  geography={geo}
-                  fill="#1e293b"
-                  stroke="#334155"
-                  strokeWidth={0.5}
-                  style={{
-                    default: { outline: 'none' },
-                    hover: { outline: 'none' },
-                    pressed: { outline: 'none' },
-                  }}
-                />
-              ))
-            }
-          </Geographies>
-          
           {value && (
-            <Marker coordinates={[value.lng, value.lat]}>
-              <circle r={8} fill="white" fillOpacity={0.4} />
-              <circle r={5} fill="white" />
+            <Marker 
+              longitude={value.lng} 
+              latitude={value.lat}
+              anchor="center"
+            >
+              <div className="relative">
+                <div className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 bg-white/40 rounded-full animate-ping" />
+                <div className="w-4 h-4 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full border-2 border-white shadow-lg" />
+              </div>
             </Marker>
           )}
-        </ComposableMap>
+        </Map>
       </div>
       {value && (
         <p className="text-sm text-gray-500">

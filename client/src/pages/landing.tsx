@@ -3,9 +3,10 @@ import { signInWithGoogle } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Globe, Users, Trophy, MapPin, ArrowRight, Zap, Shield, Target, ChevronDown, Sparkles, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import Map from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
-const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
 
 interface LandingProps {
   onSignIn: () => void;
@@ -289,34 +290,18 @@ export default function Landing({ onSignIn }: LandingProps) {
             
             <AnimatedSection delay={400}>
               <div className="relative">
-                <div className="aspect-square rounded-3xl bg-white/5 border border-white/10 overflow-hidden">
-                  <ComposableMap
-                    projection="geoMercator"
-                    projectionConfig={{
-                      scale: 120,
-                      center: [0, 30]
+                <div className="aspect-square rounded-3xl bg-black border border-white/10 overflow-hidden">
+                  <Map
+                    initialViewState={{
+                      longitude: 0,
+                      latitude: 30,
+                      zoom: 1.2
                     }}
+                    mapStyle={MAP_STYLE}
                     style={{ width: '100%', height: '100%' }}
-                  >
-                    <Geographies geography={geoUrl}>
-                      {({ geographies }) =>
-                        geographies.map((geo) => (
-                          <Geography
-                            key={geo.rsmKey}
-                            geography={geo}
-                            fill="#1e293b"
-                            stroke="#334155"
-                            strokeWidth={0.5}
-                            style={{
-                              default: { outline: 'none' },
-                              hover: { fill: '#334155', outline: 'none' },
-                              pressed: { outline: 'none' },
-                            }}
-                          />
-                        ))
-                      }
-                    </Geographies>
-                  </ComposableMap>
+                    attributionControl={false}
+                    interactive={false}
+                  />
                   <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-[30%] left-[25%] w-8 h-8 bg-blue-500 rounded-full animate-ping opacity-50" />
                     <div className="absolute top-[45%] left-[55%] w-6 h-6 bg-green-500 rounded-full animate-ping opacity-50" style={{ animationDelay: '0.5s' }} />
