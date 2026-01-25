@@ -781,13 +781,14 @@ export const removeAdminRole = async (email: string): Promise<void> => {
   });
 };
 
-export const getAdminAssignment = async (adminEmail: string): Promise<UserProfile | null> => {
+export const getAdminAssignment = async (adminEmail: string, skipEmails: string[] = []): Promise<UserProfile | null> => {
   const submissions = await getAllSubmissions();
   const pendingSubmissions = submissions.filter(s => s.status === "pending");
   
   if (pendingSubmissions.length === 0) return null;
   
-  const userEmails = [...new Set(pendingSubmissions.map(s => s.userEmail))];
+  const userEmails = [...new Set(pendingSubmissions.map(s => s.userEmail))]
+    .filter(email => !skipEmails.includes(email));
   
   for (const email of userEmails) {
     const profile = await getUserProfile(email);

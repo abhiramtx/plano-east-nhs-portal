@@ -39,9 +39,9 @@ Preferred communication style: Simple, everyday language.
 ## Key Components
 
 ### Database Layer
-- **Primary**: Firebase Firestore for all volunteer-facing data
-- **Collections**: clubs, memberships, hoursSubmissions, serviceRequests, serviceRequestParticipants, settings, users
-- **Legacy**: Drizzle ORM with PostgreSQL for admin-only features
+- **Primary**: Firebase Firestore for ALL data (volunteer and admin features)
+- **Collections**: clubs, memberships, submissions, serviceRequests, serviceRequestParticipants, settings, users, yearlyArchives
+- **Legacy**: Drizzle ORM with PostgreSQL (no longer used for admin features)
 - **Schema**: Firebase types in `client/src/lib/firebase.ts`, PostgreSQL in `shared/schema.ts`
 
 ### Security Considerations
@@ -70,6 +70,26 @@ Preferred communication style: Simple, everyday language.
 - **CORS**: Configured for cross-origin requests
 
 ## Recent Changes
+
+### January 25, 2026 - Admin Pages Firebase Migration
+- **Complete Migration**: All admin pages now use Firebase Firestore instead of PostgreSQL API calls
+- **Admin Dashboard**: Uses getAllSubmissions and getAllUserProfiles from Firebase
+- **Admin Students**: Uses Firebase for member management and submission review
+- **Admin Approval**: Uses getAdminAssignment with skip functionality for rotating through pending submissions
+- **Admin Management**: Uses getAdminProfiles, promoteToAdmin, removeAdminRole for admin user management
+- **Admin Database**: Uses archiveYearData, wipeDatabase, removeDemoData with date restrictions (May 1st - August 1st)
+- **New Firebase Functions**:
+  - getAllSubmissions() - retrieve all submissions
+  - getAllUserProfiles() - retrieve all user profiles
+  - getAdminProfiles() - retrieve users with admin role (userRole === 1)
+  - promoteToAdmin(email) - promote user to admin
+  - removeAdminRole(email) - remove admin privileges
+  - getAdminAssignment(email, skipEmails) - get next student with pending submissions
+  - getPendingSubmissionsForUser(email) - get pending submissions for a user
+  - archiveYearData(schoolYear) - archive year data to yearlyArchives collection
+  - wipeDatabase() - delete all submissions
+  - removeDemoData() - remove demo users and their data
+- **Query Keys**: All admin queries now use 'firebase-' prefixed keys for consistent cache invalidation
 
 ### January 24, 2026 - Territory Game System & Map Upgrade
 - **Map Library Upgrade**: Switched from react-simple-maps to react-map-gl with MapLibre GL for Google Maps-like rendering

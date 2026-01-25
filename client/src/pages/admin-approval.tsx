@@ -6,8 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { HoursSubmission, UserProfile } from '@shared/schema';
+import { 
+  getAdminAssignment, 
+  getPendingSubmissionsForUser, 
+  updateSubmission,
+  getUserProfile,
+  HoursSubmission, 
+  UserProfile 
+} from '@/lib/firebase';
 import { 
   Clock, 
   Calendar, 
@@ -31,44 +37,31 @@ export function AdminApproval({ user }: AdminApprovalProps) {
   const [assignedStudent, setAssignedStudent] = useState<UserProfile | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<HoursSubmission | null>(null);
   const [imageModalOpen, setImageModalOpen] = useState(false);
-  const [rejectingSubmission, setRejectingSubmission] = useState<number | null>(null);
+  const [rejectingSubmission, setRejectingSubmission] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [skippedEmails, setSkippedEmails] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get assigned student for this admin
-  const { data: assignment, isLoading: assignmentLoading } = useQuery({
-    queryKey: ['/api/admin-assignment', user.email],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/admin-assignment/${encodeURIComponent(user.email.replace(/\./g, ','))}`);
-      const data = await response.json();
-      return data;
-    },
-    refetchInterval: 5000, // Refetch every 5 seconds for debugging
-    staleTime: 0, // Never use stale data
-    gcTime: 0, // Don't cache
+  const { data: assignment, isLoading: assignmentLoading, refetch: refetchAssignment } = useQuery({
+    queryKey: ['firebase-admin-assignment', user.email, skippedEmails],
+    queryFn: () => getAdminAssignment(user.email, skippedEmails),
+    refetchInterval: 5000,
+    staleTime: 0,
+    gcTime: 0,
   });
 
-  // Get student's pending submissions
   const { data: studentSubmissions = [], isLoading: submissionsLoading } = useQuery({
-    queryKey: ['/api/student-submissions', assignment?.userId],
+    queryKey: ['firebase-pending-submissions', assignment?.email],
     queryFn: async () => {
-      if (!assignment?.userId) {
-        return [];
-      }
-      // Convert email format for API call (dots to commas)
-      const apiUserId = assignment.userId.replace(/\./g, ',');
-      const response = await apiRequest('GET', `/api/hours-submissions/${apiUserId}`);
-      const data = await response.json();
-      const pendingSubmissions = Array.isArray(data) ? data.filter((sub: HoursSubmission) => sub.status === 'pending') : [];
-      return pendingSubmissions;
+      if (!assignment?.email) return [];
+      return getPendingSubmissionsForUser(assignment.email);
     },
-    enabled: !!assignment?.userId,
-    staleTime: 0, // Never use stale data
-    gcTime: 0, // Don't cache
+    enabled: !!assignment?.email,
+    staleTime: 0,
+    gcTime: 0,
   });
 
-  // Set assigned student and first submission
   useEffect(() => {
     if (assignment) {
       setAssignedStudent(assignment);
@@ -78,14 +71,18 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     }
   }, [assignment, studentSubmissions, selectedSubmission]);
 
-  // Mutation for approving/rejecting submissions
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status, rejectReason }: { id: number; status: string; rejectReason?: string }) => {
-      return apiRequest('PUT', `/api/hours-submissions/${id}`, { status, rejectReason });
+    mutationFn: async ({ id, status, rejectReason }: { id: string; status: string; rejectReason?: string }) => {
+      await updateSubmission(id, { 
+        status, 
+        rejectReason: rejectReason || undefined,
+        reviewedAt: new Date(),
+        reviewedBy: user.email
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/student-submissions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-pending-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-submissions'] });
       setRejectingSubmission(null);
       setRejectReason("");
       toast({
@@ -102,38 +99,22 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     },
   });
 
-  // Mutation for releasing assignment and getting a new one
-  const releaseMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest('POST', '/api/release-assignment', { 
-        adminEmail: user.email.replace(/\./g, ','),
-        currentStudentId: assignedStudent?.userId 
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin-assignment'] });
-      setAssignedStudent(null);
-      setSelectedSubmission(null);
-      toast({
-        title: "Success",
-        description: "Assignment released. Getting new assignment...",
-      });
-    },
-    onError: (error) => {
-      console.error("Release error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to release assignment",
-        variant: "destructive",
-      });
+  const handleReleaseAssignment = () => {
+    if (assignedStudent?.email) {
+      setSkippedEmails(prev => [...prev, assignedStudent.email]);
     }
-  });
+    setAssignedStudent(null);
+    setSelectedSubmission(null);
+    toast({
+      title: "Success",
+      description: "Assignment released. Getting new assignment...",
+    });
+  };
 
   const handleApprove = () => {
     if (selectedSubmission) {
       updateStatusMutation.mutate({ id: selectedSubmission.id, status: 'approved' });
-      // Move to next submission or close
-      const currentIndex = studentSubmissions.findIndex(s => s.id === selectedSubmission.id);
+      const currentIndex = studentSubmissions.findIndex((s: HoursSubmission) => s.id === selectedSubmission.id);
       const nextSubmission = studentSubmissions[currentIndex + 1];
       if (nextSubmission) {
         setSelectedSubmission(nextSubmission);
@@ -143,15 +124,14 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     }
   };
 
-  const handleReject = (submissionId: number) => {
+  const handleReject = (submissionId: string) => {
     if (rejectReason.trim()) {
       updateStatusMutation.mutate({ 
         id: submissionId, 
         status: 'rejected', 
         rejectReason: rejectReason.trim() 
       });
-      // Move to next submission or close
-      const currentIndex = studentSubmissions.findIndex(s => s.id === submissionId);
+      const currentIndex = studentSubmissions.findIndex((s: HoursSubmission) => s.id === submissionId);
       const nextSubmission = studentSubmissions[currentIndex + 1];
       if (nextSubmission) {
         setSelectedSubmission(nextSubmission);
@@ -161,8 +141,9 @@ export function AdminApproval({ user }: AdminApprovalProps) {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -186,7 +167,7 @@ export function AdminApproval({ user }: AdminApprovalProps) {
         <div className="text-center">
           <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Assignment Available</h3>
-          <p className="text-gray-500">All submissions have been assigned to other administrators</p>
+          <p className="text-gray-500">All submissions have been reviewed or assigned to other administrators</p>
         </div>
       </div>
     );
@@ -194,7 +175,6 @@ export function AdminApproval({ user }: AdminApprovalProps) {
 
   return (
     <div className="flex-1 flex flex-col bg-white min-h-0">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex items-center justify-between">
@@ -212,54 +192,49 @@ export function AdminApproval({ user }: AdminApprovalProps) {
       </div>
 
       <div className="flex-1 flex min-h-0">
-        {/* Sidebar - Student Activities */}
         <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
-          {/* Student Info */}
           <div className="p-4 border-b border-gray-200 bg-white">
             <div className="flex items-center space-x-3 mb-3">
               <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
                 <span className="text-white text-sm font-medium">
-                  {assignedStudent?.userId.split('@')[0].substring(0, 2).toUpperCase()}
+                  {assignedStudent?.email?.split('@')[0].substring(0, 2).toUpperCase()}
                 </span>
               </div>
               <div>
                 <div className="flex items-center space-x-2">
                   <h3 className="font-medium text-gray-900">
-                    {assignedStudent?.goByFirstName} {assignedStudent?.lastName}
+                    {assignedStudent?.displayName || assignedStudent?.email}
                   </h3>
                   {assignedStudent?.userRole === 1 && (
                     <Badge variant="secondary" className="text-xs">Admin</Badge>
                   )}
                 </div>
-                <p className="text-sm text-gray-500">{assignedStudent?.userId}</p>
-                <p className="text-sm text-gray-500">{assignedStudent?.personalEmailAddress}</p>
+                <p className="text-sm text-gray-500">{assignedStudent?.email}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center space-x-2">
                 <IdCard className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-600">ID: {assignedStudent?.studentId}</span>
+                <span className="text-gray-600">ID: {assignedStudent?.studentId || 'N/A'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <GraduationCap className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-600">Grade: {assignedStudent?.gradeLevel}</span>
+                <span className="text-gray-600">Grade: {assignedStudent?.gradeLevel || 'N/A'}</span>
               </div>
             </div>
             <div className="mt-3">
               <Button
-                onClick={() => releaseMutation.mutate()}
-                disabled={releaseMutation.isPending}
+                onClick={handleReleaseAssignment}
                 variant="outline"
                 size="sm"
                 className="w-full"
               >
                 <UserX className="w-4 h-4 mr-2" />
-                {releaseMutation.isPending ? 'Releasing...' : 'Release & Get New Assignment'}
+                Release & Get New Assignment
               </Button>
             </div>
           </div>
 
-          {/* Activities List */}
           <div className="flex-1 overflow-y-auto p-4">
             <h4 className="font-medium text-gray-900 mb-3">Pending Activities ({studentSubmissions.length})</h4>
             {submissionsLoading ? (
@@ -301,11 +276,9 @@ export function AdminApproval({ user }: AdminApprovalProps) {
           </div>
         </div>
 
-        {/* Main Content - Submission Details */}
         <div className="flex-1 overflow-y-auto">
           {selectedSubmission ? (
             <div className="p-6">
-              {/* Action Buttons */}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">
                   {selectedSubmission.activityName || 'Unnamed Activity'}
@@ -340,7 +313,6 @@ export function AdminApproval({ user }: AdminApprovalProps) {
                 </div>
               </div>
 
-              {/* Submission Details */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
@@ -427,7 +399,6 @@ export function AdminApproval({ user }: AdminApprovalProps) {
         </div>
       </div>
 
-      {/* Image Modal */}
       {imageModalOpen && selectedSubmission?.proofImageUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="relative max-w-4xl max-h-[90vh] overflow-auto">
@@ -446,7 +417,6 @@ export function AdminApproval({ user }: AdminApprovalProps) {
         </div>
       )}
 
-      {/* Reject Reason Dialog */}
       {rejectingSubmission && (
         <Dialog open={!!rejectingSubmission} onOpenChange={() => setRejectingSubmission(null)}>
           <DialogContent>

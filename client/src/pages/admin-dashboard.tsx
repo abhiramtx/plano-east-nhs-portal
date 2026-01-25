@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { User } from "@/lib/firebase";
-import { HoursSubmission } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { User, getAllSubmissions, getAllUserProfiles, updateSubmission, HoursSubmission, UserProfile } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,35 +26,28 @@ interface AdminDashboardProps {
 export function AdminDashboard({ user }: AdminDashboardProps) {
   const [selectedSubmission, setSelectedSubmission] = useState<HoursSubmission | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Fetch all submissions for admin review
   const { data: submissions = [], isLoading } = useQuery({
-    queryKey: ['/api/hours-submissions'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/hours-submissions');
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
+    queryKey: ['firebase-submissions'],
+    queryFn: getAllSubmissions,
   });
 
-  // Fetch all user profiles to get additional information
   const { data: profiles = [] } = useQuery({
-    queryKey: ['/api/user-profiles'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/user-profiles');
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
+    queryKey: ['firebase-user-profiles'],
+    queryFn: getAllUserProfiles,
   });
 
-  // Update submission status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const response = await apiRequest('PUT', `/api/hours-submissions/${id}`, { status });
-      return await response.json();
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      await updateSubmission(id, { 
+        status, 
+        reviewedAt: new Date(),
+        reviewedBy: user?.email || ''
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-submissions'] });
       toast({
         title: "Success",
         description: "Submission status updated",
@@ -71,20 +62,20 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
     }
   });
 
-  // Calculate statistics
   const stats = {
     totalSubmissions: submissions.length,
     pendingSubmissions: submissions.filter((s: HoursSubmission) => s.status === 'pending').length,
     approvedSubmissions: submissions.filter((s: HoursSubmission) => s.status === 'approved').length,
     rejectedSubmissions: submissions.filter((s: HoursSubmission) => s.status === 'rejected').length,
-    totalHours: submissions.reduce((sum: number, s: HoursSubmission) => sum + parseFloat(s.hours), 0),
+    totalHours: submissions.reduce((sum: number, s: HoursSubmission) => sum + s.hours, 0),
     approvedHours: submissions
       .filter((s: HoursSubmission) => s.status === 'approved')
-      .reduce((sum: number, s: HoursSubmission) => sum + parseFloat(s.hours), 0),
+      .reduce((sum: number, s: HoursSubmission) => sum + s.hours, 0),
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -109,7 +100,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
     }
   };
 
-  const handleStatusUpdate = (id: number, status: string) => {
+  const handleStatusUpdate = (id: string, status: string) => {
     updateStatusMutation.mutate({ id, status });
   };
 
@@ -125,7 +116,6 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
 
   return (
     <div className="flex-1 flex flex-col bg-white min-h-0">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex items-center justify-between">
@@ -142,9 +132,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-auto p-4 lg:p-6">
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
           <Card>
             <CardContent className="p-6">
@@ -203,7 +191,6 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
           </Card>
         </div>
 
-        {/* Submissions List */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -220,103 +207,94 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
               </div>
             ) : (
               <div className="space-y-4">
-                {submissions.map((submission: HoursSubmission) => (
-                  <div key={submission.id} className="p-4 lg:p-6 border rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
-                      <div className="flex-1">
-                        <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
-                          <Badge className={getStatusColor(submission.status)}>
-                            {getStatusIcon(submission.status)}
-                            <span className="ml-1 capitalize">{submission.status}</span>
-                          </Badge>
-                          <span className="text-sm text-gray-500">
-                            {submission.studentName} (ID: {submission.studentId})
-                          </span>
-                        </div>
-                        
-                        {/* Student Information */}
-                        <div className="text-sm text-gray-500 mb-3 space-y-1">
-                          {(() => {
-                            const profile = profiles.find(p => p.userId === submission.userId);
-                            return (
-                              <>
-                                <div>Google: {submission.userId}</div>
-                                {profile?.personalEmailAddress && (
-                                  <div>Personal: {profile.personalEmailAddress}</div>
-                                )}
-                                {profile?.gradeLevel && (
-                                  <div>Grade: {profile.gradeLevel}</div>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                        
-                        <h3 className="font-medium text-gray-900 mb-2">
-                          {submission.activityName || "Activity Name Not Provided"}
-                        </h3>
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
-                          <div className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-1" />
-                            {formatDate(submission.date)}
+                {submissions.map((submission: HoursSubmission) => {
+                  const profile = profiles.find((p: UserProfile) => p.email === submission.userEmail);
+                  return (
+                    <div key={submission.id} className="p-4 lg:p-6 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
+                            <Badge className={getStatusColor(submission.status)}>
+                              {getStatusIcon(submission.status)}
+                              <span className="ml-1 capitalize">{submission.status}</span>
+                            </Badge>
+                            <span className="text-sm text-gray-500">
+                              {submission.userName}
+                            </span>
                           </div>
-                          <div className="flex items-center">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {submission.hours} hours
+                          
+                          <div className="text-sm text-gray-500 mb-3 space-y-1">
+                            <div>Email: {submission.userEmail}</div>
+                            {profile?.gradeLevel && (
+                              <div>Grade: {profile.gradeLevel}</div>
+                            )}
                           </div>
+                          
+                          <h3 className="font-medium text-gray-900 mb-2">
+                            {submission.activityName || "Activity Name Not Provided"}
+                          </h3>
+                          
+                          <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                            <div className="flex items-center">
+                              <Calendar className="w-4 h-4 mr-1" />
+                              {formatDate(submission.date)}
+                            </div>
+                            <div className="flex items-center">
+                              <Clock className="w-4 h-4 mr-1" />
+                              {submission.hours} hours
+                            </div>
+                          </div>
+                          
+                          <p className="text-gray-600 text-sm mb-4">{submission.description}</p>
                         </div>
                         
-                        <p className="text-gray-600 text-sm mb-4">{submission.description}</p>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        {submission.proofImageUrl && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedSubmission(submission)}
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            View Proof
-                          </Button>
-                        )}
-                        
-                        {submission.status === 'pending' && (
-                          <>
+                        <div className="flex items-center space-x-2">
+                          {submission.proofImageUrl && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleStatusUpdate(submission.id, 'approved')}
-                              disabled={updateStatusMutation.isPending}
-                              className="text-green-600 hover:bg-green-50"
+                              onClick={() => setSelectedSubmission(submission)}
                             >
-                              <Check className="w-4 h-4 mr-1" />
-                              Approve
+                              <Eye className="w-4 h-4 mr-1" />
+                              View Proof
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleStatusUpdate(submission.id, 'rejected')}
-                              disabled={updateStatusMutation.isPending}
-                              className="text-red-600 hover:bg-red-50"
-                            >
-                              <X className="w-4 h-4 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
+                          )}
+                          
+                          {submission.status === 'pending' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusUpdate(submission.id, 'approved')}
+                                disabled={updateStatusMutation.isPending}
+                                className="text-green-600 hover:bg-green-50"
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusUpdate(submission.id, 'rejected')}
+                                disabled={updateStatusMutation.isPending}
+                                className="text-red-600 hover:bg-red-50"
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Proof Image Modal */}
       {selectedSubmission && selectedSubmission.proofImageUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
@@ -329,7 +307,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
               </div>
               <div className="mb-4">
                 <p className="text-sm text-gray-600 mb-2">
-                  <strong>Student:</strong> {selectedSubmission.studentName}
+                  <strong>Student:</strong> {selectedSubmission.userName}
                 </p>
                 <p className="text-sm text-gray-600 mb-2">
                   <strong>Activity:</strong> {selectedSubmission.activityName || "Not provided"}

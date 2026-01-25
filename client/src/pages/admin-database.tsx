@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { archiveYearData, wipeDatabase, removeDemoData } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,18 +36,17 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Check if current date is within allowed window (May 1st - August 1st)
   const isWithinAllowedWindow = () => {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const mayFirst = new Date(currentYear, 4, 1); // May 1st
-    const augFirst = new Date(currentYear, 7, 1); // August 1st
+    const mayFirst = new Date(currentYear, 4, 1);
+    const augFirst = new Date(currentYear, 7, 1);
     return now >= mayFirst && now <= augFirst;
   };
 
   const archiveYearMutation = useMutation({
     mutationFn: async (schoolYear: string) => {
-      return apiRequest('POST', '/api/archive-year', { schoolYear });
+      await archiveYearData(schoolYear);
     },
     onSuccess: () => {
       toast({
@@ -67,11 +66,11 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
 
   const wipeDatabaseMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', '/api/wipe-database');
+      await wipeDatabase();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/user-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-profiles'] });
       toast({
         title: "Success",
         description: "Database wiped successfully for new year",
@@ -88,11 +87,11 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
 
   const removeDemoDataMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('POST', '/api/remove-demo-data');
+      await removeDemoData();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/user-profiles'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/hours-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-submissions'] });
       toast({
         title: "Success",
         description: "Demo data removed successfully",
@@ -118,10 +117,7 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
     }
 
     try {
-      // First archive the current year
       await archiveYearMutation.mutateAsync(schoolYear);
-      
-      // Then wipe the database
       await wipeDatabaseMutation.mutateAsync();
       
       toast({
@@ -129,13 +125,11 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
         description: "Year archived and database prepared for new year",
       });
     } catch (error) {
-      // Error handling is done in individual mutations
     }
   };
 
   return (
     <div className="flex-1 flex flex-col bg-white min-h-0">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex items-center justify-between">
@@ -152,9 +146,7 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-auto p-4 lg:p-6">
-        {/* Date Restriction Notice */}
         {!isWithinAllowedWindow() && (
           <Card className="mb-6 border-amber-200 bg-amber-50">
             <CardContent className="p-4">
@@ -172,7 +164,6 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Archive & Wipe Section */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -252,7 +243,6 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
             </CardContent>
           </Card>
 
-          {/* Demo Data Removal */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -321,7 +311,6 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
           </Card>
         </div>
 
-        {/* Safety Information */}
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">

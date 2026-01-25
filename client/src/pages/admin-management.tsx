@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { User } from "@/lib/firebase";
-import { UserProfile } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { User, getAdminProfiles, promoteToAdmin, removeAdminRole, UserProfile } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,34 +23,25 @@ interface AdminManagementProps {
   user: User | null;
 }
 
-// Helper function to convert email to storage key
-const emailToKey = (email: string) => email.replace(/\./g, ',');
-
 export function AdminManagement({ user }: AdminManagementProps) {
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Fetch all user profiles to see who are admins
   const { data: adminProfiles = [], isLoading } = useQuery({
-    queryKey: ['/api/admin-profiles'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/admin-profiles');
-      const data = await response.json();
-      return Array.isArray(data) ? data : [];
-    },
+    queryKey: ['firebase-admin-profiles'],
+    queryFn: getAdminProfiles,
     staleTime: 0,
     gcTime: 0,
   });
 
-  // Add admin mutation
   const addAdminMutation = useMutation({
     mutationFn: async (email: string) => {
-      const emailKey = emailToKey(email);
-      return await apiRequest('POST', '/api/admin-profiles', { email: emailKey });
+      await promoteToAdmin(email);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-admin-profiles'] });
       toast({
         title: "Success",
         description: "Admin added successfully",
@@ -69,13 +58,12 @@ export function AdminManagement({ user }: AdminManagementProps) {
     }
   });
 
-  // Remove admin mutation
   const removeAdminMutation = useMutation({
-    mutationFn: async (emailKey: string) => {
-      return await apiRequest('DELETE', `/api/admin-profiles/${emailKey}`);
+    mutationFn: async (email: string) => {
+      await removeAdminRole(email);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-admin-profiles'] });
       toast({
         title: "Success",
         description: "Admin removed successfully",
@@ -103,8 +91,8 @@ export function AdminManagement({ user }: AdminManagementProps) {
     addAdminMutation.mutate(newAdminEmail.trim());
   };
 
-  const handleRemoveAdmin = (emailKey: string) => {
-    if (emailKey === emailToKey(user?.email || "")) {
+  const handleRemoveAdmin = (email: string) => {
+    if (email === user?.email) {
       toast({
         title: "Error",
         description: "You cannot remove yourself as an admin",
@@ -112,11 +100,7 @@ export function AdminManagement({ user }: AdminManagementProps) {
       });
       return;
     }
-    removeAdminMutation.mutate(emailKey);
-  };
-
-  const formatEmailFromKey = (emailKey: string) => {
-    return emailKey.replace(/,/g, '.');
+    removeAdminMutation.mutate(email);
   };
 
   if (isLoading) {
@@ -131,7 +115,6 @@ export function AdminManagement({ user }: AdminManagementProps) {
 
   return (
     <div className="flex-1 flex flex-col bg-white min-h-0">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -148,9 +131,7 @@ export function AdminManagement({ user }: AdminManagementProps) {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-auto p-4 lg:p-6">
-        {/* Add Admin Section */}
         <div className="mb-6 lg:mb-8">
           <Card>
             <CardHeader>
@@ -210,7 +191,6 @@ export function AdminManagement({ user }: AdminManagementProps) {
           </Card>
         </div>
 
-        {/* Current Admins */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -223,12 +203,12 @@ export function AdminManagement({ user }: AdminManagementProps) {
               <div className="text-center py-12">
                 <Shield className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">No administrators found</h3>
-                <p className="text-gray-500">Add administrators to manage the NAHS system</p>
+                <p className="text-gray-500">Add administrators to manage the system</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {Array.isArray(adminProfiles) && adminProfiles.map((profile: UserProfile) => (
-                  <div key={profile.userId} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                {adminProfiles.map((profile: UserProfile) => (
+                  <div key={profile.email} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex items-center space-x-3">
                       <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
                         <UserIcon className="w-5 h-5 text-blue-600" />
@@ -236,31 +216,18 @@ export function AdminManagement({ user }: AdminManagementProps) {
                       <div>
                         <div className="flex items-center space-x-2">
                           <h3 className="font-medium text-gray-900">
-                            {profile.goByFirstName && profile.lastName 
-                              ? `${profile.goByFirstName} ${profile.lastName}`
-                              : formatEmailFromKey(profile.userId)
-                            }
+                            {profile.displayName || profile.email}
                           </h3>
-                          {profile.userId === emailToKey(user?.email || "") && (
+                          {profile.email === user?.email && (
                             <Badge className="bg-green-100 text-green-800">
                               <Crown className="w-3 h-3 mr-1" />
                               You
                             </Badge>
                           )}
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-1 text-sm text-gray-500">
-                            <Mail className="w-4 h-4" />
-                            <span className="font-medium">Google:</span>
-                            <span>{formatEmailFromKey(profile.userId)}</span>
-                          </div>
-                          {profile.personalEmailAddress && (
-                            <div className="flex items-center space-x-1 text-sm text-gray-500">
-                              <Mail className="w-4 h-4" />
-                              <span className="font-medium">Personal:</span>
-                              <span>{profile.personalEmailAddress}</span>
-                            </div>
-                          )}
+                        <div className="flex items-center space-x-1 text-sm text-gray-500">
+                          <Mail className="w-4 h-4" />
+                          <span>{profile.email}</span>
                         </div>
                         {profile.studentId && (
                           <p className="text-sm text-gray-500">Student ID: {profile.studentId}</p>
@@ -273,11 +240,11 @@ export function AdminManagement({ user }: AdminManagementProps) {
                         <Shield className="w-3 h-3 mr-1" />
                         Admin
                       </Badge>
-                      {profile.userId !== emailToKey(user?.email || "") && (
+                      {profile.email !== user?.email && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRemoveAdmin(profile.userId)}
+                          onClick={() => handleRemoveAdmin(profile.email)}
                           disabled={removeAdminMutation.isPending}
                           className="text-red-600 hover:bg-red-50"
                         >
