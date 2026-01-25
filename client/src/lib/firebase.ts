@@ -717,3 +717,156 @@ export const getUserStats = async (userEmail: string, clubId: string): Promise<{
     pendingHours: pendingSubmissions.reduce((sum, s) => sum + s.hours, 0),
   };
 };
+
+// ============ ADMIN FUNCTIONS ============
+
+export const getAllSubmissions = async (): Promise<HoursSubmission[]> => {
+  const querySnapshot = await getDocs(collection(db, "submissions"));
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    submittedAt: toDate(doc.data().submittedAt),
+    reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
+  })) as HoursSubmission[];
+};
+
+export const getAllUserProfiles = async (): Promise<UserProfile[]> => {
+  const querySnapshot = await getDocs(collection(db, "users"));
+  return querySnapshot.docs.map(doc => ({
+    email: doc.id,
+    ...doc.data(),
+    createdAt: toDate(doc.data().createdAt),
+    updatedAt: toDate(doc.data().updatedAt),
+  })) as UserProfile[];
+};
+
+export const getAdminProfiles = async (): Promise<UserProfile[]> => {
+  const q = query(collection(db, "users"), where("userRole", "==", 1));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    email: doc.id,
+    ...doc.data(),
+    createdAt: toDate(doc.data().createdAt),
+    updatedAt: toDate(doc.data().updatedAt),
+  })) as UserProfile[];
+};
+
+export const promoteToAdmin = async (email: string): Promise<void> => {
+  const docRef = doc(db, "users", email);
+  const docSnap = await getDoc(docRef);
+  const now = new Date();
+  
+  if (docSnap.exists()) {
+    await updateDoc(docRef, {
+      userRole: 1,
+      updatedAt: Timestamp.fromDate(now),
+    });
+  } else {
+    await setDoc(docRef, {
+      email,
+      displayName: email.split('@')[0],
+      profileComplete: false,
+      userRole: 1,
+      createdAt: Timestamp.fromDate(now),
+      updatedAt: Timestamp.fromDate(now),
+    });
+  }
+};
+
+export const removeAdminRole = async (email: string): Promise<void> => {
+  const docRef = doc(db, "users", email);
+  await updateDoc(docRef, {
+    userRole: 0,
+    updatedAt: Timestamp.fromDate(new Date()),
+  });
+};
+
+export const getAdminAssignment = async (adminEmail: string): Promise<UserProfile | null> => {
+  const submissions = await getAllSubmissions();
+  const pendingSubmissions = submissions.filter(s => s.status === "pending");
+  
+  if (pendingSubmissions.length === 0) return null;
+  
+  const userEmails = [...new Set(pendingSubmissions.map(s => s.userEmail))];
+  
+  for (const email of userEmails) {
+    const profile = await getUserProfile(email);
+    if (profile) return profile;
+  }
+  
+  return null;
+};
+
+export const getPendingSubmissionsForUser = async (userEmail: string): Promise<HoursSubmission[]> => {
+  const q = query(
+    collection(db, "submissions"),
+    where("userEmail", "==", userEmail),
+    where("status", "==", "pending")
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    submittedAt: toDate(doc.data().submittedAt),
+    reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
+  })) as HoursSubmission[];
+};
+
+export const archiveYearData = async (schoolYear: string): Promise<void> => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const mayFirst = new Date(currentYear, 4, 1);
+  const augFirst = new Date(currentYear, 7, 1);
+  
+  if (now < mayFirst || now > augFirst) {
+    throw new Error("Archive operations are only allowed between May 1st and August 1st");
+  }
+  
+  const submissions = await getAllSubmissions();
+  const profiles = await getAllUserProfiles();
+  
+  const archiveRef = doc(db, "yearlyArchives", schoolYear);
+  await setDoc(archiveRef, {
+    schoolYear,
+    submissions: submissions.map(s => ({ ...s })),
+    profiles: profiles.map(p => ({ ...p })),
+    archivedAt: Timestamp.fromDate(now),
+  });
+};
+
+export const wipeDatabase = async (): Promise<void> => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const mayFirst = new Date(currentYear, 4, 1);
+  const augFirst = new Date(currentYear, 7, 1);
+  
+  if (now < mayFirst || now > augFirst) {
+    throw new Error("Database wipe is only allowed between May 1st and August 1st");
+  }
+  
+  const batch = writeBatch(db);
+  
+  const submissionsSnapshot = await getDocs(collection(db, "submissions"));
+  submissionsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+  
+  await batch.commit();
+};
+
+export const removeDemoData = async (): Promise<void> => {
+  const demoEmails = ["demo.student@gmail.com", "demouser2@gmail.com", "vabhiram20092@gmail.com"];
+  const batch = writeBatch(db);
+  
+  for (const email of demoEmails) {
+    const userDocRef = doc(db, "users", email);
+    batch.delete(userDocRef);
+  }
+  
+  const submissionsSnapshot = await getDocs(collection(db, "submissions"));
+  submissionsSnapshot.docs.forEach(docSnap => {
+    if (demoEmails.includes(docSnap.data().userEmail)) {
+      batch.delete(docSnap.ref);
+    }
+  });
+  
+  await batch.commit();
+};
