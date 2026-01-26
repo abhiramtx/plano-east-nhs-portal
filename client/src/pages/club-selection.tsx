@@ -439,102 +439,115 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       </div>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-black border-white/10 text-white max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-white">Create Your Club</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Start a new volunteer club and invite your friends
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-300">Club Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter club name"
-                value={newClub.name}
-                onChange={(e) => setNewClub({ ...newClub, name: e.target.value })}
-                className="bg-white/5 border-white/10 text-white"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-gray-300">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="What's your club about?"
-                value={newClub.description}
-                onChange={(e) => setNewClub({ ...newClub, description: e.target.value })}
-                className="bg-white/5 border-white/10 text-white"
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-gray-300">Club Color</Label>
-              <div className="flex flex-wrap gap-2">
-                {CLUB_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`w-9 h-9 rounded-xl transition-all cursor-pointer ${newClub.color === color ? 'ring-2 ring-white scale-110' : 'hover:scale-105'}`}
-                    style={{ backgroundColor: color }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setNewClub({ ...newClub, color });
-                    }}
+        <DialogContent className="max-w-4xl w-[95vw] h-[90vh] bg-black border-white/10 text-white p-0 overflow-hidden">
+          <div className="flex h-full">
+            <div className="w-1/2 p-6 overflow-y-auto border-r border-white/10">
+              <DialogHeader className="mb-6">
+                <DialogTitle className="text-2xl text-white">Create Your Club</DialogTitle>
+                <DialogDescription className="text-gray-400">
+                  Start a new volunteer club and invite your friends
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-gray-300">Club Name</Label>
+                  <Input
+                    id="name"
+                    placeholder="Enter club name"
+                    value={newClub.name}
+                    onChange={(e) => setNewClub({ ...newClub, name: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white"
                   />
-                ))}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-gray-300">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="What's your club about?"
+                    value={newClub.description}
+                    onChange={(e) => setNewClub({ ...newClub, description: e.target.value })}
+                    className="bg-white/5 border-white/10 text-white"
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Club Color</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {CLUB_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`w-9 h-9 rounded-xl transition-all cursor-pointer ${newClub.color === color ? 'ring-2 ring-white scale-110' : 'hover:scale-105'}`}
+                        style={{ backgroundColor: color }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setNewClub({ ...newClub, color });
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-gray-300">Private Club</Label>
+                    <p className="text-sm text-gray-500">Require a password to join</p>
+                  </div>
+                  <Switch
+                    checked={newClub.isPrivate}
+                    onCheckedChange={(checked) => setNewClub({ ...newClub, isPrivate: checked })}
+                  />
+                </div>
+                {newClub.isPrivate && (
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-gray-300">Club Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Set a password"
+                      value={newClub.password}
+                      onChange={(e) => setNewClub({ ...newClub, password: e.target.value })}
+                      className="bg-white/5 border-white/10 text-white"
+                    />
+                  </div>
+                )}
+                <div className="flex gap-3 pt-4">
+                  <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="flex-1 border-white/20 text-gray-300 hover:bg-white/5">
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleCreateClub}
+                    disabled={createClubMutation.isPending}
+                    className="flex-1 bg-white text-black hover:bg-gray-200"
+                  >
+                    {createClubMutation.isPending ? "Creating..." : "Create Club"}
+                  </Button>
+                </div>
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label className="text-gray-300">Private Club</Label>
-                <p className="text-sm text-gray-500">Require a password to join</p>
+            <div className="w-1/2 flex flex-col">
+              <div className="p-4 border-b border-white/10">
+                <Label className="flex items-center gap-2 text-gray-300">
+                  <MapPin className="w-4 h-4" />
+                  Club Location
+                </Label>
+                <p className="text-sm text-gray-500 mt-1">Click on the map to set your club's headquarters</p>
               </div>
-              <Switch
-                checked={newClub.isPrivate}
-                onCheckedChange={(checked) => setNewClub({ ...newClub, isPrivate: checked })}
-              />
-            </div>
-            {newClub.isPrivate && (
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-300">Club Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Set a password"
-                  value={newClub.password}
-                  onChange={(e) => setNewClub({ ...newClub, password: e.target.value })}
-                  className="bg-white/5 border-white/10 text-white"
-                />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2 text-gray-300">
-                <MapPin className="w-4 h-4" />
-                Club Location (Optional)
-              </Label>
-              <p className="text-sm text-gray-500">Click on the map to set your club's location</p>
-              <div className="rounded-xl overflow-hidden border border-white/10">
+              <div className="flex-1 relative">
                 <LocationPicker
                   value={newClub.latitude && newClub.longitude ? { lat: newClub.latitude, lng: newClub.longitude } : null}
                   onChange={(lat, lng) => setNewClub({ ...newClub, latitude: lat, longitude: lng })}
                 />
               </div>
+              {newClub.latitude && newClub.longitude && (
+                <div className="p-4 border-t border-white/10 bg-white/5">
+                  <p className="text-sm text-gray-400">
+                    Location: {newClub.latitude.toFixed(4)}, {newClub.longitude.toFixed(4)}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="border-white/10 text-gray-300 hover:bg-white/5">
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreateClub}
-              disabled={createClubMutation.isPending}
-              className="bg-white text-black hover:bg-gray-200"
-            >
-              {createClubMutation.isPending ? "Creating..." : "Create Club"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

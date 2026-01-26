@@ -84,9 +84,6 @@ function VolunteerInterface({
           <Route path="/volunteer/map">
             <TerritoryMap currentClubId={club.id} />
           </Route>
-          <Route path="/volunteer/leaderboard">
-            <TerritoryMap currentClubId={club.id} />
-          </Route>
           <Route path="/volunteer/service-requests">
             <ServiceRequests />
           </Route>
@@ -98,7 +95,7 @@ function VolunteerInterface({
               user={user} 
               club={club} 
               membership={membership}
-              onLeaveClub={onLeaveClub}
+              onLeaveClub={handleLeaveClubClick}
             />
           </Route>
           <Route path="/volunteer/profile">

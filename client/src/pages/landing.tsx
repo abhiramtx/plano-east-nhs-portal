@@ -97,7 +97,7 @@ export default function Landing({ onSignIn }: LandingProps) {
   };
 
   return (
-    <div className="bg-black text-white overflow-x-hidden">
+    <div className="bg-black text-white overflow-x-hidden" style={{ height: 'auto', minHeight: '100vh' }}>
       <nav 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrollY > 50 ? 'bg-black/90 backdrop-blur-lg border-b border-white/10' : 'bg-transparent'

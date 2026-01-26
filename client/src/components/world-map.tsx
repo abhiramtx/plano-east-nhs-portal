@@ -68,7 +68,18 @@ export function WorldMap({
     const bonus = parseFloat(String(club.bonusHours || "0"));
     const decayed = parseFloat(String(club.decayedHours || "0"));
     const totalHours = Math.max(0, approved + bonus - decayed);
-    return Math.max(50, Math.sqrt(totalHours) * 30 + 50);
+    
+    const baseMiles = 4;
+    const maxMiles = 20;
+    const baseKm = baseMiles * 1.60934;
+    const maxKm = maxMiles * 1.60934;
+    
+    if (totalHours <= 0) return baseKm;
+    
+    const logScale = Math.log10(totalHours + 1) / Math.log10(1000);
+    const radiusKm = baseKm + (maxKm - baseKm) * Math.min(1, logScale);
+    
+    return radiusKm;
   };
 
   const handleMapClick = useCallback((e: any) => {
@@ -330,56 +341,105 @@ export function WorldMap({
 
 export function LocationPicker({ 
   value, 
-  onChange 
+  onChange,
+  height = '100%'
 }: { 
   value?: { lat: number; lng: number } | null;
   onChange: (lat: number, lng: number) => void;
+  height?: string;
 }) {
+  const mapRef = useRef<MapRef>(null);
   const [viewState, setViewState] = useState({
     longitude: value?.lng || 0,
     latitude: value?.lat || 20,
-    zoom: 1
+    zoom: 1.5
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
 
   const handleMapClick = useCallback((e: any) => {
     const { lngLat } = e;
     onChange(lngLat.lat, lngLat.lng);
   }, [onChange]);
 
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`
+      );
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (error) {
+      console.error('Search failed:', error);
+    }
+  };
+
+  const handleSearchSelect = (result: any) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    mapRef.current?.flyTo({
+      center: [lng, lat],
+      zoom: 10,
+      duration: 1500
+    });
+    onChange(lat, lng);
+    setSearchResults([]);
+    setSearchQuery(result.display_name.split(',')[0]);
+  };
+
   return (
-    <div className="space-y-2">
-      <div 
-        className="relative overflow-hidden bg-black rounded-xl" 
-        style={{ height: '180px' }}
+    <div className="relative w-full h-full" style={{ minHeight: height === '100%' ? '300px' : height }}>
+      <Map
+        ref={mapRef}
+        {...viewState}
+        onMove={evt => setViewState(evt.viewState)}
+        onClick={handleMapClick}
+        mapStyle={MAP_STYLE}
+        style={{ width: '100%', height: '100%' }}
+        attributionControl={false}
+        cursor="crosshair"
       >
-        <Map
-          {...viewState}
-          onMove={evt => setViewState(evt.viewState)}
-          onClick={handleMapClick}
-          mapStyle={MAP_STYLE}
-          style={{ width: '100%', height: '100%' }}
-          attributionControl={false}
-          cursor="crosshair"
-        >
-          {value && (
-            <Marker 
-              longitude={value.lng} 
-              latitude={value.lat}
-              anchor="center"
-            >
-              <div className="relative">
-                <div className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 bg-white/40 rounded-full animate-ping" />
-                <div className="w-4 h-4 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full border-2 border-white shadow-lg" />
-              </div>
-            </Marker>
+        <NavigationControl position="bottom-right" showCompass={false} />
+        {value && (
+          <Marker 
+            longitude={value.lng} 
+            latitude={value.lat}
+            anchor="center"
+          >
+            <div className="relative">
+              <div className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 bg-white/40 rounded-full animate-ping" />
+              <div className="w-4 h-4 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full border-2 border-white shadow-lg" />
+            </div>
+          </Marker>
+        )}
+      </Map>
+      
+      <div className="absolute top-3 left-3 right-3 z-10">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            className="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white placeholder:text-gray-500 text-sm backdrop-blur-lg"
+          />
+          {searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-black/95 border border-white/20 rounded-lg overflow-hidden backdrop-blur-lg max-h-48 overflow-y-auto">
+              {searchResults.map((result, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSearchSelect(result)}
+                  className="w-full px-4 py-2 text-left text-xs text-white hover:bg-white/10 border-b border-white/10 last:border-0"
+                >
+                  {result.display_name}
+                </button>
+              ))}
+            </div>
           )}
-        </Map>
+        </div>
       </div>
-      {value && (
-        <p className="text-sm text-gray-500">
-          Selected: {value.lat.toFixed(2)}, {value.lng.toFixed(2)}
-        </p>
-      )}
     </div>
   );
 }

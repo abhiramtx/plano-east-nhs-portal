@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trophy, MapPin, Clock, TrendingUp, Users, Megaphone, Globe } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { WorldMap } from "@/components/world-map";
+import { Trophy, MapPin, Clock, TrendingUp, Users, Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import Map, { Marker, NavigationControl, MapRef, Source, Layer } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { 
   getClubs, 
   getLeaderboard, 
@@ -18,15 +19,67 @@ import {
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-nolabels-gl-style/style.json';
+
 interface TerritoryMapProps {
   currentClubId?: string;
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result 
+    ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+    : [100, 100, 255];
+}
+
+function createCirclePolygon(lng: number, lat: number, radiusKm: number, segments: number = 64): number[][] {
+  const coords: number[][] = [];
+  const earthRadiusKm = 6371;
+  
+  for (let i = 0; i <= segments; i++) {
+    const angle = (i / segments) * 2 * Math.PI;
+    const latOffset = (radiusKm / earthRadiusKm) * (180 / Math.PI) * Math.cos(angle);
+    const lngOffset = (radiusKm / earthRadiusKm) * (180 / Math.PI) * Math.sin(angle) / Math.cos(lat * Math.PI / 180);
+    coords.push([lng + lngOffset, lat + latOffset]);
+  }
+  
+  return coords;
+}
+
+function calculateTerritoryRadiusKm(club: Club): number {
+  const approved = parseFloat(String(club.totalApprovedHours || "0"));
+  const bonus = parseFloat(String(club.bonusHours || "0"));
+  const decayed = parseFloat(String(club.decayedHours || "0"));
+  const totalHours = Math.max(0, approved + bonus - decayed);
+  
+  const baseMiles = 4;
+  const maxMiles = 20;
+  const baseKm = baseMiles * 1.60934;
+  const maxKm = maxMiles * 1.60934;
+  
+  if (totalHours <= 0) return baseKm;
+  
+  const logScale = Math.log10(totalHours + 1) / Math.log10(1000);
+  const radiusKm = baseKm + (maxKm - baseKm) * Math.min(1, logScale);
+  
+  return radiusKm;
+}
+
 export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const { toast } = useToast();
-  const [leaderboardPeriod, setLeaderboardPeriod] = useState("all");
+  const mapRef = useRef<MapRef>(null);
+  const [hoveredClubId, setHoveredClubId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const user = getCurrentUser();
   const userEmail = user?.email || '';
+
+  const [viewState, setViewState] = useState({
+    longitude: 0,
+    latitude: 20,
+    zoom: 2
+  });
 
   const { data: clubs = [] } = useQuery<Club[]>({
     queryKey: ['firebase-clubs'],
@@ -66,6 +119,47 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     }
   });
 
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5`
+      );
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchSelect = (result: any) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    mapRef.current?.flyTo({
+      center: [lng, lat],
+      zoom: 12,
+      duration: 1500
+    });
+    setSearchResults([]);
+    setSearchQuery(result.display_name.split(',')[0]);
+  };
+
+  const flyToClub = useCallback((club: Club) => {
+    if (!club.latitude || !club.longitude) return;
+    const lat = parseFloat(String(club.latitude));
+    const lng = parseFloat(String(club.longitude));
+    if (isNaN(lat) || isNaN(lng)) return;
+    
+    mapRef.current?.flyTo({
+      center: [lng, lat],
+      zoom: 10,
+      duration: 1500
+    });
+  }, []);
+
   const requestsWithLocation = serviceRequests.filter(r => r.latitude && r.longitude);
 
   const calculateTotalHours = (club: Club) => {
@@ -74,168 +168,276 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
 
   const currentClub = clubs.find(c => c.id === currentClubId);
   const currentClubRank = leaderboardClubs.findIndex(c => c.id === currentClubId) + 1;
-  const totalHoursGlobal = clubs.reduce((sum, c) => sum + calculateTotalHours(c), 0);
+
+  const territoriesGeoJson = {
+    type: 'FeatureCollection' as const,
+    features: clubs
+      .filter(club => club.latitude && club.longitude)
+      .map(club => {
+        const lat = parseFloat(String(club.latitude));
+        const lng = parseFloat(String(club.longitude));
+        if (isNaN(lat) || isNaN(lng)) return null;
+        
+        const radiusKm = calculateTerritoryRadiusKm(club);
+        const rgb = hexToRgb(club.color);
+        
+        return {
+          type: 'Feature' as const,
+          properties: {
+            id: club.id,
+            name: club.name,
+            color: club.color,
+            fillColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.4)`,
+            strokeColor: club.color,
+          },
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [createCirclePolygon(lng, lat, radiusKm)]
+          }
+        };
+      })
+      .filter((f): f is NonNullable<typeof f> => f !== null)
+  };
 
   return (
-    <div className="p-6 space-y-6 max-h-screen overflow-y-auto bg-gray-50">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
-            <Globe className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Territory Map</h1>
-            <p className="text-gray-600">Watch clubs compete for global dominance</p>
-          </div>
-        </div>
-        {currentClub && currentClubRank > 0 && (
-          <div className="bg-black text-white px-5 py-3 rounded-xl">
-            <span className="text-sm text-gray-400">Your Rank</span>
-            <span className="font-bold text-2xl ml-2">#{currentClubRank}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="p-4 text-center bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <Users className="w-6 h-6 mx-auto text-blue-600 mb-2" />
-          <p className="text-2xl font-bold text-gray-900">{clubs.length}</p>
-          <p className="text-sm text-gray-600">Active Clubs</p>
-        </Card>
-        <Card className="p-4 text-center bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <Clock className="w-6 h-6 mx-auto text-green-600 mb-2" />
-          <p className="text-2xl font-bold text-gray-900">{totalHoursGlobal.toFixed(0)}</p>
-          <p className="text-sm text-gray-600">Total Hours</p>
-        </Card>
-        <Card className="p-4 text-center bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <Megaphone className="w-6 h-6 mx-auto text-purple-600 mb-2" />
-          <p className="text-2xl font-bold text-gray-900">{requestsWithLocation.length}</p>
-          <p className="text-sm text-gray-600">Service Requests</p>
-        </Card>
-        <Card className="p-4 text-center bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
-          <Trophy className="w-6 h-6 mx-auto text-orange-600 mb-2" />
-          <p className="text-2xl font-bold text-gray-900">
-            {currentClub ? calculateTotalHours(currentClub).toFixed(0) : 0}
-          </p>
-          <p className="text-sm text-gray-600">Your Club Hours</p>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="overflow-hidden shadow-xl">
-            <CardHeader className="pb-2 bg-gray-900 text-white">
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                Global Territories
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <WorldMap 
-                clubs={clubs}
-                serviceRequests={requestsWithLocation}
-                onJoinRequest={(request) => joinMutation.mutate(request)}
-                joinedRequestIds={joinedRequestIds}
-                height="550px"
-                interactive={true}
-                showTerritories={true}
+    <div className="h-screen w-full flex bg-black overflow-hidden">
+      <div className="flex-1 relative">
+        <Map
+          ref={mapRef}
+          {...viewState}
+          onMove={evt => setViewState(evt.viewState)}
+          mapStyle={MAP_STYLE}
+          style={{ width: '100%', height: '100%' }}
+          attributionControl={false}
+        >
+          <NavigationControl position="bottom-right" showCompass={false} />
+          
+          {territoriesGeoJson.features.length > 0 && (
+            <Source id="territories" type="geojson" data={territoriesGeoJson}>
+              <Layer
+                id="territory-fill"
+                type="fill"
+                paint={{
+                  'fill-color': ['get', 'fillColor'],
+                  'fill-opacity': 0.6
+                }}
               />
-            </CardContent>
-          </Card>
+              <Layer
+                id="territory-outline"
+                type="line"
+                paint={{
+                  'line-color': ['get', 'strokeColor'],
+                  'line-width': 2,
+                  'line-opacity': 0.8
+                }}
+              />
+            </Source>
+          )}
+          
+          {clubs.map(club => {
+            if (!club.latitude || !club.longitude) return null;
+            const lat = parseFloat(String(club.latitude));
+            const lng = parseFloat(String(club.longitude));
+            if (isNaN(lat) || isNaN(lng)) return null;
+            
+            const totalHours = calculateTotalHours(club);
+            const isHovered = hoveredClubId === club.id;
+            const isCurrentClub = club.id === currentClubId;
+            
+            return (
+              <Marker 
+                key={club.id} 
+                longitude={lng} 
+                latitude={lat}
+                anchor="center"
+              >
+                <div 
+                  className="relative flex items-center justify-center cursor-pointer"
+                  onMouseEnter={() => setHoveredClubId(club.id)}
+                  onMouseLeave={() => setHoveredClubId(null)}
+                  onClick={() => flyToClub(club)}
+                >
+                  <div 
+                    className={`relative flex items-center justify-center rounded-full transition-all hover:scale-110 ${isCurrentClub ? 'ring-2 ring-white ring-offset-2 ring-offset-black' : ''}`}
+                    style={{ 
+                      width: 32, 
+                      height: 32,
+                      backgroundColor: club.color,
+                      border: '3px solid white',
+                      boxShadow: `0 0 20px ${club.color}80, 0 2px 8px rgba(0,0,0,0.5)`
+                    }}
+                  >
+                    <Users className="w-4 h-4 text-white" />
+                  </div>
+                  
+                  {isHovered && (
+                    <div 
+                      className="absolute left-12 top-1/2 -translate-y-1/2 bg-black/95 rounded-lg px-4 py-3 whitespace-nowrap z-50 border border-white/20 shadow-xl"
+                      style={{ minWidth: 140 }}
+                    >
+                      <p className="text-white text-sm font-semibold truncate max-w-40">
+                        {club.name}
+                      </p>
+                      <p className="text-gray-400 text-xs mt-1">
+                        {totalHours.toFixed(1)} volunteer hours
+                      </p>
+                      <div 
+                        className="w-full h-1 rounded-full mt-2"
+                        style={{ backgroundColor: club.color }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </Marker>
+            );
+          })}
+          
+          {requestsWithLocation.map(request => {
+            const lat = parseFloat(String(request.latitude));
+            const lng = parseFloat(String(request.longitude));
+            if (isNaN(lat) || isNaN(lng)) return null;
+            
+            const isJoined = joinedRequestIds.includes(request.id);
+            
+            return (
+              <Marker 
+                key={request.id} 
+                longitude={lng} 
+                latitude={lat}
+                anchor="bottom"
+              >
+                <div className="cursor-pointer transform hover:scale-110 transition-transform">
+                  <MapPin 
+                    className="w-6 h-6 drop-shadow-lg" 
+                    fill={isJoined ? '#22c55e' : '#ffffff'} 
+                    color={isJoined ? '#16a34a' : '#000000'}
+                    strokeWidth={1.5}
+                  />
+                </div>
+              </Marker>
+            );
+          })}
+        </Map>
+
+        <div className="absolute top-4 left-4 right-80 z-10">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="pl-10 pr-10 bg-black/80 border-white/20 text-white placeholder:text-gray-500 backdrop-blur-lg"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+              >
+                <X className="w-4 h-4 text-gray-400 hover:text-white" />
+              </button>
+            )}
+            
+            {searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-black/95 border border-white/20 rounded-lg overflow-hidden backdrop-blur-lg">
+                {searchResults.map((result, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSearchSelect(result)}
+                    className="w-full px-4 py-3 text-left text-sm text-white hover:bg-white/10 border-b border-white/10 last:border-0"
+                  >
+                    {result.display_name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <Card className="shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50">
-              <CardTitle className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-yellow-600" />
-                Leaderboard
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <Tabs value={leaderboardPeriod} onValueChange={setLeaderboardPeriod}>
-                <TabsList className="grid grid-cols-4 w-full mb-4">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="year">Year</TabsTrigger>
-                  <TabsTrigger value="month">Month</TabsTrigger>
-                  <TabsTrigger value="week">Week</TabsTrigger>
-                </TabsList>
-                <TabsContent value={leaderboardPeriod} className="space-y-2 max-h-[400px] overflow-y-auto">
-                  {leaderboardClubs.length === 0 ? (
-                    <p className="text-center text-gray-500 py-4">No clubs yet</p>
-                  ) : (
-                    leaderboardClubs.slice(0, 15).map((club, index) => {
-                      const totalHours = calculateTotalHours(club);
-                      const isCurrentClub = club.id === currentClubId;
-                      return (
-                        <div 
-                          key={club.id}
-                          className={`flex items-center justify-between p-3 rounded-xl transition-all ${
-                            isCurrentClub 
-                              ? 'bg-black text-white ring-2 ring-black' 
-                              : index < 3 
-                                ? 'bg-gradient-to-r from-yellow-50 to-orange-50' 
-                                : 'bg-gray-50 hover:bg-gray-100'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                              index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                              index === 1 ? 'bg-gray-300 text-gray-700' :
-                              index === 2 ? 'bg-amber-600 text-amber-100' :
-                              isCurrentClub ? 'bg-white text-black' : 'bg-gray-200 text-gray-600'
-                            }`}>
-                              {index + 1}
-                            </span>
-                            <div 
-                              className="w-5 h-5 rounded-full ring-2 ring-white shadow"
-                              style={{ backgroundColor: club.color }}
-                            />
-                            <span className="font-medium truncate max-w-[120px]">{club.name}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className={`w-4 h-4 ${isCurrentClub ? 'text-green-400' : 'text-green-500'}`} />
-                            <span className="font-semibold">{totalHours.toFixed(1)}</span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+        <div className="absolute bottom-4 left-4 flex flex-col space-y-2">
+          <div className="flex items-center space-x-2 bg-black/70 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10">
+            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
+            <span className="text-xs text-white">Club Territories</span>
+          </div>
+          <div className="flex items-center space-x-2 bg-black/70 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10">
+            <MapPin className="w-3 h-3 text-white" fill="white" />
+            <span className="text-xs text-white">Service Requests</span>
+          </div>
+        </div>
+      </div>
 
+      <div className="w-80 bg-gray-950 border-l border-white/10 flex flex-col">
+        <div className="p-4 border-b border-white/10">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-500" />
+            Leaderboard
+          </h2>
+          {currentClub && currentClubRank > 0 && (
+            <div className="mt-2 bg-white/5 rounded-lg px-3 py-2">
+              <p className="text-xs text-gray-400">Your Club Rank</p>
+              <p className="text-2xl font-bold text-white">#{currentClubRank}</p>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-2">
+            {leaderboardClubs.length === 0 ? (
+              <p className="text-center text-gray-500 py-4">No clubs yet</p>
+            ) : (
+              leaderboardClubs.slice(0, 50).map((club, index) => {
+                const totalHours = calculateTotalHours(club);
+                const isCurrentClub = club.id === currentClubId;
+                return (
+                  <button 
+                    key={club.id}
+                    onClick={() => flyToClub(club)}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl transition-all hover:bg-white/10 ${
+                      isCurrentClub 
+                        ? 'bg-white/10 ring-1 ring-white/30' 
+                        : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                        index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                        index === 1 ? 'bg-gray-300 text-gray-700' :
+                        index === 2 ? 'bg-amber-600 text-amber-100' :
+                        'bg-white/10 text-gray-400'
+                      }`}>
+                        {index + 1}
+                      </span>
+                      <div 
+                        className="w-4 h-4 rounded-full ring-1 ring-white/30"
+                        style={{ backgroundColor: club.color }}
+                      />
+                      <span className="font-medium text-white text-sm truncate max-w-[100px]">{club.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-gray-400">
+                      <TrendingUp className="w-3 h-3" />
+                      <span className="text-sm font-medium">{totalHours.toFixed(0)}</span>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-white/10 space-y-3">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">Active Clubs</span>
+            <span className="text-white font-medium">{clubs.length}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-400">Service Requests</span>
+            <span className="text-white font-medium">{requestsWithLocation.length}</span>
+          </div>
           {currentClub && (
-            <Card className="shadow-lg overflow-hidden">
-              <CardHeader className="pb-2" style={{ backgroundColor: currentClub.color + '20' }}>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <div 
-                    className="w-6 h-6 rounded-full ring-2 ring-white shadow"
-                    style={{ backgroundColor: currentClub.color }}
-                  />
-                  {currentClub.name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Approved Hours</span>
-                  <span className="font-semibold">{currentClub.totalApprovedHours.toFixed(1)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Bonus Hours</span>
-                  <span className="font-semibold text-green-600">+{currentClub.bonusHours.toFixed(1)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Decayed Hours</span>
-                  <span className="font-semibold text-red-600">-{currentClub.decayedHours.toFixed(1)}</span>
-                </div>
-                <div className="pt-3 border-t flex justify-between items-center">
-                  <span className="text-gray-900 font-medium">Net Total</span>
-                  <span className="font-bold text-lg">{calculateTotalHours(currentClub).toFixed(1)}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-400">Your Hours</span>
+              <span className="text-white font-medium">{calculateTotalHours(currentClub).toFixed(1)}</span>
+            </div>
           )}
         </div>
       </div>
