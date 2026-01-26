@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Upload, X } from "lucide-react";
+import { Upload, X, MapPin, Search, Loader2 } from "lucide-react";
 
 const compressImage = (file: File): Promise<File> => {
   return new Promise((resolve) => {
@@ -57,6 +57,7 @@ const formSchema = z.object({
   description: z.string().min(1, "Description is required"),
   date: z.string().min(1, "Date is required"),
   hours: z.string().min(1, "Hours is required"),
+  location: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -71,6 +72,14 @@ interface HoursSubmissionFormProps {
 export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId }: HoursSubmissionFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(editingSubmission?.proofImageUrl || null);
+  const [locationSearch, setLocationSearch] = useState(editingSubmission?.location || "");
+  const [locationResults, setLocationResults] = useState<any[]>([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; name: string } | null>(
+    editingSubmission?.latitude && editingSubmission?.longitude
+      ? { lat: editingSubmission.latitude, lng: editingSubmission.longitude, name: editingSubmission.location || "" }
+      : null
+  );
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -80,8 +89,49 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
       description: editingSubmission?.description || "",
       date: editingSubmission?.date ? editingSubmission.date.split('T')[0] : "",
       hours: editingSubmission?.hours ? editingSubmission.hours.toString() : "",
+      location: editingSubmission?.location || "",
     },
   });
+
+  useEffect(() => {
+    const searchLocation = async () => {
+      if (locationSearch.length < 3) {
+        setLocationResults([]);
+        return;
+      }
+      setIsSearchingLocation(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationSearch)}&limit=5`
+        );
+        const data = await response.json();
+        setLocationResults(data);
+      } catch (error) {
+        console.error('Location search failed:', error);
+      } finally {
+        setIsSearchingLocation(false);
+      }
+    };
+    
+    const timeoutId = setTimeout(searchLocation, 300);
+    return () => clearTimeout(timeoutId);
+  }, [locationSearch]);
+
+  const handleLocationSelect = (result: any) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    const name = result.display_name.split(',').slice(0, 2).join(',');
+    setSelectedLocation({ lat, lng, name });
+    setLocationSearch(name);
+    form.setValue('location', name);
+    setLocationResults([]);
+  };
+
+  const clearLocation = () => {
+    setSelectedLocation(null);
+    setLocationSearch("");
+    form.setValue('location', "");
+  };
 
   const submitMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -106,6 +156,9 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
           hours: parseFloat(data.hours),
           proofImageUrl: proofImageUrl,
           status: 'pending',
+          latitude: selectedLocation?.lat,
+          longitude: selectedLocation?.lng,
+          location: selectedLocation?.name,
         });
       } else {
         await createSubmission({
@@ -118,6 +171,9 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
           date: new Date(data.date).toISOString(),
           proofImageUrl: proofImageUrl,
           createdAt: now,
+          latitude: selectedLocation?.lat,
+          longitude: selectedLocation?.lng,
+          location: selectedLocation?.name,
         });
       }
     },
@@ -129,6 +185,8 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
       form.reset();
       setSelectedFile(null);
       setImagePreview(null);
+      setSelectedLocation(null);
+      setLocationSearch("");
       queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions'] });
       queryClient.invalidateQueries({ queryKey: ['firebase-club-submissions'] });
       onSuccess();
@@ -229,6 +287,56 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
         )}
       </div>
 
+      <div className="relative">
+        <Label className="text-gray-700 flex items-center gap-2">
+          <MapPin className="w-4 h-4" />
+          Service Location (Optional)
+        </Label>
+        <p className="text-sm text-gray-500 mb-2">
+          Adding a location helps grow your club's territory on the map
+        </p>
+        {selectedLocation ? (
+          <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <MapPin className="w-4 h-4 text-green-600 flex-shrink-0" />
+            <span className="text-green-700 flex-1">{selectedLocation.name}</span>
+            <button
+              type="button"
+              onClick={clearLocation}
+              className="text-green-600 hover:text-green-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              value={locationSearch}
+              onChange={(e) => setLocationSearch(e.target.value)}
+              placeholder="Search for a location..."
+              className="pl-10 bg-white border-gray-200 text-gray-900"
+            />
+            {isSearchingLocation && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+            )}
+            {locationResults.length > 0 && (
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {locationResults.map((result, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => handleLocationSelect(result)}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                  >
+                    {result.display_name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div>
         <Label htmlFor="description" className="text-gray-700">Description of Service</Label>
         <Textarea
@@ -296,6 +404,8 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
             form.reset();
             setSelectedFile(null);
             setImagePreview(null);
+            setSelectedLocation(null);
+            setLocationSearch("");
           }}
         >
           Cancel

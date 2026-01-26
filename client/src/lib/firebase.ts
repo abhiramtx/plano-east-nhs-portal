@@ -89,6 +89,9 @@ export interface HoursSubmission {
   submittedAt: Date;
   reviewedAt?: Date;
   reviewedBy?: string;
+  latitude?: number;
+  longitude?: number;
+  location?: string;
 }
 
 export interface ServiceRequest {
@@ -787,7 +790,7 @@ export const getAdminAssignment = async (adminEmail: string, skipEmails: string[
   
   if (pendingSubmissions.length === 0) return null;
   
-  const userEmails = [...new Set(pendingSubmissions.map(s => s.userEmail))]
+  const userEmails = Array.from(new Set(pendingSubmissions.map(s => s.userEmail)))
     .filter(email => !skipEmails.includes(email));
   
   for (const email of userEmails) {
