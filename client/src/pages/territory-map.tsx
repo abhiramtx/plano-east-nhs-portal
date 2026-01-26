@@ -15,6 +15,8 @@ import {
   joinServiceRequest,
   ServiceRequestParticipant,
   getCurrentUser,
+  getAllSubmissions,
+  HoursSubmission,
 } from "@/lib/firebase";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -49,23 +51,74 @@ function createCirclePolygon(lng: number, lat: number, radiusKm: number, segment
   return coords;
 }
 
-function calculateTerritoryRadiusKm(club: Club): number {
-  const approved = parseFloat(String(club.totalApprovedHours || "0"));
-  const bonus = parseFloat(String(club.bonusHours || "0"));
-  const decayed = parseFloat(String(club.decayedHours || "0"));
-  const totalHours = Math.max(0, approved + bonus - decayed);
-  
+function calculateTerritoryRadiusKm(hours: number): number {
   const baseMiles = 4;
   const maxMiles = 20;
   const baseKm = baseMiles * 1.60934;
   const maxKm = maxMiles * 1.60934;
   
-  if (totalHours <= 0) return baseKm;
+  if (hours <= 0) return baseKm;
   
-  const logScale = Math.log10(totalHours + 1) / Math.log10(1000);
+  const logScale = Math.log10(hours + 1) / Math.log10(1000);
   const radiusKm = baseKm + (maxKm - baseKm) * Math.min(1, logScale);
   
   return radiusKm;
+}
+
+interface TerritoryCircle {
+  id: string;
+  clubId: string;
+  clubName: string;
+  clubColor: string;
+  latitude: number;
+  longitude: number;
+  hours: number;
+  location: string;
+  lastActivity: Date;
+}
+
+function aggregateSubmissionsByLocation(
+  submissions: HoursSubmission[],
+  clubs: Club[]
+): TerritoryCircle[] {
+  const clubMap = new Map(clubs.map(c => [c.id, c]));
+  const locationMap = new Map<string, TerritoryCircle>();
+  
+  const approvedSubmissions = submissions.filter(
+    s => s.status === 'approved' && s.latitude && s.longitude
+  );
+  
+  for (const submission of approvedSubmissions) {
+    const club = clubMap.get(submission.clubId);
+    if (!club) continue;
+    
+    const lat = submission.latitude!;
+    const lng = submission.longitude!;
+    const locationKey = `${submission.clubId}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+    
+    const existing = locationMap.get(locationKey);
+    if (existing) {
+      existing.hours += submission.hours;
+      const submissionDate = new Date(submission.date);
+      if (submissionDate > existing.lastActivity) {
+        existing.lastActivity = submissionDate;
+      }
+    } else {
+      locationMap.set(locationKey, {
+        id: locationKey,
+        clubId: submission.clubId,
+        clubName: club.name,
+        clubColor: club.color,
+        latitude: lat,
+        longitude: lng,
+        hours: submission.hours,
+        location: submission.location || 'Unknown location',
+        lastActivity: new Date(submission.date),
+      });
+    }
+  }
+  
+  return Array.from(locationMap.values());
 }
 
 export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
@@ -100,6 +153,14 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     queryFn: getOpenServiceRequests,
     refetchInterval: 30000,
   });
+
+  const { data: allSubmissions = [] } = useQuery<HoursSubmission[]>({
+    queryKey: ['firebase-all-submissions'],
+    queryFn: getAllSubmissions,
+    refetchInterval: 30000,
+  });
+
+  const territoryCircles = aggregateSubmissionsByLocation(allSubmissions, clubs);
 
   const { data: myParticipations = [] } = useQuery<ServiceRequestParticipant[]>({
     queryKey: ['firebase-my-participations', userEmail],
@@ -174,30 +235,24 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
 
   const territoriesGeoJson = {
     type: 'FeatureCollection' as const,
-    features: clubs
-      .filter(club => club.latitude && club.longitude)
-      .map(club => {
-        const lat = parseFloat(String(club.latitude));
-        const lng = parseFloat(String(club.longitude));
-        if (isNaN(lat) || isNaN(lng)) return null;
-        
-        const radiusKm = calculateTerritoryRadiusKm(club);
-        const rgb = hexToRgb(club.color);
-        
-        return {
-          type: 'Feature' as const,
-          properties: {
-            id: club.id,
-            name: club.name,
-            color: club.color,
-          },
-          geometry: {
-            type: 'Polygon' as const,
-            coordinates: [createCirclePolygon(lng, lat, radiusKm)]
-          }
-        };
-      })
-      .filter((f): f is NonNullable<typeof f> => f !== null)
+    features: territoryCircles.map(circle => {
+      const radiusKm = calculateTerritoryRadiusKm(circle.hours);
+      
+      return {
+        type: 'Feature' as const,
+        properties: {
+          id: circle.id,
+          name: circle.clubName,
+          color: circle.clubColor,
+          hours: circle.hours,
+          location: circle.location,
+        },
+        geometry: {
+          type: 'Polygon' as const,
+          coordinates: [createCirclePolygon(circle.longitude, circle.latitude, radiusKm)]
+        }
+      };
+    })
   };
 
   return (
@@ -360,7 +415,11 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
         <div className="absolute bottom-4 left-4 flex flex-col space-y-2">
           <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
             <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
-            <span className="text-xs text-gray-700">Club Territories</span>
+            <span className="text-xs text-gray-700">Volunteer Territory ({territoryCircles.length} locations)</span>
+          </div>
+          <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
+            <Users className="w-3 h-3 text-gray-700" />
+            <span className="text-xs text-gray-700">Club HQ</span>
           </div>
           <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
             <MapPin className="w-3 h-3 text-gray-700" fill="#374151" />
