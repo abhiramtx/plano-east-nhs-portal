@@ -238,26 +238,26 @@ export default function ServiceRequests() {
   };
 
   const RequestCard = ({ request, showActions = true }: { request: ServiceRequest; showActions?: boolean }) => (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{request.title}</CardTitle>
+            <CardTitle className="text-lg text-white">{request.title}</CardTitle>
             {request.organizationName && (
-              <CardDescription className="flex items-center mt-1">
+              <CardDescription className="flex items-center mt-1 text-gray-400">
                 <Building className="w-3 h-3 mr-1" />
                 {request.organizationName}
               </CardDescription>
             )}
           </div>
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <Badge variant="outline" className="bg-green-900/50 text-green-400 border-green-700">
             <Clock className="w-3 h-3 mr-1" />
             {request.hoursOffered} hours
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm text-gray-600 line-clamp-2">{request.description}</p>
+        <p className="text-sm text-gray-400 line-clamp-2">{request.description}</p>
         <div className="flex flex-wrap gap-2 text-xs text-gray-500">
           <span className="flex items-center">
             <MapPin className="w-3 h-3 mr-1" />
@@ -279,18 +279,19 @@ export default function ServiceRequests() {
       </CardContent>
       {showActions && (
         <CardFooter className="pt-0 flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => handleViewRequest(request)}>
+          <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => handleViewRequest(request)}>
             <Eye className="w-4 h-4 mr-1" /> View
           </Button>
           {isMyRequest(request) ? (
-            <Button size="sm" onClick={() => handleManageRequest(request)}>
+            <Button size="sm" className="bg-white text-black hover:bg-gray-200" onClick={() => handleManageRequest(request)}>
               <Users className="w-4 h-4 mr-1" /> Manage
             </Button>
           ) : hasJoined(request.id) ? (
-            <Badge variant="secondary" className="px-3 py-1">Joined</Badge>
+            <Badge variant="secondary" className="px-3 py-1 bg-gray-800 text-gray-300">Joined</Badge>
           ) : (
             <Button 
               size="sm" 
+              className="bg-white text-black hover:bg-gray-200"
               onClick={() => joinMutation.mutate(request)}
               disabled={joinMutation.isPending}
             >
@@ -303,25 +304,25 @@ export default function ServiceRequests() {
   );
 
   return (
-    <div className="p-6 space-y-6 max-h-screen overflow-y-auto">
+    <div className="p-6 space-y-6 max-h-screen overflow-y-auto bg-gray-950 pt-16 lg:pt-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
-            <Users className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
+            <Users className="w-6 h-6 text-black" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Service Requests</h1>
-            <p className="text-gray-600">Find volunteer opportunities or request help</p>
+            <h1 className="text-2xl font-bold text-white">Service Requests</h1>
+            <p className="text-gray-400">Find volunteer opportunities or request help</p>
           </div>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)}>
+        <Button onClick={() => setCreateDialogOpen(true)} className="bg-white text-black hover:bg-gray-200">
           <Plus className="w-4 h-4 mr-2" />
           Request Service
         </Button>
       </div>
 
       <Tabs defaultValue="available" className="space-y-4">
-        <TabsList>
+        <TabsList className="bg-gray-900 border-gray-800">
           <TabsTrigger value="available">Available ({openRequests.length})</TabsTrigger>
           <TabsTrigger value="my-requests">My Requests ({myRequests.length})</TabsTrigger>
           <TabsTrigger value="joined">Joined ({myParticipations.length})</TabsTrigger>
@@ -329,10 +330,10 @@ export default function ServiceRequests() {
 
         <TabsContent value="available" className="space-y-4">
           {openRequests.length === 0 ? (
-            <Card className="p-8 text-center">
-              <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">No service requests available yet.</p>
-              <p className="text-sm text-gray-400">Be the first to request help!</p>
+            <Card className="p-8 text-center bg-gray-900 border-gray-800">
+              <Users className="w-12 h-12 mx-auto text-gray-600 mb-4" />
+              <p className="text-gray-400">No service requests available yet.</p>
+              <p className="text-sm text-gray-500">Be the first to request help!</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -345,10 +346,10 @@ export default function ServiceRequests() {
 
         <TabsContent value="my-requests" className="space-y-4">
           {myRequests.length === 0 ? (
-            <Card className="p-8 text-center">
-              <Building className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">You haven't created any service requests yet.</p>
-              <Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
+            <Card className="p-8 text-center bg-gray-900 border-gray-800">
+              <Building className="w-12 h-12 mx-auto text-gray-600 mb-4" />
+              <p className="text-gray-400">You haven't created any service requests yet.</p>
+              <Button className="mt-4 bg-white text-black hover:bg-gray-200" onClick={() => setCreateDialogOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create Your First Request
               </Button>
@@ -364,10 +365,10 @@ export default function ServiceRequests() {
 
         <TabsContent value="joined" className="space-y-4">
           {myParticipations.length === 0 ? (
-            <Card className="p-8 text-center">
-              <Check className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">You haven't joined any service requests yet.</p>
-              <p className="text-sm text-gray-400">Browse available requests to get started!</p>
+            <Card className="p-8 text-center bg-gray-900 border-gray-800">
+              <Check className="w-12 h-12 mx-auto text-gray-600 mb-4" />
+              <p className="text-gray-400">You haven't joined any service requests yet.</p>
+              <p className="text-sm text-gray-500">Browse available requests to get started!</p>
             </Card>
           ) : (
             <div className="space-y-4">
@@ -375,21 +376,21 @@ export default function ServiceRequests() {
                 const request = openRequests.find(r => r.id === participation.requestId) || 
                                myRequests.find(r => r.id === participation.requestId);
                 return (
-                  <Card key={participation.id} className="p-4">
+                  <Card key={participation.id} className="p-4 bg-gray-900 border-gray-800">
                     <div className="flex justify-between items-center">
                       <div>
-                        <h3 className="font-medium">{request?.title || "Service Request"}</h3>
-                        <p className="text-sm text-gray-500">Joined {participation.joinedAt.toLocaleDateString()}</p>
+                        <h3 className="font-medium text-white">{request?.title || "Service Request"}</h3>
+                        <p className="text-sm text-gray-400">Joined {participation.joinedAt.toLocaleDateString()}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={
                           participation.status === 'completed' ? 'default' :
                           participation.status === 'approved' ? 'secondary' : 'outline'
-                        }>
+                        } className="bg-gray-800 text-gray-300 border-gray-700">
                           {participation.status}
                         </Badge>
                         {participation.hoursAwarded && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                          <Badge variant="outline" className="bg-green-900/50 text-green-400 border-green-700">
                             {participation.hoursAwarded} hrs awarded
                           </Badge>
                         )}
@@ -404,26 +405,28 @@ export default function ServiceRequests() {
       </Tabs>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-800">
           <DialogHeader>
-            <DialogTitle>Request Service</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Request Service</DialogTitle>
+            <DialogDescription className="text-gray-400">
               Create a service request for volunteers to help with
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <Label>Title *</Label>
+                <Label className="text-gray-300">Title *</Label>
                 <Input
+                  className="bg-gray-800 border-gray-700 text-white"
                   value={newRequest.title}
                   onChange={e => setNewRequest(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g., Park Cleanup Day"
                 />
               </div>
               <div className="col-span-2">
-                <Label>Description *</Label>
+                <Label className="text-gray-300">Description *</Label>
                 <Textarea
+                  className="bg-gray-800 border-gray-700 text-white"
                   value={newRequest.description}
                   onChange={e => setNewRequest(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Describe the volunteer work needed..."
@@ -431,8 +434,9 @@ export default function ServiceRequests() {
                 />
               </div>
               <div>
-                <Label>Hours Offered *</Label>
+                <Label className="text-gray-300">Hours Offered *</Label>
                 <Input
+                  className="bg-gray-800 border-gray-700 text-white"
                   type="number"
                   min="0.5"
                   step="0.5"
@@ -441,8 +445,9 @@ export default function ServiceRequests() {
                 />
               </div>
               <div>
-                <Label>Max Participants</Label>
+                <Label className="text-gray-300">Max Participants</Label>
                 <Input
+                  className="bg-gray-800 border-gray-700 text-white"
                   type="number"
                   min="1"
                   value={newRequest.maxParticipants}
@@ -450,32 +455,36 @@ export default function ServiceRequests() {
                 />
               </div>
               <div>
-                <Label>Organization Name</Label>
+                <Label className="text-gray-300">Organization Name</Label>
                 <Input
+                  className="bg-gray-800 border-gray-700 text-white"
                   value={newRequest.organizationName}
                   onChange={e => setNewRequest(prev => ({ ...prev, organizationName: e.target.value }))}
                   placeholder="Your organization"
                 />
               </div>
               <div>
-                <Label>Date & Time</Label>
+                <Label className="text-gray-300">Date & Time</Label>
                 <Input
+                  className="bg-gray-800 border-gray-700 text-white"
                   type="datetime-local"
                   value={newRequest.dateTime}
                   onChange={e => setNewRequest(prev => ({ ...prev, dateTime: e.target.value }))}
                 />
               </div>
               <div>
-                <Label>Contact Email *</Label>
+                <Label className="text-gray-300">Contact Email *</Label>
                 <Input
+                  className="bg-gray-800 border-gray-700 text-white"
                   type="email"
                   value={newRequest.contactEmail}
                   onChange={e => setNewRequest(prev => ({ ...prev, contactEmail: e.target.value }))}
                 />
               </div>
               <div>
-                <Label>Contact Phone</Label>
+                <Label className="text-gray-300">Contact Phone</Label>
                 <Input
+                  className="bg-gray-800 border-gray-700 text-white"
                   type="tel"
                   value={newRequest.contactPhone}
                   onChange={e => setNewRequest(prev => ({ ...prev, contactPhone: e.target.value }))}
@@ -483,16 +492,18 @@ export default function ServiceRequests() {
                 />
               </div>
               <div className="col-span-2">
-                <Label>Location *</Label>
+                <Label className="text-gray-300">Location *</Label>
                 <Input
+                  className="bg-gray-800 border-gray-700 text-white"
                   value={newRequest.location}
                   onChange={e => setNewRequest(prev => ({ ...prev, location: e.target.value }))}
                   placeholder="Address or location description"
                 />
               </div>
               <div className="col-span-2">
-                <Label>Requirements (Optional)</Label>
+                <Label className="text-gray-300">Requirements (Optional)</Label>
                 <Textarea
+                  className="bg-gray-800 border-gray-700 text-white"
                   value={newRequest.requirements}
                   onChange={e => setNewRequest(prev => ({ ...prev, requirements: e.target.value }))}
                   placeholder="Any special requirements or skills needed..."
@@ -500,7 +511,7 @@ export default function ServiceRequests() {
                 />
               </div>
               <div className="col-span-2">
-                <Label>Pin Location on Map (Optional)</Label>
+                <Label className="text-gray-300">Pin Location on Map (Optional)</Label>
                 <LocationPicker
                   value={newRequest.latitude && newRequest.longitude ? 
                     { lat: newRequest.latitude, lng: newRequest.longitude } : null}
@@ -514,10 +525,10 @@ export default function ServiceRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => setCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateRequest} disabled={createMutation.isPending}>
+            <Button className="bg-white text-black hover:bg-gray-200" onClick={handleCreateRequest} disabled={createMutation.isPending}>
               {createMutation.isPending ? "Creating..." : "Create Request"}
             </Button>
           </DialogFooter>
@@ -525,40 +536,40 @@ export default function ServiceRequests() {
       </Dialog>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg bg-gray-900 border-gray-800">
           <DialogHeader>
-            <DialogTitle>{selectedRequest?.title}</DialogTitle>
+            <DialogTitle className="text-white">{selectedRequest?.title}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
-              <p className="text-gray-600">{selectedRequest.description}</p>
+              <p className="text-gray-400">{selectedRequest.description}</p>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center text-gray-400">
                   <Clock className="w-4 h-4 mr-2" />
                   {selectedRequest.hoursOffered} hours
                 </div>
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center text-gray-400">
                   <MapPin className="w-4 h-4 mr-2" />
                   {selectedRequest.location}
                 </div>
                 {selectedRequest.organizationName && (
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-400">
                     <Building className="w-4 h-4 mr-2" />
                     {selectedRequest.organizationName}
                   </div>
                 )}
                 {selectedRequest.dateTime && (
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-400">
                     <Calendar className="w-4 h-4 mr-2" />
                     {new Date(selectedRequest.dateTime).toLocaleString()}
                   </div>
                 )}
-                <div className="flex items-center text-gray-600">
+                <div className="flex items-center text-gray-400">
                   <Mail className="w-4 h-4 mr-2" />
                   {selectedRequest.contactEmail}
                 </div>
                 {selectedRequest.contactPhone && (
-                  <div className="flex items-center text-gray-600">
+                  <div className="flex items-center text-gray-400">
                     <Phone className="w-4 h-4 mr-2" />
                     {selectedRequest.contactPhone}
                   </div>
@@ -566,8 +577,8 @@ export default function ServiceRequests() {
               </div>
               {selectedRequest.requirements && (
                 <div>
-                  <h4 className="font-medium mb-1">Requirements</h4>
-                  <p className="text-sm text-gray-600">{selectedRequest.requirements}</p>
+                  <h4 className="font-medium mb-1 text-white">Requirements</h4>
+                  <p className="text-sm text-gray-400">{selectedRequest.requirements}</p>
                 </div>
               )}
             </div>
@@ -575,6 +586,7 @@ export default function ServiceRequests() {
           <DialogFooter>
             {selectedRequest && !isMyRequest(selectedRequest) && !hasJoined(selectedRequest.id) && (
               <Button 
+                className="bg-white text-black hover:bg-gray-200"
                 onClick={() => {
                   joinMutation.mutate(selectedRequest);
                   setViewDialogOpen(false);
@@ -589,16 +601,16 @@ export default function ServiceRequests() {
       </Dialog>
 
       <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-800">
           <DialogHeader>
-            <DialogTitle>Manage: {selectedRequest?.title}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Manage: {selectedRequest?.title}</DialogTitle>
+            <DialogDescription className="text-gray-400">
               View and manage volunteers who joined your service request
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="font-medium">Participants ({participants.length})</h3>
+              <h3 className="font-medium text-white">Participants ({participants.length})</h3>
               <Button 
                 variant="destructive" 
                 size="sm"
@@ -608,19 +620,19 @@ export default function ServiceRequests() {
               </Button>
             </div>
             {participants.length === 0 ? (
-              <Card className="p-6 text-center">
-                <Users className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                <p className="text-gray-500">No volunteers have joined yet.</p>
+              <Card className="p-6 text-center bg-gray-800 border-gray-700">
+                <Users className="w-8 h-8 mx-auto text-gray-500 mb-2" />
+                <p className="text-gray-400">No volunteers have joined yet.</p>
               </Card>
             ) : (
               <div className="space-y-3">
                 {participants.map(participant => (
-                  <Card key={participant.id} className="p-4">
+                  <Card key={participant.id} className="p-4 bg-gray-800 border-gray-700">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium">{participant.userName}</p>
-                        <p className="text-sm text-gray-500">{participant.userEmail}</p>
-                        <p className="text-xs text-gray-400">
+                        <p className="font-medium text-white">{participant.userName}</p>
+                        <p className="text-sm text-gray-400">{participant.userEmail}</p>
+                        <p className="text-xs text-gray-500">
                           Joined {participant.joinedAt.toLocaleDateString()}
                         </p>
                       </div>
@@ -666,17 +678,18 @@ export default function ServiceRequests() {
       </Dialog>
 
       <Dialog open={awardHoursDialogOpen} onOpenChange={setAwardHoursDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-gray-900 border-gray-800">
           <DialogHeader>
-            <DialogTitle>Award Hours</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Award Hours</DialogTitle>
+            <DialogDescription className="text-gray-400">
               Award volunteer hours to {selectedParticipant?.userName}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Hours to Award</Label>
+              <Label className="text-gray-300">Hours to Award</Label>
               <Input
+                className="bg-gray-800 border-gray-700 text-white"
                 type="number"
                 min="0.5"
                 step="0.5"
@@ -686,10 +699,11 @@ export default function ServiceRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAwardHoursDialogOpen(false)}>
+            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => setAwardHoursDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
+              className="bg-white text-black hover:bg-gray-200"
               onClick={() => {
                 if (selectedParticipant) {
                   awardHoursMutation.mutate({

@@ -104,26 +104,26 @@ export default function Profile() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-white min-h-0">
+      <div className="flex-1 flex flex-col bg-gray-950 min-h-0">
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0">
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-gray-950 min-h-0">
+      <div className="bg-gray-950 border-b border-gray-800 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Profile</h1>
-              <p className="text-gray-600 mt-1">Manage your personal information</p>
+              <h1 className="text-xl lg:text-2xl font-semibold text-white">Profile</h1>
+              <p className="text-gray-400 mt-1">Manage your personal information</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
-                <UserIcon className="w-5 h-5 text-white" />
+              <div className="flex items-center justify-center w-10 h-10 bg-white rounded-lg">
+                <UserIcon className="w-5 h-5 text-black" />
               </div>
             </div>
           </div>
@@ -131,10 +131,10 @@ export default function Profile() {
       </div>
 
       <div className="flex-1 overflow-auto p-4 lg:p-6">
-        <Card>
+        <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-            <p className="text-sm text-gray-600">
+            <CardTitle className="text-white">Personal Information</CardTitle>
+            <p className="text-sm text-gray-400">
               Please use a personal email account that you can receive mail at.
             </p>
           </CardHeader>
@@ -150,12 +150,12 @@ export default function Profile() {
                   }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <Label htmlFor="goByFirstName">Go-By First Name *</Label>
+                  <Label htmlFor="goByFirstName" className="text-gray-300">Go-By First Name *</Label>
                   <Input
                     id="goByFirstName"
                     {...form.register("goByFirstName")}
                     placeholder="e.g., John"
-                    className="mt-1"
+                    className="mt-1 bg-gray-800 border-gray-700 text-white"
                   />
                   {form.formState.errors.goByFirstName && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.goByFirstName.message}</p>
@@ -163,12 +163,12 @@ export default function Profile() {
                 </div>
 
                 <div>
-                  <Label htmlFor="lastName">Last Name *</Label>
+                  <Label htmlFor="lastName" className="text-gray-300">Last Name *</Label>
                   <Input
                     id="lastName"
                     {...form.register("lastName")}
                     placeholder="e.g., Smith"
-                    className="mt-1"
+                    className="mt-1 bg-gray-800 border-gray-700 text-white"
                   />
                   {form.formState.errors.lastName && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.lastName.message}</p>
@@ -176,12 +176,12 @@ export default function Profile() {
                 </div>
 
                 <div>
-                  <Label htmlFor="studentId">Student ID *</Label>
+                  <Label htmlFor="studentId" className="text-gray-300">Student ID *</Label>
                   <Input
                     id="studentId"
                     {...form.register("studentId")}
                     placeholder="Enter your student ID"
-                    className="mt-1"
+                    className="mt-1 bg-gray-800 border-gray-700 text-white"
                   />
                   {form.formState.errors.studentId && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.studentId.message}</p>
@@ -190,13 +190,13 @@ export default function Profile() {
               </div>
 
               <div>
-                <Label htmlFor="personalEmailAddress">Personal Email Address *</Label>
+                <Label htmlFor="personalEmailAddress" className="text-gray-300">Personal Email Address *</Label>
                 <Input
                   id="personalEmailAddress"
                   type="email"
                   {...form.register("personalEmailAddress")}
                   placeholder="your.email@example.com"
-                  className="mt-1"
+                  className="mt-1 bg-gray-800 border-gray-700 text-white"
                 />
                 {form.formState.errors.personalEmailAddress && (
                   <p className="text-sm text-red-600 mt-1">{form.formState.errors.personalEmailAddress.message}</p>
@@ -204,13 +204,13 @@ export default function Profile() {
               </div>
 
               <div>
-                <Label htmlFor="cellPhoneNumber">Cell Phone Number *</Label>
+                <Label htmlFor="cellPhoneNumber" className="text-gray-300">Cell Phone Number *</Label>
                 <Input
                   id="cellPhoneNumber"
                   type="tel"
                   {...form.register("cellPhoneNumber")}
                   placeholder="(555) 123-4567"
-                  className="mt-1"
+                  className="mt-1 bg-gray-800 border-gray-700 text-white"
                 />
                 {form.formState.errors.cellPhoneNumber && (
                   <p className="text-sm text-red-600 mt-1">{form.formState.errors.cellPhoneNumber.message}</p>
@@ -218,19 +218,19 @@ export default function Profile() {
               </div>
 
               <div>
-                <Label htmlFor="gradeLevel">Grade Level *</Label>
+                <Label htmlFor="gradeLevel" className="text-gray-300">Grade Level *</Label>
                 <Select
                   value={form.watch("gradeLevel")}
                   onValueChange={(value) => form.setValue("gradeLevel", value)}
                 >
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="mt-1 bg-gray-800 border-gray-700 text-white">
                     <SelectValue placeholder="Select your grade level" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="9">9th Grade</SelectItem>
-                    <SelectItem value="10">10th Grade</SelectItem>
-                    <SelectItem value="11">11th Grade</SelectItem>
-                    <SelectItem value="12">12th Grade</SelectItem>
+                  <SelectContent className="bg-gray-800 border-gray-700">
+                    <SelectItem value="9" className="text-white hover:bg-gray-700">9th Grade</SelectItem>
+                    <SelectItem value="10" className="text-white hover:bg-gray-700">10th Grade</SelectItem>
+                    <SelectItem value="11" className="text-white hover:bg-gray-700">11th Grade</SelectItem>
+                    <SelectItem value="12" className="text-white hover:bg-gray-700">12th Grade</SelectItem>
                   </SelectContent>
                 </Select>
                 {form.formState.errors.gradeLevel && (

@@ -187,8 +187,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             id: club.id,
             name: club.name,
             color: club.color,
-            fillColor: `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.4)`,
-            strokeColor: club.color,
           },
           geometry: {
             type: 'Polygon' as const,
@@ -218,17 +216,17 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                 id="territory-fill"
                 type="fill"
                 paint={{
-                  'fill-color': ['get', 'fillColor'],
-                  'fill-opacity': 0.6
+                  'fill-color': ['get', 'color'],
+                  'fill-opacity': 0.35
                 }}
               />
               <Layer
                 id="territory-outline"
                 type="line"
                 paint={{
-                  'line-color': ['get', 'strokeColor'],
-                  'line-width': 2,
-                  'line-opacity': 0.8
+                  'line-color': ['get', 'color'],
+                  'line-width': 3,
+                  'line-opacity': 0.9
                 }}
               />
             </Source>
