@@ -123,7 +123,7 @@ export function AdminManagement({ user }: AdminManagementProps) {
               <p className="text-gray-600 mt-1">Add or remove administrator privileges</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
                 <Settings className="w-5 h-5 text-white" />
               </div>
             </div>
@@ -143,7 +143,7 @@ export function AdminManagement({ user }: AdminManagementProps) {
             <CardContent>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button className="bg-black hover:bg-gray-800 text-white">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add Admin
                   </Button>
@@ -179,7 +179,7 @@ export function AdminManagement({ user }: AdminManagementProps) {
                       <Button 
                         type="submit" 
                         disabled={addAdminMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-black hover:bg-gray-800 text-white"
                       >
                         {addAdminMutation.isPending ? "Adding..." : "Add Admin"}
                       </Button>

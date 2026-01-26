@@ -183,7 +183,7 @@ export function AdminApproval({ user }: AdminApprovalProps) {
               <p className="text-gray-600 mt-1">Review and approve student submissions</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
                 <CheckCircle className="w-5 h-5 text-white" />
               </div>
             </div>
@@ -195,7 +195,7 @@ export function AdminApproval({ user }: AdminApprovalProps) {
         <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
           <div className="p-4 border-b border-gray-200 bg-white">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
+              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-full">
                 <span className="text-white text-sm font-medium">
                   {assignedStudent?.email?.split('@')[0].substring(0, 2).toUpperCase()}
                 </span>

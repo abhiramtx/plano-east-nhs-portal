@@ -302,7 +302,7 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
         <Button
           type="submit"
           disabled={submitMutation.isPending}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-black hover:bg-gray-800 text-white"
         >
           {submitMutation.isPending ? 'Submitting...' : 'Submit Hours'}
         </Button>

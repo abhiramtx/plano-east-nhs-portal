@@ -138,7 +138,7 @@ export function AdminDatabase({ user }: AdminDatabaseProps) {
               <p className="text-gray-600 mt-1">Year-end operations and data management</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-red-500 to-pink-600 rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
                 <Database className="w-5 h-5 text-white" />
               </div>
             </div>

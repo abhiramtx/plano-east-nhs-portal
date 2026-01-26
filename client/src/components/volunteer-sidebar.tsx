@@ -127,7 +127,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 text-xs"
+                className="flex-1 text-xs border-gray-300 text-gray-600 hover:bg-gray-100"
                 onClick={onLeaveClub}
               >
                 <ChevronLeft className="w-3 h-3 mr-1" />
@@ -136,7 +136,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="flex-1 text-xs border-gray-300 text-gray-600 hover:bg-gray-100"
                 onClick={onSignOut}
               >
                 <LogOut className="w-3 h-3 mr-1" />

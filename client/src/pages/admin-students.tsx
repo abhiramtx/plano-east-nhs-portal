@@ -425,7 +425,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                     <Badge className="bg-blue-100 text-blue-800">{activeFilterCount}</Badge>
                   )}
                 </Button>
-                <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
                   <Users className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -454,8 +454,8 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                     <p className="text-sm font-medium text-gray-600">Total Members</p>
                     <p className="text-2xl font-bold text-gray-900">{students.length}</p>
                   </div>
-                  <div className="p-3 bg-blue-50 rounded-full">
-                    <Users className="w-5 h-5 text-blue-600" />
+                  <div className="p-3 bg-gray-100 rounded-full">
+                    <Users className="w-5 h-5 text-gray-900" />
                   </div>
                 </div>
               </CardContent>

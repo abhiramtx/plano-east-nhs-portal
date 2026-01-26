@@ -124,7 +124,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
               <p className="text-gray-600 mt-1">Manage student submissions and track program progress</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
                 <Award className="w-5 h-5 text-white" />
               </div>
             </div>
@@ -141,8 +141,8 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                   <p className="text-sm font-medium text-gray-600">Total Submissions</p>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalSubmissions}</p>
                 </div>
-                <div className="p-3 bg-blue-50 rounded-full">
-                  <Users className="w-5 h-5 text-blue-600" />
+                <div className="p-3 bg-gray-100 rounded-full">
+                  <Users className="w-5 h-5 text-gray-900" />
                 </div>
               </div>
             </CardContent>
