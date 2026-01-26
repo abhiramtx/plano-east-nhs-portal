@@ -59,17 +59,17 @@ export default function Dashboard() {
 
   return (
     <ProfileCompletionGuard user={user}>
-    <div className="flex-1 flex flex-col bg-gray-950 min-h-0">
-      <div className="bg-gray-950 border-b border-gray-800 flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-white min-h-0">
+      <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-white">Dashboard</h1>
-              <p className="text-gray-400 mt-1">Welcome back, {user?.name?.split(' ')[0]}!</p>
+              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Dashboard</h1>
+              <p className="text-gray-600 mt-1">Welcome back, {user?.name?.split(' ')[0]}!</p>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-white rounded-lg">
-                <Award className="w-5 h-5 text-black" />
+              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
+                <Award className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
@@ -78,57 +78,57 @@ export default function Dashboard() {
 
       <div className="flex-1 overflow-auto p-4 lg:p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-400">Total Hours</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalHours.toFixed(1)}</p>
+                  <p className="text-sm font-medium text-gray-500">Total Hours</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-gray-800 rounded-full">
-                  <Clock className="w-5 h-5 text-white" />
+                <div className="p-3 bg-gray-100 rounded-full">
+                  <Clock className="w-5 h-5 text-gray-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-400">Approved Hours</p>
-                  <p className="text-2xl font-bold text-green-400">{stats.approvedHours.toFixed(1)}</p>
+                  <p className="text-sm font-medium text-gray-500">Approved Hours</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.approvedHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-gray-800 rounded-full">
-                  <CheckCircle2 className="w-5 h-5 text-green-400" />
+                <div className="p-3 bg-green-100 rounded-full">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-400">Pending Hours</p>
-                  <p className="text-2xl font-bold text-yellow-400">{stats.pendingHours.toFixed(1)}</p>
+                  <p className="text-sm font-medium text-gray-500">Pending Hours</p>
+                  <p className="text-2xl font-bold text-yellow-600">{stats.pendingHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-gray-800 rounded-full">
-                  <AlertCircle className="w-5 h-5 text-yellow-400" />
+                <div className="p-3 bg-yellow-100 rounded-full">
+                  <AlertCircle className="w-5 h-5 text-yellow-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-400">Submissions</p>
-                  <p className="text-2xl font-bold text-white">{stats.submissionCount}</p>
+                  <p className="text-sm font-medium text-gray-500">Submissions</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.submissionCount}</p>
                 </div>
-                <div className="p-3 bg-gray-800 rounded-full">
-                  <TrendingUp className="w-5 h-5 text-white" />
+                <div className="p-3 bg-gray-100 rounded-full">
+                  <TrendingUp className="w-5 h-5 text-gray-600" />
                 </div>
               </div>
             </CardContent>
@@ -136,28 +136,28 @@ export default function Dashboard() {
         </div>
 
         <div className="mb-6 lg:mb-8">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-white border-gray-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">March Requirement Status</h3>
-                  <p className="text-sm text-gray-400">15 approved hours required by end of March</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">March Requirement Status</h3>
+                  <p className="text-sm text-gray-500">15 approved hours required by end of March</p>
                 </div>
                 <div className="text-right">
                   {stats.approvedHours >= 15 ? (
                     <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="w-6 h-6 text-green-400" />
+                      <CheckCircle2 className="w-6 h-6 text-green-600" />
                       <div>
-                        <p className="text-lg font-bold text-green-400">Requirement Met!</p>
-                        <p className="text-sm text-gray-400">{(stats.approvedHours - 15).toFixed(1)} hours over</p>
+                        <p className="text-lg font-bold text-green-600">Requirement Met!</p>
+                        <p className="text-sm text-gray-500">{(stats.approvedHours - 15).toFixed(1)} hours over</p>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center space-x-2">
-                      <AlertCircle className="w-6 h-6 text-orange-400" />
+                      <AlertCircle className="w-6 h-6 text-orange-500" />
                       <div>
-                        <p className="text-lg font-bold text-orange-400">{(15 - stats.approvedHours).toFixed(1)} hours needed</p>
-                        <p className="text-sm text-gray-400">{stats.approvedHours.toFixed(1)} / 15 hours approved</p>
+                        <p className="text-lg font-bold text-orange-500">{(15 - stats.approvedHours).toFixed(1)} hours needed</p>
+                        <p className="text-sm text-gray-500">{stats.approvedHours.toFixed(1)} / 15 hours approved</p>
                       </div>
                     </div>
                   )}
@@ -166,13 +166,13 @@ export default function Dashboard() {
               
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Progress</span>
-                  <span className="text-sm text-gray-400">{Math.min((stats.approvedHours / 15) * 100, 100).toFixed(0)}%</span>
+                  <span className="text-sm text-gray-500">Progress</span>
+                  <span className="text-sm text-gray-500">{Math.min((stats.approvedHours / 15) * 100, 100).toFixed(0)}%</span>
                 </div>
-                <div className="w-full bg-gray-800 rounded-full h-2">
+                <div className="w-full bg-gray-200 rounded-full h-2">
                   <div 
                     className={`h-2 rounded-full transition-all duration-300 ${
-                      stats.approvedHours >= 15 ? 'bg-green-500' : 'bg-white'
+                      stats.approvedHours >= 15 ? 'bg-green-500' : 'bg-black'
                     }`}
                     style={{ width: `${Math.min((stats.approvedHours / 15) * 100, 100)}%` }}
                   />
@@ -183,10 +183,10 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-white border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-white">
-                <TrendingUp className="w-5 h-5 text-white" />
+              <CardTitle className="flex items-center space-x-2 text-gray-900">
+                <TrendingUp className="w-5 h-5 text-gray-600" />
                 <span>Monthly Hours</span>
               </CardTitle>
             </CardHeader>
@@ -194,26 +194,26 @@ export default function Dashboard() {
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                     <XAxis 
                       dataKey="month" 
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tick={{ fontSize: 12, fill: '#6B7280' }}
                     />
                     <YAxis 
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                      tick={{ fontSize: 12, fill: '#6B7280' }}
                       domain={[0, 'dataMax + 1']}
                     />
                     <Tooltip 
                       content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-gray-800 p-3 border border-gray-700 rounded-lg">
-                              <p className="font-medium text-white">{label}</p>
-                              <p className="text-white">
+                            <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+                              <p className="font-medium text-gray-900">{label}</p>
+                              <p className="text-gray-600">
                                 <span className="font-medium">{payload[0].value}</span> hours
                               </p>
                             </div>
@@ -225,10 +225,10 @@ export default function Dashboard() {
                     <Line 
                       type="monotone" 
                       dataKey="hours" 
-                      stroke="#ffffff" 
+                      stroke="#111827" 
                       strokeWidth={3}
-                      dot={{ fill: '#ffffff', strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, fill: '#ffffff' }}
+                      dot={{ fill: '#111827', strokeWidth: 2, r: 4 }}
+                      activeDot={{ r: 6, fill: '#111827' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -236,10 +236,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-white border-gray-200">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2 text-white">
-                <Calendar className="w-5 h-5 text-white" />
+              <CardTitle className="flex items-center space-x-2 text-gray-900">
+                <Calendar className="w-5 h-5 text-gray-600" />
                 <span>Recent Submissions</span>
               </CardTitle>
             </CardHeader>
@@ -249,25 +249,25 @@ export default function Dashboard() {
                   <div key={index} className="py-2">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-white truncate">
+                        <p className="text-sm font-medium text-gray-900 truncate">
                           {submission.description}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-gray-500">
                           {new Date(submission.date).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2 flex-shrink-0">
-                        <span className="text-sm font-medium text-white">
+                        <span className="text-sm font-medium text-gray-900">
                           {submission.hours}h
                         </span>
                         <Badge 
                           variant={submission.status === 'approved' ? 'default' : 'secondary'}
                           className={
                             submission.status === 'approved' 
-                              ? 'bg-green-900/50 text-green-400 border-green-700' 
+                              ? 'bg-green-100 text-green-700 border-green-200' 
                               : submission.status === 'pending'
-                              ? 'bg-yellow-900/50 text-yellow-400 border-yellow-700'
-                              : 'bg-red-900/50 text-red-400 border-red-700'
+                              ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                              : 'bg-red-100 text-red-700 border-red-200'
                           }
                         >
                           {submission.status === 'approved' && <CheckCircle2 className="w-3 h-3 mr-1" />}
@@ -278,16 +278,16 @@ export default function Dashboard() {
                       </div>
                     </div>
                     {submission.status === 'rejected' && submission.rejectReason && (
-                      <div className="mt-2 p-2 bg-red-900/30 border border-red-800 rounded-md">
-                        <p className="text-xs font-medium text-red-400 mb-1">Rejection Reason:</p>
-                        <p className="text-xs text-red-300">{submission.rejectReason}</p>
+                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+                        <p className="text-xs font-medium text-red-600 mb-1">Rejection Reason:</p>
+                        <p className="text-xs text-red-500">{submission.rejectReason}</p>
                       </div>
                     )}
                   </div>
                 ))}
                 {submissions.length === 0 && (
-                  <div className="text-center py-8 text-gray-400">
-                    <Clock className="w-12 h-12 mx-auto mb-4 text-gray-600" />
+                  <div className="text-center py-8 text-gray-500">
+                    <Clock className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                     <p>No submissions yet</p>
                     <p className="text-sm">Start by submitting your first hours!</p>
                   </div>

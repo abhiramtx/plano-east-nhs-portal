@@ -37,10 +37,10 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
   return (
     <>
       <button
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-900 rounded-lg shadow-md border border-gray-700"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
       >
-        {mobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+        {mobileMenuOpen ? <X className="w-5 h-5 text-gray-900" /> : <Menu className="w-5 h-5 text-gray-900" />}
       </button>
 
       {mobileMenuOpen && (
@@ -51,23 +51,26 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
       )}
 
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-gray-950 border-r border-gray-800 transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out
         lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
+          <div 
+            className="flex items-center justify-between px-4 py-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50"
+            onClick={() => setLocation('/club-selection')}
+          >
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                <Globe className="w-6 h-6 text-black" />
+              <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
+                <Globe className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="font-semibold text-white">VolunteerClub</h2>
-                <p className="text-xs text-gray-400">Volunteer Interface</p>
+                <h2 className="font-semibold text-gray-900">VolunteerClub</h2>
+                <p className="text-xs text-gray-500">Volunteer Interface</p>
               </div>
             </div>
           </div>
 
-          <div className="px-4 py-3 border-b border-gray-800">
+          <div className="px-4 py-3 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <div 
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
@@ -76,8 +79,8 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
                 <Trophy className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{club.name}</p>
-                <p className="text-xs text-gray-400">
+                <p className="text-sm font-medium text-gray-900 truncate">{club.name}</p>
+                <p className="text-xs text-gray-500">
                   {club.totalApprovedHours.toFixed(1)} total hours
                 </p>
               </div>
@@ -94,8 +97,8 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
                   className={`
                     w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                     ${isActive 
-                      ? 'bg-white/10 text-white' 
-                      : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                      ? 'bg-gray-100 text-gray-900' 
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }
                   `}
                 >
@@ -106,17 +109,17 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
             })}
           </nav>
 
-          <div className="p-4 border-t border-gray-800 space-y-3">
+          <div className="p-4 border-t border-gray-200 space-y-3">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                 {user.photoURL ? (
                   <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full" />
                 ) : (
-                  <UserIcon className="w-4 h-4 text-gray-400" />
+                  <UserIcon className="w-4 h-4 text-gray-500" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
             </div>
@@ -125,7 +128,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 text-xs border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-white"
+                className="flex-1 text-xs border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 onClick={onLeaveClub}
               >
                 <ChevronLeft className="w-3 h-3 mr-1" />
@@ -134,7 +137,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 text-xs border-gray-700 text-gray-400 hover:bg-gray-800 hover:text-white"
+                className="flex-1 text-xs border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 onClick={onSignOut}
               >
                 <LogOut className="w-3 h-3 mr-1" />

@@ -83,7 +83,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-950 min-h-full">
+    <div className="p-6 space-y-6 bg-white min-h-full">
       <div className="flex items-center justify-between pt-10 lg:pt-0">
         <div className="flex items-center space-x-4">
           <div 
@@ -93,18 +93,18 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
             <Globe className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">{club.name}</h1>
-            <p className="text-gray-400">{club.description || "No description"}</p>
+            <h1 className="text-2xl font-bold text-gray-900">{club.name}</h1>
+            <p className="text-gray-500">{club.description || "No description"}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
           {isAdmin && (
-            <Badge variant="secondary" className="bg-purple-900/50 text-purple-400 border-purple-700">
+            <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
               <Crown className="w-3 h-3 mr-1" />
               Admin
             </Badge>
           )}
-          <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => setLeaveDialogOpen(true)}>
+          <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => setLeaveDialogOpen(true)}>
             <LogOut className="w-4 h-4 mr-2" />
             Leave Club
           </Button>
@@ -112,57 +112,57 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-white border-gray-200">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-green-400" />
+              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Approved Hours</p>
-                <p className="text-2xl font-bold text-white">{approvedHours.toFixed(1)}</p>
+                <p className="text-sm text-gray-500">Approved Hours</p>
+                <p className="text-2xl font-bold text-gray-900">{approvedHours.toFixed(1)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-white border-gray-200">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-yellow-400" />
+              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Pending Hours</p>
-                <p className="text-2xl font-bold text-white">{pendingHours.toFixed(1)}</p>
+                <p className="text-sm text-gray-500">Pending Hours</p>
+                <p className="text-2xl font-bold text-gray-900">{pendingHours.toFixed(1)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-white border-gray-200">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-gray-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Members</p>
-                <p className="text-2xl font-bold text-white">{members.length}</p>
+                <p className="text-sm text-gray-500">Members</p>
+                <p className="text-2xl font-bold text-gray-900">{members.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900 border-gray-800">
+        <Card className="bg-white border-gray-200">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-400">Territory Size</p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-sm text-gray-500">Territory Size</p>
+                <p className="text-2xl font-bold text-gray-900">
                   {Math.max(20, Math.sqrt(club.totalApprovedHours) * 10).toFixed(0)}
                 </p>
               </div>
@@ -172,17 +172,17 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
       </div>
 
       <Tabs defaultValue="members" className="space-y-4">
-        <TabsList className="bg-gray-900 border-gray-800">
-          <TabsTrigger value="members" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400">
+        <TabsList className="bg-gray-100 border-gray-200">
+          <TabsTrigger value="members" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-600">
             <Users className="w-4 h-4 mr-2" />
             Members
           </TabsTrigger>
-          <TabsTrigger value="leaderboard" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400">
+          <TabsTrigger value="leaderboard" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-600">
             <Trophy className="w-4 h-4 mr-2" />
             Leaderboard
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="settings" className="data-[state=active]:bg-gray-800 data-[state=active]:text-white text-gray-400">
+            <TabsTrigger value="settings" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-600">
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </TabsTrigger>
@@ -190,39 +190,39 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         </TabsList>
 
         <TabsContent value="members">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-white border-gray-200">
             <CardHeader>
-              <CardTitle className="text-white">Club Members</CardTitle>
-              <CardDescription className="text-gray-400">Manage your club's membership</CardDescription>
+              <CardTitle className="text-gray-900">Club Members</CardTitle>
+              <CardDescription className="text-gray-500">Manage your club's membership</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {members.map((member) => (
                   <div 
                     key={member.id}
-                    className="flex items-center justify-between p-4 bg-gray-800 rounded-lg"
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                        <Users className="w-5 h-5 text-gray-300" />
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        <Users className="w-5 h-5 text-gray-500" />
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <p className="font-medium text-white">
+                          <p className="font-medium text-gray-900">
                             {member.userEmail}
                           </p>
                           {member.role === 'admin' && (
-                            <Badge variant="secondary" className="bg-purple-900/50 text-purple-400 border-purple-700 text-xs">
+                            <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
                               Admin
                             </Badge>
                           )}
                           {member.userEmail === userEmail && (
-                            <Badge variant="secondary" className="bg-blue-900/50 text-blue-400 border-blue-700 text-xs">
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
                               You
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-gray-500">
                           {getMemberApprovedHours(member.userEmail).toFixed(1)} approved hours
                         </p>
                       </div>
@@ -231,7 +231,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        className="text-red-400 hover:text-red-300 hover:bg-red-900/30"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
                         onClick={() => {
                           setMemberToKick(member);
                           setKickDialogOpen(true);
@@ -248,10 +248,10 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         </TabsContent>
 
         <TabsContent value="leaderboard">
-          <Card className="bg-gray-900 border-gray-800">
+          <Card className="bg-white border-gray-200">
             <CardHeader>
-              <CardTitle className="text-white">Member Leaderboard</CardTitle>
-              <CardDescription className="text-gray-400">Top contributors in your club</CardDescription>
+              <CardTitle className="text-gray-900">Member Leaderboard</CardTitle>
+              <CardDescription className="text-gray-500">Top contributors in your club</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -261,28 +261,28 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                     <div 
                       key={member.id}
                       className={`flex items-center space-x-4 p-4 rounded-lg ${
-                        member.userEmail === userEmail ? 'bg-blue-900/30 border border-blue-700' : 'bg-gray-800'
+                        member.userEmail === userEmail ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                         index === 0 ? 'bg-yellow-500 text-yellow-900' :
                         index === 1 ? 'bg-gray-400 text-gray-900' :
                         index === 2 ? 'bg-orange-500 text-orange-900' :
-                        'bg-gray-700 text-gray-300'
+                        'bg-gray-200 text-gray-600'
                       }`}>
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-white">
+                        <p className="font-medium text-gray-900">
                           {member.userEmail}
                           {member.userEmail === userEmail && " (You)"}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-white">
+                        <p className="font-bold text-gray-900">
                           {getMemberApprovedHours(member.userEmail).toFixed(1)}
                         </p>
-                        <p className="text-xs text-gray-400">hours</p>
+                        <p className="text-xs text-gray-500">hours</p>
                       </div>
                     </div>
                   ))}
@@ -293,30 +293,30 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
 
         {isAdmin && (
           <TabsContent value="settings">
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-white border-gray-200">
               <CardHeader>
-                <CardTitle className="text-white">Club Settings</CardTitle>
-                <CardDescription className="text-gray-400">Manage your club's configuration</CardDescription>
+                <CardTitle className="text-gray-900">Club Settings</CardTitle>
+                <CardDescription className="text-gray-500">Manage your club's configuration</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-4 bg-gray-800 rounded-lg">
-                    <h3 className="font-medium text-white mb-2">Club Privacy</h3>
-                    <p className="text-sm text-gray-400 mb-2">
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h3 className="font-medium text-gray-900 mb-2">Club Privacy</h3>
+                    <p className="text-sm text-gray-500 mb-2">
                       {club.isPrivate ? "This club is private and requires a password to join." : "This club is public and anyone can join."}
                     </p>
-                    <Badge variant={club.isPrivate ? "secondary" : "outline"} className={club.isPrivate ? "bg-gray-700 text-gray-300" : "border-gray-600 text-gray-300"}>
+                    <Badge variant={club.isPrivate ? "secondary" : "outline"} className={club.isPrivate ? "bg-gray-200 text-gray-700" : "border-gray-300 text-gray-700"}>
                       {club.isPrivate ? "Private" : "Public"}
                     </Badge>
                   </div>
-                  <div className="p-4 bg-gray-800 rounded-lg">
-                    <h3 className="font-medium text-white mb-2">Club Color</h3>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <h3 className="font-medium text-gray-900 mb-2">Club Color</h3>
                     <div className="flex items-center space-x-3">
                       <div 
                         className="w-8 h-8 rounded-lg"
                         style={{ backgroundColor: club.color }}
                       />
-                      <span className="text-sm text-gray-400">{club.color}</span>
+                      <span className="text-sm text-gray-500">{club.color}</span>
                     </div>
                   </div>
                 </div>
@@ -327,15 +327,15 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
       </Tabs>
 
       <Dialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
-        <DialogContent className="bg-gray-900 border-gray-800">
+        <DialogContent className="bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="text-white">Leave Club?</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogTitle className="text-gray-900">Leave Club?</DialogTitle>
+            <DialogDescription className="text-gray-500">
               Are you sure you want to leave {club.name}? Your hours will remain on record but you won't be able to contribute until you join another club.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => setLeaveDialogOpen(false)}>
+            <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => setLeaveDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
@@ -350,15 +350,15 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
       </Dialog>
 
       <Dialog open={kickDialogOpen} onOpenChange={setKickDialogOpen}>
-        <DialogContent className="bg-gray-900 border-gray-800">
+        <DialogContent className="bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="text-white">Remove Member?</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogTitle className="text-gray-900">Remove Member?</DialogTitle>
+            <DialogDescription className="text-gray-500">
               Are you sure you want to remove {memberToKick?.userEmail} from the club?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => setKickDialogOpen(false)}>
+            <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => setKickDialogOpen(false)}>
               Cancel
             </Button>
             <Button 

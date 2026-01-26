@@ -187,20 +187,20 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 lg:space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         <div>
-          <Label htmlFor="activityName" className="text-gray-300">Activity Name</Label>
+          <Label htmlFor="activityName" className="text-gray-700">Activity Name</Label>
           <Input
             id="activityName"
             {...form.register("activityName")}
             placeholder="Enter the activity name"
-            className="mt-1 bg-gray-800 border-gray-700 text-white"
+            className="mt-1 bg-white border-gray-200 text-gray-900"
           />
           {form.formState.errors.activityName && (
-            <p className="text-sm text-red-400 mt-1">{form.formState.errors.activityName.message}</p>
+            <p className="text-sm text-red-600 mt-1">{form.formState.errors.activityName.message}</p>
           )}
         </div>
 
         <div>
-          <Label htmlFor="hours" className="text-gray-300">Number of Hours</Label>
+          <Label htmlFor="hours" className="text-gray-700">Number of Hours</Label>
           <Input
             id="hours"
             type="number"
@@ -208,49 +208,49 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
             min="0"
             {...form.register("hours")}
             placeholder="e.g., 2.5"
-            className="mt-1 bg-gray-800 border-gray-700 text-white"
+            className="mt-1 bg-white border-gray-200 text-gray-900"
           />
           {form.formState.errors.hours && (
-            <p className="text-sm text-red-400 mt-1">{form.formState.errors.hours.message}</p>
+            <p className="text-sm text-red-600 mt-1">{form.formState.errors.hours.message}</p>
           )}
         </div>
       </div>
 
       <div>
-        <Label htmlFor="date" className="text-gray-300">Date of Service</Label>
+        <Label htmlFor="date" className="text-gray-700">Date of Service</Label>
         <Input
           id="date"
           type="date"
           {...form.register("date")}
-          className="mt-1 bg-gray-800 border-gray-700 text-white"
+          className="mt-1 bg-white border-gray-200 text-gray-900"
         />
         {form.formState.errors.date && (
-          <p className="text-sm text-red-400 mt-1">{form.formState.errors.date.message}</p>
+          <p className="text-sm text-red-600 mt-1">{form.formState.errors.date.message}</p>
         )}
       </div>
 
       <div>
-        <Label htmlFor="description" className="text-gray-300">Description of Service</Label>
+        <Label htmlFor="description" className="text-gray-700">Description of Service</Label>
         <Textarea
           id="description"
           {...form.register("description")}
           placeholder="Describe what you did during your service hours..."
-          className="mt-1 bg-gray-800 border-gray-700 text-white"
+          className="mt-1 bg-white border-gray-200 text-gray-900"
           rows={4}
         />
         {form.formState.errors.description && (
-          <p className="text-sm text-red-400 mt-1">{form.formState.errors.description.message}</p>
+          <p className="text-sm text-red-600 mt-1">{form.formState.errors.description.message}</p>
         )}
       </div>
 
       <div>
-        <Label className="text-gray-300">Proof of Service (Optional)</Label>
-        <p className="text-sm text-gray-400 mb-3">
+        <Label className="text-gray-700">Proof of Service (Optional)</Label>
+        <p className="text-sm text-gray-500 mb-3">
           Upload a photo as proof of your service (JPG or PNG, max 1MB)
         </p>
         
         {!selectedFile && !imagePreview ? (
-          <div className="border-2 border-dashed border-gray-700 rounded-lg p-6 text-center hover:border-gray-600 transition-colors">
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
             <input
               type="file"
               accept="image/*"
@@ -262,8 +262,8 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
               htmlFor="file-upload"
               className="cursor-pointer flex flex-col items-center"
             >
-              <Upload className="w-8 h-8 text-gray-500 mb-2" />
-              <span className="text-sm text-gray-400">Click to upload an image</span>
+              <Upload className="w-8 h-8 text-gray-400 mb-2" />
+              <span className="text-sm text-gray-500">Click to upload an image</span>
             </label>
           </div>
         ) : (
@@ -271,7 +271,7 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
             <img
               src={imagePreview || ''}
               alt="Preview"
-              className="max-w-full h-48 object-cover rounded-lg border border-gray-700"
+              className="max-w-full h-48 object-cover rounded-lg border border-gray-200"
             />
             <button
               type="button"
@@ -281,7 +281,7 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
               <X className="w-4 h-4" />
             </button>
             {selectedFile && (
-              <p className="text-sm text-gray-400 mt-2">{selectedFile.name}</p>
+              <p className="text-sm text-gray-500 mt-2">{selectedFile.name}</p>
             )}
           </div>
         )}
@@ -291,7 +291,7 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
         <Button
           type="button"
           variant="outline"
-          className="border-gray-700 text-gray-300 hover:bg-gray-800"
+          className="border-gray-200 text-gray-600 hover:bg-gray-100"
           onClick={() => {
             form.reset();
             setSelectedFile(null);
@@ -303,7 +303,7 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
         <Button
           type="submit"
           disabled={submitMutation.isPending}
-          className="bg-white hover:bg-gray-200 text-black"
+          className="bg-black hover:bg-gray-800 text-white"
         >
           {submitMutation.isPending ? 'Submitting...' : 'Submit Hours'}
         </Button>

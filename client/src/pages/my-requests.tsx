@@ -66,10 +66,10 @@ export default function MyRequests() {
 
   if (!user) {
     return (
-      <div className="p-6 flex items-center justify-center h-96 bg-gray-950">
+      <div className="p-6 flex items-center justify-center h-96 bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading...</p>
         </div>
       </div>
     );
@@ -253,13 +253,13 @@ export default function MyRequests() {
   const completedCount = participants.filter(p => p.status === 'completed').length;
 
   return (
-    <div className="p-6 max-h-screen overflow-y-auto bg-gray-950 pt-16 lg:pt-6">
+    <div className="p-6 max-h-screen overflow-y-auto bg-white pt-16 lg:pt-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">My Service Requests</h1>
-          <p className="text-gray-400">Manage your volunteer opportunities and participants</p>
+          <h1 className="text-2xl font-bold text-gray-900">My Service Requests</h1>
+          <p className="text-gray-500">Manage your volunteer opportunities and participants</p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)} className="bg-white text-black hover:bg-gray-200">
+        <Button onClick={() => setCreateDialogOpen(true)} className="bg-black text-white hover:bg-gray-800">
           <Plus className="w-4 h-4 mr-2" />
           Create Request
         </Button>
@@ -267,14 +267,14 @@ export default function MyRequests() {
 
       {isLoading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
       ) : myRequests.length === 0 ? (
-        <Card className="p-12 text-center bg-gray-900 border-gray-800">
-          <Building className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No requests yet</h3>
-          <p className="text-gray-400 mb-6">Create your first service request to find volunteers</p>
-          <Button onClick={() => setCreateDialogOpen(true)} className="bg-white text-black hover:bg-gray-200">
+        <Card className="p-12 text-center bg-gray-50 border-gray-200">
+          <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No requests yet</h3>
+          <p className="text-gray-500 mb-6">Create your first service request to find volunteers</p>
+          <Button onClick={() => setCreateDialogOpen(true)} className="bg-black text-white hover:bg-gray-800">
             <Plus className="w-4 h-4 mr-2" />
             Create Request
           </Button>
@@ -282,25 +282,25 @@ export default function MyRequests() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myRequests.map((request) => (
-            <Card key={request.id} className="bg-gray-900 border-gray-800 hover:border-gray-700 transition-all">
+            <Card key={request.id} className="bg-white border-gray-200 hover:border-gray-300 transition-all">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg text-white">{request.title}</CardTitle>
+                    <CardTitle className="text-lg text-gray-900">{request.title}</CardTitle>
                     {request.organizationName && (
-                      <CardDescription className="flex items-center mt-1 text-gray-400">
+                      <CardDescription className="flex items-center mt-1 text-gray-500">
                         <Building className="w-4 h-4 mr-1" />
                         {request.organizationName}
                       </CardDescription>
                     )}
                   </div>
-                  <Badge className={request.status === 'open' ? 'bg-green-900/50 text-green-400 border-green-700' : 'bg-gray-800 text-gray-300 border-gray-700'}>
+                  <Badge className={request.status === 'open' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}>
                     {request.status}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-gray-400 line-clamp-2">{request.description}</p>
+                <p className="text-sm text-gray-500 line-clamp-2">{request.description}</p>
                 
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500 flex items-center">
@@ -315,11 +315,11 @@ export default function MyRequests() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
+                <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-800"
+                    className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-100"
                     onClick={() => openManageDialog(request)}
                   >
                     <Users className="w-4 h-4 mr-1" />
@@ -328,7 +328,7 @@ export default function MyRequests() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                    className="border-gray-200 text-gray-600 hover:bg-gray-100"
                     onClick={() => openEditDialog(request)}
                   >
                     <Edit className="w-4 h-4" />
@@ -336,7 +336,7 @@ export default function MyRequests() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className="text-red-400 border-gray-700 hover:text-red-300 hover:bg-red-900/30"
+                    className="text-red-500 border-gray-200 hover:text-red-600 hover:bg-red-50"
                     onClick={() => { setSelectedRequest(request); setDeleteDialogOpen(true); }}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -349,28 +349,28 @@ export default function MyRequests() {
       )}
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-800">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="text-white">Create Service Request</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogTitle className="text-gray-900">Create Service Request</DialogTitle>
+            <DialogDescription className="text-gray-500">
               Post a volunteer opportunity for others to join
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-2">
-                <Label className="text-gray-300">Title *</Label>
+                <Label className="text-gray-700">Title *</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   placeholder="e.g., Beach Cleanup Event"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
               <div className="col-span-2 space-y-2">
-                <Label className="text-gray-300">Description</Label>
+                <Label className="text-gray-700">Description</Label>
                 <Textarea
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   placeholder="Describe the volunteer opportunity..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -378,9 +378,9 @@ export default function MyRequests() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Hours Offered *</Label>
+                <Label className="text-gray-700">Hours Offered *</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   type="number"
                   min={1}
                   value={formData.hoursOffered}
@@ -388,9 +388,9 @@ export default function MyRequests() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Max Participants</Label>
+                <Label className="text-gray-700">Max Participants</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   type="number"
                   min={1}
                   value={formData.maxParticipants}
@@ -398,36 +398,36 @@ export default function MyRequests() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Organization Name</Label>
+                <Label className="text-gray-700">Organization Name</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   placeholder="Your organization"
                   value={formData.organizationName}
                   onChange={(e) => setFormData({ ...formData, organizationName: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Location</Label>
+                <Label className="text-gray-700">Location</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   placeholder="City, State"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Contact Email</Label>
+                <Label className="text-gray-700">Contact Email</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   type="email"
                   value={formData.contactEmail}
                   onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Contact Phone</Label>
+                <Label className="text-gray-700">Contact Phone</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   type="tel"
                   placeholder="(555) 123-4567"
                   value={formData.contactPhone}
@@ -435,16 +435,16 @@ export default function MyRequests() {
                 />
               </div>
               <div className="col-span-2 space-y-2">
-                <Label className="text-gray-300">Date & Time</Label>
+                <Label className="text-gray-700">Date & Time</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   type="datetime-local"
                   value={formData.dateTime}
                   onChange={(e) => setFormData({ ...formData, dateTime: e.target.value })}
                 />
               </div>
               <div className="col-span-2 space-y-2">
-                <Label className="text-gray-300">Map Location</Label>
+                <Label className="text-gray-700">Map Location</Label>
                 <LocationPicker
                   value={formData.latitude && formData.longitude ? { lat: formData.latitude, lng: formData.longitude } : null}
                   onChange={(lat, lng) => setFormData({ ...formData, latitude: lat, longitude: lng })}
@@ -453,11 +453,11 @@ export default function MyRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => { setCreateDialogOpen(false); resetForm(); }}>Cancel</Button>
+            <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => { setCreateDialogOpen(false); resetForm(); }}>Cancel</Button>
             <Button 
               onClick={() => createMutation.mutate()}
               disabled={!formData.title || createMutation.isPending}
-              className="bg-white text-black hover:bg-gray-200"
+              className="bg-black text-white hover:bg-gray-800"
             >
               {createMutation.isPending ? "Creating..." : "Create Request"}
             </Button>
@@ -466,33 +466,33 @@ export default function MyRequests() {
       </Dialog>
 
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-800">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="text-white">Edit Service Request</DialogTitle>
+            <DialogTitle className="text-gray-900">Edit Service Request</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-2">
-                <Label className="text-gray-300">Title *</Label>
+                <Label className="text-gray-700">Title *</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
               <div className="col-span-2 space-y-2">
-                <Label className="text-gray-300">Description</Label>
+                <Label className="text-gray-700">Description</Label>
                 <Textarea
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Hours Offered *</Label>
+                <Label className="text-gray-700">Hours Offered *</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   type="number"
                   min={1}
                   value={formData.hoursOffered}
@@ -500,9 +500,9 @@ export default function MyRequests() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Max Participants</Label>
+                <Label className="text-gray-700">Max Participants</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   type="number"
                   min={1}
                   value={formData.maxParticipants}
@@ -510,17 +510,17 @@ export default function MyRequests() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Organization Name</Label>
+                <Label className="text-gray-700">Organization Name</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   value={formData.organizationName}
                   onChange={(e) => setFormData({ ...formData, organizationName: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-gray-300">Location</Label>
+                <Label className="text-gray-700">Location</Label>
                 <Input
-                  className="bg-gray-800 border-gray-700 text-white"
+                  className="bg-white border-gray-200 text-gray-900"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 />
@@ -528,11 +528,11 @@ export default function MyRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => { setEditDialogOpen(false); resetForm(); }}>Cancel</Button>
+            <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => { setEditDialogOpen(false); resetForm(); }}>Cancel</Button>
             <Button 
               onClick={() => updateMutation.mutate()}
               disabled={!formData.title || updateMutation.isPending}
-              className="bg-white text-black hover:bg-gray-200"
+              className="bg-black text-white hover:bg-gray-800"
             >
               {updateMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
@@ -541,57 +541,57 @@ export default function MyRequests() {
       </Dialog>
 
       <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-gray-900 border-gray-800">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-white">
+            <DialogTitle className="flex items-center gap-2 text-gray-900">
               <Users className="w-5 h-5" />
               Manage Participants - {selectedRequest?.title}
             </DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-gray-500">
               View, approve, and manage volunteers for this request
             </DialogDescription>
           </DialogHeader>
           
           <div className="flex gap-4 mb-4">
-            <Card className="flex-1 p-4 text-center bg-gray-800 border-gray-700">
-              <p className="text-2xl font-bold text-white">{participants.length}</p>
-              <p className="text-sm text-gray-400">Total Joined</p>
+            <Card className="flex-1 p-4 text-center bg-gray-50 border-gray-200">
+              <p className="text-2xl font-bold text-gray-900">{participants.length}</p>
+              <p className="text-sm text-gray-500">Total Joined</p>
             </Card>
-            <Card className="flex-1 p-4 text-center bg-gray-800 border-gray-700">
-              <p className="text-2xl font-bold text-yellow-400">{pendingCount}</p>
-              <p className="text-sm text-gray-400">Pending</p>
+            <Card className="flex-1 p-4 text-center bg-yellow-50 border-yellow-200">
+              <p className="text-2xl font-bold text-yellow-600">{pendingCount}</p>
+              <p className="text-sm text-gray-500">Pending</p>
             </Card>
-            <Card className="flex-1 p-4 text-center bg-gray-800 border-gray-700">
-              <p className="text-2xl font-bold text-green-400">{completedCount}</p>
+            <Card className="flex-1 p-4 text-center bg-green-50 border-green-200">
+              <p className="text-2xl font-bold text-green-600">{completedCount}</p>
               <p className="text-sm text-gray-500">Completed</p>
             </Card>
           </div>
 
           {participantsLoading ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
             </div>
           ) : participants.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
+            <div className="text-center py-8 text-gray-500">
               No volunteers have joined yet
             </div>
           ) : (
             <div className="space-y-3">
               {participants.map((participant) => (
-                <Card key={participant.id} className="p-4 bg-gray-800 border-gray-700">
+                <Card key={participant.id} className="p-4 bg-gray-50 border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
-                        <Users className="w-5 h-5 text-gray-400" />
+                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                        <Users className="w-5 h-5 text-gray-500" />
                       </div>
                       <div>
-                        <p className="font-medium text-white">{participant.userName}</p>
-                        <p className="text-sm text-gray-400">{participant.userEmail}</p>
+                        <p className="font-medium text-gray-900">{participant.userName}</p>
+                        <p className="text-sm text-gray-500">{participant.userEmail}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {participant.status === 'completed' ? (
-                        <Badge className="bg-green-900/50 text-green-400 border-green-700">
+                        <Badge className="bg-green-100 text-green-700 border-green-200">
                           <Check className="w-3 h-3 mr-1" />
                           {participant.hoursAwarded}h awarded
                         </Badge>
@@ -608,7 +608,7 @@ export default function MyRequests() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-red-400 border-gray-700 hover:bg-red-900/30"
+                            className="text-red-500 border-gray-200 hover:bg-red-50"
                             onClick={() => kickMutation.mutate(participant.id)}
                             disabled={kickMutation.isPending}
                           >
@@ -626,18 +626,18 @@ export default function MyRequests() {
       </Dialog>
 
       <Dialog open={awardDialogOpen} onOpenChange={setAwardDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
+        <DialogContent className="sm:max-w-md bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="text-white">Award Hours</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogTitle className="text-gray-900">Award Hours</DialogTitle>
+            <DialogDescription className="text-gray-500">
               Confirm the hours to award to {selectedParticipant?.userName}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label className="text-gray-300">Hours to Award</Label>
+              <Label className="text-gray-700">Hours to Award</Label>
               <Input
-                className="bg-gray-800 border-gray-700 text-white"
+                className="bg-white border-gray-200 text-gray-900"
                 type="number"
                 min={0.5}
                 step={0.5}
@@ -647,7 +647,7 @@ export default function MyRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => { setAwardDialogOpen(false); setSelectedParticipant(null); }}>Cancel</Button>
+            <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => { setAwardDialogOpen(false); setSelectedParticipant(null); }}>Cancel</Button>
             <Button 
               onClick={() => {
                 if (selectedParticipant && hoursToAward) {
@@ -664,15 +664,15 @@ export default function MyRequests() {
       </Dialog>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-gray-900 border-gray-800">
+        <DialogContent className="sm:max-w-md bg-white border-gray-200">
           <DialogHeader>
-            <DialogTitle className="text-white">Delete Request</DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogTitle className="text-gray-900">Delete Request</DialogTitle>
+            <DialogDescription className="text-gray-500">
               Are you sure you want to delete "{selectedRequest?.title}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
             <Button 
               variant="destructive"
               onClick={() => deleteMutation.mutate()}

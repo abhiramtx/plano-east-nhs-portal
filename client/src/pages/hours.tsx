@@ -67,11 +67,11 @@ export default function Hours() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-900/50 text-green-400 border-green-700';
+        return 'bg-green-100 text-green-700 border-green-200';
       case 'rejected':
-        return 'bg-red-900/50 text-red-400 border-red-700';
+        return 'bg-red-100 text-red-700 border-red-200';
       default:
-        return 'bg-yellow-900/50 text-yellow-400 border-yellow-700';
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
     }
   };
 
@@ -96,13 +96,13 @@ export default function Hours() {
 
   return (
     <ProfileCompletionGuard user={user}>
-      <div className="flex-1 flex flex-col h-full bg-gray-950">
-      <div className="bg-gray-950 border-b border-gray-800 flex-shrink-0">
+      <div className="flex-1 flex flex-col h-full bg-white">
+      <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-white">Hours Management</h1>
-              <p className="text-gray-400 mt-1">Track and manage your service hours</p>
+              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Hours Management</h1>
+              <p className="text-gray-600 mt-1">Track and manage your service hours</p>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
@@ -115,9 +115,9 @@ export default function Hours() {
                     Submit Hours
                   </Button>
                 </DialogTrigger>
-              <DialogContent className="max-w-2xl bg-gray-900 border-gray-800">
+              <DialogContent className="max-w-2xl bg-white border-gray-200">
                 <DialogHeader>
-                  <DialogTitle className="text-white">
+                  <DialogTitle className="text-gray-900">
                     {editingSubmission ? 'Edit Service Hours' : 'Submit Service Hours'}
                   </DialogTitle>
                 </DialogHeader>
@@ -136,17 +136,17 @@ export default function Hours() {
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
         ) : (
           <>
             {submissions.length === 0 ? (
-              <Card className="bg-gray-900 border-gray-800">
+              <Card className="bg-white border-gray-200">
                 <CardContent className="p-12">
                   <div className="text-center">
-                    <Clock className="w-16 h-16 mx-auto mb-4 text-gray-600" />
-                    <h3 className="text-lg font-medium text-white mb-2">No submissions yet</h3>
-                    <p className="text-gray-400 mb-6">Start by submitting your first service hours</p>
+                    <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
+                    <p className="text-gray-500 mb-6">Start by submitting your first service hours</p>
                     <Button onClick={() => setIsFormOpen(true)} className="bg-black hover:bg-gray-800 text-white">
                       <Plus className="w-4 h-4 mr-2" />
                       Submit Your First Hours
@@ -157,7 +157,7 @@ export default function Hours() {
             ) : (
               <div className="space-y-4 lg:space-y-6">
                 {submissions.map((submission: HoursSubmission) => (
-                  <Card key={submission.id} className="bg-gray-900 border-gray-800">
+                  <Card key={submission.id} className="bg-white border-gray-200">
                     <CardContent className="p-4 lg:p-6">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
                         <div className="flex-1">
@@ -169,23 +169,23 @@ export default function Hours() {
                               {getStatusIcon(submission.status)}
                               <span className="ml-1 capitalize">{submission.status}</span>
                             </Badge>
-                            <div className="flex items-center text-sm text-gray-400">
+                            <div className="flex items-center text-sm text-gray-500">
                               <Calendar className="w-4 h-4 mr-1" />
                               {formatDate(submission.date)}
                             </div>
-                            <div className="flex items-center text-sm text-gray-400">
+                            <div className="flex items-center text-sm text-gray-500">
                               <Clock className="w-4 h-4 mr-1" />
                               {submission.hours} hours
                             </div>
                           </div>
                           
-                          <h3 className="font-medium text-white mb-2">{submission.activityName || submission.userEmail}</h3>
-                          <p className="text-gray-400 mb-4">{submission.description}</p>
+                          <h3 className="font-medium text-gray-900 mb-2">{submission.activityName || submission.userEmail}</h3>
+                          <p className="text-gray-600 mb-4">{submission.description}</p>
                           
                           {submission.status === 'rejected' && submission.rejectReason && (
-                            <div className="bg-red-900/30 border border-red-800 rounded-lg p-3 mb-4">
-                              <p className="text-sm font-medium text-red-400 mb-1">Rejection Reason:</p>
-                              <p className="text-sm text-red-300">{submission.rejectReason}</p>
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                              <p className="text-sm font-medium text-red-600 mb-1">Rejection Reason:</p>
+                              <p className="text-sm text-red-500">{submission.rejectReason}</p>
                             </div>
                           )}
                           
@@ -194,7 +194,7 @@ export default function Hours() {
                               <img 
                                 src={submission.proofImageUrl} 
                                 alt="Proof of service" 
-                                className="w-24 h-24 lg:w-32 lg:h-32 object-cover rounded-lg border border-gray-700"
+                                className="w-24 h-24 lg:w-32 lg:h-32 object-cover rounded-lg border border-gray-200"
                               />
                             </div>
                           )}
@@ -209,7 +209,7 @@ export default function Hours() {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                              className="border-gray-200 text-gray-600 hover:bg-gray-100"
                               onClick={() => setSelectedSubmission(submission)}
                             >
                               <Eye className="w-4 h-4" />
@@ -219,7 +219,7 @@ export default function Hours() {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                              className="border-gray-200 text-gray-600 hover:bg-gray-100"
                               onClick={() => handleEdit(submission)}
                             >
                               <Edit className="w-4 h-4" />
@@ -228,7 +228,7 @@ export default function Hours() {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                            className="border-gray-200 text-gray-600 hover:bg-gray-100"
                             onClick={() => deleteMutation.mutate(submission.id)}
                             disabled={deleteMutation.isPending}
                           >
