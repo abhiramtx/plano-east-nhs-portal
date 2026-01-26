@@ -12,8 +12,8 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript, bundled by Vite.
-- **UI/UX**: shadcn/ui component library built on Radix UI, styled with Tailwind CSS (complete dark mode theme).
-- **Theme**: Full dark mode design with gray-950 backgrounds, gray-900 cards, gray-800 borders, white/gray-400 text.
+- **UI/UX**: shadcn/ui component library built on Radix UI, styled with Tailwind CSS (complete light mode theme).
+- **Theme**: Full light mode design with white backgrounds, gray-100/200 borders, gray-900 text, gray-500/600 secondary text.
 - **Authentication**: Firebase Authentication with Google OAuth.
 - **State Management**: TanStack Query for server state, React state for UI.
 - **Form Management**: React Hook Form with Zod validation.
@@ -39,14 +39,18 @@ Preferred communication style: Simple, everyday language.
 
 ### UI System
 - **Design System**: shadcn/ui "new-york" style with CSS variables for theming.
-- **Theme Colors**: Complete dark mode - gray-950 backgrounds, gray-900 cards, gray-800 borders, white text, gray-400 secondary text.
+- **Theme Colors**: Complete light mode - white backgrounds, gray-100/200 borders, gray-900 text, gray-500/600 secondary text.
 - **Icons**: Lucide React.
 - **Responsiveness**: Mobile-first design with adaptive breakpoints.
-- **Map Style**: CARTO Dark Matter (https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json)
+- **Map Style**: CARTO Positron (https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json)
 
-### Territory System
+### Territory System (Per-Location)
+- **Per-Location Circles**: Each volunteer hour submission can include a location. Circles grow independently at each location based on hours logged there.
 - **Radius Formula**: Base 4 miles + (16 miles range) * min(1, log₁₀(hours+1) / log₁₀(1000))
-- **Range**: 4-20 miles radius based on approved hours
+- **Range**: 4-20 miles radius based on approved hours at that specific location
+- **Metaball Physics**: When circles from the same club are close (within 1.5x combined radii), they merge visually using metaball-style blending
+- **Decay System**: Circles decay by 0.25 miles per week of inactivity, capped at 10% of the circle's highest radius
+- **Location Capture**: Hours submission form includes optional location search using Nominatim API
 - **Rendering**: GeoJSON polygons with hex colors and separate opacity properties (MapLibre doesn't support rgba() strings in data-driven styling)
 
 ## External Dependencies

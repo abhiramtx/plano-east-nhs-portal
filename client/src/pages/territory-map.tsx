@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Trophy, MapPin, Clock, TrendingUp, Users, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -130,33 +130,64 @@ function groupCirclesByProximity(
   circles: TerritoryCircle[],
   mergeThresholdMultiplier: number = 1.5
 ): TerritoryCircle[][] {
-  const used = new Set<string>();
-  const groups: TerritoryCircle[][] = [];
+  if (circles.length === 0) return [];
   
+  const circlesByClub = new Map<string, TerritoryCircle[]>();
   for (const circle of circles) {
-    if (used.has(circle.id)) continue;
+    const list = circlesByClub.get(circle.clubId) || [];
+    list.push(circle);
+    circlesByClub.set(circle.clubId, list);
+  }
+  
+  const allGroups: TerritoryCircle[][] = [];
+  
+  for (const clubCircles of circlesByClub.values()) {
+    const parent = new Map<string, string>();
+    for (const c of clubCircles) {
+      parent.set(c.id, c.id);
+    }
     
-    const group: TerritoryCircle[] = [circle];
-    used.add(circle.id);
+    const find = (id: string): string => {
+      if (parent.get(id) !== id) {
+        parent.set(id, find(parent.get(id)!));
+      }
+      return parent.get(id)!;
+    };
     
-    for (const other of circles) {
-      if (used.has(other.id)) continue;
-      if (circle.clubId !== other.clubId) continue;
-      
-      const r1 = calculateTerritoryRadiusKm(circle.hours, circle.lastActivity);
-      const r2 = calculateTerritoryRadiusKm(other.hours, other.lastActivity);
-      const distance = getDistanceKm(circle.latitude, circle.longitude, other.latitude, other.longitude);
-      
-      if (distance < (r1 + r2) * mergeThresholdMultiplier) {
-        group.push(other);
-        used.add(other.id);
+    const union = (a: string, b: string) => {
+      const rootA = find(a);
+      const rootB = find(b);
+      if (rootA !== rootB) {
+        parent.set(rootA, rootB);
+      }
+    };
+    
+    for (let i = 0; i < clubCircles.length; i++) {
+      for (let j = i + 1; j < clubCircles.length; j++) {
+        const c1 = clubCircles[i];
+        const c2 = clubCircles[j];
+        const r1 = calculateTerritoryRadiusKm(c1.hours, c1.lastActivity);
+        const r2 = calculateTerritoryRadiusKm(c2.hours, c2.lastActivity);
+        const distance = getDistanceKm(c1.latitude, c1.longitude, c2.latitude, c2.longitude);
+        
+        if (distance < (r1 + r2) * mergeThresholdMultiplier) {
+          union(c1.id, c2.id);
+        }
       }
     }
     
-    groups.push(group);
+    const groupMap = new Map<string, TerritoryCircle[]>();
+    for (const c of clubCircles) {
+      const root = find(c.id);
+      const list = groupMap.get(root) || [];
+      list.push(c);
+      groupMap.set(root, list);
+    }
+    
+    allGroups.push(...groupMap.values());
   }
   
-  return groups;
+  return allGroups;
 }
 
 function calculateTerritoryRadiusKm(hours: number, lastActivityDate?: Date): number {
@@ -198,6 +229,43 @@ interface TerritoryCircle {
   lastActivity: Date;
 }
 
+function encodeGeohash(lat: number, lng: number, precision: number = 7): string {
+  const base32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+  let minLat = -90, maxLat = 90, minLng = -180, maxLng = 180;
+  let hash = '';
+  let bit = 0;
+  let ch = 0;
+  let isLng = true;
+  
+  while (hash.length < precision) {
+    if (isLng) {
+      const mid = (minLng + maxLng) / 2;
+      if (lng >= mid) {
+        ch |= (1 << (4 - bit));
+        minLng = mid;
+      } else {
+        maxLng = mid;
+      }
+    } else {
+      const mid = (minLat + maxLat) / 2;
+      if (lat >= mid) {
+        ch |= (1 << (4 - bit));
+        minLat = mid;
+      } else {
+        maxLat = mid;
+      }
+    }
+    isLng = !isLng;
+    bit++;
+    if (bit === 5) {
+      hash += base32[ch];
+      bit = 0;
+      ch = 0;
+    }
+  }
+  return hash;
+}
+
 function aggregateSubmissionsByLocation(
   submissions: HoursSubmission[],
   clubs: Club[]
@@ -206,7 +274,8 @@ function aggregateSubmissionsByLocation(
   const locationMap = new Map<string, TerritoryCircle>();
   
   const approvedSubmissions = submissions.filter(
-    s => s.status === 'approved' && s.latitude && s.longitude
+    s => s.status === 'approved' && s.latitude && s.longitude && 
+    !isNaN(s.latitude) && !isNaN(s.longitude)
   );
   
   for (const submission of approvedSubmissions) {
@@ -215,13 +284,18 @@ function aggregateSubmissionsByLocation(
     
     const lat = submission.latitude!;
     const lng = submission.longitude!;
-    const locationKey = `${submission.clubId}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+    const geohash = encodeGeohash(lat, lng, 7);
+    const locationKey = `${submission.clubId}_${geohash}`;
     
     const existing = locationMap.get(locationKey);
+    const submissionDate = new Date(submission.date);
+    const isValidDate = !isNaN(submissionDate.getTime());
+    
+    const oldestDate = new Date(0);
+    
     if (existing) {
       existing.hours += submission.hours;
-      const submissionDate = new Date(submission.date);
-      if (submissionDate > existing.lastActivity) {
+      if (isValidDate && submissionDate > existing.lastActivity) {
         existing.lastActivity = submissionDate;
       }
     } else {
@@ -234,7 +308,7 @@ function aggregateSubmissionsByLocation(
         longitude: lng,
         hours: submission.hours,
         location: submission.location || 'Unknown location',
-        lastActivity: new Date(submission.date),
+        lastActivity: isValidDate ? submissionDate : oldestDate,
       });
     }
   }
@@ -354,9 +428,9 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const currentClub = clubs.find(c => c.id === currentClubId);
   const currentClubRank = leaderboardClubs.findIndex(c => c.id === currentClubId) + 1;
 
-  const circleGroups = groupCirclesByProximity(territoryCircles);
+  const circleGroups = useMemo(() => groupCirclesByProximity(territoryCircles), [territoryCircles]);
   
-  const territoriesGeoJson = {
+  const territoriesGeoJson = useMemo(() => ({
     type: 'FeatureCollection' as const,
     features: circleGroups.flatMap(group => {
       if (group.length === 1) {
@@ -374,6 +448,32 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
           geometry: {
             type: 'Polygon' as const,
             coordinates: [createCirclePolygon(circle.longitude, circle.latitude, radiusKm)]
+          }
+        }];
+      }
+      
+      if (group.length > 8) {
+        const avgLat = group.reduce((sum, c) => sum + c.latitude, 0) / group.length;
+        const avgLng = group.reduce((sum, c) => sum + c.longitude, 0) / group.length;
+        const totalHrs = group.reduce((sum, c) => sum + c.hours, 0);
+        const largestRadius = Math.max(...group.map(c => calculateTerritoryRadiusKm(c.hours, c.lastActivity)));
+        const extraRadius = Math.max(...group.map(c => 
+          getDistanceKm(avgLat, avgLng, c.latitude, c.longitude)
+        ));
+        const combinedRadius = largestRadius + extraRadius * 0.5;
+        
+        return [{
+          type: 'Feature' as const,
+          properties: {
+            id: `merged_large_${group[0].clubId}`,
+            name: group[0].clubName,
+            color: group[0].clubColor,
+            hours: totalHrs,
+            location: `${group.length} merged locations`,
+          },
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [createCirclePolygon(avgLng, avgLat, combinedRadius)]
           }
         }];
       }
@@ -420,7 +520,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
         }
       }];
     })
-  };
+  }), [circleGroups]);
 
   return (
     <div className="h-screen w-full flex bg-white overflow-hidden">
