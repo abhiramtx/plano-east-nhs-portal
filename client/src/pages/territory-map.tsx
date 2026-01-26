@@ -51,7 +51,115 @@ function createCirclePolygon(lng: number, lat: number, radiusKm: number, segment
   return coords;
 }
 
-function calculateTerritoryRadiusKm(hours: number): number {
+function getDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function createMetaballPolygon(
+  circles: { lng: number; lat: number; radius: number }[],
+  resolution: number = 100
+): number[][] | null {
+  if (circles.length === 0) return null;
+  if (circles.length === 1) {
+    return createCirclePolygon(circles[0].lng, circles[0].lat, circles[0].radius);
+  }
+  
+  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  const earthRadiusKm = 6371;
+  
+  for (const c of circles) {
+    const latOffset = (c.radius / earthRadiusKm) * (180 / Math.PI);
+    const lngOffset = (c.radius / earthRadiusKm) * (180 / Math.PI) / Math.cos(c.lat * Math.PI / 180);
+    minLng = Math.min(minLng, c.lng - lngOffset * 1.2);
+    maxLng = Math.max(maxLng, c.lng + lngOffset * 1.2);
+    minLat = Math.min(minLat, c.lat - latOffset * 1.2);
+    maxLat = Math.max(maxLat, c.lat + latOffset * 1.2);
+  }
+  
+  const threshold = 1.0;
+  const contourPoints: number[][] = [];
+  
+  for (let angle = 0; angle < 360; angle += 3) {
+    const rad = angle * Math.PI / 180;
+    let bestPoint: number[] | null = null;
+    let maxDist = 0;
+    
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    
+    for (let dist = 0; dist < 100; dist += 0.5) {
+      const testLatOffset = (dist / earthRadiusKm) * (180 / Math.PI) * Math.cos(rad);
+      const testLngOffset = (dist / earthRadiusKm) * (180 / Math.PI) * Math.sin(rad) / Math.cos(centerLat * Math.PI / 180);
+      const testLat = centerLat + testLatOffset;
+      const testLng = centerLng + testLngOffset;
+      
+      let fieldValue = 0;
+      for (const c of circles) {
+        const d = getDistanceKm(testLat, testLng, c.lat, c.lng);
+        if (d < 0.001) {
+          fieldValue = 999;
+        } else {
+          fieldValue += (c.radius * c.radius) / (d * d);
+        }
+      }
+      
+      if (fieldValue >= threshold && dist > maxDist) {
+        maxDist = dist;
+        bestPoint = [testLng, testLat];
+      }
+    }
+    
+    if (bestPoint) {
+      contourPoints.push(bestPoint);
+    }
+  }
+  
+  if (contourPoints.length < 3) return null;
+  contourPoints.push(contourPoints[0]);
+  return contourPoints;
+}
+
+function groupCirclesByProximity(
+  circles: TerritoryCircle[],
+  mergeThresholdMultiplier: number = 1.5
+): TerritoryCircle[][] {
+  const used = new Set<string>();
+  const groups: TerritoryCircle[][] = [];
+  
+  for (const circle of circles) {
+    if (used.has(circle.id)) continue;
+    
+    const group: TerritoryCircle[] = [circle];
+    used.add(circle.id);
+    
+    for (const other of circles) {
+      if (used.has(other.id)) continue;
+      if (circle.clubId !== other.clubId) continue;
+      
+      const r1 = calculateTerritoryRadiusKm(circle.hours, circle.lastActivity);
+      const r2 = calculateTerritoryRadiusKm(other.hours, other.lastActivity);
+      const distance = getDistanceKm(circle.latitude, circle.longitude, other.latitude, other.longitude);
+      
+      if (distance < (r1 + r2) * mergeThresholdMultiplier) {
+        group.push(other);
+        used.add(other.id);
+      }
+    }
+    
+    groups.push(group);
+  }
+  
+  return groups;
+}
+
+function calculateTerritoryRadiusKm(hours: number, lastActivityDate?: Date): number {
   const baseMiles = 4;
   const maxMiles = 20;
   const baseKm = baseMiles * 1.60934;
@@ -60,7 +168,20 @@ function calculateTerritoryRadiusKm(hours: number): number {
   if (hours <= 0) return baseKm;
   
   const logScale = Math.log10(hours + 1) / Math.log10(1000);
-  const radiusKm = baseKm + (maxKm - baseKm) * Math.min(1, logScale);
+  let radiusKm = baseKm + (maxKm - baseKm) * Math.min(1, logScale);
+  
+  if (lastActivityDate) {
+    const now = new Date();
+    const weeksInactive = Math.floor((now.getTime() - lastActivityDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    
+    if (weeksInactive > 0) {
+      const decayPerWeekMiles = 0.25;
+      const decayPerWeekKm = decayPerWeekMiles * 1.60934;
+      const maxDecayKm = radiusKm * 0.10;
+      const totalDecayKm = Math.min(weeksInactive * decayPerWeekKm, maxDecayKm);
+      radiusKm = Math.max(baseKm, radiusKm - totalDecayKm);
+    }
+  }
   
   return radiusKm;
 }
@@ -233,25 +354,71 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const currentClub = clubs.find(c => c.id === currentClubId);
   const currentClubRank = leaderboardClubs.findIndex(c => c.id === currentClubId) + 1;
 
+  const circleGroups = groupCirclesByProximity(territoryCircles);
+  
   const territoriesGeoJson = {
     type: 'FeatureCollection' as const,
-    features: territoryCircles.map(circle => {
-      const radiusKm = calculateTerritoryRadiusKm(circle.hours);
+    features: circleGroups.flatMap(group => {
+      if (group.length === 1) {
+        const circle = group[0];
+        const radiusKm = calculateTerritoryRadiusKm(circle.hours, circle.lastActivity);
+        return [{
+          type: 'Feature' as const,
+          properties: {
+            id: circle.id,
+            name: circle.clubName,
+            color: circle.clubColor,
+            hours: circle.hours,
+            location: circle.location,
+          },
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [createCirclePolygon(circle.longitude, circle.latitude, radiusKm)]
+          }
+        }];
+      }
       
-      return {
+      const metaballCircles = group.map(c => ({
+        lng: c.longitude,
+        lat: c.latitude,
+        radius: calculateTerritoryRadiusKm(c.hours, c.lastActivity)
+      }));
+      
+      const metaballCoords = createMetaballPolygon(metaballCircles);
+      if (!metaballCoords) {
+        return group.map(circle => ({
+          type: 'Feature' as const,
+          properties: {
+            id: circle.id,
+            name: circle.clubName,
+            color: circle.clubColor,
+            hours: circle.hours,
+            location: circle.location,
+          },
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [createCirclePolygon(circle.longitude, circle.latitude, calculateTerritoryRadiusKm(circle.hours, circle.lastActivity))]
+          }
+        }));
+      }
+      
+      const totalHours = group.reduce((sum, c) => sum + c.hours, 0);
+      const firstCircle = group[0];
+      
+      return [{
         type: 'Feature' as const,
         properties: {
-          id: circle.id,
-          name: circle.clubName,
-          color: circle.clubColor,
-          hours: circle.hours,
-          location: circle.location,
+          id: `merged_${firstCircle.clubId}`,
+          name: firstCircle.clubName,
+          color: firstCircle.clubColor,
+          hours: totalHours,
+          location: `${group.length} merged locations`,
         },
         geometry: {
           type: 'Polygon' as const,
-          coordinates: [createCirclePolygon(circle.longitude, circle.latitude, radiusKm)]
+          coordinates: [metaballCoords]
         }
-      };
+      }];
     })
   };
 
