@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getAllSubmissions, getAllUserProfiles, updateSubmission, HoursSubmission, UserProfile } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, updateSubmission, HoursSubmission, UserProfile, Club } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,16 +21,17 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AdminDashboardProps {
   user: User | null;
+  club: Club;
 }
 
-export function AdminDashboard({ user }: AdminDashboardProps) {
+export function AdminDashboard({ user, club }: AdminDashboardProps) {
   const [selectedSubmission, setSelectedSubmission] = useState<HoursSubmission | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: submissions = [], isLoading } = useQuery({
-    queryKey: ['firebase-submissions'],
-    queryFn: getAllSubmissions,
+    queryKey: ['firebase-club-submissions', club.id],
+    queryFn: () => getClubSubmissions(club.id),
   });
 
   const { data: profiles = [] } = useQuery({

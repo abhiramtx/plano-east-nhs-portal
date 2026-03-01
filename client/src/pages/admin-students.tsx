@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getAllSubmissions, getAllUserProfiles, getUserSubmissions, updateSubmission, HoursSubmission, UserProfile } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, HoursSubmission, UserProfile, Club } from "@/lib/firebase";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -30,6 +31,21 @@ import {
 
 interface AdminStudentsProps {
   user: User | null;
+  club: Club;
+}
+
+interface CustomField {
+  id: string;
+  clubId: string;
+  fieldName: string;
+  fieldType: "text" | "checkbox" | "select" | "number" | "email" | "phone" | "multiselect";
+  required: boolean;
+  filterable: boolean;
+  selectOptions?: string;
+  defaultValue?: string;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface FilterState {
@@ -37,19 +53,22 @@ interface FilterState {
   requirementStatus: string[];
   submissionStatus: string[];
   userRoles: string[];
+  customFields: { [fieldId: string]: string | string[] };
 }
 
-export function AdminStudents({ user }: AdminStudentsProps) {
+export function AdminStudents({ user, club }: AdminStudentsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [rejectingSubmission, setRejectingSubmission] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [customFieldValues, setCustomFieldValues] = useState<{ [userId: string]: { [fieldId: string]: string } }>({});
   const [filters, setFilters] = useState<FilterState>({
     gradeLevels: [],
     requirementStatus: [],
     submissionStatus: [],
-    userRoles: []
+    userRoles: [],
+    customFields: {}
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -58,7 +77,7 @@ export function AdminStudents({ user }: AdminStudentsProps) {
     queryKey: ['firebase-student-submissions', selectedStudent?.email],
     queryFn: async () => {
       if (!selectedStudent?.email) return [];
-      return getUserSubmissions(selectedStudent.email);
+      return getUserSubmissionsAllClubs(selectedStudent.email);
     },
     enabled: !!selectedStudent?.email
   });
@@ -102,14 +121,28 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   };
 
   const { data: submissions = [], isLoading: submissionsLoading } = useQuery({
-    queryKey: ['firebase-submissions'],
-    queryFn: getAllSubmissions,
+    queryKey: ['firebase-submissions', club.id],
+    queryFn: () => getClubSubmissions(club.id),
   });
 
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ['firebase-user-profiles'],
     queryFn: getAllUserProfiles,
   });
+
+  const { data: customFields = [] } = useQuery<CustomField[]>({
+    queryKey: [`/api/custom-fields/${club.id}`],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', `/api/custom-fields/${club.id}`, {});
+        return response.json() as Promise<CustomField[]>;
+      } catch {
+        return [];
+      }
+    }
+  });
+
+  const filterableCustomFields = customFields.filter(f => f.filterable);
 
   const isLoading = submissionsLoading || profilesLoading;
 
@@ -153,6 +186,32 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   }, {});
 
   const allStudents = Object.values(studentStats);
+
+  // For custom field filtering, we need to fetch values for each student
+  // For now, we'll fetch them as part of the filter process
+  useQuery({
+    queryKey: ['custom-field-values', allStudents.map(s => s.email).join(',')],
+    enabled: filterableCustomFields.length > 0 && allStudents.length > 0,
+    queryFn: async () => {
+      const values: { [userId: string]: { [fieldId: string]: string } } = {};
+      for (const student of allStudents) {
+        const userId = student.email.replace(/\./g, ',');
+        try {
+          const response = await apiRequest('GET', `/api/custom-field-values/${userId}/${club.id}`, {});
+          const fieldValues = await response.json();
+          values[userId] = {};
+          fieldValues.forEach((fv: any) => {
+            values[userId][fv.customFieldId] = fv.value || '';
+          });
+        } catch {
+          values[userId] = {};
+        }
+      }
+      setCustomFieldValues(values);
+      return values;
+    }
+  });
+
   const filteredStudents = allStudents.filter((student: any) => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
@@ -175,8 +234,31 @@ export function AdminStudents({ user }: AdminStudentsProps) {
     const matchesRole = filters.userRoles.length === 0 ||
       (filters.userRoles.includes('student') && student.userRole === 0) ||
       (filters.userRoles.includes('admin') && student.userRole === 1);
+
+    // Check custom field filters
+    const userId = student.email.replace(/\./g, ',');
+    const userCustomFields = customFieldValues[userId] || {};
+    const matchesCustomFields = Object.entries(filters.customFields).every(([fieldId, filterValue]) => {
+      if (!filterValue || (Array.isArray(filterValue) && filterValue.length === 0)) return true;
+      const userValueRaw = userCustomFields[fieldId] || '';
+      let userValues: string[] = [];
+      try {
+        const parsed = JSON.parse(userValueRaw);
+        if (Array.isArray(parsed)) userValues = parsed.map((v: any) => String(v));
+        else userValues = [String(parsed)];
+      } catch {
+        userValues = [userValueRaw];
+      }
+
+      if (Array.isArray(filterValue)) {
+        // match if user has ANY of the selected options
+        return (filterValue as string[]).some(fv => userValues.includes(fv));
+      } else {
+        return userValues.some(uv => uv.toLowerCase().includes((filterValue as string).toLowerCase()));
+      }
+    });
     
-    return matchesSearch && matchesGrade && matchesRequirement && matchesSubmissionStatus && matchesRole;
+    return matchesSearch && matchesGrade && matchesRequirement && matchesSubmissionStatus && matchesRole && matchesCustomFields;
   });
 
   const students = filteredStudents;
@@ -220,7 +302,14 @@ export function AdminStudents({ user }: AdminStudentsProps) {
   };
 
   const gradeLevels = ['9', '10', '11', '12'];
-  const activeFilterCount = Object.values(filters).flat().length;
+  const activeFilterCount = Object.values(filters).reduce((count: number, filterArray: any) => {
+    if (Array.isArray(filterArray)) {
+      return count + filterArray.length;
+    } else if (typeof filterArray === 'object') {
+      return count + Object.values(filterArray).filter(v => v).length;
+    }
+    return count;
+  }, 0);
 
   const handleFilterChange = (category: keyof FilterState, value: string, checked: boolean) => {
     setFilters(prev => ({
@@ -236,7 +325,8 @@ export function AdminStudents({ user }: AdminStudentsProps) {
       gradeLevels: [],
       requirementStatus: [],
       submissionStatus: [],
-      userRoles: []
+      userRoles: [],
+      customFields: {}
     });
   };
 
@@ -400,6 +490,96 @@ export function AdminStudents({ user }: AdminStudentsProps) {
                   </div>
                 </div>
               </div>
+
+              {filterableCustomFields.length > 0 && (
+                <>
+                  <Separator />
+
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Additional Parameters</h4>
+                    <div className="space-y-4">
+                      {filterableCustomFields.map(field => (
+                        <div key={field.id}>
+                          <label htmlFor={`filter-${field.id}`} className="text-sm font-medium text-gray-700 mb-1 block">
+                            {field.fieldName}
+                          </label>
+                          {field.fieldType === 'select' ? (
+                            <select
+                              id={`filter-${field.id}`}
+                              value={(filters.customFields[field.id] as string) || ''}
+                              onChange={(e) => {
+                                setFilters(prev => ({
+                                  ...prev,
+                                  customFields: {
+                                    ...prev.customFields,
+                                    [field.id]: e.target.value
+                                  }
+                                }));
+                              }}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                            >
+                              <option value="">All {field.fieldName}</option>
+                              {field.selectOptions && JSON.parse(field.selectOptions).map((option: string) => (
+                                <option key={option} value={option}>{option}</option>
+                              ))}
+                            </select>
+                          ) : field.fieldType === 'multiselect' ? (
+                            <div className="space-y-2">
+                              {field.selectOptions && JSON.parse(field.selectOptions).map((option: string) => {
+                                const selected = Array.isArray(filters.customFields[field.id]) && (filters.customFields[field.id] as string[]).includes(option);
+                                return (
+                                  <div key={option} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`filter-${field.id}-${option}`}
+                                      checked={selected}
+                                      onCheckedChange={(checked) => {
+                                        setFilters(prev => {
+                                          const prevVal = prev.customFields[field.id];
+                                          let nextArr: string[] = Array.isArray(prevVal) ? [...prevVal] : [];
+                                          if (checked) {
+                                            if (!nextArr.includes(option)) nextArr.push(option);
+                                          } else {
+                                            nextArr = nextArr.filter(v => v !== option);
+                                          }
+                                          return {
+                                            ...prev,
+                                            customFields: {
+                                              ...prev.customFields,
+                                              [field.id]: nextArr
+                                            }
+                                          };
+                                        });
+                                      }}
+                                    />
+                                    <label htmlFor={`filter-${field.id}-${option}`} className="text-sm text-gray-700">{option}</label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <Input
+                              id={`filter-${field.id}`}
+                              type={field.fieldType === 'number' ? 'number' : 'text'}
+                              placeholder={`Filter by ${field.fieldName}`}
+                              value={(filters.customFields[field.id] as string) || ''}
+                              onChange={(e) => {
+                                setFilters(prev => ({
+                                  ...prev,
+                                  customFields: {
+                                    ...prev.customFields,
+                                    [field.id]: e.target.value
+                                  }
+                                }));
+                              }}
+                              className="text-sm"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

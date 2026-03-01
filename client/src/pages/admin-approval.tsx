@@ -7,12 +7,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  getAdminAssignment, 
-  getPendingSubmissionsForUser, 
+  getAdminAssignmentForClub, 
+  getPendingSubmissionsForUserInClub, 
   updateSubmission,
   getUserProfile,
   HoursSubmission, 
-  UserProfile 
+  UserProfile,
+  Club
 } from '@/lib/firebase';
 import { 
   Clock, 
@@ -31,9 +32,10 @@ import {
 
 interface AdminApprovalProps {
   user: { name: string; email: string };
+  club: Club;
 }
 
-export function AdminApproval({ user }: AdminApprovalProps) {
+export function AdminApproval({ user, club }: AdminApprovalProps) {
   const [assignedStudent, setAssignedStudent] = useState<UserProfile | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<HoursSubmission | null>(null);
   const [imageModalOpen, setImageModalOpen] = useState(false);
@@ -44,18 +46,18 @@ export function AdminApproval({ user }: AdminApprovalProps) {
   const queryClient = useQueryClient();
 
   const { data: assignment, isLoading: assignmentLoading, refetch: refetchAssignment } = useQuery({
-    queryKey: ['firebase-admin-assignment', user.email, skippedEmails],
-    queryFn: () => getAdminAssignment(user.email, skippedEmails),
+    queryKey: ['firebase-admin-assignment', club.id, user.email, skippedEmails],
+    queryFn: () => getAdminAssignmentForClub(club.id, user.email, skippedEmails),
     refetchInterval: 5000,
     staleTime: 0,
     gcTime: 0,
   });
 
   const { data: studentSubmissions = [], isLoading: submissionsLoading } = useQuery({
-    queryKey: ['firebase-pending-submissions', assignment?.email],
+    queryKey: ['firebase-pending-submissions', assignment?.email, club.id],
     queryFn: async () => {
       if (!assignment?.email) return [];
-      return getPendingSubmissionsForUser(assignment.email);
+      return getPendingSubmissionsForUserInClub(assignment.email, club.id);
     },
     enabled: !!assignment?.email,
     staleTime: 0,

@@ -187,7 +187,8 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
       setImagePreview(null);
       setSelectedLocation(null);
       setLocationSearch("");
-      queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions'] });
+      // Invalidate queries with proper cache key structure including clubId
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', user?.email, clubId] });
       queryClient.invalidateQueries({ queryKey: ['firebase-club-submissions'] });
       onSuccess();
     },

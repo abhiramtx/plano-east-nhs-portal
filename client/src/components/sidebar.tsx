@@ -48,7 +48,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
           <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
             <Palette className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-semibold text-gray-900">Wylie NAHS</h1>
+          <h1 className="text-xl font-semibold text-gray-900">VolunteerClub</h1>
         </div>
       </div>
 

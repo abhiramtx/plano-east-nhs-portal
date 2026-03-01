@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User, getCurrentUser, getUserSubmissions, HoursSubmission } from "@/lib/firebase";
+import { User, getCurrentUser, getUserSubmissions, HoursSubmission, getClubsForUser, Club } from "@/lib/firebase";
 import { Clock, TrendingUp, Calendar, Award, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 
-export default function Dashboard() {
+interface DashboardProps {
+  club: Club;
+}
+
+export default function Dashboard({ club }: DashboardProps) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -20,9 +24,9 @@ export default function Dashboard() {
   const userEmail = user?.email || '';
 
   const { data: submissions = [] } = useQuery<HoursSubmission[]>({
-    queryKey: ['firebase-user-submissions', userEmail],
-    queryFn: () => getUserSubmissions(userEmail),
-    enabled: !!userEmail,
+    queryKey: ['firebase-user-submissions', userEmail, club.id],
+    queryFn: () => getUserSubmissions(userEmail, club.id),
+    enabled: !!userEmail && !!club.id,
   });
 
   const stats = {

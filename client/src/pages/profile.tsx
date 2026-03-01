@@ -12,7 +12,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { UserIcon, Save, Loader2 } from "lucide-react";
+
+interface CustomField {
+  id: string;
+  clubId: string;
+  fieldName: string;
+  fieldType: "text" | "checkbox" | "select" | "number" | "email" | "phone";
+  required: boolean;
+  filterable: boolean;
+  selectOptions?: string;
+  defaultValue?: string;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface CustomFieldValue {
+  id: string;
+  userId: string;
+  customFieldId: string;
+  clubId: string;
+  value?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 const profileSchema = insertUserProfileSchema.extend({
   goByFirstName: z.string().min(1, "First name is required"),
@@ -29,6 +54,7 @@ const emailToKey = (email: string) => email.replace(/\./g, ',');
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
+  const [customFieldValues, setCustomFieldValues] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -39,10 +65,39 @@ export default function Profile() {
     }
   }, []);
 
-  const { data: profile, isLoading } = useQuery<UserProfile>({
+  const { data: profile, isLoading: profileLoading } = useQuery<UserProfile>({
     queryKey: ['/api/user-profile', user?.email ? emailToKey(user.email) : ''],
     enabled: !!user?.email,
   });
+
+  const { data: customFields = [], isLoading: customFieldsLoading } = useQuery<CustomField[]>({
+    queryKey: ['/api/custom-fields', profile?.currentClubId],
+    enabled: !!profile?.currentClubId,
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/custom-fields/${profile?.currentClubId}`, {});
+      return response.json() as Promise<CustomField[]>;
+    }
+  });
+
+  const { data: fieldValues = [] } = useQuery<CustomFieldValue[]>({
+    queryKey: ['/api/custom-field-values', user?.email, profile?.currentClubId],
+    enabled: !!user?.email && !!profile?.currentClubId,
+    queryFn: async () => {
+      const userId = user?.email ? emailToKey(user.email) : '';
+      const response = await apiRequest('GET', `/api/custom-field-values/${userId}/${profile?.currentClubId}`, {});
+      return response.json() as Promise<CustomFieldValue[]>;
+    }
+  });
+
+  useEffect(() => {
+    if (fieldValues) {
+      const values: { [key: string]: string } = {};
+      fieldValues.forEach((fv: CustomFieldValue) => {
+        values[fv.customFieldId] = fv.value || '';
+      });
+      setCustomFieldValues(values);
+    }
+  }, [fieldValues]);
 
   const form = useForm<ProfileData>({
     resolver: zodResolver(profileSchema),
@@ -77,7 +132,7 @@ export default function Profile() {
         isProfileComplete: true,
       };
       const response = await apiRequest('PUT', '/api/user-profile', payload);
-      return response;
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user-profile', user?.email ? emailToKey(user.email) : ''] });
@@ -95,12 +150,184 @@ export default function Profile() {
     }
   });
 
+  const updateCustomFieldValueMutation = useMutation({
+    mutationFn: async ({ fieldId, value }: { fieldId: string; value: string }) => {
+      const userId = user?.email ? emailToKey(user.email) : '';
+      const payload = {
+        clubId: profile?.currentClubId,
+        value,
+      };
+      const response = await apiRequest('PUT', `/api/custom-field-values/${userId}/${fieldId}`, payload);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/custom-field-values', user?.email, profile?.currentClubId] });
+      toast({
+        title: "Success",
+        description: "Custom field updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update custom field",
+        variant: "destructive",
+      });
+    }
+  });
+
   const onSubmit = (data: ProfileData) => {
     if (Object.keys(form.formState.errors).length > 0) {
       return;
     }
     updateProfileMutation.mutate(data);
   };
+
+  const renderCustomField = (field: CustomField) => {
+    const value = customFieldValues[field.id] || field.defaultValue || '';
+    const isLoading = updateCustomFieldValueMutation.isPending;
+
+    switch (field.fieldType) {
+      case 'checkbox':
+        return (
+          <div key={field.id} className="flex items-center space-x-2">
+            <Checkbox
+              id={field.id}
+              checked={value === 'true' || value === true}
+              onCheckedChange={(checked) => {
+                setCustomFieldValues({ ...customFieldValues, [field.id]: checked ? 'true' : 'false' });
+                updateCustomFieldValueMutation.mutate({ fieldId: field.id, value: checked ? 'true' : 'false' });
+              }}
+              disabled={isLoading}
+            />
+            <Label htmlFor={field.id} className="font-normal cursor-pointer text-gray-700">
+              {field.fieldName}
+              {field.required && <span className="text-red-600 ml-1">*</span>}
+            </Label>
+          </div>
+        );
+
+      case 'select':
+        const options = field.selectOptions ? JSON.parse(field.selectOptions) : [];
+        return (
+          <div key={field.id}>
+            <Label htmlFor={field.id} className="text-gray-700">
+              {field.fieldName}
+              {field.required && <span className="text-red-600 ml-1">*</span>}
+            </Label>
+            <Select
+              value={value}
+              onValueChange={(newValue) => {
+                setCustomFieldValues({ ...customFieldValues, [field.id]: newValue });
+                updateCustomFieldValueMutation.mutate({ fieldId: field.id, value: newValue });
+              }}
+            >
+              <SelectTrigger id={field.id} className="mt-1 bg-white border-gray-200 text-gray-900" disabled={isLoading}>
+                <SelectValue placeholder={`Select ${field.fieldName.toLowerCase()}`} />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-gray-200">
+                {options.map((option: string) => (
+                  <SelectItem key={option} value={option} className="text-gray-900 hover:bg-gray-100">
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+
+      case 'email':
+        return (
+          <div key={field.id}>
+            <Label htmlFor={field.id} className="text-gray-700">
+              {field.fieldName}
+              {field.required && <span className="text-red-600 ml-1">*</span>}
+            </Label>
+            <Input
+              id={field.id}
+              type="email"
+              value={value}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              onBlur={() => {
+                updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
+              }}
+              placeholder={`Enter ${field.fieldName.toLowerCase()}`}
+              className="mt-1 bg-white border-gray-200 text-gray-900"
+              disabled={isLoading}
+            />
+          </div>
+        );
+
+      case 'phone':
+        return (
+          <div key={field.id}>
+            <Label htmlFor={field.id} className="text-gray-700">
+              {field.fieldName}
+              {field.required && <span className="text-red-600 ml-1">*</span>}
+            </Label>
+            <Input
+              id={field.id}
+              type="tel"
+              value={value}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              onBlur={() => {
+                updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
+              }}
+              placeholder={`Enter ${field.fieldName.toLowerCase()}`}
+              className="mt-1 bg-white border-gray-200 text-gray-900"
+              disabled={isLoading}
+            />
+          </div>
+        );
+
+      case 'number':
+        return (
+          <div key={field.id}>
+            <Label htmlFor={field.id} className="text-gray-700">
+              {field.fieldName}
+              {field.required && <span className="text-red-600 ml-1">*</span>}
+            </Label>
+            <Input
+              id={field.id}
+              type="number"
+              value={value}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              onBlur={() => {
+                updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
+              }}
+              placeholder={`Enter ${field.fieldName.toLowerCase()}`}
+              className="mt-1 bg-white border-gray-200 text-gray-900"
+              disabled={isLoading}
+            />
+          </div>
+        );
+
+      case 'text':
+      default:
+        return (
+          <div key={field.id}>
+            <Label htmlFor={field.id} className="text-gray-700">
+              {field.fieldName}
+              {field.required && <span className="text-red-600 ml-1">*</span>}
+            </Label>
+            <Input
+              id={field.id}
+              type="text"
+              value={value}
+              onChange={(e) => setCustomFieldValues({ ...customFieldValues, [field.id]: e.target.value })}
+              onBlur={() => {
+                updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
+              }}
+              placeholder={`Enter ${field.fieldName.toLowerCase()}`}
+              className="mt-1 bg-white border-gray-200 text-gray-900"
+              disabled={isLoading}
+            />
+          </div>
+        );
+    }
+  };
+
+  const isLoading = profileLoading || customFieldsLoading;
 
   if (isLoading) {
     return (
@@ -131,7 +358,7 @@ export default function Profile() {
       </div>
 
       <div className="flex-1 overflow-auto p-4 lg:p-6">
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-white border-gray-200 mb-6">
           <CardHeader>
             <CardTitle className="text-gray-900">Personal Information</CardTitle>
             <p className="text-sm text-gray-500">
@@ -265,6 +492,19 @@ export default function Profile() {
             </form>
           </CardContent>
         </Card>
+
+        {customFields.length > 0 && (
+          <Card className="bg-white border-gray-200">
+            <CardHeader>
+              <CardTitle className="text-gray-900">Additional Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {customFields.map(renderCustomField)}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

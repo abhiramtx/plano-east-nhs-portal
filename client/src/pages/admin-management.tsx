@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getAdminProfiles, promoteToAdmin, removeAdminRole, UserProfile } from "@/lib/firebase";
+import { User, getMemberships, promoteToAdmin, removeAdminRole, Club, Membership, getUserProfile } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,27 +21,49 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 interface AdminManagementProps {
   user: User | null;
+  club: Club;
 }
 
-export function AdminManagement({ user }: AdminManagementProps) {
+export function AdminManagement({ user, club }: AdminManagementProps) {
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [adminNames, setAdminNames] = useState<{ [email: string]: string }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: adminProfiles = [], isLoading } = useQuery({
-    queryKey: ['firebase-admin-profiles'],
-    queryFn: getAdminProfiles,
+  const { data: allMembers = [], isLoading } = useQuery({
+    queryKey: ['firebase-club-memberships', club.id],
+    queryFn: () => getMemberships(club.id),
     staleTime: 0,
     gcTime: 0,
   });
 
+  const adminProfiles = allMembers.filter((m: Membership) => m.role === 'admin');
+
+  // Fetch personal names for all admins
+  useEffect(() => {
+    const fetchNames = async () => {
+      const names: { [email: string]: string } = {};
+      for (const admin of adminProfiles) {
+        const profile = await getUserProfile(admin.userEmail);
+        if (profile && profile.goByFirstName) {
+          names[admin.userEmail] = profile.goByFirstName;
+        }
+      }
+      setAdminNames(names);
+    };
+
+    if (adminProfiles.length > 0) {
+      fetchNames();
+    }
+  }, [adminProfiles]);
+
   const addAdminMutation = useMutation({
     mutationFn: async (email: string) => {
-      await promoteToAdmin(email);
+      await promoteToAdmin(email, club.id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-admin-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-memberships', club.id] });
       toast({
         title: "Success",
         description: "Admin added successfully",
@@ -60,10 +82,10 @@ export function AdminManagement({ user }: AdminManagementProps) {
 
   const removeAdminMutation = useMutation({
     mutationFn: async (email: string) => {
-      await removeAdminRole(email);
+      await removeAdminRole(email, club.id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-admin-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-memberships', club.id] });
       toast({
         title: "Success",
         description: "Admin removed successfully",
@@ -80,7 +102,9 @@ export function AdminManagement({ user }: AdminManagementProps) {
 
   const handleAddAdmin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAdminEmail.trim()) {
+    const emailToAdd = newAdminEmail.trim().toLowerCase();
+    
+    if (!emailToAdd) {
       toast({
         title: "Error",
         description: "Please enter a valid email address",
@@ -88,7 +112,19 @@ export function AdminManagement({ user }: AdminManagementProps) {
       });
       return;
     }
-    addAdminMutation.mutate(newAdminEmail.trim());
+
+    // Check if the email is a member of the club
+    const isMember = allMembers.some(m => m.userEmail?.toLowerCase() === emailToAdd);
+    if (!isMember) {
+      toast({
+        title: "Error",
+        description: "This user must be a member of the club before being promoted to admin",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    addAdminMutation.mutate(emailToAdd);
   };
 
   const handleRemoveAdmin = (email: string) => {
@@ -207,54 +243,54 @@ export function AdminManagement({ user }: AdminManagementProps) {
               </div>
             ) : (
               <div className="space-y-4">
-                {adminProfiles.map((profile: UserProfile) => (
-                  <div key={profile.email} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
-                        <UserIcon className="w-5 h-5 text-blue-600" />
+                {adminProfiles.map((member: Membership) => {
+                  const isCurrentUser = member.userEmail?.toLowerCase() === user?.email?.toLowerCase();
+                  const displayName = adminNames[member.userEmail] || member.userName || member.userEmail;
+                  return (
+                    <div key={member.userEmail} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
+                          <UserIcon className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-medium text-gray-900">
+                              {displayName}
+                            </h3>
+                            {isCurrentUser && (
+                              <Badge className="bg-green-100 text-green-800">
+                                You
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-1 text-sm text-gray-500">
+                            <Mail className="w-4 h-4" />
+                            <span>{member.userEmail}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-medium text-gray-900">
-                            {profile.displayName || profile.email}
-                          </h3>
-                          {profile.email === user?.email && (
-                            <Badge className="bg-green-100 text-green-800">
-                              <Crown className="w-3 h-3 mr-1" />
-                              You
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-1 text-sm text-gray-500">
-                          <Mail className="w-4 h-4" />
-                          <span>{profile.email}</span>
-                        </div>
-                        {profile.studentId && (
-                          <p className="text-sm text-gray-500">Student ID: {profile.studentId}</p>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Badge className="bg-purple-100 text-purple-800">
+                          <Shield className="w-3 h-3 mr-1" />
+                          Admin
+                        </Badge>
+                        {!isCurrentUser && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveAdmin(member.userEmail)}
+                            disabled={removeAdminMutation.isPending}
+                            className="text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Remove
+                          </Button>
                         )}
                       </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Badge className="bg-purple-100 text-purple-800">
-                        <Shield className="w-3 h-3 mr-1" />
-                        Admin
-                      </Badge>
-                      {profile.email !== user?.email && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemoveAdmin(profile.email)}
-                          disabled={removeAdminMutation.isPending}
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

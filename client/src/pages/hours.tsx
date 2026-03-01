@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, getCurrentUser, getUserSubmissions, deleteSubmission, HoursSubmission } from "@/lib/firebase";
+import { User, getCurrentUser, getUserSubmissions, deleteSubmission, HoursSubmission, Club } from "@/lib/firebase";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,11 @@ import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-export default function Hours() {
+interface HoursProps {
+  club: Club;
+}
+
+export default function Hours({ club }: HoursProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSubmission, setEditingSubmission] = useState<HoursSubmission | null>(null);
@@ -28,9 +32,9 @@ export default function Hours() {
   const userEmail = user?.email || '';
 
   const { data: submissions = [], isLoading } = useQuery<HoursSubmission[]>({
-    queryKey: ['firebase-user-submissions', userEmail],
-    queryFn: () => getUserSubmissions(userEmail),
-    enabled: !!userEmail,
+    queryKey: ['firebase-user-submissions', userEmail, club.id],
+    queryFn: () => getUserSubmissions(userEmail, club.id),
+    enabled: !!userEmail && !!club.id,
   });
 
   const deleteMutation = useMutation({
@@ -38,7 +42,7 @@ export default function Hours() {
       await deleteSubmission(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', userEmail] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', userEmail, club.id] });
       toast({
         title: "Success",
         description: "Hours submission deleted successfully",
@@ -83,7 +87,7 @@ export default function Hours() {
   const handleFormSuccess = () => {
     setIsFormOpen(false);
     setEditingSubmission(null);
-    queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', userEmail] });
+    queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', userEmail, club.id] });
   };
 
   const formatDate = (dateString: string) => {
@@ -125,6 +129,7 @@ export default function Hours() {
                   user={user} 
                   onSuccess={handleFormSuccess} 
                   editingSubmission={editingSubmission}
+                  clubId={club.id}
                 />
               </DialogContent>
               </Dialog>

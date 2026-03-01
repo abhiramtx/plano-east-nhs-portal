@@ -6,6 +6,7 @@ import {
   getUserMembership, 
   createClub, 
   createMembership,
+  ensureClubCreatorIsAdmin,
   Club as FirebaseClub,
   Membership as FirebaseMembership,
   getOpenServiceRequests,
@@ -102,6 +103,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         userName: user.name || userEmail.split('@')[0],
         role: 'admin',
       });
+      // Ensure the creator is set as admin
+      await ensureClubCreatorIsAdmin(club.id, userEmail);
       return { club, membership };
     },
     onSuccess: async ({ club, membership }) => {

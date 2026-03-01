@@ -149,6 +149,17 @@ export interface UserProfile {
   studentId?: string;
   profileComplete: boolean;
   userRole: number;
+  goByFirstName?: string;
+  lastName?: string;
+  personalEmailAddress?: string;
+  cellPhoneNumber?: string;
+  gpa?: string;
+  artTeacherName?: string;
+  artTeacherEmail?: string;
+  phoneNumber?: string;
+  clubId?: string;
+  role?: string;
+  joinedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -266,7 +277,8 @@ export const createClub = async (clubData: Omit<Club, 'id' | 'createdAt' | 'upda
     createdAt: Timestamp.fromDate(now),
     updatedAt: Timestamp.fromDate(now),
   });
-  return {
+  
+  const club = {
     id: docRef.id,
     ...clubData,
     totalApprovedHours: 0,
@@ -276,6 +288,16 @@ export const createClub = async (clubData: Omit<Club, 'id' | 'createdAt' | 'upda
     createdAt: now,
     updatedAt: now,
   };
+  
+  // Add creator as admin member
+  await createMembership({
+    clubId: club.id,
+    userEmail: clubData.creatorEmail,
+    userName: clubData.creatorEmail.split('@')[0],
+    role: 'admin'
+  });
+  
+  return club;
 };
 
 export const updateClub = async (clubId: string, updates: Partial<Club>): Promise<void> => {
@@ -293,26 +315,38 @@ export const deleteClub = async (clubId: string): Promise<void> => {
 // ============ MEMBERSHIPS ============
 
 export const getMemberships = async (clubId: string): Promise<Membership[]> => {
-  const q = query(collection(db, "memberships"), where("clubId", "==", clubId));
+  const q = query(collection(db, "userProfiles"), where("clubId", "==", clubId));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    joinedAt: toDate(doc.data().joinedAt),
-  })) as Membership[];
+  return querySnapshot.docs
+    .map(doc => ({
+      id: doc.id,
+      clubId: doc.data().clubId,
+      userEmail: doc.data().email,
+      userName: doc.data().goByFirstName || doc.data().displayName || doc.data().email.split('@')[0],
+      role: doc.data().role || 'member',
+      joinedAt: doc.data().joinedAt ? toDate(doc.data().joinedAt) : new Date(),
+    })) as Membership[];
 };
 
 export const getUserMembership = async (userEmail: string): Promise<{ membership: Membership; club: Club } | null> => {
-  const q = query(collection(db, "memberships"), where("userEmail", "==", userEmail));
+  const q = query(collection(db, "userProfiles"), where("email", "==", userEmail));
   const querySnapshot = await getDocs(q);
   if (querySnapshot.empty) return null;
   
-  const membershipDoc = querySnapshot.docs[0];
+  const userProfileDoc = querySnapshot.docs[0];
+  const data = userProfileDoc.data();
+  if (!data.clubId) return null;
+  
   const membership = {
-    id: membershipDoc.id,
-    ...membershipDoc.data(),
-    joinedAt: toDate(membershipDoc.data().joinedAt),
+    id: userProfileDoc.id,
+    clubId: data.clubId,
+    userEmail: data.email,
+    userName: data.goByFirstName || data.displayName || userEmail.split('@')[0],
+    role: data.role || 'member',
+    joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
   } as Membership;
+  
+  console.log('getUserMembership - retrieved membership:', membership);
   
   const club = await getClub(membership.clubId);
   if (!club) return null;
@@ -322,31 +356,94 @@ export const getUserMembership = async (userEmail: string): Promise<{ membership
 
 export const createMembership = async (data: { clubId: string; userEmail: string; userName: string; role: string }): Promise<Membership> => {
   const now = new Date();
-  const docRef = await addDoc(collection(db, "memberships"), {
-    ...data,
-    joinedAt: Timestamp.fromDate(now),
-  });
+  const docRef = doc(db, "userProfiles", data.userEmail);
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists()) {
+    await updateDoc(docRef, {
+      clubId: data.clubId,
+      role: data.role,
+      joinedAt: Timestamp.fromDate(now),
+      updatedAt: Timestamp.fromDate(now),
+    });
+  } else {
+    await setDoc(docRef, {
+      email: data.userEmail,
+      displayName: data.userName,
+      clubId: data.clubId,
+      role: data.role,
+      joinedAt: Timestamp.fromDate(now),
+      profileComplete: false,
+      userRole: 0,
+      createdAt: Timestamp.fromDate(now),
+      updatedAt: Timestamp.fromDate(now),
+    }, { merge: true });
+  }
+  
   return {
-    id: docRef.id,
+    id: data.userEmail,
     ...data,
     joinedAt: now,
   };
 };
 
 export const deleteMembership = async (membershipId: string): Promise<void> => {
-  await deleteDoc(doc(db, "memberships", membershipId));
+  const q = query(collection(db, "userProfiles"), where("email", "==", membershipId));
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) {
+    const userProfileDoc = querySnapshot.docs[0];
+    await updateDoc(userProfileDoc.ref, {
+      clubId: null,
+      role: null,
+      joinedAt: null,
+      updatedAt: Timestamp.fromDate(new Date()),
+    });
+  }
 };
 
 export const deleteMembershipByUserAndClub = async (userEmail: string, clubId: string): Promise<void> => {
+  const q = query(collection(db, "userProfiles"), where("email", "==", userEmail));
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) {
+    const userProfileDoc = querySnapshot.docs[0];
+    const data = userProfileDoc.data();
+    if (data.clubId === clubId) {
+      await updateDoc(userProfileDoc.ref, {
+        clubId: null,
+        role: null,
+        joinedAt: null,
+        updatedAt: Timestamp.fromDate(new Date()),
+      });
+    }
+  }
+};
+
+export const updateMembershipRole = async (membershipId: string, role: string): Promise<void> => {
+  const q = query(collection(db, "userProfiles"), where("email", "==", membershipId));
+  const querySnapshot = await getDocs(q);
+  if (!querySnapshot.empty) {
+    const userProfileDoc = querySnapshot.docs[0];
+    await updateDoc(userProfileDoc.ref, {
+      role,
+      updatedAt: Timestamp.fromDate(new Date()),
+    });
+  }
+};
+
+export const ensureClubCreatorIsAdmin = async (clubId: string, creatorEmail: string): Promise<void> => {
   const q = query(
     collection(db, "memberships"),
-    where("userEmail", "==", userEmail),
+    where("userEmail", "==", creatorEmail),
     where("clubId", "==", clubId)
   );
   const querySnapshot = await getDocs(q);
-  const batch = writeBatch(db);
-  querySnapshot.docs.forEach(doc => batch.delete(doc.ref));
-  await batch.commit();
+  if (!querySnapshot.empty) {
+    const membershipDoc = querySnapshot.docs[0];
+    if (membershipDoc.data().role !== 'admin') {
+      await updateMembershipRole(membershipDoc.id, 'admin');
+      console.log(`Updated ${creatorEmail} to admin for club ${clubId}`);
+    }
+  }
 };
 
 // ============ HOURS SUBMISSIONS ============
@@ -362,20 +459,26 @@ export const getClubSubmissions = async (clubId: string): Promise<HoursSubmissio
   })) as HoursSubmission[];
 };
 
-export const getUserSubmissions = async (userEmail: string, clubId?: string): Promise<HoursSubmission[]> => {
-  let q;
-  if (clubId) {
-    q = query(
-      collection(db, "submissions"),
-      where("userEmail", "==", userEmail),
-      where("clubId", "==", clubId)
-    );
-  } else {
-    q = query(
-      collection(db, "submissions"),
-      where("userEmail", "==", userEmail)
-    );
-  }
+export const getUserSubmissions = async (userEmail: string, clubId: string): Promise<HoursSubmission[]> => {
+  const q = query(
+    collection(db, "submissions"),
+    where("userEmail", "==", userEmail),
+    where("clubId", "==", clubId)
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    submittedAt: toDate(doc.data().submittedAt),
+    reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
+  })) as HoursSubmission[];
+};
+
+export const getUserSubmissionsAllClubs = async (userEmail: string): Promise<HoursSubmission[]> => {
+  const q = query(
+    collection(db, "submissions"),
+    where("userEmail", "==", userEmail)
+  );
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
@@ -411,6 +514,30 @@ export const updateSubmission = async (submissionId: string, updates: Partial<Ho
 
 export const deleteSubmission = async (submissionId: string): Promise<void> => {
   await deleteDoc(doc(db, "submissions", submissionId));
+};
+
+// Archive submission to history when resetting data
+export const archiveSubmission = async (submission: HoursSubmission, clubName: string, archivePeriod: string): Promise<void> => {
+  const now = new Date();
+  const archivedData = {
+    ...submission,
+    clubName,
+    archivePeriod,
+    archivedAt: Timestamp.fromDate(now),
+  };
+  await addDoc(collection(db, "submissionArchive"), archivedData);
+};
+
+export const getAllArchivedSubmissions = async (clubId: string): Promise<(HoursSubmission & { clubName?: string; archivePeriod?: string; archivedAt?: Date })[]> => {
+  const q = query(collection(db, "submissionArchive"), where("clubId", "==", clubId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    submittedAt: doc.data().submittedAt ? toDate(doc.data().submittedAt) : new Date(),
+    reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
+    archivedAt: doc.data().archivedAt ? toDate(doc.data().archivedAt) : undefined,
+  })) as (HoursSubmission & { clubName?: string; archivePeriod?: string; archivedAt?: Date })[];
 };
 
 // ============ SERVICE REQUESTS ============
@@ -648,7 +775,7 @@ export const updateAdminSettings = async (updates: Partial<AdminSettings>, updat
 // ============ USER PROFILES ============
 
 export const getUserProfile = async (email: string): Promise<UserProfile | null> => {
-  const docRef = doc(db, "users", email);
+  const docRef = doc(db, "userProfiles", email);
   const docSnap = await getDoc(docRef);
   if (!docSnap.exists()) return null;
   const data = docSnap.data();
@@ -661,13 +788,14 @@ export const getUserProfile = async (email: string): Promise<UserProfile | null>
 };
 
 export const createOrUpdateUserProfile = async (email: string, data: Partial<UserProfile>): Promise<void> => {
-  const docRef = doc(db, "users", email);
+  const docRef = doc(db, "userProfiles", email);
   const docSnap = await getDoc(docRef);
   const now = new Date();
   
   if (docSnap.exists()) {
     await updateDoc(docRef, {
       ...data,
+      email,
       updatedAt: Timestamp.fromDate(now),
     });
   } else {
@@ -734,7 +862,7 @@ export const getAllSubmissions = async (): Promise<HoursSubmission[]> => {
 };
 
 export const getAllUserProfiles = async (): Promise<UserProfile[]> => {
-  const querySnapshot = await getDocs(collection(db, "users"));
+  const querySnapshot = await getDocs(collection(db, "userProfiles"));
   return querySnapshot.docs.map(doc => ({
     email: doc.id,
     ...doc.data(),
@@ -744,7 +872,7 @@ export const getAllUserProfiles = async (): Promise<UserProfile[]> => {
 };
 
 export const getAdminProfiles = async (): Promise<UserProfile[]> => {
-  const q = query(collection(db, "users"), where("userRole", "==", 1));
+  const q = query(collection(db, "userProfiles"), where("userRole", "==", 1));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({
     email: doc.id,
@@ -754,34 +882,45 @@ export const getAdminProfiles = async (): Promise<UserProfile[]> => {
   })) as UserProfile[];
 };
 
-export const promoteToAdmin = async (email: string): Promise<void> => {
-  const docRef = doc(db, "users", email);
-  const docSnap = await getDoc(docRef);
+export const promoteToAdmin = async (email: string, clubId?: string): Promise<void> => {
   const now = new Date();
+  const docRef = doc(db, "userProfiles", email);
+  const docSnap = await getDoc(docRef);
   
   if (docSnap.exists()) {
     await updateDoc(docRef, {
-      userRole: 1,
+      role: "admin",
       updatedAt: Timestamp.fromDate(now),
     });
-  } else {
+  } else if (clubId) {
+    // If user profile doesn't exist but clubId is provided, create it
     await setDoc(docRef, {
       email,
       displayName: email.split('@')[0],
       profileComplete: false,
-      userRole: 1,
+      userRole: 0,
+      clubId,
+      role: "admin",
       createdAt: Timestamp.fromDate(now),
       updatedAt: Timestamp.fromDate(now),
-    });
+    }, { merge: true });
   }
 };
 
-export const removeAdminRole = async (email: string): Promise<void> => {
-  const docRef = doc(db, "users", email);
-  await updateDoc(docRef, {
-    userRole: 0,
-    updatedAt: Timestamp.fromDate(new Date()),
-  });
+export const removeAdminRole = async (email: string, clubId?: string): Promise<void> => {
+  const now = new Date();
+  
+  // Update userProfile
+  const q = query(collection(db, "userProfiles"), where("email", "==", email));
+  const querySnapshot = await getDocs(q);
+  
+  if (!querySnapshot.empty) {
+    const userProfileDoc = querySnapshot.docs[0];
+    await updateDoc(userProfileDoc.ref, {
+      role: "member",
+      updatedAt: Timestamp.fromDate(now),
+    });
+  }
 };
 
 export const getAdminAssignment = async (adminEmail: string, skipEmails: string[] = []): Promise<UserProfile | null> => {
@@ -801,10 +940,43 @@ export const getAdminAssignment = async (adminEmail: string, skipEmails: string[
   return null;
 };
 
+export const getAdminAssignmentForClub = async (clubId: string, adminEmail: string, skipEmails: string[] = []): Promise<UserProfile | null> => {
+  const submissions = await getClubSubmissions(clubId);
+  const pendingSubmissions = submissions.filter(s => s.status === "pending");
+  
+  if (pendingSubmissions.length === 0) return null;
+  
+  const userEmails = Array.from(new Set(pendingSubmissions.map(s => s.userEmail)))
+    .filter(email => !skipEmails.includes(email));
+  
+  for (const email of userEmails) {
+    const profile = await getUserProfile(email);
+    if (profile) return profile;
+  }
+  
+  return null;
+};
+
 export const getPendingSubmissionsForUser = async (userEmail: string): Promise<HoursSubmission[]> => {
   const q = query(
     collection(db, "submissions"),
     where("userEmail", "==", userEmail),
+    where("status", "==", "pending")
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    submittedAt: toDate(doc.data().submittedAt),
+    reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
+  })) as HoursSubmission[];
+};
+
+export const getPendingSubmissionsForUserInClub = async (userEmail: string, clubId: string): Promise<HoursSubmission[]> => {
+  const q = query(
+    collection(db, "submissions"),
+    where("userEmail", "==", userEmail),
+    where("clubId", "==", clubId),
     where("status", "==", "pending")
   );
   const querySnapshot = await getDocs(q);
@@ -873,4 +1045,63 @@ export const removeDemoData = async (): Promise<void> => {
   });
   
   await batch.commit();
+};
+export interface TerritoryCircle {
+  id: string;
+  clubId: string;
+  latitude: number;
+  longitude: number;
+  radiusKm: number;
+  hoursContributed: number;
+  peopleCount: number;
+  locationName?: string;
+  isMainClubLocation: boolean;
+  lastActivityAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const getTerritoryCircles = async (clubId: string): Promise<TerritoryCircle[]> => {
+  try {
+    const response = await fetch(`/api/clubs/${clubId}/territories`);
+    if (!response.ok) throw new Error('Failed to fetch territories');
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching territory circles:', error);
+    return [];
+  }
+};
+
+export const getAllTerritoryCircles = async (clubs: Club[]): Promise<(TerritoryCircle & { clubName: string; clubColor: string })[]> => {
+  try {
+    const allCircles: (TerritoryCircle & { clubName: string; clubColor: string })[] = [];
+    
+    for (const club of clubs) {
+      const circles = await getTerritoryCircles(club.id);
+      allCircles.push(...circles.map(c => ({
+        ...c,
+        clubName: club.name,
+        clubColor: club.color,
+      })));
+    }
+    
+    return allCircles;
+  } catch (error) {
+    console.error('Error fetching all territory circles:', error);
+    return [];
+  }
+};
+
+export const updateTerritoryCircles = async (clubId: string): Promise<TerritoryCircle[]> => {
+  try {
+    const response = await fetch(`/api/clubs/${clubId}/territories/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) throw new Error('Failed to update territories');
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating territory circles:', error);
+    return [];
+  }
 };

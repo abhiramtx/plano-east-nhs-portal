@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertHoursSubmissionSchema, insertUserProfileSchema, insertProjectSchema, insertClubSchema, insertClubMembershipSchema, insertServiceRequestSchema, insertServiceParticipantSchema } from "@shared/schema";
+import { insertHoursSubmissionSchema, insertUserProfileSchema, insertProjectSchema, insertClubSchema, insertClubMembershipSchema, insertServiceRequestSchema, insertServiceParticipantSchema, insertCustomFieldSchema, insertCustomFieldValueSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/hours-submissions/:userId", async (req, res) => {
@@ -415,6 +415,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Territory Circles
+  app.get("/api/clubs/:id/territories", async (req, res) => {
+    try {
+      const clubId = req.params.id;
+      const circles = await storage.calculateAndUpdateTerritoryCircles(clubId);
+      console.log(`Territory circles for ${clubId}:`, circles.length, circles);
+      res.json(circles);
+    } catch (error) {
+      console.error("Error fetching territory circles:", error);
+      res.status(500).json({ error: "Failed to fetch territory circles" });
+    }
+  });
+
+  app.post("/api/clubs/:id/territories/update", async (req, res) => {
+    try {
+      const clubId = req.params.id;
+      const circles = await storage.calculateAndUpdateTerritoryCircles(clubId);
+      res.json(circles);
+    } catch (error) {
+      console.error("Error updating territory circles:", error);
+      res.status(500).json({ error: "Failed to update territory circles" });
+    }
+  });
+
   app.get("/api/leaderboard/clubs", async (req, res) => {
     try {
       const period = (req.query.period as string) || 'all';
@@ -649,6 +673,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true, message: "Decay applied successfully" });
     } catch (error) {
       res.status(500).json({ error: "Failed to apply decay" });
+    }
+  });
+
+  // Custom Fields Routes
+  app.post("/api/custom-fields", async (req, res) => {
+    try {
+      const validatedData = insertCustomFieldSchema.parse(req.body);
+      const field = await storage.createCustomField(validatedData);
+      res.status(201).json(field);
+    } catch (error) {
+      console.error("Custom field creation error:", error);
+      res.status(400).json({ error: "Invalid custom field data", details: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get("/api/custom-fields/:clubId", async (req, res) => {
+    try {
+      const { clubId } = req.params;
+      const fields = await storage.getCustomFields(clubId);
+      res.json(fields);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch custom fields" });
+    }
+  });
+
+  app.get("/api/custom-fields-by-id/:fieldId", async (req, res) => {
+    try {
+      const { fieldId } = req.params;
+      const field = await storage.getCustomField(fieldId);
+      if (!field) return res.status(404).json({ error: "Custom field not found" });
+      res.json(field);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch custom field" });
+    }
+  });
+
+  app.put("/api/custom-fields/:fieldId", async (req, res) => {
+    try {
+      const { fieldId } = req.params;
+      const field = await storage.updateCustomField(fieldId, req.body);
+      if (!field) return res.status(404).json({ error: "Custom field not found" });
+      res.json(field);
+    } catch (error) {
+      console.error("Custom field update error:", error);
+      res.status(500).json({ error: "Failed to update custom field" });
+    }
+  });
+
+  app.delete("/api/custom-fields/:fieldId", async (req, res) => {
+    try {
+      const { fieldId } = req.params;
+      const success = await storage.deleteCustomField(fieldId);
+      if (!success) return res.status(404).json({ error: "Custom field not found" });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete custom field" });
+    }
+  });
+
+  // Custom Field Values Routes
+  app.post("/api/custom-field-values", async (req, res) => {
+    try {
+      const validatedData = insertCustomFieldValueSchema.parse(req.body);
+      const value = await storage.createCustomFieldValue(validatedData);
+      res.status(201).json(value);
+    } catch (error) {
+      console.error("Custom field value creation error:", error);
+      res.status(400).json({ error: "Invalid custom field value data", details: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get("/api/custom-field-values/:userId/:clubId", async (req, res) => {
+    try {
+      const { userId, clubId } = req.params;
+      const values = await storage.getCustomFieldValues(userId, clubId);
+      res.json(values);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch custom field values" });
+    }
+  });
+
+  app.put("/api/custom-field-values/:userId/:customFieldId", async (req, res) => {
+    try {
+      const { userId, customFieldId } = req.params;
+      const { clubId, value } = req.body;
+      const fieldValue = await storage.upsertCustomFieldValue(userId, customFieldId, clubId, value);
+      res.json(fieldValue);
+    } catch (error) {
+      console.error("Custom field value upsert error:", error);
+      res.status(500).json({ error: "Failed to upsert custom field value" });
     }
   });
 

@@ -1,9 +1,9 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Trophy, MapPin, Clock, TrendingUp, Users, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Map, { Marker, NavigationControl, MapRef, Source, Layer } from 'react-map-gl/maplibre';
+import MapGlComponent, { Marker, NavigationControl, MapRef, Source, Layer } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { 
   getClubs, 
@@ -17,6 +17,8 @@ import {
   getCurrentUser,
   getAllSubmissions,
   HoursSubmission,
+  getAllTerritoryCircles,
+  TerritoryCircle,
 } from "@/lib/firebase";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -270,31 +272,39 @@ function aggregateSubmissionsByLocation(
   submissions: HoursSubmission[],
   clubs: Club[]
 ): TerritoryCircle[] {
-  const clubMap = new Map(clubs.map(c => [c.id, c]));
-  const locationMap = new Map<string, TerritoryCircle>();
+  const clubMap = new globalThis.Map(clubs.map(c => [c.id, c]));
+  const locationMap = new globalThis.Map<string, TerritoryCircle>();
   
-  const approvedSubmissions = submissions.filter(
-    s => s.status === 'approved' && s.latitude && s.longitude && 
-    !isNaN(s.latitude) && !isNaN(s.longitude)
-  );
+  const approvedSubmissions = submissions.filter(s => s.status === 'approved');
+  console.log('Territory Map - Total submissions:', submissions.length, 'Approved:', approvedSubmissions.length);
   
   for (const submission of approvedSubmissions) {
     const club = clubMap.get(submission.clubId);
-    if (!club) continue;
+    if (!club) {
+      console.log('Club not found for submission:', submission.clubId);
+      continue;
+    }
     
-    const lat = submission.latitude!;
-    const lng = submission.longitude!;
+    // Use submission location if available, fall back to club location
+    let lat = submission.locationLat ? parseFloat(String(submission.locationLat)) : (club.latitude ? parseFloat(String(club.latitude)) : null);
+    let lng = submission.locationLng ? parseFloat(String(submission.locationLng)) : (club.longitude ? parseFloat(String(club.longitude)) : null);
+    
+    if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+      console.log('Invalid coordinates for submission:', { lat, lng, clubId: submission.clubId });
+      continue;
+    }
+    
     const geohash = encodeGeohash(lat, lng, 7);
     const locationKey = `${submission.clubId}_${geohash}`;
     
     const existing = locationMap.get(locationKey);
-    const submissionDate = new Date(submission.date);
+    const submissionDate = new Date(submission.date || submission.createdAt);
     const isValidDate = !isNaN(submissionDate.getTime());
     
     const oldestDate = new Date(0);
     
     if (existing) {
-      existing.hours += submission.hours;
+      existing.hours += parseFloat(String(submission.hours)) || 0;
       if (isValidDate && submissionDate > existing.lastActivity) {
         existing.lastActivity = submissionDate;
       }
@@ -306,14 +316,16 @@ function aggregateSubmissionsByLocation(
         clubColor: club.color,
         latitude: lat,
         longitude: lng,
-        hours: submission.hours,
-        location: submission.location || 'Unknown location',
+        hours: parseFloat(String(submission.hours)) || 0,
+        location: submission.activityName || club.name || 'Unknown location',
         lastActivity: isValidDate ? submissionDate : oldestDate,
       });
     }
   }
   
-  return Array.from(locationMap.values());
+  const result = Array.from(locationMap.values());
+  console.log('Territory circles created:', result.length, result);
+  return result;
 }
 
 export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
@@ -355,15 +367,21 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     refetchInterval: 30000,
   });
 
-  const territoryCircles = aggregateSubmissionsByLocation(allSubmissions, clubs);
+  // Load territory circles from server for ALL clubs
+  const { data: serverCircles = [], refetch: refetchCircles } = useQuery<(TerritoryCircle & { clubName: string; clubColor: string })[]>({
+    queryKey: ['firebase-all-territory-circles', clubs],
+    queryFn: () => clubs.length > 0 ? getAllTerritoryCircles(clubs) : Promise.resolve([]),
+    enabled: clubs.length > 0,
+    refetchInterval: 60000,
+  });
 
-  const { data: myParticipations = [] } = useQuery<ServiceRequestParticipant[]>({
+  const { data: myParticipations } = useQuery<ServiceRequestParticipant[]>({
     queryKey: ['firebase-my-participations', userEmail],
     queryFn: () => getUserParticipations(userEmail),
     enabled: !!userEmail,
   });
 
-  const joinedRequestIds = myParticipations.map(p => p.requestId);
+  const joinedRequestIds = myParticipations.data?.map(p => p.requestId) || [];
 
   const joinMutation = useMutation({
     mutationFn: async (request: ServiceRequest) => {
@@ -428,104 +446,64 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const currentClub = clubs.find(c => c.id === currentClubId);
   const currentClubRank = leaderboardClubs.findIndex(c => c.id === currentClubId) + 1;
 
+  // Convert server circles to the TerritoryCircle format for grouping
+  const territoryCircles: TerritoryCircle[] = serverCircles.map(sc => ({
+    id: sc.id,
+    clubId: sc.clubId,
+    clubName: currentClub?.name || 'Unknown Club',
+    clubColor: currentClub?.color || '#3B82F6',
+    latitude: sc.latitude,
+    longitude: sc.longitude,
+    hours: sc.hoursContributed,
+    location: sc.locationName || 'Unknown Location',
+    lastActivity: new Date(sc.lastActivityAt || new Date()),
+  }));
+
   const circleGroups = useMemo(() => groupCirclesByProximity(territoryCircles), [territoryCircles]);
   
   const territoriesGeoJson = useMemo(() => ({
     type: 'FeatureCollection' as const,
-    features: circleGroups.flatMap(group => {
-      if (group.length === 1) {
-        const circle = group[0];
-        const radiusKm = calculateTerritoryRadiusKm(circle.hours, circle.lastActivity);
-        return [{
-          type: 'Feature' as const,
-          properties: {
-            id: circle.id,
-            name: circle.clubName,
-            color: circle.clubColor,
-            hours: circle.hours,
-            location: circle.location,
-          },
-          geometry: {
-            type: 'Polygon' as const,
-            coordinates: [createCirclePolygon(circle.longitude, circle.latitude, radiusKm)]
-          }
-        }];
-      }
+    features: serverCircles.map(circle => {
+      // Ensure radius is properly in km
+      const radiusKm = circle.radiusKm || 6.4; // Fallback to base radius if missing
+      console.log(`Circle ${circle.id}: ${radiusKm}km, location: ${circle.locationName}, club: ${circle.clubName}, color: ${circle.clubColor}`);
       
-      if (group.length > 8) {
-        const avgLat = group.reduce((sum, c) => sum + c.latitude, 0) / group.length;
-        const avgLng = group.reduce((sum, c) => sum + c.longitude, 0) / group.length;
-        const totalHrs = group.reduce((sum, c) => sum + c.hours, 0);
-        const largestRadius = Math.max(...group.map(c => calculateTerritoryRadiusKm(c.hours, c.lastActivity)));
-        const extraRadius = Math.max(...group.map(c => 
-          getDistanceKm(avgLat, avgLng, c.latitude, c.longitude)
-        ));
-        const combinedRadius = largestRadius + extraRadius * 0.5;
-        
-        return [{
-          type: 'Feature' as const,
-          properties: {
-            id: `merged_large_${group[0].clubId}`,
-            name: group[0].clubName,
-            color: group[0].clubColor,
-            hours: totalHrs,
-            location: `${group.length} merged locations`,
-          },
-          geometry: {
-            type: 'Polygon' as const,
-            coordinates: [createCirclePolygon(avgLng, avgLat, combinedRadius)]
-          }
-        }];
-      }
-      
-      const metaballCircles = group.map(c => ({
-        lng: c.longitude,
-        lat: c.latitude,
-        radius: calculateTerritoryRadiusKm(c.hours, c.lastActivity)
-      }));
-      
-      const metaballCoords = createMetaballPolygon(metaballCircles);
-      if (!metaballCoords) {
-        return group.map(circle => ({
-          type: 'Feature' as const,
-          properties: {
-            id: circle.id,
-            name: circle.clubName,
-            color: circle.clubColor,
-            hours: circle.hours,
-            location: circle.location,
-          },
-          geometry: {
-            type: 'Polygon' as const,
-            coordinates: [createCirclePolygon(circle.longitude, circle.latitude, calculateTerritoryRadiusKm(circle.hours, circle.lastActivity))]
-          }
-        }));
-      }
-      
-      const totalHours = group.reduce((sum, c) => sum + c.hours, 0);
-      const firstCircle = group[0];
-      
-      return [{
+      return {
         type: 'Feature' as const,
         properties: {
-          id: `merged_${firstCircle.clubId}`,
-          name: firstCircle.clubName,
-          color: firstCircle.clubColor,
-          hours: totalHours,
-          location: `${group.length} merged locations`,
+          id: circle.id,
+          name: circle.locationName || 'Volunteer Territory',
+          color: circle.clubColor || '#3B82F6',
+          hours: circle.hoursContributed,
+          people: circle.peopleCount,
+          radius: radiusKm,
+          clubName: circle.clubName,
         },
         geometry: {
           type: 'Polygon' as const,
-          coordinates: [metaballCoords]
+          coordinates: [createCirclePolygon(circle.longitude, circle.latitude, radiusKm)]
         }
-      }];
+      };
     })
-  }), [circleGroups]);
+  }), [serverCircles]);
+
+  // Debug logging and circle calculation trigger
+  useEffect(() => {
+    console.log('=== Territory Map State ===');
+    console.log('Current Club ID:', currentClubId);
+    console.log('Territories GeoJSON features:', territoriesGeoJson.features.length);
+    console.log('Features:', territoriesGeoJson.features.map(f => ({ 
+      id: f.properties?.id, 
+      name: f.properties?.name,
+      radius: f.properties?.radius 
+    })));
+    console.log('Server circles:', serverCircles);
+  }, [territoriesGeoJson, serverCircles, currentClubId]);
 
   return (
     <div className="h-screen w-full flex bg-white overflow-hidden">
       <div className="flex-1 relative">
-        <Map
+        <MapGlComponent
           ref={mapRef}
           {...viewState}
           onMove={evt => setViewState(evt.viewState)}
@@ -642,7 +620,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
               </Marker>
             );
           })}
-        </Map>
+        </MapGlComponent>
 
         <div className="absolute top-4 left-4 right-80 z-10">
           <div className="relative max-w-md">

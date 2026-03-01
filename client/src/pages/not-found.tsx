@@ -50,13 +50,13 @@ export default function NotFound() {
           
           {/* Subtitle */}
           <h2 className="text-3xl font-bold text-gray-800 mb-4">
-            Oops! Lost in the Gallery
+            Oops! Page Not Found
           </h2>
 
           {/* Description */}
           <p className="text-lg text-gray-700 mb-10 max-w-lg mx-auto leading-relaxed">
-            Looks like this masterpiece doesn't exist yet. The canvas you're looking for 
-            hasn't been painted in our NAHS collection.
+            Looks like this page doesn't exist. The page you're looking for
+            could not be found in our VolunteerClub collection.
           </p>
 
           {/* Action Buttons */}
@@ -91,10 +91,10 @@ export default function NotFound() {
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 text-gray-600 mb-2">
               <Paintbrush className="w-5 h-5 text-purple-500" />
-              <span className="font-medium">Wylie National Art Honor Society</span>
+              <span className="font-medium">VolunteerClub</span>
             </div>
             <p className="text-sm text-gray-500 italic">
-              Creating art • Building character • Serving community
+              Connecting volunteers • Building community • Making impact
             </p>
           </div>
         </div>

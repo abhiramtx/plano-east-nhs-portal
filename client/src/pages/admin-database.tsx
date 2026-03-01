@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { archiveYearData, wipeDatabase, removeDemoData } from "@/lib/firebase";
+import { archiveYearData, wipeDatabase, removeDemoData, Club } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,9 +29,10 @@ import {
 
 interface AdminDatabaseProps {
   user: { name: string; email: string };
+  club: Club;
 }
 
-export function AdminDatabase({ user }: AdminDatabaseProps) {
+export function AdminDatabase({ user, club }: AdminDatabaseProps) {
   const [schoolYear, setSchoolYear] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();

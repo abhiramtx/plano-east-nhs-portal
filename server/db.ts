@@ -1,15 +1,28 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
-import * as schema from "@shared/schema";
+import "dotenv/config";
+import admin from "firebase-admin";
+import { cert } from "firebase-admin/app";
 
-neonConfig.webSocketConstructor = ws;
-
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+// Initialize Firebase Admin
+if (!process.env.FIREBASE_PROJECT_ID) {
+  throw new Error("FIREBASE_PROJECT_ID must be set");
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+if (!process.env.FIREBASE_PRIVATE_KEY) {
+  throw new Error("FIREBASE_PRIVATE_KEY must be set");
+}
+
+if (!process.env.FIREBASE_CLIENT_EMAIL) {
+  throw new Error("FIREBASE_CLIENT_EMAIL must be set");
+}
+
+const serviceAccount = {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+};
+
+admin.initializeApp({
+  credential: cert(serviceAccount as admin.ServiceAccount),
+});
+
+export const db = admin.firestore();

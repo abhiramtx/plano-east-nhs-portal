@@ -11,6 +11,7 @@ import {
   handleSignOut, 
   auth,
   getUserMembership,
+  ensureClubCreatorIsAdmin,
   deleteMembershipByUserAndClub,
   Club,
   Membership
@@ -32,6 +33,9 @@ import { AdminStudents } from "@/pages/admin-students";
 import { AdminManagement } from "@/pages/admin-management";
 import { AdminApproval } from "@/pages/admin-approval";
 import { AdminDatabase } from "@/pages/admin-database";
+import { AdminHistory } from "@/pages/admin-history";
+import { AdminCustomFields } from "@/pages/admin-custom-fields";
+import { AdminSettings } from "@/pages/admin-settings";
 
 function VolunteerInterface({ 
   user, 
@@ -76,10 +80,10 @@ function VolunteerInterface({
       <div className="flex-1 lg:ml-64 flex flex-col min-h-0 overflow-auto">
         <Switch>
           <Route path="/volunteer/dashboard">
-            <Dashboard />
+            <Dashboard club={club} />
           </Route>
           <Route path="/volunteer/hours">
-            <Hours />
+            <Hours club={club} />
           </Route>
           <Route path="/volunteer/map">
             <TerritoryMap currentClubId={club.id} />
@@ -102,10 +106,10 @@ function VolunteerInterface({
             <Profile />
           </Route>
           <Route path="/volunteer/history">
-            <StudentHistory />
+            <AdminHistory club={club} isVolunteerView={true} />
           </Route>
           <Route path="/volunteer">
-            <Dashboard />
+            <Dashboard club={club} />
           </Route>
           <Route>
             <NotFound />
@@ -116,15 +120,29 @@ function VolunteerInterface({
   );
 }
 
-function AdminInterface({ user }: { user: User }) {
+function AdminInterface({ user, club }: { user: User; club?: Club }) {
+  const [, setLocation] = useLocation();
   const [currentPage, setCurrentPage] = useState(() => {
     const path = window.location.pathname;
     if (path.includes('/admin/dashboard')) return 'dashboard';
     if (path.includes('/admin/students')) return 'students';
     if (path.includes('/admin/management')) return 'admin-management';
     if (path.includes('/admin/database')) return 'database';
+    if (path.includes('/admin/history')) return 'history';
+    if (path.includes('/admin/settings')) return 'settings';
     return 'approval';
   });
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.includes('/admin/dashboard')) setCurrentPage('dashboard');
+    else if (path.includes('/admin/students')) setCurrentPage('students');
+    else if (path.includes('/admin/management')) setCurrentPage('admin-management');
+    else if (path.includes('/admin/database')) setCurrentPage('database');
+    else if (path.includes('/admin/history')) setCurrentPage('history');
+    else if (path.includes('/admin/settings')) setCurrentPage('settings');
+    else if (path.includes('/admin/approval')) setCurrentPage('approval');
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -134,20 +152,34 @@ function AdminInterface({ user }: { user: User }) {
     }
   };
 
+  if (!club) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Panel</h2>
+          <p className="text-gray-600">No club selected. Please select a club to continue.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-white">
       <div className="w-64 bg-white border-r border-gray-200 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col">
         <div className="flex flex-col flex-1 min-h-0 bg-white">
           <div className="flex items-center flex-shrink-0 px-4 py-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-8 h-8 bg-black rounded-lg">
+              <div 
+                className="flex items-center justify-center w-8 h-8 rounded-lg"
+                style={{ backgroundColor: club.color }}
+              >
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
-                <p className="text-sm text-gray-600">Club Management</p>
+                <p className="text-sm text-gray-600">{club.name}</p>
               </div>
             </div>
           </div>
@@ -193,6 +225,23 @@ function AdminInterface({ user }: { user: User }) {
               <span>Database</span>
             </button>
             
+            <button
+              onClick={() => { setCurrentPage('history'); window.history.pushState({}, '', '/admin/history'); }}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'history' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span>History</span>
+            </button>
+
+            <button
+              onClick={() => { setCurrentPage('settings'); window.history.pushState({}, '', '/admin/settings'); }}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'settings' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span>Admin Settings</span>
+            </button>
+            
+            
             <a
               href="/volunteer/dashboard"
               className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-gray-700 hover:bg-gray-50"
@@ -220,11 +269,13 @@ function AdminInterface({ user }: { user: User }) {
       </div>
 
       <div className="flex-1 lg:ml-64 flex flex-col min-h-0">
-        {currentPage === 'approval' && <AdminApproval user={user} />}
-        {currentPage === 'dashboard' && <AdminDashboard user={user} />}
-        {currentPage === 'students' && <AdminStudents user={user} />}
-        {currentPage === 'admin-management' && <AdminManagement user={user} />}
-        {currentPage === 'database' && <AdminDatabase user={user} />}
+        {currentPage === 'approval' && <AdminApproval user={user} club={club} />}
+        {currentPage === 'dashboard' && <AdminDashboard user={user} club={club} />}
+        {currentPage === 'students' && <AdminStudents user={user} club={club} />}
+        {currentPage === 'admin-management' && <AdminManagement user={user} club={club} />}
+        {currentPage === 'database' && <AdminDatabase user={user} club={club} />}
+        {currentPage === 'history' && <AdminHistory user={user} club={club} />}
+        {currentPage === 'settings' && <AdminSettings user={user} club={club} />}
       </div>
     </div>
   );
@@ -253,10 +304,14 @@ function App() {
   useEffect(() => {
     if (user?.email && !clubChecked) {
       getUserMembership(user.email)
-        .then(data => {
+        .then(async (data) => {
           if (data && data.club && data.membership) {
             setSelectedClub(data.club);
             setMembership(data.membership);
+            // Ensure club creator has admin role
+            if (data.club.creatorEmail === user.email) {
+              await ensureClubCreatorIsAdmin(data.club.id, user.email);
+            }
           }
         })
         .catch(() => {})
@@ -353,15 +408,29 @@ function App() {
             )}
           </Route>
           <Route path="/admin/:rest*">
-            {user ? (
-              <AdminInterface user={user} />
+            { (initializing || !clubChecked) ? (
+              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading your club...</p>
+                </div>
+              </div>
+            ) : user && selectedClub ? (
+              <AdminInterface user={user} club={selectedClub} />
             ) : (
               <Landing onSignIn={() => {}} />
             )}
           </Route>
           <Route path="/admin">
-            {user ? (
-              <AdminInterface user={user} />
+            {(initializing || !clubChecked) ? (
+              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading your club...</p>
+                </div>
+              </div>
+            ) : user && selectedClub ? (
+              <AdminInterface user={user} club={selectedClub} />
             ) : (
               <Landing onSignIn={() => {}} />
             )}

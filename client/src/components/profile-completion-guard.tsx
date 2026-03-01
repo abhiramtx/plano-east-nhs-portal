@@ -47,7 +47,7 @@ export function ProfileCompletionGuard({
                 </svg>
               </div>
               <h3 className="text-2xl font-bold mb-2">
-                Welcome to the Wylie NAHS!
+                Welcome to VolunteerClub!
               </h3>
               <p className="text-blue-100">
                 Let's set up your profile to get started
@@ -132,7 +132,7 @@ export function ProfileCompletionGuard({
 
               {/* Action button */}
               <Link
-                href="/student/profile"
+                href="/volunteer/profile"
                 className="inline-flex items-center justify-center w-full bg-white border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition-all duration-200 font-medium"
               >
                 <svg

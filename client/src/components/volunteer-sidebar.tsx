@@ -17,16 +17,20 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = membership.role === 'admin';
 
+  console.log('VolunteerSidebar - membership:', membership);
+  console.log('VolunteerSidebar - isAdmin:', isAdmin);
+
   const navItems = [
     { path: "/volunteer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/volunteer/hours", icon: Clock, label: "Log Hours" },
     { path: "/volunteer/map", icon: Map, label: "Territory Map" },
     { path: "/volunteer/club", icon: Globe, label: "My Club" },
+    { path: "/volunteer/history", icon: ClipboardList, label: "History" },
     { path: "/volunteer/profile", icon: UserIcon, label: "Profile" },
   ];
 
   if (isAdmin) {
-    navItems.push({ path: "/admin", icon: Settings, label: "Admin Panel" });
+    navItems.push({ path: "/admin/dashboard", icon: Settings, label: "Admin Panel" });
   }
 
   const handleNavigation = (path: string) => {
