@@ -779,13 +779,18 @@ export const updateAdminSettings = async (updates: Partial<AdminSettings>, updat
 export const getUserProfile = async (email: string): Promise<UserProfile | null> => {
   const docRef = doc(db, "userProfiles", email);
   const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) return null;
-  const data = docSnap.data();
+  const altId = email.includes(',') ? email.replace(/,/g, '.') : email.replace(/\./g, ',');
+  const altRef = doc(db, "userProfiles", altId);
+  const altSnap = await getDoc(altRef);
+  const primary = docSnap.exists() ? docSnap.data() : null;
+  const alt = altSnap.exists() ? altSnap.data() : null;
+  if (!primary && !alt) return null;
+  const merged = { ...primary, ...alt };
   return {
-    email: docSnap.id,
-    ...data,
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
+    email: email.replace(/,/g, '.'),
+    ...merged,
+    createdAt: toDate(merged.createdAt),
+    updatedAt: toDate(merged.updatedAt),
   } as UserProfile;
 };
 

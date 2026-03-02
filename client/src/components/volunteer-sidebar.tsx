@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { User, Club, Membership } from "@/lib/firebase";
+import { useQuery } from "@tanstack/react-query";
+import { User, Club, Membership, getUserProfile } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Globe, LayoutDashboard, Clock, Map, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, ClipboardList, Trophy } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
@@ -18,8 +19,17 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isAdmin = membership.role === 'admin';
 
-  console.log('VolunteerSidebar - membership:', membership);
-  console.log('VolunteerSidebar - isAdmin:', isAdmin);
+  const { data: profile } = useQuery({
+    queryKey: ['firebase-user-profile-sidebar', user.email],
+    queryFn: () => getUserProfile(user.email),
+    enabled: !!user.email,
+    staleTime: 60000,
+  });
+
+  const profileName = profile
+    ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ')
+    : '';
+  const displayName = profileName || user.name;
 
   const navItems = [
     { path: "/volunteer/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -122,7 +132,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">{displayName}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
             </div>

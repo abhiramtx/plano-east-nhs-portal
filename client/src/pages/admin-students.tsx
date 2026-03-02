@@ -171,6 +171,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     const displayName = profile
       ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ') || member.userName
       : member.userName;
+    const isComplete = !!(profile?.goByFirstName && profile?.lastName && profile?.studentId && profile?.personalEmailAddress && profile?.cellPhoneNumber && profile?.gradeLevel);
     studentStats[key] = {
       email: member.userEmail,
       studentName: displayName,
@@ -179,6 +180,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       personalEmail: profile?.personalEmailAddress || '',
       phone: profile?.cellPhoneNumber || profile?.phoneNumber || '',
       studentId: profile?.studentId || '',
+      profileComplete: isComplete,
       totalHours: 0,
       approvedHours: 0,
       pendingHours: 0,
@@ -192,6 +194,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     const key = submission.userEmail;
     if (!studentStats[key]) {
       const profile = findProfile(submission.userEmail);
+      const isComplete = !!(profile?.goByFirstName && profile?.lastName && profile?.studentId && profile?.personalEmailAddress && profile?.cellPhoneNumber && profile?.gradeLevel);
       studentStats[key] = {
         email: submission.userEmail,
         studentName: submission.userName,
@@ -200,6 +203,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
         personalEmail: profile?.personalEmailAddress || '',
         phone: profile?.cellPhoneNumber || profile?.phoneNumber || '',
         studentId: profile?.studentId || '',
+        profileComplete: isComplete,
         totalHours: 0,
         approvedHours: 0,
         pendingHours: 0,
@@ -766,6 +770,15 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                 <h3 className="font-semibold text-gray-900 truncate">{student.studentName}</h3>
                                 {student.userRole === 1 && (
                                   <Badge className="bg-gray-200 text-gray-900 text-xs flex-shrink-0">Admin</Badge>
+                                )}
+                                {!student.profileComplete && (
+                                  <a
+                                    href="/volunteer/profile"
+                                    className="text-sm text-gray-500 underline flex-shrink-0"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Complete Profile
+                                  </a>
                                 )}
                               </div>
                               <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
