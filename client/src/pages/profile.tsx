@@ -71,20 +71,22 @@ export default function Profile() {
   });
 
   const { data: customFields = [], isLoading: customFieldsLoading } = useQuery<CustomField[]>({
-    queryKey: ['/api/custom-fields', profile?.currentClubId],
-    enabled: !!profile?.currentClubId,
+    queryKey: ['/api/custom-fields', profile?.clubId],
+    enabled: !!profile?.clubId,
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/custom-fields/${profile?.currentClubId}`, {});
+      const response = await fetch(`/api/custom-fields/${profile?.clubId}`, { credentials: "include" });
+      if (!response.ok) throw new Error('Failed to fetch custom fields');
       return response.json() as Promise<CustomField[]>;
     }
   });
 
   const { data: fieldValues = [] } = useQuery<CustomFieldValue[]>({
-    queryKey: ['/api/custom-field-values', user?.email, profile?.currentClubId],
-    enabled: !!user?.email && !!profile?.currentClubId,
+    queryKey: ['/api/custom-field-values', user?.email, profile?.clubId],
+    enabled: !!user?.email && !!profile?.clubId,
     queryFn: async () => {
       const userId = user?.email ? emailToKey(user.email) : '';
-      const response = await apiRequest('GET', `/api/custom-field-values/${userId}/${profile?.currentClubId}`, {});
+      const response = await fetch(`/api/custom-field-values/${userId}/${profile?.clubId}`, { credentials: "include" });
+      if (!response.ok) throw new Error('Failed to fetch custom field values');
       return response.json() as Promise<CustomFieldValue[]>;
     }
   });
@@ -154,14 +156,14 @@ export default function Profile() {
     mutationFn: async ({ fieldId, value }: { fieldId: string; value: string }) => {
       const userId = user?.email ? emailToKey(user.email) : '';
       const payload = {
-        clubId: profile?.currentClubId,
+        clubId: profile?.clubId,
         value,
       };
       const response = await apiRequest('PUT', `/api/custom-field-values/${userId}/${fieldId}`, payload);
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/custom-field-values', user?.email, profile?.currentClubId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/custom-field-values', user?.email, profile?.clubId] });
       toast({
         title: "Success",
         description: "Custom field updated successfully",

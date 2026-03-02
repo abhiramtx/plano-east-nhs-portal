@@ -40,14 +40,16 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
 
   const adminProfiles = allMembers.filter((m: Membership) => m.role === 'admin');
 
-  // Fetch personal names for all admins
   useEffect(() => {
     const fetchNames = async () => {
       const names: { [email: string]: string } = {};
       for (const admin of adminProfiles) {
         const profile = await getUserProfile(admin.userEmail);
-        if (profile && profile.goByFirstName) {
-          names[admin.userEmail] = profile.goByFirstName;
+        if (profile) {
+          const fullName = [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ');
+          if (fullName) {
+            names[admin.userEmail] = fullName;
+          }
         }
       }
       setAdminNames(names);

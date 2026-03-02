@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, HoursSubmission, UserProfile, Club } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, getMemberships, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -130,11 +130,17 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     queryFn: getAllUserProfiles,
   });
 
+  const { data: clubMembers = [], isLoading: membersLoading } = useQuery({
+    queryKey: ['firebase-club-memberships', club.id],
+    queryFn: () => getMemberships(club.id),
+  });
+
   const { data: customFields = [] } = useQuery<CustomField[]>({
-    queryKey: [`/api/custom-fields/${club.id}`],
+    queryKey: ['/api/custom-fields', club.id],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', `/api/custom-fields/${club.id}`, {});
+        const response = await fetch(`/api/custom-fields/${club.id}`, { credentials: "include" });
+        if (!response.ok) return [];
         return response.json() as Promise<CustomField[]>;
       } catch {
         return [];
@@ -144,13 +150,35 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
 
   const filterableCustomFields = customFields.filter(f => f.filterable);
 
-  const isLoading = submissionsLoading || profilesLoading;
+  const isLoading = submissionsLoading || profilesLoading || membersLoading;
 
-  const studentStats = submissions.reduce((acc: any, submission: HoursSubmission) => {
+  const studentStats: any = {};
+
+  clubMembers.forEach((member: Membership) => {
+    const key = member.userEmail;
+    const profile = profiles.find((p: UserProfile) => p.email === member.userEmail);
+    const displayName = profile
+      ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ') || member.userName
+      : member.userName;
+    studentStats[key] = {
+      email: member.userEmail,
+      studentName: displayName,
+      gradeLevel: profile?.gradeLevel || 'N/A',
+      userRole: member.role === 'admin' ? 1 : 0,
+      totalHours: 0,
+      approvedHours: 0,
+      pendingHours: 0,
+      rejectedHours: 0,
+      submissionCount: 0,
+      lastSubmission: member.joinedAt
+    };
+  });
+
+  submissions.forEach((submission: HoursSubmission) => {
     const key = submission.userEmail;
-    if (!acc[key]) {
+    if (!studentStats[key]) {
       const profile = profiles.find((p: UserProfile) => p.email === submission.userEmail);
-      acc[key] = {
+      studentStats[key] = {
         email: submission.userEmail,
         studentName: submission.userName,
         gradeLevel: profile?.gradeLevel || 'N/A',
@@ -165,25 +193,23 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     }
     
     const hours = submission.hours;
-    acc[key].totalHours += hours;
-    acc[key].submissionCount++;
+    studentStats[key].totalHours += hours;
+    studentStats[key].submissionCount++;
     
     if (submission.status === 'approved') {
-      acc[key].approvedHours += hours;
+      studentStats[key].approvedHours += hours;
     } else if (submission.status === 'pending') {
-      acc[key].pendingHours += hours;
+      studentStats[key].pendingHours += hours;
     } else if (submission.status === 'rejected') {
-      acc[key].rejectedHours += hours;
+      studentStats[key].rejectedHours += hours;
     }
     
     const submissionDate = typeof submission.createdAt === 'string' ? new Date(submission.createdAt) : submission.createdAt;
-    const lastSubmissionDate = typeof acc[key].lastSubmission === 'string' ? new Date(acc[key].lastSubmission) : acc[key].lastSubmission;
+    const lastSubmissionDate = typeof studentStats[key].lastSubmission === 'string' ? new Date(studentStats[key].lastSubmission) : studentStats[key].lastSubmission;
     if (submissionDate > lastSubmissionDate) {
-      acc[key].lastSubmission = submission.createdAt;
+      studentStats[key].lastSubmission = submission.createdAt;
     }
-    
-    return acc;
-  }, {});
+  });
 
   const allStudents = Object.values(studentStats);
 
@@ -197,7 +223,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       for (const student of allStudents) {
         const userId = student.email.replace(/\./g, ',');
         try {
-          const response = await apiRequest('GET', `/api/custom-field-values/${userId}/${club.id}`, {});
+          const response = await fetch(`/api/custom-field-values/${userId}/${club.id}`, { credentials: "include" });
           const fieldValues = await response.json();
           values[userId] = {};
           fieldValues.forEach((fv: any) => {

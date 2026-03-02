@@ -260,7 +260,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="fieldName">Field Name</Label>
+                  <Label htmlFor="fieldName" className="text-gray-900">Field Name</Label>
                   <Input
                     id="fieldName"
                     placeholder="e.g., Preferred Location"
@@ -270,7 +270,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="fieldType">Field Type</Label>
+                  <Label htmlFor="fieldType" className="text-gray-900">Field Type</Label>
                   <Select value={formData.fieldType} onValueChange={(value: any) => setFormData({ ...formData, fieldType: value })}>
                     <SelectTrigger id="fieldType">
                       <SelectValue />
@@ -289,7 +289,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
 
                 {(formData.fieldType === 'select' || formData.fieldType === 'multiselect') && (
                   <div>
-                    <Label htmlFor="selectOptions">Options (comma-separated)</Label>
+                    <Label htmlFor="selectOptions" className="text-gray-900">Options (comma-separated)</Label>
                     <Textarea
                       id="selectOptions"
                       placeholder="Option 1, Option 2, Option 3"
@@ -301,7 +301,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                 )}
 
                 <div>
-                  <Label htmlFor="defaultValue">Default Value (Optional)</Label>
+                  <Label htmlFor="defaultValue" className="text-gray-900">Default Value (Optional)</Label>
                   <Input
                     id="defaultValue"
                     placeholder="Leave empty for no default"
@@ -362,7 +362,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                   {isEditingId === field.id ? (
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor={`edit-fieldName-${field.id}`}>Field Name</Label>
+                        <Label htmlFor={`edit-fieldName-${field.id}`} className="text-gray-900">Field Name</Label>
                         <Input
                           id={`edit-fieldName-${field.id}`}
                           placeholder="e.g., Preferred Location"
@@ -372,7 +372,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                       </div>
 
                       <div>
-                        <Label htmlFor={`edit-fieldType-${field.id}`}>Field Type</Label>
+                        <Label htmlFor={`edit-fieldType-${field.id}`} className="text-gray-900">Field Type</Label>
                         <Select value={formData.fieldType} onValueChange={(value: any) => setFormData({ ...formData, fieldType: value })}>
                           <SelectTrigger id={`edit-fieldType-${field.id}`}>
                             <SelectValue />
@@ -391,7 +391,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
 
                       {(formData.fieldType === 'select' || formData.fieldType === 'multiselect') && (
                         <div>
-                          <Label htmlFor={`edit-selectOptions-${field.id}`}>Options (comma-separated)</Label>
+                          <Label htmlFor={`edit-selectOptions-${field.id}`} className="text-gray-900">Options (comma-separated)</Label>
                           <Textarea
                             id={`edit-selectOptions-${field.id}`}
                             placeholder="Option 1, Option 2, Option 3"
@@ -403,7 +403,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                       )}
 
                       <div>
-                        <Label htmlFor={`edit-defaultValue-${field.id}`}>Default Value (Optional)</Label>
+                        <Label htmlFor={`edit-defaultValue-${field.id}`} className="text-gray-900">Default Value (Optional)</Label>
                         <Input
                           id={`edit-defaultValue-${field.id}`}
                           placeholder="Leave empty for no default"
