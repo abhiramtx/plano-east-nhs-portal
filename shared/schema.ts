@@ -268,10 +268,11 @@ export interface TerritoryCircle extends InsertTerritoryCircle {
 export const insertCustomFieldSchema = z.object({
   clubId: z.string().min(1),
   fieldName: z.string().min(1),
+  description: z.string().optional(),
   fieldType: z.enum(["text", "checkbox", "select", "number", "email", "phone", "multiselect"]),
   required: z.boolean().default(false),
   filterable: z.boolean().default(false),
-  selectOptions: z.string().optional(), // JSON string of array for select fields
+  selectOptions: z.string().optional(),
   defaultValue: z.string().optional(),
   order: z.number().default(0),
 });

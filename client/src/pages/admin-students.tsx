@@ -161,8 +161,15 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     const commaEmail = email.replace(/\./g, ',');
     const byDot = profiles.find((p: UserProfile) => p.email === dotEmail);
     const byComma = profiles.find((p: UserProfile) => p.email === commaEmail);
-    if (byDot && byComma) return { ...byDot, ...byComma, email: dotEmail } as UserProfile;
-    return byDot || byComma;
+    if (!byDot && !byComma) return undefined;
+    const merged: any = { email: dotEmail };
+    for (const obj of [byDot, byComma]) {
+      if (!obj) continue;
+      for (const [k, v] of Object.entries(obj)) {
+        if (v !== undefined && v !== null && v !== '') merged[k] = v;
+      }
+    }
+    return merged as UserProfile;
   };
 
   clubMembers.forEach((member: Membership) => {

@@ -28,6 +28,7 @@ interface CustomField {
   id: string;
   clubId: string;
   fieldName: string;
+  description?: string;
   fieldType: "text" | "checkbox" | "select" | "number" | "email" | "phone" | "multiselect";
   required: boolean;
   filterable: boolean;
@@ -43,6 +44,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
   const [isEditingId, setIsEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     fieldName: "",
+    description: "",
     fieldType: "text" as "text" | "checkbox" | "select" | "number" | "email" | "phone" | "multiselect",
     required: false,
     filterable: false,
@@ -82,6 +84,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
       });
       setFormData({
         fieldName: "",
+        description: "",
         fieldType: "text",
         required: false,
         filterable: false,
@@ -194,6 +197,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
   const startEdit = (field: CustomField) => {
     setFormData({
       fieldName: field.fieldName,
+      description: field.description || "",
       fieldType: field.fieldType,
       required: field.required,
       filterable: field.filterable,
@@ -207,6 +211,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
     setIsEditingId(null);
     setFormData({
       fieldName: "",
+      description: "",
       fieldType: "text",
       required: false,
       filterable: false,
@@ -266,6 +271,16 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                     placeholder="e.g., Preferred Location"
                     value={formData.fieldName}
                     onChange={(e) => setFormData({ ...formData, fieldName: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="description" className="text-gray-900">Description (Optional)</Label>
+                  <Input
+                    id="description"
+                    placeholder="Brief description shown to volunteers"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   />
                 </div>
 
@@ -372,6 +387,16 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                       </div>
 
                       <div>
+                        <Label htmlFor={`edit-description-${field.id}`} className="text-gray-900">Description (Optional)</Label>
+                        <Input
+                          id={`edit-description-${field.id}`}
+                          placeholder="Brief description shown to volunteers"
+                          value={formData.description}
+                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
                         <Label htmlFor={`edit-fieldType-${field.id}`} className="text-gray-900">Field Type</Label>
                         <Select value={formData.fieldType} onValueChange={(value: any) => setFormData({ ...formData, fieldType: value })}>
                           <SelectTrigger id={`edit-fieldType-${field.id}`}>
@@ -458,6 +483,9 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-lg font-medium text-gray-900">{field.fieldName}</h3>
+                        {field.description && (
+                          <p className="text-sm text-gray-500 mt-0.5">{field.description}</p>
+                        )}
                         <div className="mt-2 flex flex-wrap gap-2">
                           <span className="inline-block px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
                             {field.fieldType}

@@ -785,7 +785,13 @@ export const getUserProfile = async (email: string): Promise<UserProfile | null>
   const primary = docSnap.exists() ? docSnap.data() : null;
   const alt = altSnap.exists() ? altSnap.data() : null;
   if (!primary && !alt) return null;
-  const merged = { ...primary, ...alt };
+  const merged: any = {};
+  for (const obj of [primary, alt]) {
+    if (!obj) continue;
+    for (const [k, v] of Object.entries(obj)) {
+      if (v !== undefined && v !== null && v !== '') merged[k] = v;
+    }
+  }
   return {
     email: email.replace(/,/g, '.'),
     ...merged,

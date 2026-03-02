@@ -19,6 +19,7 @@ interface CustomField {
   id: string;
   clubId: string;
   fieldName: string;
+  description?: string;
   fieldType: "text" | "checkbox" | "select" | "number" | "email" | "phone";
   required: boolean;
   filterable: boolean;
@@ -124,7 +125,7 @@ export default function Profile() {
         gradeLevel: profile.gradeLevel || "",
       });
     }
-  }, [profile, form]);
+  }, [profile]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileData) => {
@@ -185,6 +186,18 @@ export default function Profile() {
     updateProfileMutation.mutate(data);
   };
 
+  const renderFieldLabel = (field: CustomField) => (
+    <div className="flex-shrink-0 w-48">
+      <Label htmlFor={field.id} className="text-gray-700">
+        {field.fieldName}
+        {field.required && <span className="text-red-600 ml-1">*</span>}
+      </Label>
+      {field.description && (
+        <p className="text-xs text-gray-400 mt-0.5">{field.description}</p>
+      )}
+    </div>
+  );
+
   const renderCustomField = (field: CustomField) => {
     const value = customFieldValues[field.id] || field.defaultValue || '';
     const isLoading = updateCustomFieldValueMutation.isPending;
@@ -192,7 +205,8 @@ export default function Profile() {
     switch (field.fieldType) {
       case 'checkbox':
         return (
-          <div key={field.id} className="flex items-center space-x-2">
+          <div key={field.id} className="flex items-center gap-4">
+            {renderFieldLabel(field)}
             <Checkbox
               id={field.id}
               checked={value === 'true' || value === true}
@@ -202,49 +216,41 @@ export default function Profile() {
               }}
               disabled={isLoading}
             />
-            <Label htmlFor={field.id} className="font-normal cursor-pointer text-gray-700">
-              {field.fieldName}
-              {field.required && <span className="text-red-600 ml-1">*</span>}
-            </Label>
           </div>
         );
 
       case 'select':
         const options = field.selectOptions ? JSON.parse(field.selectOptions) : [];
         return (
-          <div key={field.id}>
-            <Label htmlFor={field.id} className="text-gray-700">
-              {field.fieldName}
-              {field.required && <span className="text-red-600 ml-1">*</span>}
-            </Label>
-            <Select
-              value={value}
-              onValueChange={(newValue) => {
-                setCustomFieldValues({ ...customFieldValues, [field.id]: newValue });
-                updateCustomFieldValueMutation.mutate({ fieldId: field.id, value: newValue });
-              }}
-            >
-              <SelectTrigger id={field.id} className="mt-1 bg-white border-gray-200 text-gray-900" disabled={isLoading}>
-                <SelectValue placeholder={`Select ${field.fieldName.toLowerCase()}`} />
-              </SelectTrigger>
-              <SelectContent className="bg-white border-gray-200">
-                {options.map((option: string) => (
-                  <SelectItem key={option} value={option} className="text-gray-900 hover:bg-gray-100">
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div key={field.id} className="flex items-center gap-4">
+            {renderFieldLabel(field)}
+            <div className="flex-1">
+              <Select
+                value={value}
+                onValueChange={(newValue) => {
+                  setCustomFieldValues({ ...customFieldValues, [field.id]: newValue });
+                  updateCustomFieldValueMutation.mutate({ fieldId: field.id, value: newValue });
+                }}
+              >
+                <SelectTrigger id={field.id} className="bg-white border-gray-200 text-gray-900" disabled={isLoading}>
+                  <SelectValue placeholder={`Select ${field.fieldName.toLowerCase()}`} />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-gray-200">
+                  {options.map((option: string) => (
+                    <SelectItem key={option} value={option} className="text-gray-900 hover:bg-gray-100">
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         );
 
       case 'email':
         return (
-          <div key={field.id}>
-            <Label htmlFor={field.id} className="text-gray-700">
-              {field.fieldName}
-              {field.required && <span className="text-red-600 ml-1">*</span>}
-            </Label>
+          <div key={field.id} className="flex items-center gap-4">
+            {renderFieldLabel(field)}
             <Input
               id={field.id}
               type="email"
@@ -254,7 +260,7 @@ export default function Profile() {
                 updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
               }}
               placeholder={`Enter ${field.fieldName.toLowerCase()}`}
-              className="mt-1 bg-white border-gray-200 text-gray-900"
+              className="flex-1 bg-white border-gray-200 text-gray-900"
               disabled={isLoading}
             />
           </div>
@@ -262,11 +268,8 @@ export default function Profile() {
 
       case 'phone':
         return (
-          <div key={field.id}>
-            <Label htmlFor={field.id} className="text-gray-700">
-              {field.fieldName}
-              {field.required && <span className="text-red-600 ml-1">*</span>}
-            </Label>
+          <div key={field.id} className="flex items-center gap-4">
+            {renderFieldLabel(field)}
             <Input
               id={field.id}
               type="tel"
@@ -276,7 +279,7 @@ export default function Profile() {
                 updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
               }}
               placeholder={`Enter ${field.fieldName.toLowerCase()}`}
-              className="mt-1 bg-white border-gray-200 text-gray-900"
+              className="flex-1 bg-white border-gray-200 text-gray-900"
               disabled={isLoading}
             />
           </div>
@@ -284,11 +287,8 @@ export default function Profile() {
 
       case 'number':
         return (
-          <div key={field.id}>
-            <Label htmlFor={field.id} className="text-gray-700">
-              {field.fieldName}
-              {field.required && <span className="text-red-600 ml-1">*</span>}
-            </Label>
+          <div key={field.id} className="flex items-center gap-4">
+            {renderFieldLabel(field)}
             <Input
               id={field.id}
               type="number"
@@ -298,7 +298,7 @@ export default function Profile() {
                 updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
               }}
               placeholder={`Enter ${field.fieldName.toLowerCase()}`}
-              className="mt-1 bg-white border-gray-200 text-gray-900"
+              className="flex-1 bg-white border-gray-200 text-gray-900"
               disabled={isLoading}
             />
           </div>
@@ -307,11 +307,8 @@ export default function Profile() {
       case 'text':
       default:
         return (
-          <div key={field.id}>
-            <Label htmlFor={field.id} className="text-gray-700">
-              {field.fieldName}
-              {field.required && <span className="text-red-600 ml-1">*</span>}
-            </Label>
+          <div key={field.id} className="flex items-center gap-4">
+            {renderFieldLabel(field)}
             <Input
               id={field.id}
               type="text"
@@ -321,7 +318,7 @@ export default function Profile() {
                 updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
               }}
               placeholder={`Enter ${field.fieldName.toLowerCase()}`}
-              className="mt-1 bg-white border-gray-200 text-gray-900"
+              className="flex-1 bg-white border-gray-200 text-gray-900"
               disabled={isLoading}
             />
           </div>
@@ -501,7 +498,7 @@ export default function Profile() {
               <CardTitle className="text-gray-900">Additional Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 {customFields.map(renderCustomField)}
               </div>
             </CardContent>
