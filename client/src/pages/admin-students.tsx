@@ -156,9 +156,18 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
 
   const studentStats: any = {};
 
+  const findProfile = (email: string): UserProfile | undefined => {
+    const dotEmail = email.replace(/,/g, '.');
+    const commaEmail = email.replace(/\./g, ',');
+    const byDot = profiles.find((p: UserProfile) => p.email === dotEmail);
+    const byComma = profiles.find((p: UserProfile) => p.email === commaEmail);
+    if (byDot && byComma) return { ...byDot, ...byComma, email: dotEmail } as UserProfile;
+    return byDot || byComma;
+  };
+
   clubMembers.forEach((member: Membership) => {
     const key = member.userEmail;
-    const profile = profiles.find((p: UserProfile) => p.email === member.userEmail);
+    const profile = findProfile(member.userEmail);
     const displayName = profile
       ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ') || member.userName
       : member.userName;
@@ -182,7 +191,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
   submissions.forEach((submission: HoursSubmission) => {
     const key = submission.userEmail;
     if (!studentStats[key]) {
-      const profile = profiles.find((p: UserProfile) => p.email === submission.userEmail);
+      const profile = findProfile(submission.userEmail);
       studentStats[key] = {
         email: submission.userEmail,
         studentName: submission.userName,
