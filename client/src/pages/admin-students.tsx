@@ -360,7 +360,10 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     if (Array.isArray(filterArray)) {
       return count + filterArray.length;
     } else if (typeof filterArray === 'object') {
-      return count + Object.values(filterArray).filter(v => v).length;
+      return count + Object.values(filterArray).filter((v: any) => {
+        if (Array.isArray(v)) return v.length > 0;
+        return !!v;
+      }).length;
     }
     return count;
   }, 0);
@@ -398,7 +401,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
   return (
     <div className="flex-1 flex bg-white min-h-0">
       {showFilters && (
-        <div className="w-56 border-r border-gray-200 flex-shrink-0 bg-gray-50">
+        <div className="w-56 border-r border-gray-200 flex-shrink-0 bg-gray-50 overflow-y-auto">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-gray-900 flex items-center gap-2">
@@ -557,64 +560,70 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                           <label htmlFor={`filter-${field.id}`} className="text-sm font-medium text-gray-700 mb-1 block">
                             {field.fieldName}
                           </label>
-                          {field.fieldType === 'select' ? (
-                            <select
-                              id={`filter-${field.id}`}
-                              value={(filters.customFields[field.id] as string) || ''}
-                              onChange={(e) => {
-                                setFilters(prev => ({
-                                  ...prev,
-                                  customFields: {
-                                    ...prev.customFields,
-                                    [field.id]: e.target.value
-                                  }
-                                }));
-                              }}
-                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
-                            >
-                              <option value="">All {field.fieldName}</option>
-                              {field.selectOptions && JSON.parse(field.selectOptions).map((option: string) => (
-                                <option key={option} value={option}>{option}</option>
-                              ))}
-                            </select>
-                          ) : field.fieldType === 'multiselect' ? (
+                          {(field.fieldType === 'select' || field.fieldType === 'multiselect' || field.fieldType === 'checkbox') ? (
                             <div className="space-y-2">
-                              {field.selectOptions && JSON.parse(field.selectOptions).map((option: string) => {
-                                const selected = Array.isArray(filters.customFields[field.id]) && (filters.customFields[field.id] as string[]).includes(option);
-                                return (
-                                  <div key={option} className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id={`filter-${field.id}-${option}`}
-                                      checked={selected}
-                                      onCheckedChange={(checked) => {
-                                        setFilters(prev => {
-                                          const prevVal = prev.customFields[field.id];
-                                          let nextArr: string[] = Array.isArray(prevVal) ? [...prevVal] : [];
-                                          if (checked) {
-                                            if (!nextArr.includes(option)) nextArr.push(option);
-                                          } else {
-                                            nextArr = nextArr.filter(v => v !== option);
-                                          }
-                                          return {
-                                            ...prev,
-                                            customFields: {
-                                              ...prev.customFields,
-                                              [field.id]: nextArr
-                                            }
-                                          };
-                                        });
-                                      }}
-                                    />
-                                    <label htmlFor={`filter-${field.id}-${option}`} className="text-sm text-gray-700">{option}</label>
-                                  </div>
-                                );
-                              })}
+                              {field.fieldType === 'checkbox' ? (
+                                <>
+                                  {['Yes', 'No'].map((option) => {
+                                    const selected = Array.isArray(filters.customFields[field.id]) && (filters.customFields[field.id] as string[]).includes(option === 'Yes' ? 'true' : 'false');
+                                    return (
+                                      <div key={option} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={`filter-${field.id}-${option}`}
+                                          checked={selected}
+                                          onCheckedChange={(checked) => {
+                                            setFilters(prev => {
+                                              const prevVal = prev.customFields[field.id];
+                                              let nextArr: string[] = Array.isArray(prevVal) ? [...prevVal] : [];
+                                              const val = option === 'Yes' ? 'true' : 'false';
+                                              if (checked) {
+                                                if (!nextArr.includes(val)) nextArr.push(val);
+                                              } else {
+                                                nextArr = nextArr.filter(v => v !== val);
+                                              }
+                                              return { ...prev, customFields: { ...prev.customFields, [field.id]: nextArr } };
+                                            });
+                                          }}
+                                        />
+                                        <label htmlFor={`filter-${field.id}-${option}`} className="text-sm text-gray-700">{option}</label>
+                                      </div>
+                                    );
+                                  })}
+                                </>
+                              ) : (
+                                <>
+                                  {field.selectOptions && JSON.parse(field.selectOptions).map((option: string) => {
+                                    const selected = Array.isArray(filters.customFields[field.id]) && (filters.customFields[field.id] as string[]).includes(option);
+                                    return (
+                                      <div key={option} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={`filter-${field.id}-${option}`}
+                                          checked={selected}
+                                          onCheckedChange={(checked) => {
+                                            setFilters(prev => {
+                                              const prevVal = prev.customFields[field.id];
+                                              let nextArr: string[] = Array.isArray(prevVal) ? [...prevVal] : [];
+                                              if (checked) {
+                                                if (!nextArr.includes(option)) nextArr.push(option);
+                                              } else {
+                                                nextArr = nextArr.filter(v => v !== option);
+                                              }
+                                              return { ...prev, customFields: { ...prev.customFields, [field.id]: nextArr } };
+                                            });
+                                          }}
+                                        />
+                                        <label htmlFor={`filter-${field.id}-${option}`} className="text-sm text-gray-700">{option}</label>
+                                      </div>
+                                    );
+                                  })}
+                                </>
+                              )}
                             </div>
                           ) : (
-                            <Input
+                            <input
                               id={`filter-${field.id}`}
                               type={field.fieldType === 'number' ? 'number' : 'text'}
-                              placeholder={`Filter by ${field.fieldName}`}
+                              placeholder={`Filter by ${field.fieldName.toLowerCase()}`}
                               value={(filters.customFields[field.id] as string) || ''}
                               onChange={(e) => {
                                 setFilters(prev => ({
@@ -625,7 +634,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                   }
                                 }));
                               }}
-                              className="text-sm"
+                              className="w-full text-sm bg-transparent border-0 border-b border-gray-300 focus:border-gray-900 focus:outline-none py-1 px-0 text-gray-900 placeholder-gray-400"
                             />
                           )}
                         </div>
