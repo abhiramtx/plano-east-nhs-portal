@@ -28,7 +28,8 @@ import {
   Check,
   XCircle,
   Hash,
-  ArrowLeft
+  ArrowLeft,
+  Download
 } from "lucide-react";
 
 interface AdminStudentsProps {
@@ -65,6 +66,8 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
   const [rejectingSubmission, setRejectingSubmission] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [customFieldValues, setCustomFieldValues] = useState<{ [userId: string]: { [fieldId: string]: string } }>({});
+  const [showCsvDialog, setShowCsvDialog] = useState(false);
+  const [csvColumns, setCsvColumns] = useState<{ [key: string]: boolean }>({});
   const [filters, setFilters] = useState<FilterState>({
     gradeLevels: [],
     requirementStatus: [],
@@ -316,6 +319,81 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
   });
 
   const students = filteredStudents;
+
+  const profileColumns = [
+    { key: 'studentName', label: 'Name' },
+    { key: 'email', label: 'School Email' },
+    { key: 'personalEmail', label: 'Personal Email' },
+    { key: 'studentId', label: 'Student ID' },
+    { key: 'gradeLevel', label: 'Grade Level' },
+    { key: 'phone', label: 'Phone Number' },
+    { key: 'userRole', label: 'Role' },
+    { key: 'approvedHours', label: 'Approved Hours' },
+    { key: 'pendingHours', label: 'Pending Hours' },
+    { key: 'rejectedHours', label: 'Rejected Hours' },
+    { key: 'totalHours', label: 'Total Hours' },
+    { key: 'submissionCount', label: 'Submission Count' },
+    { key: 'requirementStatus', label: 'Requirement Status' },
+  ];
+
+  const customFieldColumns = filterableCustomFields.map(f => ({
+    key: `cf_${f.id}`,
+    label: f.fieldName,
+    fieldId: f.id,
+  }));
+
+  const allCsvColumns = [...profileColumns, ...customFieldColumns];
+
+  const openCsvDialog = () => {
+    const defaults: { [key: string]: boolean } = {};
+    allCsvColumns.forEach(col => { defaults[col.key] = true; });
+    setCsvColumns(defaults);
+    setShowCsvDialog(true);
+  };
+
+  const downloadCsv = () => {
+    const selectedCols = allCsvColumns.filter(col => csvColumns[col.key]);
+    if (selectedCols.length === 0) return;
+
+    const escCsv = (val: string) => {
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    };
+
+    const header = selectedCols.map(c => escCsv(c.label)).join(',');
+    const rows = students.map((s: any) => {
+      return selectedCols.map(col => {
+        if (col.key === 'userRole') return escCsv(s.userRole === 1 ? 'Admin' : 'Student');
+        if (col.key === 'requirementStatus') return escCsv(s.approvedHours >= 15 ? 'Met' : 'Not Met');
+        if (col.key.startsWith('cf_')) {
+          const fieldId = (col as any).fieldId;
+          const userId = s.email.replace(/\./g, ',');
+          const val = customFieldValues[userId]?.[fieldId] || '';
+          try {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) return escCsv(parsed.join('; '));
+          } catch {}
+          if (val === 'true') return 'Yes';
+          if (val === 'false') return 'No';
+          return escCsv(val);
+        }
+        const val = s[col.key];
+        return escCsv(val != null ? String(val) : '');
+      }).join(',');
+    });
+
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `volunteers_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setShowCsvDialog(false);
+  };
 
   const formatDate = (dateString: string | Date) => {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
@@ -643,10 +721,77 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   </div>
                 </>
               )}
+              <Separator />
+
+              <Button
+                onClick={openCsvDialog}
+                variant="outline"
+                className="w-full flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download CSV
+              </Button>
             </div>
           </div>
         </div>
       )}
+
+      <Dialog open={showCsvDialog} onOpenChange={setShowCsvDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Export to CSV</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-500">
+            {students.length} volunteer{students.length !== 1 ? 's' : ''} will be exported. Select columns to include:
+          </p>
+          <div className="max-h-72 overflow-y-auto space-y-2 border border-gray-200 rounded p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-gray-500 uppercase">Columns</span>
+              <button
+                type="button"
+                className="text-xs text-blue-600 hover:underline"
+                onClick={() => {
+                  const allSelected = allCsvColumns.every(c => csvColumns[c.key]);
+                  const next: { [key: string]: boolean } = {};
+                  allCsvColumns.forEach(c => { next[c.key] = !allSelected; });
+                  setCsvColumns(next);
+                }}
+              >
+                {allCsvColumns.every(c => csvColumns[c.key]) ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            {allCsvColumns.map(col => (
+              <div key={col.key} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`csv-${col.key}`}
+                  checked={!!csvColumns[col.key]}
+                  onCheckedChange={(checked) => setCsvColumns(prev => ({ ...prev, [col.key]: !!checked }))}
+                />
+                <label htmlFor={`csv-${col.key}`} className="text-sm text-gray-700 cursor-pointer">
+                  {col.label}
+                </label>
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button
+              onClick={downloadCsv}
+              disabled={!allCsvColumns.some(c => csvColumns[c.key])}
+              className="flex-1 bg-black hover:bg-gray-800 text-white"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowCsvDialog(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex-1 flex flex-col min-h-0">
         <div className="bg-white border-b border-gray-200 flex-shrink-0">
