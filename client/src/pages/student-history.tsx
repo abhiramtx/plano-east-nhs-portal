@@ -185,56 +185,17 @@ export default function StudentHistory() {
                     </Card>
                   </div>
 
-                  {/* Requirement Status */}
+                  {/* Year Summary */}
                   <Card>
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">{year.schoolYear} Requirement Status</h3>
-                          <p className="text-sm text-gray-600">15 approved hours required</p>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">{year.schoolYear} Summary</h3>
+                          <p className="text-sm text-gray-600">Total approved hours for the year</p>
                         </div>
                         <div className="text-right">
-                          {year.requirementMet ? (
-                            <div className="flex items-center space-x-2">
-                              <CheckCircle2 className="w-6 h-6 text-green-600" />
-                              <div>
-                                <p className="text-lg font-bold text-green-600">Requirement Met!</p>
-                                <p className="text-sm text-gray-600">
-                                  {(parseFloat(year.approvedHours) - 15).toFixed(1)} hours over
-                                </p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center space-x-2">
-                              <AlertCircle className="w-6 h-6 text-red-600" />
-                              <div>
-                                <p className="text-lg font-bold text-red-600">
-                                  {(15 - parseFloat(year.approvedHours)).toFixed(1)} hours short
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  {parseFloat(year.approvedHours).toFixed(1)} / 15 hours approved
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Progress Bar */}
-                      <div className="mt-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-600">Progress</span>
-                          <span className="text-sm text-gray-600">
-                            {Math.min((parseFloat(year.approvedHours) / 15) * 100, 100).toFixed(0)}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              year.requirementMet ? 'bg-green-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${Math.min((parseFloat(year.approvedHours) / 15) * 100, 100)}%` }}
-                          />
+                          <p className="text-2xl font-bold text-gray-900">{parseFloat(year.approvedHours).toFixed(1)}</p>
+                          <p className="text-sm text-gray-600">approved hours</p>
                         </div>
                       </div>
                     </CardContent>

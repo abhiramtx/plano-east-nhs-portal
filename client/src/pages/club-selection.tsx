@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, HandHeart, MapPin, Trophy, Clock, Building, Phone, Mail, ExternalLink } from "lucide-react";
+import logoImg from "@assets/image_1772414281666.png";
 import { LocationPicker } from "@/components/world-map";
 
 interface ClubSelectionProps {
@@ -215,9 +216,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
-                <Globe className="w-6 h-6 text-white" />
-              </div>
+              <img src={logoImg} alt="VolunteerClub" className="w-10 h-10 rounded-xl" />
               <span className="text-xl font-bold">VolunteerClub</span>
             </div>
             <div className="flex items-center space-x-4">

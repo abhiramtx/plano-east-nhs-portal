@@ -139,52 +139,6 @@ export default function Dashboard({ club }: DashboardProps) {
           </Card>
         </div>
 
-        <div className="mb-6 lg:mb-8">
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">March Requirement Status</h3>
-                  <p className="text-sm text-gray-500">15 approved hours required by end of March</p>
-                </div>
-                <div className="text-right">
-                  {stats.approvedHours >= 15 ? (
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle2 className="w-6 h-6 text-green-600" />
-                      <div>
-                        <p className="text-lg font-bold text-green-600">Requirement Met!</p>
-                        <p className="text-sm text-gray-500">{(stats.approvedHours - 15).toFixed(1)} hours over</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <AlertCircle className="w-6 h-6 text-orange-500" />
-                      <div>
-                        <p className="text-lg font-bold text-orange-500">{(15 - stats.approvedHours).toFixed(1)} hours needed</p>
-                        <p className="text-sm text-gray-500">{stats.approvedHours.toFixed(1)} / 15 hours approved</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-500">Progress</span>
-                  <span className="text-sm text-gray-500">{Math.min((stats.approvedHours / 15) * 100, 100).toFixed(0)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      stats.approvedHours >= 15 ? 'bg-green-500' : 'bg-black'
-                    }`}
-                    style={{ width: `${Math.min((stats.approvedHours / 15) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           <Card className="bg-white border-gray-200">

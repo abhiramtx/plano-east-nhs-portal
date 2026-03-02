@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { User, Club, Membership } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Globe, LayoutDashboard, Clock, Map, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, ClipboardList, Trophy } from "lucide-react";
+import logoImg from "@assets/image_1772414281666.png";
 
 interface VolunteerSidebarProps {
   user: User;
@@ -64,9 +65,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
             onClick={() => setLocation('/club-selection')}
           >
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
-                <Globe className="w-6 h-6 text-white" />
-              </div>
+              <img src={logoImg} alt="VolunteerClub" className="w-10 h-10 rounded-xl" />
               <div>
                 <h2 className="font-semibold text-gray-900">VolunteerClub</h2>
                 <p className="text-xs text-gray-500">Volunteer Interface</p>

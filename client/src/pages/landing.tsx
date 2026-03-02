@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { signInWithGoogle } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { Globe, Users, Trophy, MapPin, ArrowRight, Zap, Shield, Target, ChevronDown, Sparkles, Play } from "lucide-react";
+import { Users, Trophy, MapPin, ArrowRight, Zap, Shield, Target, ChevronDown, Sparkles, Play, Globe } from "lucide-react";
+import logoImg from "@assets/image_1772414281666.png";
 import { Button } from "@/components/ui/button";
 import Map from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -106,9 +107,7 @@ export default function Landing({ onSignIn }: LandingProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
-                <Globe className="w-6 h-6 text-black" />
-              </div>
+              <img src={logoImg} alt="VolunteerClub" className="w-10 h-10 rounded-xl" />
               <span className="text-xl font-bold text-white">VolunteerClub</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
@@ -347,9 +346,7 @@ export default function Landing({ onSignIn }: LandingProps) {
       <footer className="py-12 px-4 border-t border-white/10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center space-x-3 mb-4 md:mb-0">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <Globe className="w-5 h-5 text-black" />
-            </div>
+            <img src={logoImg} alt="VolunteerClub" className="w-8 h-8 rounded-lg" />
             <span className="font-semibold text-white">VolunteerClub</span>
           </div>
           <p className="text-sm text-gray-500">
