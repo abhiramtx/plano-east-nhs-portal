@@ -829,7 +829,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       </div>
 
       <Dialog open={!!selectedStudent} onOpenChange={() => setSelectedStudent(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 bg-white [&>button:last-child]:hidden">
+        <DialogContent className="max-w-5xl w-[90vw] max-h-[90vh] overflow-y-auto p-0 bg-white [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>{selectedStudent?.studentName} - Profile</DialogTitle>
           </DialogHeader>
