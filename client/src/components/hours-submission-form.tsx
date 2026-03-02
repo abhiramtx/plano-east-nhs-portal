@@ -192,11 +192,14 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
       queryClient.invalidateQueries({ queryKey: ['firebase-club-submissions'] });
       onSuccess();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Form submission error:", error);
+      const errorMessage = error?.message || error?.code || (typeof error === 'string' ? error : 'Unknown error');
       toast({
         title: "Error",
-        description: editingSubmission ? "Failed to update hours" : "Failed to submit hours",
+        description: editingSubmission 
+          ? `Failed to update hours: ${errorMessage}` 
+          : `Failed to submit hours: ${errorMessage}`,
         variant: "destructive",
       });
     }
@@ -239,11 +242,12 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
   };
 
   const onSubmit = (data: FormData) => {
+    console.log("Hours form submitting with data:", data);
     submitMutation.mutate(data);
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 lg:space-y-6">
+    <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.error("Hours form validation errors:", errors))} className="space-y-4 lg:space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         <div>
           <Label htmlFor="activityName" className="text-gray-700">Activity Name</Label>
