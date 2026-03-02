@@ -184,7 +184,9 @@ const firebaseUserToUser = (fbUser: FirebaseUser | null): User | null => {
 
 export const onAuthStateChanged = (callback: (user: User | null) => void) => {
   authListeners.push(callback);
-  callback(currentUser);
+  if (currentUser !== null) {
+    callback(currentUser);
+  }
   
   return () => {
     authListeners = authListeners.filter(listener => listener !== callback);

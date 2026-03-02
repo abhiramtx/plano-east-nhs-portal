@@ -295,7 +295,11 @@ function App() {
       setUser(authUser);
       setInitializing(false);
       if (!authUser) {
+        setSelectedClub(null);
+        setMembership(null);
         setClubChecked(true);
+      } else {
+        setClubChecked(false);
       }
     });
     return () => unsubscribe();
