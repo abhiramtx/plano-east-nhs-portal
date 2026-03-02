@@ -53,9 +53,12 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
   const queryClient = useQueryClient();
 
   const { data: fields = [], isLoading } = useQuery<CustomField[]>({
-    queryKey: [`/api/custom-fields/${club.id}`],
+    queryKey: ['/api/custom-fields', club.id],
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/custom-fields/${club.id}`, {});
+      const response = await fetch(`/api/custom-fields/${club.id}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error('Failed to fetch custom fields');
       return response.json() as Promise<CustomField[]>;
     },
   });
@@ -72,10 +75,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
       return response.json();
     },
     onSuccess: () => {
-      console.log('createFieldMutation: onSuccess - invalidating custom fields for club', club.id);
-      console.log('pre-invalidate cache:', queryClient.getQueryData([`/api/custom-fields/${club.id}`]));
-      queryClient.invalidateQueries({ queryKey: [`/api/custom-fields/${club.id}`] });
-      setTimeout(() => console.log('post-invalidate cache:', queryClient.getQueryData([`/api/custom-fields/${club.id}`])), 200);
+      queryClient.invalidateQueries({ queryKey: ['/api/custom-fields', club.id] });
       toast({
         title: "Success",
         description: "Custom field created successfully",
@@ -109,7 +109,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/custom-fields/${club.id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/custom-fields', club.id] });
       toast({
         title: "Success",
         description: "Custom field updated successfully",
@@ -135,11 +135,10 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
 
   const deleteFieldMutation = useMutation({
     mutationFn: async (fieldId: string) => {
-      const response = await apiRequest('DELETE', `/api/custom-fields/${fieldId}`, {});
-      return response.json();
+      await apiRequest('DELETE', `/api/custom-fields/${fieldId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/custom-fields/${club.id}`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/custom-fields', club.id] });
       toast({
         title: "Success",
         description: "Custom field deleted successfully",

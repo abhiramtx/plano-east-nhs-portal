@@ -821,9 +821,9 @@ export class FirestoreStorage implements IStorage {
   async getCustomFields(clubId: string): Promise<CustomField[]> {
     const snapshot = await db.collection("customFields")
       .where("clubId", "==", clubId)
-      .orderBy("order", "asc")
       .get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CustomField));
+    const fields = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CustomField));
+    return fields.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }
 
   async getCustomField(fieldId: string): Promise<CustomField | undefined> {
