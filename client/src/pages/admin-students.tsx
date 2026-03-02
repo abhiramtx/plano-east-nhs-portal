@@ -737,7 +737,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       )}
 
       <Dialog open={showCsvDialog} onOpenChange={setShowCsvDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Export to CSV</DialogTitle>
           </DialogHeader>
