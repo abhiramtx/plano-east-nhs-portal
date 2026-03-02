@@ -186,7 +186,10 @@ export class FirestoreStorage implements IStorage {
 
   async getUserProfile(userId: string): Promise<UserProfile | undefined> {
     const doc = await db.collection("userProfiles").doc(userId).get();
-    return doc.exists ? ({ id: doc.id, ...doc.data() } as UserProfile) : undefined;
+    if (doc.exists) return { id: doc.id, ...doc.data() } as UserProfile;
+    const altId = userId.includes(',') ? userId.replace(/,/g, '.') : userId.replace(/\./g, ',');
+    const altDoc = await db.collection("userProfiles").doc(altId).get();
+    return altDoc.exists ? ({ id: altDoc.id, ...altDoc.data() } as UserProfile) : undefined;
   }
 
   async upsertUserProfile(insertProfile: InsertUserProfile): Promise<UserProfile> {
