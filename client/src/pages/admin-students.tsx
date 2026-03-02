@@ -26,7 +26,9 @@ import {
   Calendar,
   Eye,
   Check,
-  XCircle
+  XCircle,
+  Hash,
+  ArrowLeft
 } from "lucide-react";
 
 interface AdminStudentsProps {
@@ -165,6 +167,9 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       studentName: displayName,
       gradeLevel: profile?.gradeLevel || 'N/A',
       userRole: member.role === 'admin' ? 1 : 0,
+      personalEmail: profile?.personalEmailAddress || '',
+      phone: profile?.cellPhoneNumber || profile?.phoneNumber || '',
+      studentId: profile?.studentId || '',
       totalHours: 0,
       approvedHours: 0,
       pendingHours: 0,
@@ -183,6 +188,9 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
         studentName: submission.userName,
         gradeLevel: profile?.gradeLevel || 'N/A',
         userRole: profile?.userRole || 0,
+        personalEmail: profile?.personalEmailAddress || '',
+        phone: profile?.cellPhoneNumber || profile?.phoneNumber || '',
+        studentId: profile?.studentId || '',
         totalHours: 0,
         approvedHours: 0,
         pendingHours: 0,
@@ -725,50 +733,89 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {students.map((student: any, index: number) => {
                     const requirement = getRequirementStatus(student.approvedHours);
+                    const lastActivity = student.lastSubmission 
+                      ? `Last activity: ${formatDate(student.lastSubmission)}` 
+                      : '';
                     return (
                       <div 
                         key={index} 
-                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer" 
+                        className="border border-gray-200 rounded-xl p-4 hover:bg-gray-50 transition-colors cursor-pointer" 
                         onClick={() => setSelectedStudent(student)}
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-full">
-                                <span className="text-white text-sm font-medium">
-                                  {student.email.split('@')[0].substring(0, 2).toUpperCase()}
-                                </span>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-full flex-shrink-0">
+                              <span className="text-white text-sm font-medium">
+                                {student.studentName?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || student.email.substring(0, 2).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-gray-900 truncate">{student.studentName}</h3>
+                                {student.userRole === 1 && (
+                                  <Badge className="bg-gray-200 text-gray-900 text-xs flex-shrink-0">Admin</Badge>
+                                )}
                               </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-semibold text-gray-900">{student.studentName}</h3>
-                                  {student.userRole === 1 && (
-                                    <Badge className="bg-purple-100 text-purple-800 text-xs">Admin</Badge>
-                                  )}
-                                </div>
-                                <div className="space-y-1 text-sm text-gray-600">
-                                  <div className="flex items-center gap-1">
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <Mail className="w-3 h-3" />
+                                  {student.email}
+                                </span>
+                                {student.personalEmail && (
+                                  <span className="flex items-center gap-1">
                                     <Mail className="w-3 h-3" />
-                                    <span>{student.email}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <GraduationCap className="w-3 h-3" />
-                                    <span>Grade {student.gradeLevel}</span>
-                                  </div>
-                                </div>
+                                    Personal: {student.personalEmail}
+                                  </span>
+                                )}
+                                {student.phone && (
+                                  <span className="flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    {student.phone}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 mt-1">
+                                {student.studentId && (
+                                  <span className="flex items-center gap-1">
+                                    <Hash className="w-3 h-3" />
+                                    ID: {student.studentId}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1">
+                                  <GraduationCap className="w-3 h-3" />
+                                  Grade {student.gradeLevel}
+                                </span>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-4">
-                            <div className="text-right">
-                              <div className="text-lg font-bold text-gray-900">{student.approvedHours.toFixed(1)}</div>
-                              <div className="text-xs text-gray-500">approved hours</div>
-                            </div>
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
                             <Badge className={requirement.color}>{requirement.text}</Badge>
+                            {lastActivity && (
+                              <span className="text-xs text-gray-400">{lastActivity}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-gray-100">
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Total Hours</div>
+                            <div className="text-sm font-bold text-gray-900">{student.totalHours.toFixed(1)}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Approved</div>
+                            <div className="text-sm font-bold text-gray-900">{student.approvedHours.toFixed(1)}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Pending</div>
+                            <div className="text-sm font-bold text-gray-900">{student.pendingHours.toFixed(1)}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500">Submissions</div>
+                            <div className="text-sm font-bold text-gray-900">{student.submissionCount}</div>
                           </div>
                         </div>
                       </div>
@@ -782,70 +829,208 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       </div>
 
       <Dialog open={!!selectedStudent} onOpenChange={() => setSelectedStudent(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedStudent?.studentName} - Submissions
-            </DialogTitle>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 bg-white [&>button:last-child]:hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{selectedStudent?.studentName} - Profile</DialogTitle>
           </DialogHeader>
-          
-          {studentSubmissionsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : studentSubmissions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No submissions found
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {studentSubmissions.map((submission: HoursSubmission) => (
-                <div key={submission.id} className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">{submission.activityName || 'Unnamed Activity'}</h4>
-                    <Badge className={getStatusBadgeColor(submission.status)}>
-                      {getStatusIcon(submission.status)}
-                      <span className="ml-1 capitalize">{submission.status}</span>
-                    </Badge>
+          <div className="p-6 pb-0">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-gray-900 rounded-full">
+                  <span className="text-white text-lg font-medium">
+                    {selectedStudent?.studentName?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || '??'}
+                  </span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-gray-900">{selectedStudent?.studentName}</h2>
+                    {selectedStudent?.userRole === 1 && (
+                      <Badge className="bg-gray-200 text-gray-900 text-xs">Admin</Badge>
+                    )}
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{submission.description}</p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {formatDate(submission.date)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {submission.hours} hours
-                    </span>
+                  <p className="text-sm text-gray-500">Student Profile & Hours Review</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setSelectedStudent(null)} className="flex items-center gap-1">
+                <X className="w-4 h-4" />
+                Close Profile
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="border border-gray-200 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Contact Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                      <Mail className="w-3 h-3" />
+                      Google Account
+                    </div>
+                    <p className="text-sm font-medium text-gray-900">{selectedStudent?.email}</p>
                   </div>
-                  
-                  {submission.status === 'pending' && (
-                    <div className="flex items-center gap-2 mt-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateStatusMutation.mutate({ id: submission.id, status: 'approved' })}
-                        className="text-green-600"
-                      >
-                        <Check className="w-3 h-3 mr-1" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setRejectingSubmission(submission.id)}
-                        className="text-red-600"
-                      >
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Reject
-                      </Button>
+                  {selectedStudent?.personalEmail && (
+                    <div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                        <Mail className="w-3 h-3" />
+                        Personal Email
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">{selectedStudent.personalEmail}</p>
+                    </div>
+                  )}
+                  {selectedStudent?.phone && (
+                    <div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                        <Phone className="w-3 h-3" />
+                        Phone Number
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">{selectedStudent.phone}</p>
                     </div>
                   )}
                 </div>
-              ))}
+              </div>
+
+              <div className="border border-gray-200 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Academic Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                      <GraduationCap className="w-3 h-3" />
+                      Grade Level
+                    </div>
+                    <p className="text-sm font-medium text-gray-900">Grade {selectedStudent?.gradeLevel}</p>
+                  </div>
+                  {selectedStudent?.studentId && (
+                    <div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                        <Hash className="w-3 h-3" />
+                        Student ID
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">{selectedStudent.studentId}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Requirements</h4>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-gray-900">{selectedStudent?.approvedHours?.toFixed(1)}</div>
+                  <div className="text-xs text-gray-500 mb-2">Approved Hours</div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                    <div 
+                      className="bg-gray-900 h-2 rounded-full transition-all" 
+                      style={{ width: `${Math.min(100, ((selectedStudent?.approvedHours || 0) / 15) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {selectedStudent?.approvedHours >= 15 
+                      ? 'Requirement met' 
+                      : `${(15 - (selectedStudent?.approvedHours || 0)).toFixed(1)} hours remaining`
+                    }
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
+
+            <div className="grid grid-cols-4 gap-3 mb-6">
+              <div className="border border-gray-200 rounded-xl p-4 text-center">
+                <div className="text-xs text-gray-500 mb-1">Total Hours</div>
+                <div className="text-2xl font-bold text-gray-900">{selectedStudent?.totalHours?.toFixed(1)}</div>
+              </div>
+              <div className="border border-gray-200 rounded-xl p-4 text-center">
+                <div className="text-xs text-gray-500 mb-1">Approved</div>
+                <div className="text-2xl font-bold text-gray-900">{selectedStudent?.approvedHours?.toFixed(1)}</div>
+              </div>
+              <div className="border border-gray-200 rounded-xl p-4 text-center">
+                <div className="text-xs text-gray-500 mb-1">Pending</div>
+                <div className="text-2xl font-bold text-gray-900">{selectedStudent?.pendingHours?.toFixed(1)}</div>
+              </div>
+              <div className="border border-gray-200 rounded-xl p-4 text-center">
+                <div className="text-xs text-gray-500 mb-1">Submissions</div>
+                <div className="text-2xl font-bold text-gray-900">{selectedStudent?.submissionCount}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 pb-6">
+            <h3 className="font-semibold text-gray-900 text-lg mb-4">Hours Submissions</h3>
+            {studentSubmissionsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              </div>
+            ) : studentSubmissions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No submissions found
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {studentSubmissions.map((submission: HoursSubmission) => (
+                  <div key={submission.id} className="border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge className={getStatusBadgeColor(submission.status)}>
+                            {getStatusIcon(submission.status)}
+                            <span className="ml-1 capitalize">{submission.status}</span>
+                          </Badge>
+                          <span className="text-sm text-gray-500">{formatDate(submission.date)}</span>
+                        </div>
+                        <h4 className="font-semibold text-gray-900">{submission.activityName || 'Unnamed Activity'}</h4>
+                        {submission.description && (
+                          <p className="text-sm text-gray-500">{submission.description}</p>
+                        )}
+                        <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {submission.hours} hours
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(submission.date)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {submission.status !== 'pending' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: submission.id, status: 'pending' }); }}
+                            className="text-gray-600 border-gray-300"
+                          >
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending
+                          </Button>
+                        )}
+                        {submission.status !== 'approved' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: submission.id, status: 'approved' }); }}
+                            className="text-gray-900 border-gray-300"
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            Approve
+                          </Button>
+                        )}
+                        {submission.status !== 'rejected' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => { e.stopPropagation(); setRejectingSubmission(submission.id); }}
+                            className="text-gray-600 border-gray-300"
+                          >
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Reject
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
