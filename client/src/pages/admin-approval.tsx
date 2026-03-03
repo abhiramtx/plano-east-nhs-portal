@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -17,6 +18,7 @@ import {
   UserProfile,
   Club
 } from '@/lib/firebase';
+import { HoursLog } from '@shared/schema';
 import { 
   Clock, 
   Calendar, 
@@ -29,7 +31,10 @@ import {
   IdCard,
   Eye,
   X,
-  UserX
+  UserX,
+  BookOpen,
+  ChevronDown,
+  Filter
 } from 'lucide-react';
 
 interface AdminApprovalProps {
@@ -44,6 +49,9 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
   const [rejectingSubmission, setRejectingSubmission] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [skippedEmails, setSkippedEmails] = useState<string[]>([]);
+  const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
+  const [logDropdownOpen, setLogDropdownOpen] = useState(false);
+  const logDropdownRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -52,8 +60,28 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     queryFn: getAdminSettings,
   });
 
+  const { data: hoursLogs = [] } = useQuery<HoursLog[]>({
+    queryKey: ['/api/hours-logs', club.id],
+  });
+
   const approvalsRequired = adminSettings?.approvalsRequired ?? 1;
   const rejectionsRequired = adminSettings?.rejectionsRequired ?? 1;
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (logDropdownRef.current && !logDropdownRef.current.contains(e.target as Node)) {
+        setLogDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const toggleLogId = (logId: string) => {
+    setSelectedLogIds(prev =>
+      prev.includes(logId) ? prev.filter(id => id !== logId) : [...prev, logId]
+    );
+  };
 
   const { data: assignment, isLoading: assignmentLoading, refetch: refetchAssignment } = useQuery({
     queryKey: ['firebase-admin-assignment', club.id, user.email, skippedEmails],
@@ -74,14 +102,21 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     gcTime: 0,
   });
 
+  const filteredSubmissions = selectedLogIds.length > 0
+    ? studentSubmissions.filter((s: HoursSubmission) => s.logId && selectedLogIds.includes(s.logId))
+    : studentSubmissions;
+
   useEffect(() => {
     if (assignment) {
       setAssignedStudent(assignment);
-      if (studentSubmissions.length > 0 && !selectedSubmission) {
-        setSelectedSubmission(studentSubmissions[0]);
+      if (filteredSubmissions.length > 0 && !selectedSubmission) {
+        setSelectedSubmission(filteredSubmissions[0]);
+      }
+      if (selectedSubmission && selectedLogIds.length > 0 && selectedSubmission.logId && !selectedLogIds.includes(selectedSubmission.logId)) {
+        setSelectedSubmission(filteredSubmissions[0] || null);
       }
     }
-  }, [assignment, studentSubmissions, selectedSubmission]);
+  }, [assignment, filteredSubmissions, selectedSubmission, selectedLogIds]);
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, rejectReason }: { id: string; status: string; rejectReason?: string }) => {
@@ -176,8 +211,8 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
   const handleApprove = () => {
     if (selectedSubmission) {
       updateStatusMutation.mutate({ id: selectedSubmission.id, status: 'approved' });
-      const currentIndex = studentSubmissions.findIndex((s: HoursSubmission) => s.id === selectedSubmission.id);
-      const nextSubmission = studentSubmissions[currentIndex + 1];
+      const currentIndex = filteredSubmissions.findIndex((s: HoursSubmission) => s.id === selectedSubmission.id);
+      const nextSubmission = filteredSubmissions[currentIndex + 1];
       if (nextSubmission) {
         setSelectedSubmission(nextSubmission);
       } else {
@@ -193,8 +228,8 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
         status: 'rejected', 
         rejectReason: rejectReason.trim() 
       });
-      const currentIndex = studentSubmissions.findIndex((s: HoursSubmission) => s.id === submissionId);
-      const nextSubmission = studentSubmissions[currentIndex + 1];
+      const currentIndex = filteredSubmissions.findIndex((s: HoursSubmission) => s.id === submissionId);
+      const nextSubmission = filteredSubmissions[currentIndex + 1];
       if (nextSubmission) {
         setSelectedSubmission(nextSubmission);
       } else {
@@ -244,7 +279,51 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
               <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Hours Approval</h1>
               <p className="text-gray-600 mt-1">Review and approve student submissions</p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
+              {hoursLogs.length > 0 && (
+                <div className="relative" ref={logDropdownRef}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLogDropdownOpen(!logDropdownOpen)}
+                    className="flex items-center gap-2"
+                  >
+                    <Filter className="w-4 h-4" />
+                    {selectedLogIds.length === 0 ? 'All Logs' : `${selectedLogIds.length} Log${selectedLogIds.length > 1 ? 's' : ''}`}
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                  {logDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                      <div className="p-2">
+                        <button
+                          onClick={() => setSelectedLogIds([])}
+                          className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
+                            selectedLogIds.length === 0 ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          All Logs
+                        </button>
+                        <div className="border-t border-gray-100 my-1" />
+                        {hoursLogs.map((log: HoursLog) => (
+                          <label
+                            key={log.id}
+                            className="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-50 cursor-pointer"
+                          >
+                            <Checkbox
+                              checked={selectedLogIds.includes(log.id)}
+                              onCheckedChange={() => toggleLogId(log.id)}
+                            />
+                            <span className="text-sm text-gray-900 truncate">{log.name}</span>
+                            {!log.isOpen && (
+                              <Badge variant="secondary" className="text-xs ml-auto">Closed</Badge>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
                 <CheckCircle className="w-5 h-5 text-white" />
               </div>
@@ -298,20 +377,22 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            <h4 className="font-medium text-gray-900 mb-3">Pending Activities ({studentSubmissions.length})</h4>
+            <h4 className="font-medium text-gray-900 mb-3">Pending Activities ({filteredSubmissions.length})</h4>
             {submissionsLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
                 <p className="text-sm text-gray-600">Loading activities...</p>
               </div>
-            ) : studentSubmissions.length === 0 ? (
+            ) : filteredSubmissions.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-400" />
-                <p className="text-sm text-gray-600">All activities reviewed!</p>
+                <p className="text-sm text-gray-600">
+                  {selectedLogIds.length > 0 ? 'No activities for selected logs' : 'All activities reviewed!'}
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
-                {studentSubmissions.map((submission: HoursSubmission) => (
+                {filteredSubmissions.map((submission: HoursSubmission) => (
                   <button
                     key={submission.id}
                     onClick={() => setSelectedSubmission(submission)}
@@ -327,9 +408,16 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                       </span>
                       <span className="text-xs text-gray-500">{submission.hours}h</span>
                     </div>
-                    <div className="flex items-center text-xs text-gray-500">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {formatDate(submission.date)}
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {formatDate(submission.date)}
+                      </div>
+                      {submission.logName && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {submission.logName}
+                        </Badge>
+                      )}
                     </div>
                   </button>
                 ))}
@@ -409,6 +497,12 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                         <p className="text-gray-900">{selectedSubmission.hours}</p>
                       </div>
                     </div>
+                    {selectedSubmission.logName && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">Log</label>
+                        <p className="text-gray-900">{selectedSubmission.logName}</p>
+                      </div>
+                    )}
                     <div>
                       <label className="text-sm font-medium text-gray-700">Submitted</label>
                       <p className="text-gray-900">{formatDate(selectedSubmission.createdAt)}</p>
