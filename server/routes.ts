@@ -781,7 +781,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/hours-logs/:clubId", async (req, res) => {
     try {
       const { clubId } = req.params;
-      const logs = await storage.getHoursLogs(clubId);
+      let logs = await storage.getHoursLogs(clubId);
+      if (logs.length === 0) {
+        await storage.createHoursLog({
+          clubId,
+          name: "Log 1",
+          hoursRequired: 15,
+          isOpen: true,
+        });
+        logs = await storage.getHoursLogs(clubId);
+      }
       res.json(logs);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch hours logs" });
