@@ -29,7 +29,10 @@ import {
   XCircle,
   Hash,
   ArrowLeft,
-  Download
+  Download,
+  BookOpen,
+  Award,
+  Palette
 } from "lucide-react";
 
 interface AdminStudentsProps {
@@ -215,6 +218,11 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       personalEmail: profile?.personalEmailAddress || '',
       phone: profile?.cellPhoneNumber || profile?.phoneNumber || '',
       studentId: profile?.studentId || '',
+      gpa: profile?.gpa || '',
+      artTeacherName: profile?.artTeacherName || '',
+      artTeacherEmail: profile?.artTeacherEmail || '',
+      goByFirstName: profile?.goByFirstName || '',
+      lastName: profile?.lastName || '',
       profileComplete: isComplete,
       totalHours: 0,
       approvedHours: 0,
@@ -238,6 +246,11 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
         personalEmail: profile?.personalEmailAddress || '',
         phone: profile?.cellPhoneNumber || profile?.phoneNumber || '',
         studentId: profile?.studentId || '',
+        gpa: profile?.gpa || '',
+        artTeacherName: profile?.artTeacherName || '',
+        artTeacherEmail: profile?.artTeacherEmail || '',
+        goByFirstName: profile?.goByFirstName || '',
+        lastName: profile?.lastName || '',
         profileComplete: isComplete,
         totalHours: 0,
         approvedHours: 0,
@@ -1114,14 +1127,14 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       </div>
 
       <Dialog open={!!selectedStudent} onOpenChange={() => setSelectedStudent(null)}>
-        <DialogContent className="max-w-5xl w-[90vw] max-h-[90vh] overflow-y-auto p-0 bg-white [&>button:last-child]:hidden">
+        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 bg-white [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>{selectedStudent?.studentName} - Profile</DialogTitle>
           </DialogHeader>
-          <div className="p-6 pb-0">
+          <div className="p-8 pb-0">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <div className="flex items-center justify-center w-12 h-12 bg-gray-900 rounded-full">
+                <div className="flex items-center justify-center w-14 h-14 bg-gray-900 rounded-full">
                   <span className="text-white text-lg font-medium">
                     {selectedStudent?.studentName?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || '??'}
                   </span>
@@ -1193,29 +1206,90 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                       <p className="text-sm font-medium text-gray-900">{selectedStudent.studentId}</p>
                     </div>
                   )}
+                  {selectedStudent?.gpa && (
+                    <div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                        <Award className="w-3 h-3" />
+                        GPA
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">{selectedStudent.gpa}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="border border-gray-200 rounded-xl p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Requirements</h4>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gray-900">{selectedStudent?.approvedHours?.toFixed(1)}</div>
-                  <div className="text-xs text-gray-500 mb-2">Approved Hours</div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                    <div 
-                      className="bg-gray-900 h-2 rounded-full transition-all" 
-                      style={{ width: `${Math.min(100, ((selectedStudent?.approvedHours || 0) / 15) * 100)}%` }}
-                    />
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {selectedStudent?.approvedHours >= 15 
-                      ? 'Requirement met' 
-                      : `${(15 - (selectedStudent?.approvedHours || 0)).toFixed(1)} hours remaining`
-                    }
-                  </div>
+                <h4 className="font-semibold text-gray-900 mb-3">Additional Information</h4>
+                <div className="space-y-3">
+                  {selectedStudent?.goByFirstName && (
+                    <div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                        <UserIcon className="w-3 h-3" />
+                        Goes By
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">{selectedStudent.goByFirstName} {selectedStudent.lastName}</p>
+                    </div>
+                  )}
+                  {selectedStudent?.artTeacherName && (
+                    <div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                        <Palette className="w-3 h-3" />
+                        Art Teacher
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">{selectedStudent.artTeacherName}</p>
+                    </div>
+                  )}
+                  {selectedStudent?.artTeacherEmail && (
+                    <div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
+                        <Mail className="w-3 h-3" />
+                        Art Teacher Email
+                      </div>
+                      <p className="text-sm font-medium text-gray-900">{selectedStudent.artTeacherEmail}</p>
+                    </div>
+                  )}
+                  {!selectedStudent?.goByFirstName && !selectedStudent?.artTeacherName && !selectedStudent?.artTeacherEmail && (
+                    <p className="text-sm text-gray-400 italic">No additional info provided</p>
+                  )}
                 </div>
               </div>
             </div>
+
+            {hoursLogs.length > 0 && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Log Progress
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {hoursLogs.map((log: HoursLogType) => {
+                    const logHours = studentLogHours[selectedStudent?.email]?.[log.id] || 0;
+                    const pct = Math.min(100, (logHours / log.hoursRequired) * 100);
+                    const met = logHours >= log.hoursRequired;
+                    return (
+                      <div key={log.id} className="border border-gray-200 rounded-xl p-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-900">{log.name}</span>
+                          <Badge variant={met ? "default" : "outline"} className={met ? "bg-green-100 text-green-800 text-xs" : "text-xs"}>
+                            {met ? 'Met' : 'Not Met'}
+                          </Badge>
+                        </div>
+                        <div className="text-2xl font-bold text-gray-900">{logHours.toFixed(1)} <span className="text-sm font-normal text-gray-500">/ {log.hoursRequired}h</span></div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all ${met ? 'bg-green-600' : 'bg-gray-900'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {met ? 'Requirement met' : `${(log.hoursRequired - logHours).toFixed(1)} hours remaining`}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-4 gap-3 mb-6">
               <div className="border border-gray-200 rounded-xl p-4 text-center">
@@ -1237,7 +1311,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
             </div>
           </div>
 
-          <div className="px-6 pb-6">
+          <div className="px-8 pb-8">
             <h3 className="font-semibold text-gray-900 text-lg mb-4">Hours Submissions</h3>
             {studentSubmissionsLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -1248,71 +1322,98 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                 No submissions found
               </div>
             ) : (
-              <div className="space-y-3">
-                {studentSubmissions.map((submission: HoursSubmission) => (
-                  <div key={submission.id} className="border border-gray-200 rounded-xl p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge className={getStatusBadgeColor(submission.status)}>
-                            {getStatusIcon(submission.status)}
-                            <span className="ml-1 capitalize">{submission.status}</span>
-                          </Badge>
-                          <span className="text-sm text-gray-500">{formatDate(submission.date)}</span>
-                        </div>
-                        <h4 className="font-semibold text-gray-900">{submission.activityName || 'Unnamed Activity'}</h4>
-                        {submission.description && (
-                          <p className="text-sm text-gray-500">{submission.description}</p>
-                        )}
-                        <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {submission.hours} hours
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {formatDate(submission.date)}
-                          </span>
-                        </div>
+              <div className="space-y-6">
+                {(() => {
+                  const grouped: { [key: string]: { logName: string; submissions: HoursSubmission[] } } = {};
+                  const ungrouped: HoursSubmission[] = [];
+                  studentSubmissions.forEach((s: HoursSubmission) => {
+                    if (s.logId && s.logName) {
+                      if (!grouped[s.logId]) grouped[s.logId] = { logName: s.logName, submissions: [] };
+                      grouped[s.logId].submissions.push(s);
+                    } else {
+                      ungrouped.push(s);
+                    }
+                  });
+                  const sections = [
+                    ...Object.entries(grouped).map(([logId, data]) => ({ logId, logName: data.logName, items: data.submissions })),
+                    ...(ungrouped.length > 0 ? [{ logId: '_none', logName: 'Uncategorized', items: ungrouped }] : [])
+                  ];
+                  return sections.map(section => (
+                    <div key={section.logId}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <BookOpen className="w-4 h-4 text-gray-500" />
+                        <h4 className="font-semibold text-gray-700">{section.logName}</h4>
+                        <Badge variant="outline" className="text-xs">{section.items.length}</Badge>
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {submission.status !== 'pending' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: submission.id, status: 'pending' }); }}
-                            className="text-gray-600 border-gray-300"
-                          >
-                            <Clock className="w-3 h-3 mr-1" />
-                            Pending
-                          </Button>
-                        )}
-                        {submission.status !== 'approved' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: submission.id, status: 'approved' }); }}
-                            className="text-gray-900 border-gray-300"
-                          >
-                            <Check className="w-3 h-3 mr-1" />
-                            Approve
-                          </Button>
-                        )}
-                        {submission.status !== 'rejected' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => { e.stopPropagation(); setRejectingSubmission(submission.id); }}
-                            className="text-gray-600 border-gray-300"
-                          >
-                            <XCircle className="w-3 h-3 mr-1" />
-                            Reject
-                          </Button>
-                        )}
+                      <div className="space-y-3 ml-6">
+                        {section.items.map((submission: HoursSubmission) => (
+                          <div key={submission.id} className="border border-gray-200 rounded-xl p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge className={getStatusBadgeColor(submission.status)}>
+                                    {getStatusIcon(submission.status)}
+                                    <span className="ml-1 capitalize">{submission.status}</span>
+                                  </Badge>
+                                  <span className="text-sm text-gray-500">{formatDate(submission.date)}</span>
+                                </div>
+                                <h4 className="font-semibold text-gray-900">{submission.activityName || 'Unnamed Activity'}</h4>
+                                {submission.description && (
+                                  <p className="text-sm text-gray-500">{submission.description}</p>
+                                )}
+                                <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {submission.hours} hours
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {formatDate(submission.date)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                {submission.status !== 'pending' && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: submission.id, status: 'pending' }); }}
+                                    className="text-gray-600 border-gray-300"
+                                  >
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    Pending
+                                  </Button>
+                                )}
+                                {submission.status !== 'approved' && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: submission.id, status: 'approved' }); }}
+                                    className="text-gray-900 border-gray-300"
+                                  >
+                                    <Check className="w-3 h-3 mr-1" />
+                                    Approve
+                                  </Button>
+                                )}
+                                {submission.status !== 'rejected' && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => { e.stopPropagation(); setRejectingSubmission(submission.id); }}
+                                    className="text-gray-600 border-gray-300"
+                                  >
+                                    <XCircle className="w-3 h-3 mr-1" />
+                                    Reject
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
             )}
           </div>
