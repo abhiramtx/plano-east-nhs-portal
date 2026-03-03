@@ -30,9 +30,7 @@ import {
   Hash,
   ArrowLeft,
   Download,
-  BookOpen,
-  Award,
-  Palette
+  BookOpen
 } from "lucide-react";
 
 interface AdminStudentsProps {
@@ -218,11 +216,6 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       personalEmail: profile?.personalEmailAddress || '',
       phone: profile?.cellPhoneNumber || profile?.phoneNumber || '',
       studentId: profile?.studentId || '',
-      gpa: profile?.gpa || '',
-      artTeacherName: profile?.artTeacherName || '',
-      artTeacherEmail: profile?.artTeacherEmail || '',
-      goByFirstName: profile?.goByFirstName || '',
-      lastName: profile?.lastName || '',
       profileComplete: isComplete,
       totalHours: 0,
       approvedHours: 0,
@@ -246,11 +239,6 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
         personalEmail: profile?.personalEmailAddress || '',
         phone: profile?.cellPhoneNumber || profile?.phoneNumber || '',
         studentId: profile?.studentId || '',
-        gpa: profile?.gpa || '',
-        artTeacherName: profile?.artTeacherName || '',
-        artTeacherEmail: profile?.artTeacherEmail || '',
-        goByFirstName: profile?.goByFirstName || '',
-        lastName: profile?.lastName || '',
         profileComplete: isComplete,
         totalHours: 0,
         approvedHours: 0,
@@ -1206,51 +1194,28 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                       <p className="text-sm font-medium text-gray-900">{selectedStudent.studentId}</p>
                     </div>
                   )}
-                  {selectedStudent?.gpa && (
-                    <div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
-                        <Award className="w-3 h-3" />
-                        GPA
-                      </div>
-                      <p className="text-sm font-medium text-gray-900">{selectedStudent.gpa}</p>
-                    </div>
-                  )}
                 </div>
               </div>
 
               <div className="border border-gray-200 rounded-xl p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Additional Information</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">Custom Fields</h4>
                 <div className="space-y-3">
-                  {selectedStudent?.goByFirstName && (
-                    <div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
-                        <UserIcon className="w-3 h-3" />
-                        Goes By
+                  {(() => {
+                    const userId = selectedStudent?.email?.replace(/\./g, ',') || '';
+                    const vals = customFieldValues[userId] || {};
+                    const fieldsWithValues = customFields.filter((f: CustomField) => vals[f.id]);
+                    if (fieldsWithValues.length === 0) {
+                      return <p className="text-sm text-gray-400 italic">No custom fields set</p>;
+                    }
+                    return fieldsWithValues.map((field: CustomField) => (
+                      <div key={field.id}>
+                        <div className="text-xs text-gray-500 mb-0.5">{field.fieldName}</div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {field.fieldType === 'checkbox' ? (vals[field.id] === 'true' ? 'Yes' : 'No') : vals[field.id]}
+                        </p>
                       </div>
-                      <p className="text-sm font-medium text-gray-900">{selectedStudent.goByFirstName} {selectedStudent.lastName}</p>
-                    </div>
-                  )}
-                  {selectedStudent?.artTeacherName && (
-                    <div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
-                        <Palette className="w-3 h-3" />
-                        Art Teacher
-                      </div>
-                      <p className="text-sm font-medium text-gray-900">{selectedStudent.artTeacherName}</p>
-                    </div>
-                  )}
-                  {selectedStudent?.artTeacherEmail && (
-                    <div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-0.5">
-                        <Mail className="w-3 h-3" />
-                        Art Teacher Email
-                      </div>
-                      <p className="text-sm font-medium text-gray-900">{selectedStudent.artTeacherEmail}</p>
-                    </div>
-                  )}
-                  {!selectedStudent?.goByFirstName && !selectedStudent?.artTeacherName && !selectedStudent?.artTeacherEmail && (
-                    <p className="text-sm text-gray-400 italic">No additional info provided</p>
-                  )}
+                    ));
+                  })()}
                 </div>
               </div>
             </div>
