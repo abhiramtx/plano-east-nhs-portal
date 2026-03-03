@@ -1079,7 +1079,6 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                           </div>
                           
                           <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                            <Badge className={requirement.color}>{requirement.text}</Badge>
                             {lastActivity && (
                               <span className="text-xs text-gray-400">{lastActivity}</span>
                             )}
