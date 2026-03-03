@@ -94,6 +94,9 @@ export interface HoursSubmission {
   location?: string;
   logId?: string;
   logName?: string;
+  approvals?: string[];
+  rejections?: string[];
+  rejectionReasons?: { [adminEmail: string]: string };
 }
 
 export interface ServiceRequest {
@@ -137,6 +140,8 @@ export interface AdminSettings {
   showPhone: boolean;
   showGpa: boolean;
   requireProofImage: boolean;
+  approvalsRequired: number;
+  rejectionsRequired: number;
   decayRate: number;
   maxDecay: number;
   bonusMultiplier: number;

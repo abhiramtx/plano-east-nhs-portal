@@ -11,6 +11,8 @@ import {
   getPendingSubmissionsForUserInClub, 
   updateSubmission,
   getUserProfile,
+  getAdminSettings,
+  AdminSettings,
   HoursSubmission, 
   UserProfile,
   Club
@@ -45,6 +47,14 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { data: adminSettings } = useQuery<AdminSettings | null>({
+    queryKey: ['firebase-admin-settings'],
+    queryFn: getAdminSettings,
+  });
+
+  const approvalsRequired = adminSettings?.approvalsRequired ?? 1;
+  const rejectionsRequired = adminSettings?.rejectionsRequired ?? 1;
+
   const { data: assignment, isLoading: assignmentLoading, refetch: refetchAssignment } = useQuery({
     queryKey: ['firebase-admin-assignment', club.id, user.email, skippedEmails],
     queryFn: () => getAdminAssignmentForClub(club.id, user.email, skippedEmails),
@@ -75,12 +85,57 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, rejectReason }: { id: string; status: string; rejectReason?: string }) => {
-      await updateSubmission(id, { 
-        status, 
-        rejectReason: rejectReason || undefined,
-        reviewedAt: new Date(),
-        reviewedBy: user.email
-      });
+      const submission = studentSubmissions.find((s: HoursSubmission) => s.id === id);
+      const currentApprovals = submission?.approvals || [];
+      const currentRejections = submission?.rejections || [];
+      const currentRejectionReasons = submission?.rejectionReasons || {};
+
+      if (status === 'approved') {
+        const newApprovals = currentApprovals.includes(user.email) 
+          ? currentApprovals 
+          : [...currentApprovals, user.email];
+        
+        if (newApprovals.length >= approvalsRequired) {
+          await updateSubmission(id, { 
+            status: 'approved',
+            approvals: newApprovals,
+            reviewedAt: new Date(),
+            reviewedBy: user.email
+          } as any);
+        } else {
+          await updateSubmission(id, { 
+            approvals: newApprovals,
+          } as any);
+        }
+      } else if (status === 'rejected') {
+        const newRejections = currentRejections.includes(user.email)
+          ? currentRejections
+          : [...currentRejections, user.email];
+        const newRejectionReasons = { ...currentRejectionReasons };
+        if (rejectReason) newRejectionReasons[user.email] = rejectReason;
+
+        if (newRejections.length >= rejectionsRequired) {
+          await updateSubmission(id, { 
+            status: 'rejected',
+            rejections: newRejections,
+            rejectionReasons: newRejectionReasons,
+            rejectReason: Object.values(newRejectionReasons).join(' | '),
+            reviewedAt: new Date(),
+            reviewedBy: user.email
+          } as any);
+        } else {
+          await updateSubmission(id, { 
+            rejections: newRejections,
+            rejectionReasons: newRejectionReasons,
+          } as any);
+        }
+      } else {
+        await updateSubmission(id, { 
+          status, 
+          reviewedAt: new Date(),
+          reviewedBy: user.email
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['firebase-pending-submissions'] });
@@ -89,7 +144,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
       setRejectReason("");
       toast({
         title: "Success",
-        description: "Submission status updated successfully",
+        description: "Your review has been recorded",
       });
     },
     onError: () => {
@@ -112,6 +167,11 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
       description: "Assignment released. Getting new assignment...",
     });
   };
+
+  const alreadyApproved = (submission: HoursSubmission | null) => 
+    (submission?.approvals || []).includes(user.email);
+  const alreadyRejected = (submission: HoursSubmission | null) => 
+    (submission?.rejections || []).includes(user.email);
 
   const handleApprove = () => {
     if (selectedSubmission) {
@@ -205,7 +265,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
               <div>
                 <div className="flex items-center space-x-2">
                   <h3 className="font-medium text-gray-900">
-                    {assignedStudent?.displayName || assignedStudent?.email}
+                    {[assignedStudent?.goByFirstName, assignedStudent?.lastName].filter(Boolean).join(' ') || assignedStudent?.displayName || assignedStudent?.email}
                   </h3>
                   {assignedStudent?.userRole === 1 && (
                     <Badge variant="secondary" className="text-xs">Admin</Badge>
@@ -285,7 +345,14 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                 <h2 className="text-xl font-semibold text-gray-900">
                   {selectedSubmission.activityName || 'Unnamed Activity'}
                 </h2>
-                <div className="flex space-x-3">
+                <div className="flex items-center space-x-3">
+                  {(approvalsRequired > 1 || rejectionsRequired > 1) && (
+                    <span className="text-xs text-gray-500 mr-2">
+                      {(selectedSubmission.approvals || []).length}/{approvalsRequired} approvals
+                      {' · '}
+                      {(selectedSubmission.rejections || []).length}/{rejectionsRequired} rejections
+                    </span>
+                  )}
                   <Button
                     onClick={() => updateStatusMutation.mutate({ id: selectedSubmission.id, status: 'pending' })}
                     disabled={updateStatusMutation.isPending}
@@ -297,20 +364,20 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                   </Button>
                   <Button
                     onClick={handleApprove}
-                    disabled={updateStatusMutation.isPending}
+                    disabled={updateStatusMutation.isPending || alreadyApproved(selectedSubmission)}
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Approve
+                    {alreadyApproved(selectedSubmission) ? 'Approved' : 'Approve'}
                   </Button>
                   <Button
                     onClick={() => setRejectingSubmission(selectedSubmission?.id || null)}
-                    disabled={updateStatusMutation.isPending}
+                    disabled={updateStatusMutation.isPending || alreadyRejected(selectedSubmission)}
                     variant="outline"
                     className="text-red-600 hover:bg-red-50 border-red-200"
                   >
                     <XCircle className="w-4 h-4 mr-2" />
-                    Reject
+                    {alreadyRejected(selectedSubmission) ? 'Rejected' : 'Reject'}
                   </Button>
                 </div>
               </div>

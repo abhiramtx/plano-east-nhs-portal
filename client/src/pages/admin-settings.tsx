@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, Settings, Eye, Clock, MapPin, Palette, Lock, FileText, BookOpen } from "lucide-react";
+import { Save, Settings, Eye, Clock, MapPin, Palette, Lock, FileText, BookOpen, CheckCircle } from "lucide-react";
 
 interface AdminSettingsProps {
   user: User;
@@ -19,7 +19,7 @@ interface AdminSettingsProps {
 
 export function AdminSettings({ user, club }: AdminSettingsProps) {
   const { toast } = useToast();
-  const [innerPage, setInnerPage] = useState<'custom-fields' | 'logs' | 'general'>('custom-fields');
+  const [innerPage, setInnerPage] = useState<'custom-fields' | 'logs' | 'hours-approval' | 'general'>('custom-fields');
 
   const [clubName, setClubName] = useState(club.name || '');
   const [clubDescription, setClubDescription] = useState(club.description || '');
@@ -34,6 +34,8 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
   const [showGpa, setShowGpa] = useState(true);
   const [showPhone, setShowPhone] = useState(true);
   const [requireProofImage, setRequireProofImage] = useState(false);
+  const [approvalsRequired, setApprovalsRequired] = useState('1');
+  const [rejectionsRequired, setRejectionsRequired] = useState('1');
   const [decayRate, setDecayRate] = useState('1');
   const [maxDecay, setMaxDecay] = useState('10');
   const [bonusMultiplier, setBonusMultiplier] = useState('1.5');
@@ -50,6 +52,8 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
       setShowGpa(settings.showGpa ?? true);
       setShowPhone(settings.showPhone ?? true);
       setRequireProofImage(settings.requireProofImage ?? false);
+      setApprovalsRequired(settings.approvalsRequired?.toString() ?? '1');
+      setRejectionsRequired(settings.rejectionsRequired?.toString() ?? '1');
       setDecayRate(settings.decayRate?.toString() ?? '1');
       setMaxDecay(settings.maxDecay?.toString() ?? '10');
       setBonusMultiplier(settings.bonusMultiplier?.toString() ?? '1.5');
@@ -122,6 +126,18 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
           </button>
 
           <button
+            onClick={() => setInnerPage('hours-approval')}
+            className={`w-full px-3 py-2 rounded-lg text-left transition-colors flex items-center gap-2 ${
+              innerPage === 'hours-approval'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <CheckCircle className="w-4 h-4" />
+            Hours Approval
+          </button>
+
+          <button
             onClick={() => setInnerPage('general')}
             className={`w-full px-3 py-2 rounded-lg text-left transition-colors flex items-center gap-2 ${
               innerPage === 'general'
@@ -142,6 +158,57 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
 
         {innerPage === 'logs' && (
           <AdminLogs user={user} club={club} />
+        )}
+
+        {innerPage === 'hours-approval' && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" />
+                  Hours Approval Settings
+                </CardTitle>
+                <CardDescription>
+                  Configure how many unique admin approvals or rejections are needed before a submission is finalized
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Approvals Required</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={approvalsRequired}
+                    onChange={(e) => setApprovalsRequired(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">Number of unique admins that must approve before hours are finalized</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Rejections Required</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={rejectionsRequired}
+                    onChange={(e) => setRejectionsRequired(e.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">Number of unique admins that must reject before hours are rejected</p>
+                </div>
+                <Button
+                  onClick={() => {
+                    updateSettingsMutation.mutate({
+                      approvalsRequired: Math.max(1, parseInt(approvalsRequired) || 1),
+                      rejectionsRequired: Math.max(1, parseInt(rejectionsRequired) || 1),
+                    });
+                  }}
+                  disabled={updateSettingsMutation.isPending}
+                  className="w-full bg-black hover:bg-gray-800 text-white"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Approval Settings
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {innerPage === 'general' && (
