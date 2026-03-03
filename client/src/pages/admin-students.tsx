@@ -51,12 +51,23 @@ interface CustomField {
   updatedAt: Date;
 }
 
+interface HoursLogType {
+  id: string;
+  clubId: string;
+  name: string;
+  hoursRequired: number;
+  isOpen: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface FilterState {
   gradeLevels: string[];
   requirementStatus: string[];
   submissionStatus: string[];
   userRoles: string[];
   customFields: { [fieldId: string]: string | string[] };
+  logs: { [logId: string]: string[] };
 }
 
 export function AdminStudents({ user, club }: AdminStudentsProps) {
@@ -73,7 +84,8 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     requirementStatus: [],
     submissionStatus: [],
     userRoles: [],
-    customFields: {}
+    customFields: {},
+    logs: {}
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -147,6 +159,19 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
         const response = await fetch(`/api/custom-fields/${club.id}`, { credentials: "include" });
         if (!response.ok) return [];
         return response.json() as Promise<CustomField[]>;
+      } catch {
+        return [];
+      }
+    }
+  });
+
+  const { data: hoursLogs = [] } = useQuery<HoursLogType[]>({
+    queryKey: ['/api/hours-logs', club.id],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/hours-logs/${club.id}`, { credentials: "include" });
+        if (!response.ok) return [];
+        return response.json() as Promise<HoursLogType[]>;
       } catch {
         return [];
       }
@@ -242,6 +267,16 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     }
   });
 
+  const studentLogHours: { [email: string]: { [logId: string]: number } } = {};
+  submissions.forEach((submission: HoursSubmission) => {
+    if (submission.status === 'approved' && (submission as any).logId) {
+      const key = submission.userEmail;
+      if (!studentLogHours[key]) studentLogHours[key] = {};
+      const logId = (submission as any).logId;
+      studentLogHours[key][logId] = (studentLogHours[key][logId] || 0) + submission.hours;
+    }
+  });
+
   const allStudents = Object.values(studentStats);
 
   // For custom field filtering, we need to fetch values for each student
@@ -315,7 +350,16 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       }
     });
     
-    return matchesSearch && matchesGrade && matchesRequirement && matchesSubmissionStatus && matchesRole && matchesCustomFields;
+    const matchesLogs = Object.entries(filters.logs).every(([logId, filterValues]) => {
+      if (!filterValues || filterValues.length === 0) return true;
+      const log = hoursLogs.find(l => l.id === logId);
+      if (!log) return true;
+      const logApprovedHours = studentLogHours[student.email]?.[logId] || 0;
+      const met = logApprovedHours >= log.hoursRequired;
+      return (filterValues.includes('met') && met) || (filterValues.includes('not-met') && !met);
+    });
+
+    return matchesSearch && matchesGrade && matchesRequirement && matchesSubmissionStatus && matchesRole && matchesCustomFields && matchesLogs;
   });
 
   const students = filteredStudents;
@@ -342,7 +386,13 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     fieldId: f.id,
   }));
 
-  const allCsvColumns = [...profileColumns, ...customFieldColumns];
+  const logColumns = hoursLogs.map(log => ({
+    key: `log_${log.id}`,
+    label: `${log.name} (${log.hoursRequired}h)`,
+    logId: log.id,
+  }));
+
+  const allCsvColumns = [...profileColumns, ...customFieldColumns, ...logColumns];
 
   const openCsvDialog = () => {
     const defaults: { [key: string]: boolean } = {};
@@ -367,6 +417,13 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       return selectedCols.map(col => {
         if (col.key === 'userRole') return escCsv(s.userRole === 1 ? 'Admin' : 'Student');
         if (col.key === 'requirementStatus') return escCsv(s.approvedHours >= 15 ? 'Met' : 'Not Met');
+        if (col.key.startsWith('log_')) {
+          const logId = (col as any).logId;
+          const log = hoursLogs.find(l => l.id === logId);
+          if (!log) return '';
+          const logApproved = studentLogHours[s.email]?.[logId] || 0;
+          return escCsv(logApproved >= log.hoursRequired ? 'Met' : 'Not Met');
+        }
         if (col.key.startsWith('cf_')) {
           const fieldId = (col as any).fieldId;
           const userId = s.email.replace(/\./g, ',');
@@ -461,7 +518,8 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       requirementStatus: [],
       submissionStatus: [],
       userRoles: [],
-      customFields: {}
+      customFields: {},
+      logs: {}
     });
   };
 
@@ -721,6 +779,50 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   </div>
                 </>
               )}
+              {hoursLogs.length > 0 && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Hour Logs</h4>
+                    <div className="space-y-4">
+                      {hoursLogs.map(log => (
+                        <div key={log.id}>
+                          <span className="text-sm font-medium text-gray-700 mb-1 block">{log.name} ({log.hoursRequired}h)</span>
+                          <div className="space-y-2">
+                            {['met', 'not-met'].map(val => {
+                              const selected = (filters.logs[log.id] || []).includes(val);
+                              return (
+                                <div key={val} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`log-${log.id}-${val}`}
+                                    checked={selected}
+                                    onCheckedChange={(checked) => {
+                                      setFilters(prev => {
+                                        const prevArr = prev.logs[log.id] || [];
+                                        let nextArr: string[];
+                                        if (checked) {
+                                          nextArr = [...prevArr, val];
+                                        } else {
+                                          nextArr = prevArr.filter(v => v !== val);
+                                        }
+                                        return { ...prev, logs: { ...prev.logs, [log.id]: nextArr } };
+                                      });
+                                    }}
+                                  />
+                                  <label htmlFor={`log-${log.id}-${val}`} className="text-sm text-gray-700">
+                                    {val === 'met' ? 'Met' : 'Not Met'}
+                                  </label>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
               <Separator />
 
               <Button

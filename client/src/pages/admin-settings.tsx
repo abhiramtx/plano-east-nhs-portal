@@ -4,12 +4,13 @@ import { User, Club, AdminSettings as AdminSettingsType, getAdminSettings, updat
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { AdminCustomFields } from "./admin-custom-fields";
+import { AdminLogs } from "./admin-logs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, Settings, Eye, Clock, MapPin, Palette, Lock, FileText } from "lucide-react";
+import { Save, Settings, Eye, Clock, MapPin, Palette, Lock, FileText, BookOpen } from "lucide-react";
 
 interface AdminSettingsProps {
   user: User;
@@ -18,7 +19,7 @@ interface AdminSettingsProps {
 
 export function AdminSettings({ user, club }: AdminSettingsProps) {
   const { toast } = useToast();
-  const [innerPage, setInnerPage] = useState<'custom-fields' | 'general'>('custom-fields');
+  const [innerPage, setInnerPage] = useState<'custom-fields' | 'logs' | 'general'>('custom-fields');
 
   const [clubName, setClubName] = useState(club.name || '');
   const [clubDescription, setClubDescription] = useState(club.description || '');
@@ -106,6 +107,18 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
           </button>
 
           <button
+            onClick={() => setInnerPage('logs')}
+            className={`w-full px-3 py-2 rounded-lg text-left transition-colors flex items-center gap-2 ${
+              innerPage === 'logs'
+                ? 'bg-gray-100 text-gray-900'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            Logs
+          </button>
+
+          <button
             onClick={() => setInnerPage('general')}
             className={`w-full px-3 py-2 rounded-lg text-left transition-colors flex items-center gap-2 ${
               innerPage === 'general'
@@ -122,6 +135,10 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
       <div className="flex-1 p-6 overflow-auto bg-white">
         {innerPage === 'custom-fields' && (
           <AdminCustomFields user={user} club={club} />
+        )}
+
+        {innerPage === 'logs' && (
+          <AdminLogs user={user} club={club} />
         )}
 
         {innerPage === 'general' && (

@@ -67,9 +67,11 @@ interface HoursSubmissionFormProps {
   onSuccess: () => void;
   editingSubmission?: HoursSubmission | null;
   clubId?: string;
+  logId?: string;
+  logName?: string;
 }
 
-export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId }: HoursSubmissionFormProps) {
+export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId, logId, logName }: HoursSubmissionFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(editingSubmission?.proofImageUrl || null);
   const [locationSearch, setLocationSearch] = useState(editingSubmission?.location || "");
@@ -174,6 +176,8 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
           latitude: selectedLocation?.lat,
           longitude: selectedLocation?.lng,
           location: selectedLocation?.name,
+          logId: logId,
+          logName: logName,
         });
       }
     },

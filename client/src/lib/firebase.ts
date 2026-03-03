@@ -92,6 +92,8 @@ export interface HoursSubmission {
   latitude?: number;
   longitude?: number;
   location?: string;
+  logId?: string;
+  logName?: string;
 }
 
 export interface ServiceRequest {

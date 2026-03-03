@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertHoursSubmissionSchema, insertUserProfileSchema, insertProjectSchema, insertClubSchema, insertClubMembershipSchema, insertServiceRequestSchema, insertServiceParticipantSchema, insertCustomFieldSchema, insertCustomFieldValueSchema } from "@shared/schema";
+import { insertHoursSubmissionSchema, insertUserProfileSchema, insertProjectSchema, insertClubSchema, insertClubMembershipSchema, insertServiceRequestSchema, insertServiceParticipantSchema, insertCustomFieldSchema, insertCustomFieldValueSchema, insertHoursLogSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/hours-submissions/:userId", async (req, res) => {
@@ -763,6 +763,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Custom field value upsert error:", error);
       res.status(500).json({ error: "Failed to upsert custom field value" });
+    }
+  });
+
+  // Hours Logs
+  app.post("/api/hours-logs", async (req, res) => {
+    try {
+      const validatedData = insertHoursLogSchema.parse(req.body);
+      const log = await storage.createHoursLog(validatedData);
+      res.status(201).json(log);
+    } catch (error) {
+      console.error("Hours log creation error:", error);
+      res.status(400).json({ error: "Invalid hours log data", details: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.get("/api/hours-logs/:clubId", async (req, res) => {
+    try {
+      const { clubId } = req.params;
+      const logs = await storage.getHoursLogs(clubId);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch hours logs" });
+    }
+  });
+
+  app.put("/api/hours-logs/:logId", async (req, res) => {
+    try {
+      const { logId } = req.params;
+      const log = await storage.updateHoursLog(logId, req.body);
+      if (!log) return res.status(404).json({ error: "Hours log not found" });
+      res.json(log);
+    } catch (error) {
+      console.error("Hours log update error:", error);
+      res.status(500).json({ error: "Failed to update hours log" });
+    }
+  });
+
+  app.delete("/api/hours-logs/:logId", async (req, res) => {
+    try {
+      const { logId } = req.params;
+      const deleted = await storage.deleteHoursLog(logId);
+      if (!deleted) return res.status(404).json({ error: "Hours log not found" });
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete hours log" });
     }
   });
 

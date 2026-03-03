@@ -10,6 +10,7 @@ import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Tra
 import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import type { HoursLog } from "@shared/schema";
 
 interface HoursProps {
   club: Club;
@@ -20,6 +21,7 @@ export default function Hours({ club }: HoursProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSubmission, setEditingSubmission] = useState<HoursSubmission | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<HoursSubmission | null>(null);
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,6 +32,14 @@ export default function Hours({ club }: HoursProps) {
   }, []);
 
   const userEmail = user?.email || '';
+
+  const { data: hoursLogs = [] } = useQuery<HoursLog[]>({
+    queryKey: ['/api/hours-logs', club.id],
+    enabled: !!club.id,
+  });
+
+  const openLogs = hoursLogs.filter(log => log.isOpen);
+  const selectedLog = openLogs.find(log => String(log.id) === selectedLogId) || null;
 
   const { data: submissions = [], isLoading } = useQuery<HoursSubmission[]>({
     queryKey: ['firebase-user-submissions', userEmail, club.id],
@@ -90,6 +100,10 @@ export default function Hours({ club }: HoursProps) {
     queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', userEmail, club.id] });
   };
 
+  const filteredSubmissions = selectedLogId
+    ? submissions.filter(s => s.logId === selectedLogId)
+    : submissions;
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -114,7 +128,10 @@ export default function Hours({ club }: HoursProps) {
               </div>
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-black hover:bg-gray-800 text-white">
+                  <Button 
+                    className="bg-black hover:bg-gray-800 text-white"
+                    disabled={openLogs.length > 0 && !selectedLogId}
+                  >
                     <Plus className="w-4 h-4 mr-2" />
                     Submit Hours
                   </Button>
@@ -122,7 +139,7 @@ export default function Hours({ club }: HoursProps) {
               <DialogContent className="max-w-2xl bg-white border-gray-200">
                 <DialogHeader>
                   <DialogTitle className="text-gray-900">
-                    {editingSubmission ? 'Edit Service Hours' : 'Submit Service Hours'}
+                    {editingSubmission ? 'Edit Service Hours' : `Submit Service Hours${selectedLog ? ` — ${selectedLog.name}` : ''}`}
                   </DialogTitle>
                 </DialogHeader>
                 <HoursSubmissionForm 
@@ -130,12 +147,45 @@ export default function Hours({ club }: HoursProps) {
                   onSuccess={handleFormSuccess} 
                   editingSubmission={editingSubmission}
                   clubId={club.id}
+                  logId={editingSubmission ? (editingSubmission as any).logId : (selectedLogId || undefined)}
+                  logName={editingSubmission ? (editingSubmission as any).logName : (selectedLog?.name || undefined)}
                 />
               </DialogContent>
               </Dialog>
             </div>
           </div>
         </div>
+
+        {openLogs.length > 0 && (
+          <div className="px-4 lg:px-6 pb-2">
+            <div className="flex items-center gap-2 overflow-x-auto">
+              <button
+                onClick={() => setSelectedLogId(null)}
+                className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
+                  selectedLogId === null
+                    ? 'bg-black text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                All
+              </button>
+              {openLogs.map(log => (
+                <button
+                  key={log.id}
+                  onClick={() => setSelectedLogId(String(log.id))}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
+                    selectedLogId === String(log.id)
+                      ? 'bg-black text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {log.name}
+                  <span className="ml-1.5 text-xs opacity-75">({log.hoursRequired}h req)</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
@@ -145,7 +195,7 @@ export default function Hours({ club }: HoursProps) {
           </div>
         ) : (
           <>
-            {submissions.length === 0 ? (
+            {filteredSubmissions.length === 0 ? (
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-12">
                   <div className="text-center">
@@ -161,7 +211,7 @@ export default function Hours({ club }: HoursProps) {
               </Card>
             ) : (
               <div className="space-y-4 lg:space-y-6">
-                {submissions.map((submission: HoursSubmission) => (
+                {filteredSubmissions.map((submission: HoursSubmission) => (
                   <Card key={submission.id} className="bg-white border-gray-200">
                     <CardContent className="p-4 lg:p-6">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">

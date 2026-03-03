@@ -7,7 +7,7 @@ import type {
   ServiceParticipant, InsertServiceParticipant, HighNeedArea,
   InsertHighNeedArea, AppSetting, InsertAppSetting, TerritoryCircle,
   InsertTerritoryCircle, CustomField, InsertCustomField, CustomFieldValue,
-  InsertCustomFieldValue
+  InsertCustomFieldValue, HoursLog, InsertHoursLog
 } from "@shared/schema";
 
 export interface IStorage {
@@ -105,6 +105,11 @@ export interface IStorage {
   getCustomFieldValues(userId: string, clubId: string): Promise<CustomFieldValue[]>;
   upsertCustomFieldValue(userId: string, customFieldId: string, clubId: string, value: string): Promise<CustomFieldValue>;
   deleteCustomFieldValue(fieldValueId: string): Promise<boolean>;
+
+  createHoursLog(log: InsertHoursLog): Promise<HoursLog>;
+  getHoursLogs(clubId: string): Promise<HoursLog[]>;
+  updateHoursLog(logId: string, updates: Partial<HoursLog>): Promise<HoursLog | undefined>;
+  deleteHoursLog(logId: string): Promise<boolean>;
 }
 
 export class FirestoreStorage implements IStorage {
@@ -913,6 +918,42 @@ export class FirestoreStorage implements IStorage {
     const doc = await db.collection("customFieldValues").doc(fieldValueId).get();
     if (!doc.exists) return false;
     await doc.ref.delete();
+    return true;
+  }
+
+  async createHoursLog(insertLog: InsertHoursLog): Promise<HoursLog> {
+    const id = this.generateId();
+    const now = new Date();
+    const log: HoursLog = { id, ...insertLog, createdAt: now, updatedAt: now } as any;
+    await db.collection("hoursLogs").doc(id).set(log);
+    return log;
+  }
+
+  async getHoursLogs(clubId: string): Promise<HoursLog[]> {
+    const snapshot = await db.collection("hoursLogs")
+      .where("clubId", "==", clubId)
+      .get();
+    const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as HoursLog));
+    logs.sort((a, b) => {
+      const aTime = a.createdAt instanceof Date ? a.createdAt.getTime() : new Date(a.createdAt as any).getTime();
+      const bTime = b.createdAt instanceof Date ? b.createdAt.getTime() : new Date(b.createdAt as any).getTime();
+      return bTime - aTime;
+    });
+    return logs;
+  }
+
+  async updateHoursLog(logId: string, updates: Partial<HoursLog>): Promise<HoursLog | undefined> {
+    const doc = await db.collection("hoursLogs").doc(logId).get();
+    if (!doc.exists) return undefined;
+    const updated = { ...doc.data(), ...updates, updatedAt: new Date() };
+    await db.collection("hoursLogs").doc(logId).set(updated);
+    return updated as HoursLog;
+  }
+
+  async deleteHoursLog(logId: string): Promise<boolean> {
+    const doc = await db.collection("hoursLogs").doc(logId).get();
+    if (!doc.exists) return false;
+    await db.collection("hoursLogs").doc(logId).delete();
     return true;
   }
 }
