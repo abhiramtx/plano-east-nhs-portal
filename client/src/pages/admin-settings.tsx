@@ -33,6 +33,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
   const [showGradeLevel, setShowGradeLevel] = useState(true);
   const [showGpa, setShowGpa] = useState(true);
   const [showPhone, setShowPhone] = useState(true);
+  const [requireProofImage, setRequireProofImage] = useState(false);
   const [decayRate, setDecayRate] = useState('1');
   const [maxDecay, setMaxDecay] = useState('10');
   const [bonusMultiplier, setBonusMultiplier] = useState('1.5');
@@ -48,6 +49,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
       setShowGradeLevel(settings.showGradeLevel ?? true);
       setShowGpa(settings.showGpa ?? true);
       setShowPhone(settings.showPhone ?? true);
+      setRequireProofImage(settings.requireProofImage ?? false);
       setDecayRate(settings.decayRate?.toString() ?? '1');
       setMaxDecay(settings.maxDecay?.toString() ?? '10');
       setBonusMultiplier(settings.bonusMultiplier?.toString() ?? '1.5');
@@ -73,6 +75,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
       showGradeLevel,
       showGpa,
       showPhone,
+      requireProofImage,
     });
   };
 
@@ -313,13 +316,23 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                 onCheckedChange={setShowPhone}
               />
             </div>
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div className="space-y-0.5">
+                <Label>Require Proof Image</Label>
+                <p className="text-sm text-gray-500">Require photo proof when submitting hours</p>
+              </div>
+              <Switch
+                checked={requireProofImage}
+                onCheckedChange={setRequireProofImage}
+              />
+            </div>
             <Button 
               onClick={handleSaveVisibility}
               disabled={updateSettingsMutation.isPending}
               className="w-full"
             >
               <Save className="w-4 h-4 mr-2" />
-              Save Visibility Settings
+              Save Settings
             </Button>
               </CardContent>
             </Card>

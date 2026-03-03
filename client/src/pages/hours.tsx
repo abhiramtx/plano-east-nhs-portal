@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, getCurrentUser, getUserSubmissions, deleteSubmission, HoursSubmission, Club } from "@/lib/firebase";
+import { User, getCurrentUser, getUserSubmissions, deleteSubmission, HoursSubmission, Club, getAdminSettings, AdminSettings as AdminSettingsType } from "@/lib/firebase";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,13 @@ export default function Hours({ club }: HoursProps) {
     queryKey: ['/api/hours-logs', club.id],
     enabled: !!club.id,
   });
+
+  const { data: adminSettings } = useQuery<AdminSettingsType | null>({
+    queryKey: ['firebase-admin-settings'],
+    queryFn: getAdminSettings,
+  });
+
+  const requireProofImage = adminSettings?.requireProofImage ?? false;
 
   const openLogs = hoursLogs.filter(log => log.isOpen);
   const selectedLog = openLogs.find(log => String(log.id) === selectedLogId) || null;
@@ -149,6 +156,7 @@ export default function Hours({ club }: HoursProps) {
                   clubId={club.id}
                   logId={editingSubmission ? (editingSubmission as any).logId : (selectedLogId || undefined)}
                   logName={editingSubmission ? (editingSubmission as any).logName : (selectedLog?.name || undefined)}
+                  requireProofImage={requireProofImage}
                 />
               </DialogContent>
               </Dialog>

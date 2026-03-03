@@ -136,6 +136,7 @@ export interface AdminSettings {
   showEmail: boolean;
   showPhone: boolean;
   showGpa: boolean;
+  requireProofImage: boolean;
   decayRate: number;
   maxDecay: number;
   bonusMultiplier: number;

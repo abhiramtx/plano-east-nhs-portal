@@ -69,9 +69,10 @@ interface HoursSubmissionFormProps {
   clubId?: string;
   logId?: string;
   logName?: string;
+  requireProofImage?: boolean;
 }
 
-export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId, logId, logName }: HoursSubmissionFormProps) {
+export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId, logId, logName, requireProofImage = false }: HoursSubmissionFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(editingSubmission?.proofImageUrl || null);
   const [locationSearch, setLocationSearch] = useState(editingSubmission?.location || "");
@@ -151,19 +152,22 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
       const now = new Date().toISOString();
 
       if (editingSubmission) {
-        await updateSubmission(editingSubmission.id, {
+        const updateData: any = {
           activityName: data.activityName,
           description: data.description,
           date: new Date(data.date).toISOString(),
           hours: parseFloat(data.hours),
-          proofImageUrl: proofImageUrl,
           status: 'pending',
-          latitude: selectedLocation?.lat,
-          longitude: selectedLocation?.lng,
-          location: selectedLocation?.name,
-        });
+        };
+        if (proofImageUrl !== undefined) updateData.proofImageUrl = proofImageUrl;
+        if (selectedLocation) {
+          updateData.latitude = selectedLocation.lat;
+          updateData.longitude = selectedLocation.lng;
+          updateData.location = selectedLocation.name;
+        }
+        await updateSubmission(editingSubmission.id, updateData);
       } else {
-        await createSubmission({
+        const submissionData: any = {
           clubId: clubId || '',
           userEmail: user?.email || '',
           userName: user?.name || '',
@@ -171,14 +175,17 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
           description: data.description,
           activityName: data.activityName,
           date: new Date(data.date).toISOString(),
-          proofImageUrl: proofImageUrl,
           createdAt: now,
-          latitude: selectedLocation?.lat,
-          longitude: selectedLocation?.lng,
-          location: selectedLocation?.name,
-          logId: logId,
-          logName: logName,
-        });
+        };
+        if (proofImageUrl) submissionData.proofImageUrl = proofImageUrl;
+        if (selectedLocation) {
+          submissionData.latitude = selectedLocation.lat;
+          submissionData.longitude = selectedLocation.lng;
+          submissionData.location = selectedLocation.name;
+        }
+        if (logId) submissionData.logId = logId;
+        if (logName) submissionData.logName = logName;
+        await createSubmission(submissionData);
       }
     },
     onSuccess: () => {
@@ -246,6 +253,14 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
   };
 
   const onSubmit = (data: FormData) => {
+    if (requireProofImage && !selectedFile && !imagePreview) {
+      toast({
+        title: "Proof image required",
+        description: "Please upload an image as proof of your service hours",
+        variant: "destructive",
+      });
+      return;
+    }
     console.log("Hours form submitting with data:", data);
     submitMutation.mutate(data);
   };
@@ -361,7 +376,7 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
       </div>
 
       <div>
-        <Label className="text-gray-700">Proof of Service (Optional)</Label>
+        <Label className="text-gray-700">Proof of Service {requireProofImage ? '(Required)' : '(Optional)'}</Label>
         <p className="text-sm text-gray-500 mb-3">
           Upload a photo as proof of your service (JPG or PNG, max 1MB)
         </p>
