@@ -244,14 +244,14 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900">Invite Link</p>
-                <p className="text-xs text-gray-500 font-mono truncate">{`${window.location.origin}/join/${club.inviteCode}`}</p>
+                <p className="text-xs text-gray-500 font-mono truncate">{`https://volunteerio.replit.app/join/${club.inviteCode}`}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
                 className="flex-shrink-0 border-gray-200 bg-white"
                 onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/join/${club.inviteCode}`);
+                  navigator.clipboard.writeText(`https://volunteerio.replit.app/join/${club.inviteCode}`);
                 }}
               >
                 <Copy className="w-3.5 h-3.5 mr-1.5" />

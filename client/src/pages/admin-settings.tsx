@@ -776,7 +776,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                     <div className="flex items-center gap-2">
                       <Input
                         readOnly
-                        value={`${window.location.origin}/join/${currentInviteCode}`}
+                        value={`https://volunteerio.replit.app/join/${currentInviteCode}`}
                         className="font-mono text-sm bg-gray-50 border-gray-200"
                       />
                       <Button
@@ -784,7 +784,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                         size="sm"
                         className="flex-shrink-0 border-gray-200"
                         onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/join/${currentInviteCode}`);
+                          navigator.clipboard.writeText(`https://volunteerio.replit.app/join/${currentInviteCode}`);
                           toast({ title: "Copied!", description: "Invite link copied to clipboard." });
                         }}
                       >
