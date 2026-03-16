@@ -848,15 +848,16 @@ export class FirestoreStorage implements IStorage {
 
     const result: { volunteerName: string; latitude: number; longitude: number; radiusKm: number; hours: number }[] = [];
 
-    const baseMi = 3;
     const maxMi = 11;
     const horizonHours = 200;
     const MI_TO_KM = 1.60934;
 
     for (const [email, locMap] of byMember.entries()) {
       for (const loc of locMap.values()) {
-        const growth = Math.log10(loc.hours + 1) / Math.log10(horizonHours);
-        const radiusKm = (baseMi + (maxMi - baseMi) * Math.min(1, growth)) * MI_TO_KM;
+        if (loc.hours <= 0) continue;
+        const growth = Math.log10(loc.hours + 1) / Math.log10(horizonHours + 1);
+        const radiusKm = maxMi * Math.min(1, growth) * MI_TO_KM;
+        if (radiusKm < 0.1) continue; // skip negligible circles
         result.push({ volunteerName: email, latitude: loc.lat, longitude: loc.lng, radiusKm, hours: loc.hours });
       }
     }
