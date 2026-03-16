@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  User, Club, Partnership, PartnershipAffiliation, ClubEvent, EventAttendance,
+  User, Club, Partnership, PartnershipAffiliation, ClubEvent, EventAttendance, EventConditional,
   getAllPartnerships, getPartnershipsByOwner, createPartnership, updatePartnership, deletePartnership,
   getPartnershipAffiliations, getClubAffiliations, requestAffiliation, respondToAffiliation, removeAffiliation,
   getPartnershipEvents, createEvent, updateEvent, deleteEvent, getPartnershipSubmissions, getClubs,
-  getEventAttendance, checkInUser, checkOutUser, grantEventHours
+  getEventAttendance, checkInUser, checkOutUser, grantEventHours, updateAttendanceHours
 } from "@/lib/firebase";
+import type { HoursLog } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -150,6 +151,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   const [editEventDesc, setEditEventDesc] = useState('');
   const [editEventType, setEditEventType] = useState<ClubEvent['type']>('none');
   const [editEventPassword, setEditEventPassword] = useState('');
+  const [editConditionals, setEditConditionals] = useState<EventConditional[]>([]);
+  const [editLogId, setEditLogId] = useState('');
   const [activePartnershipEventTab, setActivePartnershipEventTab] = useState<PartnershipEventTab>('information');
   const [qrSubTab, setQrSubTab] = useState<QRSubTab>('checkin');
   const [scanResult, setScanResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -200,6 +203,11 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     enabled: !!selectedPartnership?.id,
   });
 
+  const { data: hoursLogs = [] } = useQuery<HoursLog[]>({
+    queryKey: ['/api/hours-logs', club?.id],
+    enabled: !!club?.id,
+  });
+
   useEffect(() => {
     if (selectedPartnership) {
       setEditName(selectedPartnership.name);
@@ -216,6 +224,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       setEditEventDesc(selectedPartnershipEvent.description || '');
       setEditEventType(selectedPartnershipEvent.type);
       setEditEventPassword(selectedPartnershipEvent.password || '');
+      setEditConditionals(selectedPartnershipEvent.conditionals || []);
+      setEditLogId(selectedPartnershipEvent.logId || '');
       setActivePartnershipEventTab('information');
       setScanResult(null);
       setSelectedAttendees([]);
@@ -223,6 +233,26 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       setDefaultHours('');
     }
   }, [selectedPartnershipEvent?.id]);
+
+  const addConditional = () => {
+    setEditConditionals(prev => [...prev, { id: Math.random().toString(36).slice(2), type: 'more', thresholdHours: 1, grantHours: 1 }]);
+  };
+  const updateConditional = (id: string, field: keyof EventConditional, value: any) => {
+    setEditConditionals(prev => prev.map(c => c.id === id ? { ...c, [field]: value } : c));
+  };
+  const removeConditional = (id: string) => {
+    setEditConditionals(prev => prev.filter(c => c.id !== id));
+  };
+  const computeConditionalHours = (minutesAttended?: number): number | null => {
+    if (minutesAttended == null || editConditionals.length === 0) return null;
+    const h = minutesAttended / 60;
+    for (const c of editConditionals) {
+      if (c.type === 'less' && h < c.thresholdHours) return c.grantHours;
+      if (c.type === 'exact' && Math.abs(h - c.thresholdHours) < 0.1) return c.grantHours;
+      if (c.type === 'more' && h >= c.thresholdHours) return c.grantHours;
+    }
+    return null;
+  };
 
   const handleLogoUpload = (file: File, setUrl: (url: string) => void) => {
     if (file.size > 2 * 1024 * 1024) {
@@ -307,6 +337,9 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       description: editEventDesc,
       type: editEventType,
       password: editEventType === 'password' ? editEventPassword : undefined,
+      conditionals: editConditionals,
+      logId: (editLogId && editLogId !== '_none') ? editLogId : undefined,
+      logName: hoursLogs.find(l => String(l.id) === editLogId)?.name,
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-partnership-events', selectedPartnership?.id] });
@@ -316,6 +349,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
         description: editEventDesc,
         type: editEventType as any,
         password: editEventType === 'password' ? editEventPassword : undefined,
+        conditionals: editConditionals,
+        logId: (editLogId && editLogId !== '_none') ? editLogId : undefined,
       } : prev);
       toast({ title: "Event updated" });
     },
@@ -361,15 +396,33 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   };
 
   const grantMutation = useMutation({
-    mutationFn: () => grantEventHours({
-      eventId: selectedPartnershipEvent!.id,
-      eventName: selectedPartnershipEvent!.name,
-      attendanceIds: selectedAttendees.length > 0 ? selectedAttendees : attendance.map(a => a.id),
-      defaultHours: parseFloat(defaultHours) || 0,
-      overrideHours: Object.fromEntries(Object.entries(overrideHours).map(([k, v]) => [k, parseFloat(v)])),
-      conditionals: [],
-      partnershipId: selectedPartnership?.id,
-    }),
+    mutationFn: async () => {
+      const isQRType = selectedPartnershipEvent && ['scan_qr', 'show_qr'].includes(selectedPartnershipEvent.type);
+      const targetRecords = selectedAttendees.length > 0
+        ? attendance.filter(a => selectedAttendees.includes(a.id))
+        : attendance;
+
+      for (const record of targetRecords) {
+        if (overrideHours[record.id]) {
+          await updateAttendanceHours(record.id, parseFloat(overrideHours[record.id]));
+        }
+      }
+
+      const useConditionals = isQRType && editConditionals.length > 0;
+      const defHours = defaultHours ? parseFloat(defaultHours) : null;
+
+      await grantEventHours(
+        selectedPartnershipEvent!.id,
+        selectedPartnershipEvent!.name,
+        targetRecords.filter(r => !overrideHours[r.id]),
+        defHours,
+        useConditionals ? editConditionals : [],
+        undefined,
+        (editLogId && editLogId !== '_none') ? editLogId : undefined,
+        hoursLogs.find(l => String(l.id) === editLogId)?.name,
+        selectedPartnership?.id,
+      );
+    },
     onSuccess: () => {
       refetchAttendance();
       setSelectedAttendees([]);
@@ -727,168 +780,251 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                     )}
 
                     {/* QR CODE TAB */}
-                    {activePartnershipEventTab === 'qrcode' && (
-                      <div className="space-y-5">
-                        {(selectedPartnershipEvent.type === 'none') && (
-                          <Card>
-                            <CardContent className="pt-6 text-center py-10">
-                              <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                              <p className="text-gray-600 font-medium">This event has no QR code</p>
-                              <p className="text-sm text-gray-400 mt-1">Change the check-in method to "Scan QR" or "Show QR" in the Information tab.</p>
-                            </CardContent>
-                          </Card>
-                        )}
-                        {selectedPartnershipEvent.type === 'password' && (
-                          <Card>
-                            <CardContent className="pt-6 text-center py-10">
-                              <p className="text-gray-600 font-medium">Password-protected event</p>
-                              <p className="text-sm text-gray-400 mt-1">Volunteers enter a password when submitting hours. No QR scanning needed.</p>
-                            </CardContent>
-                          </Card>
-                        )}
-                        {selectedPartnershipEvent.type === 'show_qr' && (
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-5 h-5" /> Event QR Codes</CardTitle>
-                              <CardDescription>Display these on a screen or print them out. Volunteers scan the Check-in QR when they arrive and the Check-out QR when they leave.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="grid grid-cols-2 gap-6">
-                                <div className="text-center space-y-3">
-                                  <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium">
-                                    <CheckCircle2 className="w-4 h-4" /> Check-in
+                    {activePartnershipEventTab === 'qrcode' && (() => {
+                      const isQRType = ['scan_qr', 'show_qr'].includes(selectedPartnershipEvent.type);
+                      return (
+                        <div className="space-y-6">
+                          {selectedPartnershipEvent.type === 'none' && (
+                            <Card>
+                              <CardContent className="pt-6 text-center py-10">
+                                <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                <p className="text-gray-600 font-medium">This event has no QR code</p>
+                                <p className="text-sm text-gray-400 mt-1">Change the check-in method to "Scan QR" or "Show QR" in the Information tab.</p>
+                              </CardContent>
+                            </Card>
+                          )}
+                          {selectedPartnershipEvent.type === 'password' && (
+                            <Card>
+                              <CardContent className="pt-6 text-center py-10">
+                                <p className="text-gray-600 font-medium">Password-protected event</p>
+                                <p className="text-sm text-gray-400 mt-1">Volunteers enter a password when submitting hours. No QR scanning needed.</p>
+                              </CardContent>
+                            </Card>
+                          )}
+                          {selectedPartnershipEvent.type === 'show_qr' && (
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-5 h-5" /> Event QR Codes</CardTitle>
+                                <CardDescription>Display these on a screen or print them out. Volunteers scan the Check-in QR when they arrive and the Check-out QR when they leave. Their time is automatically recorded.</CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="grid grid-cols-2 gap-6">
+                                  <div className="text-center space-y-3">
+                                    <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                                      <CheckCircle2 className="w-4 h-4" /> Check-in
+                                    </div>
+                                    <div className="p-4 bg-white border-2 border-green-200 rounded-xl inline-block">
+                                      <QRCode value={JSON.stringify({ eventId: selectedPartnershipEvent.id, action: 'checkin', partnershipId: selectedPartnership?.id })} size={160} />
+                                    </div>
+                                    <p className="text-xs text-gray-500">Scan this to check IN</p>
                                   </div>
-                                  <div className="p-4 bg-white border-2 border-green-200 rounded-xl inline-block">
-                                    <QRCode value={JSON.stringify({ eventId: selectedPartnershipEvent.id, action: 'checkin', partnershipId: selectedPartnership?.id })} size={160} />
+                                  <div className="text-center space-y-3">
+                                    <div className="inline-flex items-center gap-1.5 bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                                      <XCircle className="w-4 h-4" /> Check-out
+                                    </div>
+                                    <div className="p-4 bg-white border-2 border-red-200 rounded-xl inline-block">
+                                      <QRCode value={JSON.stringify({ eventId: selectedPartnershipEvent.id, action: 'checkout', partnershipId: selectedPartnership?.id })} size={160} />
+                                    </div>
+                                    <p className="text-xs text-gray-500">Scan this to check OUT</p>
                                   </div>
-                                  <p className="text-xs text-gray-500">Scan this to check IN</p>
                                 </div>
-                                <div className="text-center space-y-3">
-                                  <div className="inline-flex items-center gap-1.5 bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-sm font-medium">
-                                    <XCircle className="w-4 h-4" /> Check-out
-                                  </div>
-                                  <div className="p-4 bg-white border-2 border-red-200 rounded-xl inline-block">
-                                    <QRCode value={JSON.stringify({ eventId: selectedPartnershipEvent.id, action: 'checkout', partnershipId: selectedPartnership?.id })} size={160} />
-                                  </div>
-                                  <p className="text-xs text-gray-500">Scan this to check OUT</p>
+                              </CardContent>
+                            </Card>
+                          )}
+                          {selectedPartnershipEvent.type === 'scan_qr' && (
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-base flex items-center gap-2"><ScanLine className="w-5 h-5" /> QR Code Scanner</CardTitle>
+                                <CardDescription>Leave this device at the event table. Volunteers line up and show their personal QR codes (found in their profile). Scan to check them in or out.</CardDescription>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="flex gap-2 border-b border-gray-200">
+                                  {(['checkin', 'checkout'] as QRSubTab[]).map(sub => (
+                                    <button key={sub} onClick={() => setQrSubTab(sub)}
+                                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${qrSubTab === sub ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500'}`}>
+                                      {sub === 'checkin' ? '✓ Check-in Scanner' : '✗ Check-out Scanner'}
+                                    </button>
+                                  ))}
                                 </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-                        {selectedPartnershipEvent.type === 'scan_qr' && (
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-base flex items-center gap-2"><ScanLine className="w-5 h-5" /> QR Code Scanner</CardTitle>
-                              <CardDescription>Leave this device at the event table. Volunteers show their personal QR codes (found in their profile).</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="flex gap-2 border-b border-gray-200">
-                                {(['checkin', 'checkout'] as QRSubTab[]).map(sub => (
-                                  <button key={sub} onClick={() => setQrSubTab(sub)}
-                                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${qrSubTab === sub ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500'}`}>
-                                    {sub === 'checkin' ? '✓ Check-in Scanner' : '✗ Check-out Scanner'}
-                                  </button>
-                                ))}
-                              </div>
-                              {scanResult && (
-                                <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${scanResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                                  {scanResult.success ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                                  {scanResult.message}
-                                </div>
-                              )}
-                              {qrSubTab === 'checkin' && <QRScanner onScan={handleCheckInScan} />}
-                              {qrSubTab === 'checkout' && <QRScanner onScan={handleCheckOutScan} />}
-                              {attendance.length > 0 && (
-                                <div className="mt-4">
-                                  <p className="text-sm font-medium text-gray-700 mb-2">Current Attendance ({attendance.length})</p>
-                                  <div className="space-y-1 max-h-48 overflow-auto">
-                                    {attendance.map(a => (
-                                      <div key={a.id} className="flex items-center justify-between text-xs py-1 px-2 bg-gray-50 rounded">
-                                        <span className="font-medium text-gray-900">{a.userEmail}</span>
-                                        <div className="flex items-center gap-2 text-gray-500">
-                                          <span>In: {formatTime(a.checkInTime)}</span>
-                                          {a.checkOutTime && <span>Out: {formatTime(a.checkOutTime)}</span>}
-                                          {a.minutesAttended != null && <span className="text-blue-600">{formatMinutes(a.minutesAttended)}</span>}
+                                {scanResult && (
+                                  <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${scanResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                    {scanResult.success ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                    {scanResult.message}
+                                  </div>
+                                )}
+                                {qrSubTab === 'checkin' && <QRScanner onScan={handleCheckInScan} />}
+                                {qrSubTab === 'checkout' && <QRScanner onScan={handleCheckOutScan} />}
+                                {attendance.length > 0 && (
+                                  <div className="mt-4">
+                                    <p className="text-sm font-medium text-gray-700 mb-2">Current Attendance ({attendance.length})</p>
+                                    <div className="space-y-1 max-h-48 overflow-auto">
+                                      {attendance.map(a => (
+                                        <div key={a.id} className="flex items-center justify-between text-xs py-1 px-2 bg-gray-50 rounded">
+                                          <span className="font-medium text-gray-900">{a.userEmail}</span>
+                                          <div className="flex items-center gap-2 text-gray-500">
+                                            <span>In: {formatTime(a.checkInTime)}</span>
+                                            {a.checkOutTime && <span>Out: {formatTime(a.checkOutTime)}</span>}
+                                            {a.minutesAttended != null && <span className="text-blue-600">{formatMinutes(a.minutesAttended)}</span>}
+                                          </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      ))}
+                                    </div>
                                   </div>
+                                )}
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Conditionals card — QR events only */}
+                          {isQRType && (
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-base">Hour Conditionals</CardTitle>
+                                <CardDescription>
+                                  Automatically grant different hours based on how long volunteers stayed. Conditionals are checked in order — the first match wins.
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent className="space-y-3">
+                                {editConditionals.length === 0 && (
+                                  <p className="text-sm text-gray-500 italic">No conditionals yet. Add one below, or leave empty to manually set hours in Grant Hours tab.</p>
+                                )}
+                                {editConditionals.map((cond, idx) => (
+                                  <div key={cond.id} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                                    <span className="text-xs text-gray-500 w-4">{idx + 1}.</span>
+                                    <span className="text-sm text-gray-700">If stayed</span>
+                                    <Select value={cond.type} onValueChange={(v) => updateConditional(cond.id, 'type', v)}>
+                                      <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="less">less than</SelectItem>
+                                        <SelectItem value="exact">exactly</SelectItem>
+                                        <SelectItem value="more">at least</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <Input type="number" step="0.5" min="0"
+                                      value={cond.thresholdHours}
+                                      onChange={e => updateConditional(cond.id, 'thresholdHours', parseFloat(e.target.value) || 0)}
+                                      className="w-20 h-8 text-xs" />
+                                    <span className="text-sm text-gray-700">hours → grant</span>
+                                    <Input type="number" step="0.5" min="0"
+                                      value={cond.grantHours}
+                                      onChange={e => updateConditional(cond.id, 'grantHours', parseFloat(e.target.value) || 0)}
+                                      className="w-20 h-8 text-xs" />
+                                    <span className="text-sm text-gray-700">hrs</span>
+                                    <button onClick={() => removeConditional(cond.id)} className="ml-auto text-red-400 hover:text-red-600">
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                ))}
+                                <Button variant="outline" size="sm" onClick={addConditional} className="w-full">
+                                  <Plus className="w-4 h-4 mr-1" /> Add Conditional
+                                </Button>
+                                <div className="pt-2 border-t border-gray-100 space-y-1">
+                                  <Label className="text-sm">Append hours to Log <span className="text-gray-400">(optional)</span></Label>
+                                  <Select value={editLogId} onValueChange={setEditLogId}>
+                                    <SelectTrigger><SelectValue placeholder="No log selected" /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="_none">No log</SelectItem>
+                                      {hoursLogs.map(l => (
+                                        <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <p className="text-xs text-gray-400">Hours granted from this event will count toward the selected log's requirement.</p>
                                 </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        )}
-                      </div>
-                    )}
+                                <Button onClick={() => updateEventMutation.mutate()} disabled={updateEventMutation.isPending} className="w-full bg-black hover:bg-gray-800 text-white">
+                                  <Save className="w-4 h-4 mr-2" />
+                                  Save Conditionals
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* GRANT HOURS TAB */}
-                    {activePartnershipEventTab === 'grant' && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-base">Grant Hours to Attendees</CardTitle>
-                          <CardDescription>Set a default hours amount for all selected attendees, or set custom amounts per person.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          {attendance.length === 0 ? (
-                            <div className="text-center py-8">
-                              <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                              <p className="text-sm text-gray-500">No attendees yet</p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {selectedPartnershipEvent.type === 'none' ? "Attendees are added when volunteers submit hours for this event." : "Attendees will appear here after checking in."}
-                              </p>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Checkbox
-                                    checked={selectedAttendees.length === attendance.length}
-                                    onCheckedChange={(checked) => setSelectedAttendees(checked ? attendance.map(a => a.id) : [])}
-                                  />
-                                  <span className="text-sm text-gray-600">{selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'Select all'}</span>
+                    {activePartnershipEventTab === 'grant' && (() => {
+                      const isQRType = ['scan_qr', 'show_qr'].includes(selectedPartnershipEvent.type);
+                      return (
+                        <div className="space-y-5">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-base">Grant Hours to Attendees</CardTitle>
+                              <CardDescription>
+                                {isQRType && editConditionals.length > 0
+                                  ? "Conditionals are active. Hours will be auto-calculated based on time stayed. You can override individual amounts below."
+                                  : "Set a default hours amount for all selected attendees, or set custom amounts per person."
+                                }
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              {attendance.length === 0 ? (
+                                <div className="text-center py-8">
+                                  <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                                  <p className="text-sm text-gray-500">No attendees yet</p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {selectedPartnershipEvent.type === 'none' ? "Attendees are added when volunteers submit hours for this event." : "Attendees will appear here after checking in."}
+                                  </p>
                                 </div>
-                                <Button variant="outline" size="sm" onClick={() => refetchAttendance()}>
-                                  <RefreshCw className="w-4 h-4 mr-1" /> Refresh
-                                </Button>
-                              </div>
-                              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                                <Label className="text-sm whitespace-nowrap">Default hours for all:</Label>
-                                <Input type="number" step="0.5" min="0" value={defaultHours} onChange={e => setDefaultHours(e.target.value)} placeholder="e.g. 2.5" className="w-28 h-8" />
-                                <p className="text-xs text-gray-500">Applied to everyone without a custom amount</p>
-                              </div>
-                              <div className="space-y-2 max-h-96 overflow-auto">
-                                {attendance.map(a => {
-                                  const isSelected = selectedAttendees.includes(a.id);
-                                  return (
-                                    <div key={a.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isSelected ? 'bg-gray-50 border-gray-300' : 'bg-white border-gray-200'}`}>
-                                      <Checkbox checked={isSelected} onCheckedChange={(checked) => setSelectedAttendees(prev => checked ? [...prev, a.id] : prev.filter(id => id !== a.id))} />
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-900 truncate">{a.userName || a.userEmail}</p>
-                                        <p className="text-xs text-gray-500 truncate">{a.userEmail}</p>
-                                      </div>
-                                      <div className="text-xs text-gray-500 space-y-0.5 text-right flex-shrink-0">
-                                        {a.checkInTime && <div>In: {formatTime(a.checkInTime)}</div>}
-                                        {a.checkOutTime && <div>Out: {formatTime(a.checkOutTime)}</div>}
-                                        {a.minutesAttended != null && <div className="text-blue-600 font-medium">{formatMinutes(a.minutesAttended)}</div>}
-                                      </div>
-                                      {(a as any).grantStatus === 'granted' && (
-                                        <Badge className="bg-green-100 text-green-700 text-xs">✓ {(a as any).hoursGranted}h granted</Badge>
-                                      )}
-                                      <Input type="number" step="0.5" min="0" placeholder="Override" value={overrideHours[a.id] || ''} onChange={e => setOverrideHours(prev => ({ ...prev, [a.id]: e.target.value }))} className="w-24 h-7 text-xs" />
+                              ) : (
+                                <>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <Checkbox
+                                        checked={selectedAttendees.length === attendance.length}
+                                        onCheckedChange={(checked) => setSelectedAttendees(checked ? attendance.map(a => a.id) : [])}
+                                      />
+                                      <span className="text-sm text-gray-600">{selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'Select all'}</span>
                                     </div>
-                                  );
-                                })}
-                              </div>
-                              <Button onClick={() => grantMutation.mutate()} disabled={grantMutation.isPending} className="w-full bg-black hover:bg-gray-800 text-white">
-                                <Award className="w-4 h-4 mr-2" />
-                                {grantMutation.isPending ? "Granting..." : `Grant Hours to ${selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'all attendees'}`}
-                              </Button>
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
+                                    <Button variant="outline" size="sm" onClick={() => refetchAttendance()}>
+                                      <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+                                    </Button>
+                                  </div>
+                                  {(!isQRType || editConditionals.length === 0) && (
+                                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                                      <Label className="text-sm whitespace-nowrap">Default hours for all:</Label>
+                                      <Input type="number" step="0.5" min="0" value={defaultHours} onChange={e => setDefaultHours(e.target.value)} placeholder="e.g. 2.5" className="w-28 h-8" />
+                                      <p className="text-xs text-gray-500">Applied to everyone without a custom amount</p>
+                                    </div>
+                                  )}
+                                  <div className="space-y-2 max-h-96 overflow-auto">
+                                    {attendance.map(a => {
+                                      const conditionalHours = computeConditionalHours(a.minutesAttended);
+                                      const isSelected = selectedAttendees.includes(a.id);
+                                      return (
+                                        <div key={a.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isSelected ? 'bg-gray-50 border-gray-300' : 'bg-white border-gray-200'}`}>
+                                          <Checkbox checked={isSelected} onCheckedChange={(checked) => setSelectedAttendees(prev => checked ? [...prev, a.id] : prev.filter(id => id !== a.id))} />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-900 truncate">{a.userName || a.userEmail}</p>
+                                            <p className="text-xs text-gray-500 truncate">{a.userEmail}</p>
+                                          </div>
+                                          <div className="text-xs text-gray-500 space-y-0.5 text-right flex-shrink-0">
+                                            {a.checkInTime && <div>In: {formatTime(a.checkInTime)}</div>}
+                                            {a.checkOutTime && <div>Out: {formatTime(a.checkOutTime)}</div>}
+                                            {a.minutesAttended != null && <div className="text-blue-600 font-medium">{formatMinutes(a.minutesAttended)}</div>}
+                                          </div>
+                                          {conditionalHours != null && (
+                                            <Badge className="bg-blue-100 text-blue-700 text-xs">{conditionalHours}h (auto)</Badge>
+                                          )}
+                                          {a.grantStatus === 'granted' && (
+                                            <Badge className="bg-green-100 text-green-700 text-xs">✓ {a.hoursGranted}h granted</Badge>
+                                          )}
+                                          <Input type="number" step="0.5" min="0" placeholder="Override" value={overrideHours[a.id] || ''} onChange={e => setOverrideHours(prev => ({ ...prev, [a.id]: e.target.value }))} className="w-24 h-7 text-xs" />
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  <Button onClick={() => grantMutation.mutate()} disabled={grantMutation.isPending} className="w-full bg-black hover:bg-gray-800 text-white">
+                                    <Award className="w-4 h-4 mr-2" />
+                                    {grantMutation.isPending ? "Granting..." : `Grant Hours to ${selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'all attendees'}`}
+                                  </Button>
+                                </>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

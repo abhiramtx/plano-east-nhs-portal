@@ -1378,9 +1378,10 @@ export const grantEventHours = async (
   attendanceRecords: EventAttendance[],
   defaultHours: number | null,
   conditionals: EventConditional[],
-  clubId: string,
+  clubId?: string,
   logId?: string,
-  logName?: string
+  logName?: string,
+  partnershipId?: string,
 ): Promise<void> => {
   const batch = writeBatch(db);
   const now = new Date();
@@ -1397,12 +1398,15 @@ export const grantEventHours = async (
     }
     if (hours == null || hours <= 0) continue;
 
+    const resolvedClubId = clubId || record.clubId || null;
+
     const attendRef = doc(db, "eventAttendance", record.id);
     batch.update(attendRef, { hoursGranted: hours, grantStatus: 'granted' });
 
     const submissionRef = doc(collection(db, "submissions"));
     batch.set(submissionRef, {
-      clubId,
+      clubId: resolvedClubId,
+      partnershipId: partnershipId || null,
       userEmail: record.userEmail,
       userName: record.userName,
       hours,
