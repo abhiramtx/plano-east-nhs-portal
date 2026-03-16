@@ -290,7 +290,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                     <SelectTrigger id="fieldType">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[200]">
                       <SelectItem value="text">Text</SelectItem>
                       <SelectItem value="email">Email</SelectItem>
                       <SelectItem value="phone">Phone</SelectItem>
@@ -402,7 +402,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                           <SelectTrigger id={`edit-fieldType-${field.id}`}>
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="z-[200]">
                             <SelectItem value="text">Text</SelectItem>
                             <SelectItem value="email">Email</SelectItem>
                             <SelectItem value="phone">Phone</SelectItem>

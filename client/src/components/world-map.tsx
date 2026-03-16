@@ -425,15 +425,15 @@ export function LocationPicker({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white placeholder:text-gray-500 text-sm backdrop-blur-lg"
+            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 text-sm shadow-sm"
           />
           {searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-black/95 border border-white/20 rounded-lg overflow-hidden backdrop-blur-lg max-h-48 overflow-y-auto z-[200]">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg max-h-48 overflow-y-auto z-[200]">
               {searchResults.map((result, index) => (
                 <button
                   key={index}
                   onClick={() => handleSearchSelect(result)}
-                  className="w-full px-4 py-2 text-left text-xs text-white hover:bg-white/10 border-b border-white/10 last:border-0"
+                  className="w-full px-4 py-2 text-left text-xs text-gray-900 hover:bg-gray-50 border-b border-gray-100 last:border-0"
                 >
                   {result.display_name}
                 </button>

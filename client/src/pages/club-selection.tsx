@@ -508,7 +508,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] bg-white border-gray-200 text-gray-900 p-0 overflow-hidden">
           <div className="flex h-full">
-            <div className="w-[340px] min-w-[300px] p-6 overflow-y-auto border-r border-gray-200 flex-shrink-0">
+            <div className="w-[340px] min-w-[300px] p-6 overflow-y-auto border-r border-gray-200 flex-shrink-0 min-h-0">
               <DialogHeader className="mb-6">
                 <DialogTitle className="text-2xl text-gray-900">Create Your Club</DialogTitle>
                 <DialogDescription className="text-gray-500">
