@@ -755,6 +755,20 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
 
                     {/* INFORMATION TAB */}
                     {activePartnershipEventTab === 'information' && (
+                      <div className="space-y-4">
+                        {['scan_qr', 'show_qr'].includes(editEventType) && (
+                          <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-sm font-semibold text-amber-800">QR check-in has important limitations for partnerships</p>
+                              <p className="text-sm text-amber-700 mt-1 leading-relaxed">
+                                Only use a QR event if <strong>all participants will be from a single affiliated club</strong> and you currently have <strong>exactly one affiliated club</strong>.
+                                QR events tie attendance to one club's logs and hour grants — volunteers from other clubs won't be captured correctly.
+                                If you expect volunteers from multiple clubs, use a <strong>Password event</strong> instead so each volunteer submits hours to their own club.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-base">Event Settings</CardTitle>
@@ -797,6 +811,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                           </Button>
                         </CardContent>
                       </Card>
+                      </div>
                     )}
 
                     {/* QR CODE TAB */}
