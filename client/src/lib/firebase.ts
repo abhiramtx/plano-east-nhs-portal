@@ -1298,8 +1298,12 @@ export const createEvent = async (data: Omit<ClubEvent, 'id' | 'createdAt' | 'up
 };
 
 export const updateEvent = async (eventId: string, updates: Partial<ClubEvent>): Promise<void> => {
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(updates)) {
+    if (v !== undefined) clean[k] = v;
+  }
   await updateDoc(doc(db, "events", eventId), {
-    ...updates,
+    ...clean,
     updatedAt: Timestamp.fromDate(new Date()),
   });
 };

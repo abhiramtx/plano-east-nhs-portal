@@ -237,8 +237,16 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-partnership-events', selectedPartnership?.id] });
+      setSelectedPartnershipEvent(prev => prev ? {
+        ...prev,
+        name: editEventName,
+        description: editEventDesc,
+        type: editEventType as any,
+        password: editEventType === 'password' ? editEventPassword : undefined,
+      } : prev);
       toast({ title: "Event updated" });
     },
+    onError: (e: any) => toast({ title: "Failed to update event", description: e?.message || "Check Firestore permissions.", variant: "destructive" }),
   });
 
   const deleteEventMutation = useMutation({
@@ -505,6 +513,11 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
+                    <div className="flex gap-1 mt-3 border-b border-gray-200 -mb-4 pb-0">
+                      <button className="px-4 py-2 text-sm font-medium border-b-2 border-gray-900 text-gray-900">
+                        Information
+                      </button>
+                    </div>
                   </div>
                   <div className="flex-1 overflow-auto p-6">
                     <Card>
@@ -525,7 +538,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                           <Label>Check-in Method</Label>
                           <Select value={editEventType} onValueChange={(v) => setEditEventType(v as 'none' | 'password')}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[200]">
                               <SelectItem value="none">Open — No check-in required</SelectItem>
                               <SelectItem value="password">Password Protected</SelectItem>
                             </SelectContent>
@@ -863,7 +876,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                   <p className="text-gray-500 mt-1 text-sm">Manage your partnership details.</p>
                 </div>
 
-                <Card className="max-w-xl">
+                <Card>
                   <CardContent className="pt-6 space-y-4">
                     <div className="space-y-1">
                       <Label>Logo</Label>
@@ -927,7 +940,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                   </CardContent>
                 </Card>
 
-                <Card className="border-red-200 max-w-xl">
+                <Card className="border-red-200">
                   <CardHeader>
                     <CardTitle className="text-base text-red-700">Danger Zone</CardTitle>
                   </CardHeader>

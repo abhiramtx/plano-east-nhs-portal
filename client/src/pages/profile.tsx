@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserIcon, Save, Loader2 } from "lucide-react";
+import { UserIcon, Save, Loader2, QrCode } from "lucide-react";
+import QRCode from "react-qr-code";
 
 interface CustomField {
   id: string;
@@ -504,6 +505,24 @@ export default function Profile() {
             </CardContent>
           </Card>
         )}
+
+        <Card className="bg-white border-gray-200">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-gray-700" />
+              <CardTitle className="text-gray-900">Your QR Code</CardTitle>
+            </div>
+            <p className="text-sm text-gray-500">
+              Show this to your club admin when attending Scan QR events. Your email is encoded so you can be checked in and out automatically.
+            </p>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4 pb-6">
+            <div className="p-4 bg-white border-2 border-gray-200 rounded-xl inline-block">
+              <QRCode value={user.email} size={180} />
+            </div>
+            <p className="text-xs text-gray-400 font-mono">{user.email}</p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
