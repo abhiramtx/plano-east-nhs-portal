@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -404,8 +405,9 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
               className="pl-10 bg-white border-gray-200 text-gray-900"
             />
             {isSearchingLocation && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
-            {dropdownPos && locationResults.length > 0 && (
+            {dropdownPos && locationResults.length > 0 && createPortal(
               <div
+                data-location-suggestions=""
                 style={{
                   position: 'fixed',
                   zIndex: 9999,
@@ -425,7 +427,8 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                     {result.display_name}
                   </button>
                 ))}
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         )}

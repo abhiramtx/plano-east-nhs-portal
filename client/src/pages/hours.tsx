@@ -143,7 +143,12 @@ export default function Hours({ club }: HoursProps) {
                     Submit Hours
                   </Button>
                 </DialogTrigger>
-              <DialogContent className="max-w-2xl bg-white border-gray-200 flex flex-col max-h-[90vh] overflow-hidden p-0">
+              <DialogContent
+                className="max-w-2xl bg-white border-gray-200 flex flex-col max-h-[90vh] overflow-hidden p-0"
+                onPointerDownOutside={e => {
+                  if ((e.target as HTMLElement)?.closest('[data-location-suggestions]')) e.preventDefault();
+                }}
+              >
                 <DialogHeader className="px-6 pt-6 pb-0 flex-shrink-0">
                   <DialogTitle className="text-gray-900">
                     {editingSubmission ? 'Edit Service Hours' : `Submit Service Hours${selectedLog ? ` — ${selectedLog.name}` : ''}`}
