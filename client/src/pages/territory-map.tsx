@@ -353,10 +353,15 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                         {totalHours.toFixed(1)} volunteer hours
                       </p>
                       {clubEvents.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100">
-                          <p className="text-xs font-medium text-gray-500 mb-1">Active Events</p>
+                        <div className="mt-2 pt-2 border-t border-gray-100 space-y-1.5">
+                          <p className="text-xs font-medium text-gray-500">Active Events</p>
                           {clubEvents.map(ev => (
-                            <p key={ev.id} className="text-xs text-gray-700 truncate">• {ev.name}</p>
+                            <div key={ev.id}>
+                              <p className="text-xs font-medium text-gray-800 truncate">• {ev.name}</p>
+                              {ev.description && (
+                                <p className="text-xs text-gray-500 pl-3 line-clamp-2">{ev.description}</p>
+                              )}
+                            </div>
                           ))}
                         </div>
                       )}
@@ -407,10 +412,15 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                       <p className="text-gray-900 text-sm font-semibold truncate">{partner.name}</p>
                       <p className="text-gray-400 text-xs mt-0.5 capitalize">{partner.orgType}</p>
                       {partnerEvents.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100">
-                          <p className="text-xs font-medium text-gray-500 mb-1">Active Events</p>
+                        <div className="mt-2 pt-2 border-t border-gray-100 space-y-1.5">
+                          <p className="text-xs font-medium text-gray-500">Active Events</p>
                           {partnerEvents.map(ev => (
-                            <p key={ev.id} className="text-xs text-gray-700 truncate">• {ev.name}</p>
+                            <div key={ev.id}>
+                              <p className="text-xs font-medium text-gray-800 truncate">• {ev.name}</p>
+                              {ev.description && (
+                                <p className="text-xs text-gray-500 pl-3 line-clamp-2">{ev.description}</p>
+                              )}
+                            </div>
                           ))}
                         </div>
                       )}
