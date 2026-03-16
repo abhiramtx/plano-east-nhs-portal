@@ -147,14 +147,15 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     allPartnerships.filter(p => p.latitude != null && p.longitude != null),
   [allPartnerships]);
 
-  // Open events that belong to a partnership with NO location AND have their own lat/lng → checkpoint pins
+  // Partnership events that have their own lat/lng → show as checkpoint flags
+  // (shown regardless of whether the partnership also has an HQ pin)
   const checkpointEvents = useMemo(() =>
-    allOpenEvents.filter(e => {
-      if (!e.partnershipId || !e.latitude || !e.longitude) return false;
-      const partner = allPartnerships.find(p => p.id === e.partnershipId);
-      return partner && (partner.latitude == null || partner.longitude == null);
-    }),
-  [allOpenEvents, allPartnerships]);
+    allOpenEvents.filter(e =>
+      e.partnershipId &&
+      e.latitude != null && e.longitude != null &&
+      !isNaN(parseFloat(String(e.latitude))) && !isNaN(parseFloat(String(e.longitude)))
+    ),
+  [allOpenEvents]);
 
   const calculateTotalHours = (club: Club) => {
     return club.totalApprovedHours + club.bonusHours - club.decayedHours;
@@ -314,11 +315,9 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             const isHovered = hoveredClubId === club.id;
             const isCurrentClub = club.id === currentClubId;
             const clubEvents = allOpenEvents.filter(e => e.clubId === club.id);
-            const affiliatedPartnerIds = new Set(
-              allPartnerships.filter(p => p.affiliatedClubIds?.includes(club.id)).map(p => p.id)
-            );
+            // Only show partner events that are explicitly targeted at this specific club
             const affiliatedPartnerEvents = allOpenEvents.filter(
-              e => e.partnershipId && affiliatedPartnerIds.has(e.partnershipId)
+              e => e.partnershipId && e.targetClubId === club.id
             );
             
             return (
