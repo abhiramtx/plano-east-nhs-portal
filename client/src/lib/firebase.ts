@@ -51,6 +51,7 @@ export interface Club {
   name: string;
   description?: string;
   color: string;
+  logoUrl?: string;
   isPrivate: boolean;
   password?: string;
   creatorEmail: string;
@@ -1050,8 +1051,25 @@ export const wipeDatabase = async (): Promise<void> => {
   
   const submissionsSnapshot = await getDocs(collection(db, "submissions"));
   submissionsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+  const hoursLogsSnapshot = await getDocs(collection(db, "hoursLogs"));
+  hoursLogsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+  const participantsSnapshot = await getDocs(collection(db, "serviceRequestParticipants"));
+  participantsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
   
   await batch.commit();
+};
+
+export const logClubLeave = async (userEmail: string, clubId: string, clubName: string): Promise<void> => {
+  const now = new Date();
+  await addDoc(collection(db, "clubLeaveHistory"), {
+    userEmail,
+    clubId,
+    clubName,
+    title: `${clubName} - ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
+    leftAt: Timestamp.fromDate(now),
+  });
 };
 
 export const removeDemoData = async (): Promise<void> => {

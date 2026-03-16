@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, 
@@ -14,8 +14,8 @@ import {
   joinServiceRequest,
   getUserParticipations,
   ServiceRequestParticipant,
-  getCurrentUser,
 } from "@/lib/firebase";
+import { AdminPartnerships } from "@/pages/admin-partnerships";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, HandHeart, MapPin, Trophy, Clock, Building, Phone, Mail, ExternalLink } from "lucide-react";
+import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, HandHeart, MapPin, Trophy, Clock, Building, Mail, Upload, Image, Handshake, ChevronRight } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
 import { LocationPicker } from "@/components/world-map";
 
@@ -48,8 +48,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const [selectedClub, setSelectedClub] = useState<FirebaseClub | null>(null);
   const [joinPassword, setJoinPassword] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSection, setActiveSection] = useState<'clubs' | 'services'>('clubs');
-  
+  const [activeSection, setActiveSection] = useState<'clubs' | 'services' | 'partnerships'>('clubs');
+  const logoFileRef = useRef<HTMLInputElement>(null);
+
   const [newClub, setNewClub] = useState({
     name: "",
     description: "",
@@ -58,6 +59,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     color: CLUB_COLORS[Math.floor(Math.random() * CLUB_COLORS.length)],
     latitude: null as number | null,
     longitude: null as number | null,
+    logoUrl: "" as string,
   });
 
   const userEmail = user.email || '';
@@ -94,6 +96,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         isPrivate: clubData.isPrivate,
         password: clubData.password,
         color: clubData.color,
+        logoUrl: clubData.logoUrl || undefined,
         latitude: clubData.latitude || undefined,
         longitude: clubData.longitude || undefined,
         creatorEmail: userEmail,
@@ -104,7 +107,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         userName: user.name || userEmail.split('@')[0],
         role: 'admin',
       });
-      // Ensure the creator is set as admin
       await ensureClubCreatorIsAdmin(club.id, userEmail);
       return { club, membership };
     },
@@ -158,11 +160,19 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     }
   });
 
-  useEffect(() => {
-    if (userClubData?.club && userClubData?.membership) {
-      onClubSelected(userClubData.club, userClubData.membership);
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Logo must be under 2MB.", variant: "destructive" });
+      return;
     }
-  }, [userClubData, onClubSelected]);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setNewClub(prev => ({ ...prev, logoUrl: ev.target?.result as string }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const filteredClubs = clubs.filter(club => 
     club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -181,10 +191,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     );
-  }
-
-  if (userClubData?.club && userClubData?.membership) {
-    return null;
   }
 
   const handleCreateClub = () => {
@@ -210,6 +216,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     }
   };
 
+  const currentClub = userClubData?.club;
+  const currentMembership = userClubData?.membership;
+
   return (
     <div className="min-h-screen bg-white text-gray-900">
       <nav className="bg-white/90 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-50">
@@ -220,6 +229,16 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
               <span className="text-xl font-bold">VolunteerClub</span>
             </div>
             <div className="flex items-center space-x-4">
+              {currentClub && currentMembership && (
+                <Button
+                  size="sm"
+                  className="bg-black text-white hover:bg-gray-800"
+                  onClick={() => onClubSelected(currentClub, currentMembership)}
+                >
+                  Back to {currentClub.name}
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              )}
               <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
               <Button variant="outline" size="sm" onClick={onSignOut} className="border-gray-200 text-gray-600 hover:bg-gray-100">
                 <LogOut className="w-4 h-4 mr-2" />
@@ -231,47 +250,84 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Choose Your Path</h1>
-          <p className="text-xl text-gray-500">Join a club to compete, or find service opportunities</p>
-        </div>
+        {currentClub ? (
+          <div className="mb-10">
+            <div className="flex items-center space-x-4 p-5 bg-gray-50 border border-gray-200 rounded-2xl">
+              <div
+                className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: currentClub.logoUrl ? undefined : currentClub.color }}
+              >
+                {currentClub.logoUrl
+                  ? <img src={currentClub.logoUrl} alt={currentClub.name} className="w-full h-full object-cover" />
+                  : <Trophy className="w-7 h-7 text-white" />
+                }
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-0.5">Your Current Club</p>
+                <h2 className="text-lg font-semibold text-gray-900">{currentClub.name}</h2>
+                <p className="text-sm text-gray-500">{currentClub.totalApprovedHours.toFixed(1)} total approved hours · {currentMembership?.role === 'admin' ? 'Admin' : 'Member'}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onClubSelected(currentClub, currentMembership!)}
+                className="border-gray-200 text-gray-700 hover:bg-gray-100"
+              >
+                Go to Dashboard
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Choose Your Path</h1>
+            <p className="text-xl text-gray-500">Join a club to compete, or find service opportunities</p>
+          </div>
+        )}
 
         <div className="flex justify-center mb-8">
           <div className="inline-flex bg-gray-100 rounded-2xl p-1 border border-gray-200">
             <button
               onClick={() => setActiveSection('clubs')}
-              className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                activeSection === 'clubs' 
-                  ? 'bg-black text-white' 
-                  : 'text-gray-500 hover:text-gray-900'
+              className={`px-5 py-2.5 rounded-xl font-medium transition-all text-sm ${
+                activeSection === 'clubs' ? 'bg-black text-white' : 'text-gray-500 hover:text-gray-900'
               }`}
             >
-              <Users className="w-5 h-5 inline-block mr-2" />
+              <Users className="w-4 h-4 inline-block mr-1.5" />
               Clubs
             </button>
             <button
               onClick={() => setActiveSection('services')}
-              className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                activeSection === 'services' 
-                  ? 'bg-black text-white' 
-                  : 'text-gray-500 hover:text-gray-900'
+              className={`px-5 py-2.5 rounded-xl font-medium transition-all text-sm ${
+                activeSection === 'services' ? 'bg-black text-white' : 'text-gray-500 hover:text-gray-900'
               }`}
             >
-              <HandHeart className="w-5 h-5 inline-block mr-2" />
+              <HandHeart className="w-4 h-4 inline-block mr-1.5" />
               Service Requests
+            </button>
+            <button
+              onClick={() => setActiveSection('partnerships')}
+              className={`px-5 py-2.5 rounded-xl font-medium transition-all text-sm ${
+                activeSection === 'partnerships' ? 'bg-black text-white' : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              <Handshake className="w-4 h-4 inline-block mr-1.5" />
+              Partnerships
             </button>
           </div>
         </div>
 
-        <div className="relative mb-8">
-          <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <Input
-            placeholder={activeSection === 'clubs' ? "Search clubs..." : "Search service requests..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-12 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 h-12 rounded-xl"
-          />
-        </div>
+        {activeSection !== 'partnerships' && (
+          <div className="relative mb-8">
+            <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder={activeSection === 'clubs' ? "Search clubs..." : "Search service requests..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 h-12 rounded-xl"
+            />
+          </div>
+        )}
 
         {activeSection === 'clubs' && (
           <div className="space-y-8">
@@ -322,10 +378,13 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         >
                           <div className="flex items-center space-x-4">
                             <div 
-                              className="w-12 h-12 rounded-xl flex items-center justify-center"
-                              style={{ backgroundColor: club.color }}
+                              className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                              style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
                             >
-                              <Trophy className="w-6 h-6 text-white" />
+                              {club.logoUrl
+                                ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
+                                : <Trophy className="w-6 h-6 text-white" />
+                              }
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
@@ -338,10 +397,10 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                           <Button 
                             size="sm"
                             onClick={() => handleJoinClub(club)}
-                            disabled={joinClubMutation.isPending}
+                            disabled={joinClubMutation.isPending || club.id === currentClub?.id}
                             className="bg-black text-white hover:bg-gray-800"
                           >
-                            Join
+                            {club.id === currentClub?.id ? 'Current' : 'Join'}
                           </Button>
                         </div>
                       ))}
@@ -358,9 +417,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
             <div className="text-center mb-8">
               <p className="text-gray-500">
                 Browse volunteer opportunities from organizations. You don't need to join a club to help!
-              </p>
-              <p className="text-sm text-gray-400 mt-2">
-                Are you a food bank, nonprofit, or business looking to receive volunteer hours? Register as a <strong>Partnership</strong> in the admin panel to appear here and track hours from any club's volunteers.
               </p>
             </div>
             
@@ -399,14 +455,12 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <p className="text-sm text-gray-500 line-clamp-2">{request.description}</p>
-                        
                         {request.location && (
                           <p className="text-sm text-gray-500 flex items-center">
                             <MapPin className="w-4 h-4 mr-1" />
                             {request.location}
                           </p>
                         )}
-                        
                         <div className="flex items-center justify-between pt-2">
                           {request.contactEmail && (
                             <a 
@@ -417,7 +471,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                               Contact
                             </a>
                           )}
-                          
                           {isJoined ? (
                             <Badge variant="secondary" className="bg-green-100 text-green-700">
                               Joined
@@ -441,8 +494,15 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
             )}
           </div>
         )}
+
+        {activeSection === 'partnerships' && (
+          <div className="space-y-2">
+            <AdminPartnerships user={user} club={currentClub} />
+          </div>
+        )}
       </div>
 
+      {/* Create Club Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="max-w-4xl w-[95vw] h-[90vh] bg-white border-gray-200 text-gray-900 p-0 overflow-hidden">
           <div className="flex h-full">
@@ -454,6 +514,52 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-5">
+                {/* Logo Upload */}
+                <div className="space-y-2">
+                  <Label className="text-gray-700">Club Logo</Label>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-dashed border-gray-300 cursor-pointer hover:border-gray-400 transition-colors"
+                      style={{ backgroundColor: newClub.logoUrl ? undefined : newClub.color }}
+                      onClick={() => logoFileRef.current?.click()}
+                    >
+                      {newClub.logoUrl
+                        ? <img src={newClub.logoUrl} alt="Logo preview" className="w-full h-full object-cover" />
+                        : <Image className="w-6 h-6 text-white/70" />
+                      }
+                    </div>
+                    <div className="flex-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="border-gray-200 text-gray-600 hover:bg-gray-100 w-full"
+                        onClick={() => logoFileRef.current?.click()}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {newClub.logoUrl ? "Change Logo" : "Upload Logo"}
+                      </Button>
+                      {newClub.logoUrl && (
+                        <button
+                          type="button"
+                          className="text-xs text-red-500 hover:text-red-700 mt-1 w-full text-center"
+                          onClick={() => setNewClub(prev => ({ ...prev, logoUrl: "" }))}
+                        >
+                          Remove logo
+                        </button>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 2MB</p>
+                    </div>
+                  </div>
+                  <input
+                    ref={logoFileRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={handleLogoUpload}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-gray-700">Club Name</Label>
                   <Input
@@ -492,6 +598,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       />
                     ))}
                   </div>
+                  <p className="text-xs text-gray-400">Used as the territory color on the map</p>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -556,6 +663,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         </DialogContent>
       </Dialog>
 
+      {/* Join Club Dialog */}
       <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
         <DialogContent className="sm:max-w-md bg-white border-gray-200 text-gray-900">
           <DialogHeader>

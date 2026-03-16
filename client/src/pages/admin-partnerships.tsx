@@ -23,7 +23,7 @@ import {
 
 interface AdminPartnershipsProps {
   user: User;
-  club: Club;
+  club?: Club;
 }
 
 type PartnershipView = 'list' | 'manage';
@@ -60,9 +60,7 @@ export function AdminPartnerships({ user, club }: AdminPartnershipsProps) {
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newOrgType, setNewOrgType] = useState<Partnership['orgType']>('nonprofit');
-  const [newRequireApproval, setNewRequireApproval] = useState(true);
   const [newAddress, setNewAddress] = useState('');
-  const [newColor, setNewColor] = useState('#3B82F6');
 
   // Edit settings
   const [editName, setEditName] = useState('');
@@ -101,9 +99,9 @@ export function AdminPartnerships({ user, club }: AdminPartnershipsProps) {
   });
 
   const { data: clubAffiliations = [] } = useQuery<PartnershipAffiliation[]>({
-    queryKey: ['firebase-club-affiliations', club.id],
-    queryFn: () => getClubAffiliations(club.id),
-    enabled: !!club.id,
+    queryKey: ['firebase-club-affiliations', club?.id],
+    queryFn: () => getClubAffiliations(club!.id),
+    enabled: !!club?.id,
   });
 
   const { data: partnershipSubmissions = [] } = useQuery({
@@ -129,9 +127,9 @@ export function AdminPartnerships({ user, club }: AdminPartnershipsProps) {
       ownerEmail: user.email,
       ownerName: user.name,
       orgType: newOrgType,
-      requireApproval: newRequireApproval,
+      requireApproval: true,
       address: newAddress,
-      color: newColor,
+      color: '#3B82F6',
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-partnerships-owned', user.email] });
@@ -186,9 +184,9 @@ export function AdminPartnerships({ user, club }: AdminPartnershipsProps) {
 
   const requestAffiliationMutation = useMutation({
     mutationFn: (partnership: Partnership) =>
-      requestAffiliation(partnership.id, partnership.name, club.id, club.name, user.email),
+      requestAffiliation(partnership.id, partnership.name, club?.id ?? '', club?.name ?? '', user.email),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['firebase-club-affiliations', club.id] });
+      qc.invalidateQueries({ queryKey: ['firebase-club-affiliations', club?.id] });
       setShowAffiliateDialog(false);
       toast({ title: "Affiliation requested!", description: "The partnership will review your request." });
     },
@@ -713,20 +711,6 @@ export function AdminPartnerships({ user, club }: AdminPartnershipsProps) {
                   <div className="space-y-1">
                     <Label>Address <span className="text-gray-400">(optional)</span></Label>
                     <Input value={newAddress} onChange={e => setNewAddress(e.target.value)} placeholder="123 Main St, City" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Color</Label>
-                    <div className="flex items-center gap-2">
-                      <Input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="w-12 h-10" />
-                      <Input value={newColor} onChange={e => setNewColor(e.target.value)} className="flex-1" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium">Require Approval</p>
-                      <p className="text-xs text-gray-500">Approve each hours submission manually</p>
-                    </div>
-                    <Switch checked={newRequireApproval} onCheckedChange={setNewRequireApproval} />
                   </div>
                   <Button
                     className="w-full bg-black hover:bg-gray-800 text-white"

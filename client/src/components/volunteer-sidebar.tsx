@@ -1,8 +1,18 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { User, Club, Membership, getUserProfile } from "@/lib/firebase";
+import { User, Club, Membership, getUserProfile, logClubLeave } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Globe, LayoutDashboard, Clock, Map, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, ClipboardList, Trophy } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
 
@@ -17,6 +27,8 @@ interface VolunteerSidebarProps {
 export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClub }: VolunteerSidebarProps) {
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const isAdmin = membership.role === 'admin';
 
   const { data: profile } = useQuery({
@@ -49,6 +61,16 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
     setMobileMenuOpen(false);
   };
 
+  const handleLeaveConfirm = async () => {
+    setLeaving(true);
+    try {
+      await logClubLeave(user.email || '', club.id, club.name);
+    } catch {}
+    setLeaving(false);
+    setLeaveDialogOpen(false);
+    onLeaveClub();
+  };
+
   return (
     <>
       <button
@@ -59,7 +81,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
       </button>
 
       {mobileMenuOpen && (
-        <div 
+        <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
           onClick={() => setMobileMenuOpen(false)}
         />
@@ -70,9 +92,9 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
         lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">
-          <div 
+          <div
             className="flex items-center justify-between px-4 py-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50"
-            onClick={() => setLocation('/club-selection')}
+            onClick={() => { setLocation('/clubs'); setMobileMenuOpen(false); }}
           >
             <div className="flex items-center space-x-3">
               <img src={logoImg} alt="VolunteerClub" className="w-10 h-10 rounded-xl" />
@@ -85,11 +107,14 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
 
           <div className="px-4 py-3 border-b border-gray-200">
             <div className="flex items-center space-x-3">
-              <div 
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: club.color }}
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
               >
-                <Trophy className="w-4 h-4 text-white" />
+                {club.logoUrl
+                  ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
+                  : <Trophy className="w-4 h-4 text-white" />
+                }
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{club.name}</p>
@@ -109,8 +134,8 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
                   onClick={() => handleNavigation(item.path)}
                   className={`
                     w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
-                    ${isActive 
-                      ? 'bg-gray-100 text-gray-900' 
+                    ${isActive
+                      ? 'bg-gray-100 text-gray-900'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }
                   `}
@@ -136,20 +161,20 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
             </div>
-            
+
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="flex-1 text-xs border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                onClick={onLeaveClub}
+                onClick={() => setLeaveDialogOpen(true)}
               >
                 <ChevronLeft className="w-3 h-3 mr-1" />
                 Leave Club
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className="flex-1 text-xs border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 onClick={onSignOut}
               >
@@ -160,6 +185,31 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
           </div>
         </div>
       </div>
+
+      <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave {club.name}?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">You are about to leave <strong>{club.name}</strong>.</span>
+              <span className="block mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+                ⚠️ All your approved hours and pending submissions in this club will be <strong>wiped from the active database</strong>. Your history will be preserved in the History tab so you can still view your past contributions.
+              </span>
+              <span className="block text-sm text-gray-500 mt-1">You can rejoin at any time, but your hours will not be restored.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeaveConfirm}
+              disabled={leaving}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {leaving ? "Leaving..." : "Leave Club"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
