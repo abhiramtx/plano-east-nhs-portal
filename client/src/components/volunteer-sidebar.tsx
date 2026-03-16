@@ -223,9 +223,9 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
             <AlertDialogDescription className="space-y-2">
               <span className="block">You are about to leave <strong>{club.name}</strong>.</span>
               <span className="block mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
-                ⚠️ All your approved hours and pending submissions in this club will be <strong>wiped from the active database</strong>. Your history will be preserved in the History tab so you can still view your past contributions.
+                ⚠️ All your submissions will be <strong>archived to your History tab</strong> and your hours will reset to zero. If you rejoin, you start fresh.
               </span>
-              <span className="block text-sm text-gray-500 mt-1">You can rejoin at any time, but your hours will not be restored.</span>
+              <span className="block text-sm text-gray-500 mt-1">You can view your past contributions anytime under History.</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

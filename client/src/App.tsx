@@ -12,7 +12,7 @@ import {
   auth,
   getUserMembership,
   ensureClubCreatorIsAdmin,
-  deleteMembershipByUserAndClub,
+  leaveClubWithArchive,
   Club,
   Membership
 } from "@/lib/firebase";
@@ -60,7 +60,7 @@ function VolunteerInterface({
 
   const handleLeaveClubClick = async () => {
     try {
-      await deleteMembershipByUserAndClub(user.email || '', club.id);
+      await leaveClubWithArchive(user.email || '', club.id, club.name);
       onLeaveClub();
     } catch (error) {
       console.error('Failed to leave club:', error);

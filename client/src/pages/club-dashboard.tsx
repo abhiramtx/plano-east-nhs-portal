@@ -7,7 +7,7 @@ import {
   HoursSubmission,
   getMemberships,
   getClubSubmissions,
-  deleteMembershipByUserAndClub,
+  leaveClubWithArchive,
   deleteMembership
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -111,7 +111,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
 
   const leaveClubMutation = useMutation({
     mutationFn: async () => {
-      await deleteMembershipByUserAndClub(userEmail, club.id);
+      await leaveClubWithArchive(userEmail, club.id, club.name);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['firebase-user-club', userEmail] });
@@ -490,7 +490,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
           <DialogHeader>
             <DialogTitle className="text-gray-900">Leave Club?</DialogTitle>
             <DialogDescription className="text-gray-500">
-              Are you sure you want to leave {club.name}? Your hours will remain on record but you won't be able to contribute until you join another club.
+              Are you sure you want to leave {club.name}? All your submissions will be saved to your History tab under "{club.name}" and your hours will reset to zero. You can rejoin at any time, but you'll start fresh.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

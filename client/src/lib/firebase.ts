@@ -615,6 +615,31 @@ export const deleteSubmission = async (submissionId: string): Promise<void> => {
   await deleteDoc(doc(db, "submissions", submissionId));
 };
 
+// Archive all of a user's submissions for a club when they leave, then delete them from live submissions
+export const archiveUserSubmissionsOnLeave = async (userEmail: string, clubId: string, clubName: string): Promise<void> => {
+  const submissions = await getUserSubmissions(userEmail, clubId);
+  if (submissions.length === 0) return;
+
+  const now = new Date();
+  const monthYear = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const archivePeriod = `Left ${clubName} – ${monthYear}`;
+
+  const batch = writeBatch(db);
+  for (const sub of submissions) {
+    const archiveRef = doc(collection(db, "submissionArchive"));
+    batch.set(archiveRef, {
+      ...sub,
+      clubName,
+      archivePeriod,
+      archivedAt: Timestamp.fromDate(now),
+      submittedAt: sub.submittedAt ? Timestamp.fromDate(new Date(sub.submittedAt)) : Timestamp.fromDate(now),
+      reviewedAt: sub.reviewedAt ? Timestamp.fromDate(new Date(sub.reviewedAt)) : null,
+    });
+    batch.delete(doc(db, "submissions", sub.id));
+  }
+  await batch.commit();
+};
+
 // Archive submission to history when resetting data
 export const archiveSubmission = async (submission: HoursSubmission, clubName: string, archivePeriod: string): Promise<void> => {
   const now = new Date();
@@ -1289,6 +1314,18 @@ export const logClubLeave = async (userEmail: string, clubId: string, clubName: 
     title: `${clubName} - ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
     leftAt: Timestamp.fromDate(now),
   });
+};
+
+// Full leave flow: archive submissions → remove membership → recalculate club hours
+export const leaveClubWithArchive = async (userEmail: string, clubId: string, clubName: string): Promise<void> => {
+  // 1. Archive all live submissions for this user+club, then delete them
+  await archiveUserSubmissionsOnLeave(userEmail, clubId, clubName);
+
+  // 2. Remove the membership
+  await deleteMembershipByUserAndClub(userEmail, clubId);
+
+  // 3. Recalculate club total hours now that this member's submissions are gone
+  await recalculateClubHours(clubId);
 };
 
 export const removeDemoData = async (): Promise<void> => {
