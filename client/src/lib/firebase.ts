@@ -325,14 +325,32 @@ export const updateClub = async (clubId: string, updates: Partial<Club>): Promis
 };
 
 export const recalculateClubHours = async (clubId: string): Promise<void> => {
-  const q = query(
-    collection(db, "submissions"),
-    where("clubId", "==", clubId)
-  );
-  const snap = await getDocs(q);
-  const total = snap.docs
+  // Get current member emails for this club (to catch legacy submissions with clubId="")
+  const membershipsQ = query(collection(db, "userProfiles"), where("clubId", "==", clubId));
+  const membershipsSnap = await getDocs(membershipsQ);
+  const memberEmails = new Set(membershipsSnap.docs.map(d => d.data().email).filter(Boolean));
+
+  // Query submissions with correct clubId
+  const mainQ = query(collection(db, "submissions"), where("clubId", "==", clubId));
+  const mainSnap = await getDocs(mainQ);
+
+  // Also query submissions with empty clubId that belong to club members (legacy fix)
+  const legacyQ = query(collection(db, "submissions"), where("clubId", "==", ""));
+  const legacySnap = await getDocs(legacyQ);
+  const legacyDocs = legacySnap.docs.filter(d => memberEmails.has(d.data().userEmail));
+
+  // Merge and deduplicate
+  const seen = new Set<string>();
+  const allDocs = [...mainSnap.docs, ...legacyDocs].filter(d => {
+    if (seen.has(d.id)) return false;
+    seen.add(d.id);
+    return true;
+  });
+
+  const total = allDocs
     .filter(d => d.data().status === "approved")
     .reduce((sum, d) => sum + (d.data().hours || 0), 0);
+
   await updateDoc(doc(db, "clubs", clubId), {
     totalApprovedHours: total,
     updatedAt: Timestamp.fromDate(new Date()),

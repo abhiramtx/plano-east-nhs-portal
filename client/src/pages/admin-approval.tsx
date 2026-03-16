@@ -83,7 +83,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     if (club?.id) {
       recalculateClubHours(club.id).then(() => {
         queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
-      }).catch(() => {});
+      }).catch(err => console.error('recalculateClubHours failed:', err));
     }
   }, [club?.id]);
 

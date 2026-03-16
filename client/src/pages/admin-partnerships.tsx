@@ -340,22 +340,22 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
         </div>
 
         {/* Main content */}
-        <div className="flex-1 overflow-auto bg-gray-50">
+        <div className="flex-1 overflow-auto bg-white">
           <div className="p-8">
 
             {/* Overview Tab */}
             {activeTab === 'overview' && (
-              <div className="space-y-6 max-w-5xl">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{selectedPartnership.name}</h1>
-                  <div className="flex items-center gap-3 mt-1">
+              <div className="space-y-7">
+                <div className="pb-4 border-b-2 border-gray-900">
+                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{selectedPartnership.name}</h1>
+                  <div className="flex items-center gap-3 mt-2">
                     <Badge className={ORG_TYPE_COLORS[selectedPartnership.orgType]}>{ORG_TYPE_LABELS[selectedPartnership.orgType]}</Badge>
                     {selectedPartnership.address && (
                       <span className="text-sm text-gray-400">{selectedPartnership.address}</span>
                     )}
                   </div>
                   {selectedPartnership.description && (
-                    <p className="text-gray-600 mt-2 text-sm max-w-2xl">{selectedPartnership.description}</p>
+                    <p className="text-gray-500 mt-2 text-sm">{selectedPartnership.description}</p>
                   )}
                 </div>
 
@@ -500,9 +500,9 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             {/* Events Tab */}
             {activeTab === 'events' && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Events</h2>
-                  <p className="text-gray-500 mt-1">Create events volunteers can submit hours for.</p>
+                <div className="pb-4 border-b-2 border-gray-900">
+                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Events</h1>
+                  <p className="text-gray-500 mt-1 text-sm">Create events volunteers can submit hours for.</p>
                 </div>
 
                 <Card>
@@ -571,9 +571,9 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             {/* Volunteers Tab */}
             {activeTab === 'volunteers' && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Volunteer Submissions</h2>
-                  <p className="text-gray-500 mt-1">All hours submitted to this partnership.</p>
+                <div className="pb-4 border-b-2 border-gray-900">
+                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Volunteer Submissions</h1>
+                  <p className="text-gray-500 mt-1 text-sm">All hours submitted to this partnership.</p>
                 </div>
                 {(partnershipSubmissions as any[]).length === 0 ? (
                   <div className="text-center py-16">
@@ -608,9 +608,9 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             {/* Affiliations Tab */}
             {activeTab === 'affiliations' && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Club Affiliations</h2>
-                  <p className="text-gray-500 mt-1">Request clubs to affiliate with your partnership. Club admins approve or reject.</p>
+                <div className="pb-4 border-b-2 border-gray-900">
+                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Club Affiliations</h1>
+                  <p className="text-gray-500 mt-1 text-sm">Request clubs to affiliate. Club admins approve or reject.</p>
                 </div>
 
                 <Card>
@@ -692,9 +692,9 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             {/* Settings Tab */}
             {activeTab === 'settings' && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
-                  <p className="text-gray-500 mt-1">Manage your partnership details.</p>
+                <div className="pb-4 border-b-2 border-gray-900">
+                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Settings</h1>
+                  <p className="text-gray-500 mt-1 text-sm">Manage your partnership details.</p>
                 </div>
 
                 <Card className="max-w-xl">

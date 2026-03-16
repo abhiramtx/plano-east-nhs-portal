@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, 
@@ -7,6 +7,7 @@ import {
   createClub, 
   createMembership,
   ensureClubCreatorIsAdmin,
+  recalculateClubHours,
   Club as FirebaseClub,
   Membership as FirebaseMembership,
 } from "@/lib/firebase";
@@ -227,6 +228,15 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
   const currentClub = userClubData?.club;
   const currentMembership = userClubData?.membership;
+
+  // Keep club's totalApprovedHours in sync whenever this page loads
+  useEffect(() => {
+    if (currentClub?.id) {
+      recalculateClubHours(currentClub.id)
+        .then(() => queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] }))
+        .catch(err => console.error('recalculateClubHours failed:', err));
+    }
+  }, [currentClub?.id]);
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
