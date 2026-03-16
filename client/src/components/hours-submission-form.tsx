@@ -405,6 +405,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                   width: locationInputRef.current.getBoundingClientRect().width,
                 }}
                 className="bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto"
+                onPointerDownCapture={e => e.stopPropagation()}
               >
                 {locationResults.map((result, index) => (
                   <button
