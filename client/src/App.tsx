@@ -380,7 +380,7 @@ function App() {
   const handleLeaveClub = () => {
     setSelectedClub(null);
     setMembership(null);
-    setLocation('/clubs');
+    window.location.href = '/clubs';
   };
 
   // Let the event check-in page render immediately — it manages its own auth state

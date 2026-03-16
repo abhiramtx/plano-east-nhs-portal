@@ -296,8 +296,13 @@ export const getClub = async (clubId: string): Promise<Club | null> => {
 
 export const createClub = async (clubData: Omit<Club, 'id' | 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'totalApprovedHours' | 'bonusHours' | 'decayedHours'>): Promise<Club> => {
   const now = new Date();
+  // Strip undefined values — Firestore rejects them
+  const safeData: any = {};
+  for (const [k, v] of Object.entries(clubData)) {
+    if (v !== undefined) safeData[k] = v;
+  }
   const docRef = await addDoc(collection(db, "clubs"), {
-    ...clubData,
+    ...safeData,
     totalApprovedHours: 0,
     yearlyApprovedHours: 0,
     bonusHours: 0,
