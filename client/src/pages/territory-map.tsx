@@ -147,14 +147,22 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     allPartnerships.filter(p => p.latitude != null && p.longitude != null),
   [allPartnerships]);
 
-  // Partnership events with a lat/lng whose partnership has NO HQ → show as checkpoint flags
-  // If the partnership has an HQ pin, its events are shown in the HQ hover list instead
+  // Partnership events with their own lat/lng → show as checkpoint flags
+  // Exception: skip the flag if the event is at the exact same spot as the partnership's HQ
+  // (avoids stacking a flag on top of the HQ building pin)
   const checkpointEvents = useMemo(() =>
     allOpenEvents.filter(e => {
       if (!e.partnershipId || e.latitude == null || e.longitude == null) return false;
       if (isNaN(parseFloat(String(e.latitude))) || isNaN(parseFloat(String(e.longitude)))) return false;
       const partner = allPartnerships.find(p => p.id === e.partnershipId);
-      return partner != null && (partner.latitude == null || partner.longitude == null);
+      if (!partner) return false;
+      // Suppress flag only when event coords exactly equal the HQ coords
+      if (
+        partner.latitude != null && partner.longitude != null &&
+        parseFloat(String(e.latitude)) === parseFloat(String(partner.latitude)) &&
+        parseFloat(String(e.longitude)) === parseFloat(String(partner.longitude))
+      ) return false;
+      return true;
     }),
   [allOpenEvents, allPartnerships]);
 
