@@ -428,6 +428,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/clubs/:id/member-territories", async (req, res) => {
+    try {
+      const circles = await storage.calculateMemberTerritories(req.params.id);
+      res.json(circles);
+    } catch (error) {
+      console.error("Error fetching member territories:", error);
+      res.status(500).json({ error: "Failed to fetch member territories" });
+    }
+  });
+
   app.post("/api/clubs/:id/territories/update", async (req, res) => {
     try {
       const clubId = req.params.id;

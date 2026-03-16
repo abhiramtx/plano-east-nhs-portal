@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, 
@@ -17,7 +17,30 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe, Link2, Copy } from "lucide-react";
+import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe, Link2, Copy, Map } from "lucide-react";
+import MapGlComponent, { NavigationControl, MapRef } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+
+const MEMBER_COLORS = [
+  '#ef4444','#f97316','#eab308','#22c55e','#14b8a6',
+  '#3b82f6','#8b5cf6','#ec4899','#06b6d4','#84cc16',
+  '#a855f7','#fb923c','#34d399','#f43f5e','#60a5fa',
+];
+
+function createCirclePolygon(lng: number, lat: number, radiusKm: number, steps = 64): number[][] {
+  const coords: number[][] = [];
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * 2 * Math.PI;
+    const dx = radiusKm / 111.32;
+    const dy = radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180));
+    coords.push([lng + dy * Math.sin(angle), lat + dx * Math.cos(angle)]);
+  }
+  return coords;
+}
+
+type MemberCircle = { volunteerName: string; latitude: number; longitude: number; radiusKm: number; hours: number };
 
 interface ClubDashboardProps {
   user: User;
@@ -31,6 +54,9 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [kickDialogOpen, setKickDialogOpen] = useState(false);
   const [memberToKick, setMemberToKick] = useState<Membership | null>(null);
+  const mapRef = useRef<MapRef>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [memberTooltip, setMemberTooltip] = useState<{ x: number; y: number; name: string } | null>(null);
   
   const userEmail = user.email || '';
   const isAdmin = membership.role === 'admin';
@@ -44,6 +70,44 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
     queryKey: ['firebase-club-submissions', club.id],
     queryFn: () => getClubSubmissions(club.id),
   });
+
+  const { data: memberCircles = [] } = useQuery<MemberCircle[]>({
+    queryKey: ['member-territories', club.id],
+    queryFn: () => fetch(`/api/clubs/${club.id}/member-territories`).then(r => r.json()),
+    refetchInterval: 60000,
+  });
+
+  // Build a stable color map: sorted unique names → palette index
+  const memberColorMap = useMemo(() => {
+    const names = [...new Set(memberCircles.map(c => c.volunteerName))].sort();
+    const m = new Map<string, string>();
+    names.forEach((n, i) => m.set(n, MEMBER_COLORS[i % MEMBER_COLORS.length]));
+    return m;
+  }, [memberCircles]);
+
+  const memberGeoJson = useMemo(() => ({
+    type: 'FeatureCollection' as const,
+    features: memberCircles.map(c => ({
+      type: 'Feature' as const,
+      properties: { color: memberColorMap.get(c.volunteerName) || '#3b82f6', name: c.volunteerName, hours: c.hours },
+      geometry: { type: 'Polygon' as const, coordinates: [createCirclePolygon(c.longitude, c.latitude, c.radiusKm)] },
+    })),
+  }), [memberCircles, memberColorMap]);
+
+  const applyMemberLayers = useCallback((map: any, geoJson: any) => {
+    if (map.getSource('member-territories')) {
+      (map.getSource('member-territories') as any).setData(geoJson);
+    } else {
+      map.addSource('member-territories', { type: 'geojson', data: geoJson });
+      map.addLayer({ id: 'member-fill', type: 'fill', source: 'member-territories', paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.35 } });
+      map.addLayer({ id: 'member-outline', type: 'line', source: 'member-territories', paint: { 'line-color': ['get', 'color'], 'line-width': 2, 'line-opacity': 0.9 } });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    applyMemberLayers(mapRef.current.getMap(), memberGeoJson);
+  }, [mapLoaded, memberGeoJson, applyMemberLayers]);
 
   const leaveClubMutation = useMutation({
     mutationFn: async () => {
@@ -208,6 +272,10 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
             <Trophy className="w-4 h-4 mr-2" />
             Leaderboard
           </TabsTrigger>
+          <TabsTrigger value="map" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-600">
+            <Map className="w-4 h-4 mr-2" />
+            Map
+          </TabsTrigger>
           {isAdmin && (
             <TabsTrigger value="settings" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-600">
               <Settings className="w-4 h-4 mr-2" />
@@ -314,6 +382,70 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                     </div>
                   ))}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="map">
+          <Card className="bg-white border-gray-200 overflow-hidden">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-gray-900">Volunteer Territory Map</CardTitle>
+              <CardDescription className="text-gray-500">
+                Each circle shows where a volunteer has logged hours. Bigger circle = more hours at that location.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="relative" style={{ height: 480 }}>
+                <MapGlComponent
+                  ref={mapRef}
+                  initialViewState={{ longitude: 0, latitude: 20, zoom: 1.5 }}
+                  mapStyle={MAP_STYLE}
+                  style={{ width: '100%', height: '100%' }}
+                  attributionControl={false}
+                  onLoad={evt => {
+                    setMapLoaded(true);
+                    const map = evt.target;
+                    applyMemberLayers(map, memberGeoJson);
+                    map.on('styledata', () => { if (!map.getSource('member-territories')) applyMemberLayers(map, memberGeoJson); });
+                    map.on('mousemove', 'member-fill', (e: any) => {
+                      if (e.features?.length > 0) {
+                        setMemberTooltip({ x: e.point.x, y: e.point.y, name: e.features[0].properties?.name || '' });
+                        map.getCanvas().style.cursor = 'pointer';
+                      }
+                    });
+                    map.on('mouseleave', 'member-fill', () => { setMemberTooltip(null); map.getCanvas().style.cursor = ''; });
+                  }}
+                >
+                  <NavigationControl position="bottom-right" showCompass={false} />
+                </MapGlComponent>
+
+                {memberTooltip && (
+                  <div
+                    style={{ left: memberTooltip.x + 12, top: memberTooltip.y - 36, pointerEvents: 'none' }}
+                    className="absolute z-10 bg-white rounded-lg px-3 py-1.5 shadow-lg border border-gray-200 text-sm font-semibold text-gray-900 whitespace-nowrap"
+                  >
+                    {memberTooltip.name}
+                  </div>
+                )}
+
+                {memberCircles.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                    <p className="text-gray-500 text-sm">No location-tagged hours logged yet.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Legend */}
+              {memberCircles.length > 0 && (
+                <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-3">
+                  {[...memberColorMap.entries()].map(([name, color]) => (
+                    <div key={name} className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                      <span className="text-xs text-gray-600 truncate max-w-[160px]">{name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

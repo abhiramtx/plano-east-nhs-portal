@@ -822,6 +822,48 @@ export class FirestoreStorage implements IStorage {
     return circles;
   }
 
+  async calculateMemberTerritories(clubId: string): Promise<{ volunteerName: string; latitude: number; longitude: number; radiusKm: number; hours: number }[]> {
+    const submissions = await this.getClubHoursSubmissions(clubId);
+    const approved = submissions.filter(s => s.status === 'approved');
+
+    // Group by volunteer email, then by geohash location
+    const byMember = new Map<string, Map<string, { lat: number; lng: number; hours: number }>>();
+
+    for (const sub of approved) {
+      const lat = sub.latitude ? parseFloat(String(sub.latitude)) : null;
+      const lng = sub.longitude ? parseFloat(String(sub.longitude)) : null;
+      if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) continue;
+
+      const email = sub.userEmail || sub.userId || 'Unknown';
+      if (!byMember.has(email)) byMember.set(email, new Map());
+      const locMap = byMember.get(email)!;
+      const key = this.geohashId(lat, lng);
+      const existing = locMap.get(key);
+      if (existing) {
+        existing.hours += parseFloat(String(sub.hours)) || 0;
+      } else {
+        locMap.set(key, { lat, lng, hours: parseFloat(String(sub.hours)) || 0 });
+      }
+    }
+
+    const result: { volunteerName: string; latitude: number; longitude: number; radiusKm: number; hours: number }[] = [];
+
+    const baseMi = 3;
+    const maxMi = 11;
+    const horizonHours = 200;
+    const MI_TO_KM = 1.60934;
+
+    for (const [email, locMap] of byMember.entries()) {
+      for (const loc of locMap.values()) {
+        const growth = Math.log10(loc.hours + 1) / Math.log10(horizonHours);
+        const radiusKm = (baseMi + (maxMi - baseMi) * Math.min(1, growth)) * MI_TO_KM;
+        result.push({ volunteerName: email, latitude: loc.lat, longitude: loc.lng, radiusKm, hours: loc.hours });
+      }
+    }
+
+    return result;
+  }
+
   private geohashId(lat: number, lng: number, precision: number = 7): string {
     const base32 = '0123456789bcdefghjkmnpqrstuvwxyz';
     let minLat = -90, maxLat = 90, minLng = -180, maxLng = 180;
