@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, getMemberships, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import QRCode from "react-qr-code";
 import { 
   Users, 
   Search, 
@@ -30,7 +33,10 @@ import {
   Hash,
   ArrowLeft,
   Download,
-  BookOpen
+  BookOpen,
+  Plus,
+  QrCode,
+  Award
 } from "lucide-react";
 
 interface AdminStudentsProps {
@@ -88,6 +94,13 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     customFields: {},
     logs: {}
   });
+  const [showGrantDialog, setShowGrantDialog] = useState(false);
+  const [grantHours, setGrantHours] = useState('');
+  const [grantDescription, setGrantDescription] = useState('');
+  const [grantLogId, setGrantLogId] = useState('');
+  const [grantDate, setGrantDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showStudentQR, setShowStudentQR] = useState<string | null>(null);
+  const [editingSubmissionHours, setEditingSubmissionHours] = useState<{ id: string; hours: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -137,6 +150,50 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       });
     }
   };
+
+  const grantHoursMutation = useMutation({
+    mutationFn: async () => {
+      const hours = parseFloat(grantHours);
+      if (!selectedStudent?.email || isNaN(hours) || hours <= 0) throw new Error("Invalid hours");
+      const selectedLog = (hoursLogs as any[]).find(l => String(l.id) === grantLogId);
+      await createSubmission({
+        clubId: club.id,
+        userEmail: selectedStudent.email,
+        userName: selectedStudent.studentName || selectedStudent.email,
+        hours,
+        description: grantDescription || `Hours granted by admin`,
+        activityName: grantDescription || `Admin Grant`,
+        date: new Date(grantDate).toISOString(),
+        status: 'approved',
+        grantedByAdmin: true,
+        reviewedBy: user?.email || '',
+        reviewedAt: new Date(),
+        logId: selectedLog?.id ? String(selectedLog.id) : undefined,
+        logName: selectedLog?.name,
+        createdAt: new Date().toISOString(),
+      } as any);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-student-submissions', selectedStudent?.email] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-submissions', club.id] });
+      setShowGrantDialog(false);
+      setGrantHours(''); setGrantDescription(''); setGrantLogId('');
+      toast({ title: "Hours granted", description: `${grantHours} hours added to ${selectedStudent?.studentName}` });
+    },
+    onError: (e: any) => toast({ title: "Failed", description: e.message, variant: "destructive" }),
+  });
+
+  const editSubmissionHoursMutation = useMutation({
+    mutationFn: async ({ id, hours }: { id: string; hours: number }) => {
+      await updateSubmission(id, { hours });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-student-submissions', selectedStudent?.email] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-submissions', club.id] });
+      setEditingSubmissionHours(null);
+      toast({ title: "Hours updated" });
+    },
+  });
 
   const { data: submissions = [], isLoading: submissionsLoading } = useQuery({
     queryKey: ['firebase-submissions', club.id],
@@ -1136,10 +1193,29 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   <p className="text-sm text-gray-500">Student Profile & Hours Review</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setSelectedStudent(null)} className="flex items-center gap-1">
-                <X className="w-4 h-4" />
-                Close Profile
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowStudentQR(selectedStudent?.email)}
+                  className="flex items-center gap-1"
+                >
+                  <QrCode className="w-4 h-4" />
+                  QR Code
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-black hover:bg-gray-800 text-white flex items-center gap-1"
+                  onClick={() => { setShowGrantDialog(true); setGrantDate(new Date().toISOString().split('T')[0]); }}
+                >
+                  <Award className="w-4 h-4" />
+                  Grant Hours
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setSelectedStudent(null)} className="flex items-center gap-1">
+                  <X className="w-4 h-4" />
+                  Close Profile
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1321,14 +1397,55 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                   </Badge>
                                   <span className="text-sm text-gray-500">{formatDate(submission.date)}</span>
                                 </div>
-                                <h4 className="font-semibold text-gray-900">{submission.activityName || 'Unnamed Activity'}</h4>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4 className="font-semibold text-gray-900">{submission.activityName || 'Unnamed Activity'}</h4>
+                                  {(submission as any).grantedByAdmin && (
+                                    <Badge className="bg-blue-100 text-blue-700 text-xs">
+                                      <Award className="w-3 h-3 mr-1" /> Granted by Admin
+                                    </Badge>
+                                  )}
+                                  {submission.eventName && (
+                                    <Badge className="bg-purple-100 text-purple-700 text-xs">
+                                      Event: {submission.eventName}
+                                    </Badge>
+                                  )}
+                                  {(submission as any).partnershipName && (
+                                    <Badge className="bg-green-100 text-green-700 text-xs">
+                                      Partnership: {(submission as any).partnershipName}
+                                    </Badge>
+                                  )}
+                                </div>
                                 {submission.description && (
                                   <p className="text-sm text-gray-500">{submission.description}</p>
                                 )}
                                 <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
-                                    {submission.hours} hours
+                                    {editingSubmissionHours?.id === submission.id ? (
+                                      <span className="flex items-center gap-1">
+                                        <Input
+                                          type="number"
+                                          step="0.5"
+                                          min="0"
+                                          value={editingSubmissionHours.hours}
+                                          onChange={e => setEditingSubmissionHours({ id: submission.id, hours: e.target.value })}
+                                          className="w-20 h-6 text-xs"
+                                          onClick={e => e.stopPropagation()}
+                                        />
+                                        <button
+                                          className="text-green-600 hover:text-green-800"
+                                          onClick={e => { e.stopPropagation(); editSubmissionHoursMutation.mutate({ id: submission.id, hours: parseFloat(editingSubmissionHours.hours) }); }}
+                                        ><Check className="w-3 h-3" /></button>
+                                        <button
+                                          className="text-red-400 hover:text-red-600"
+                                          onClick={e => { e.stopPropagation(); setEditingSubmissionHours(null); }}
+                                        ><X className="w-3 h-3" /></button>
+                                      </span>
+                                    ) : (
+                                      <span className="flex items-center gap-1 cursor-pointer hover:text-gray-900" onClick={e => { e.stopPropagation(); setEditingSubmissionHours({ id: submission.id, hours: String(submission.hours) }); }}>
+                                        {submission.hours} hours <span className="text-gray-400 text-xs">(click to edit)</span>
+                                      </span>
+                                    )}
                                   </span>
                                   <span className="flex items-center gap-1">
                                     <Calendar className="w-3 h-3" />
@@ -1407,6 +1524,95 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                 Reject
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Grant Hours Dialog */}
+      <Dialog open={showGrantDialog} onOpenChange={setShowGrantDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5" />
+              Grant Hours to {selectedStudent?.studentName}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-500 -mt-1">
+            This creates an auto-approved submission on behalf of this volunteer. It will appear in their hours with a "Granted by Admin" badge.
+          </p>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <Label>Hours to Grant</Label>
+              <Input
+                type="number" step="0.5" min="0.5"
+                value={grantHours}
+                onChange={e => setGrantHours(e.target.value)}
+                placeholder="e.g. 2.5"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Activity / Description</Label>
+              <Input
+                value={grantDescription}
+                onChange={e => setGrantDescription(e.target.value)}
+                placeholder="e.g. Beach Cleanup, Admin correction..."
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Date</Label>
+              <Input
+                type="date"
+                value={grantDate}
+                onChange={e => setGrantDate(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Append to Log <span className="text-gray-400">(optional)</span></Label>
+              <Select value={grantLogId} onValueChange={setGrantLogId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="No log" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No log</SelectItem>
+                  {(hoursLogs as any[]).map(l => (
+                    <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => setShowGrantDialog(false)}>Cancel</Button>
+              <Button
+                className="flex-1 bg-black hover:bg-gray-800 text-white"
+                onClick={() => grantHoursMutation.mutate()}
+                disabled={!grantHours || parseFloat(grantHours) <= 0 || grantHoursMutation.isPending}
+              >
+                {grantHoursMutation.isPending ? 'Granting...' : `Grant ${grantHours || '0'} Hours`}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Student QR Code Dialog */}
+      <Dialog open={!!showStudentQR} onOpenChange={() => setShowStudentQR(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5" />
+              Volunteer QR Code
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-center space-y-4 py-2">
+            <p className="text-sm text-gray-500">
+              This QR code encodes the volunteer's email. Use it with a Scan QR event — the volunteer shows this on their phone and you scan it to check them in or out.
+            </p>
+            <div className="flex justify-center">
+              <div className="p-4 bg-white border-2 border-gray-200 rounded-xl inline-block">
+                {showStudentQR && <QRCode value={showStudentQR} size={180} />}
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 font-mono">{showStudentQR}</p>
           </div>
         </DialogContent>
       </Dialog>

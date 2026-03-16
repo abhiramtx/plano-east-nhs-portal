@@ -381,7 +381,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     enabled: !!userEmail,
   });
 
-  const joinedRequestIds = myParticipations.data?.map(p => p.requestId) || [];
+  const joinedRequestIds = myParticipations?.map(p => p.requestId) || [];
 
   const joinMutation = useMutation({
     mutationFn: async (request: ServiceRequest) => {

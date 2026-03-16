@@ -277,7 +277,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Hours Approval</h1>
-              <p className="text-gray-600 mt-1">Review and approve student submissions</p>
+              <p className="text-gray-600 mt-1">Each admin reviews one volunteer at a time. Submissions require a set number of approvals before hours are finalized — configure this threshold in Settings → Approvals.</p>
             </div>
             <div className="flex items-center space-x-3">
               {hoursLogs.length > 0 && (

@@ -36,6 +36,8 @@ import { AdminDatabase } from "@/pages/admin-database";
 import { AdminHistory } from "@/pages/admin-history";
 import { AdminCustomFields } from "@/pages/admin-custom-fields";
 import { AdminSettings } from "@/pages/admin-settings";
+import { AdminEvents } from "@/pages/admin-events";
+import { AdminPartnerships } from "@/pages/admin-partnerships";
 
 function VolunteerInterface({ 
   user, 
@@ -130,6 +132,8 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
     if (path.includes('/admin/database')) return 'database';
     if (path.includes('/admin/history')) return 'history';
     if (path.includes('/admin/settings')) return 'settings';
+    if (path.includes('/admin/events')) return 'events';
+    if (path.includes('/admin/partnerships')) return 'partnerships';
     return 'approval';
   });
 
@@ -142,6 +146,8 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
     else if (path.includes('/admin/history')) setCurrentPage('history');
     else if (path.includes('/admin/settings')) setCurrentPage('settings');
     else if (path.includes('/admin/approval')) setCurrentPage('approval');
+    else if (path.includes('/admin/events')) setCurrentPage('events');
+    else if (path.includes('/admin/partnerships')) setCurrentPage('partnerships');
   }, []);
 
   const handleSignOut = async () => {
@@ -234,13 +240,28 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
             </button>
 
             <button
+              onClick={() => { setCurrentPage('events'); window.history.pushState({}, '', '/admin/events'); }}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'events' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              <span>Events</span>
+            </button>
+
+            <button
+              onClick={() => { setCurrentPage('partnerships'); window.history.pushState({}, '', '/admin/partnerships'); }}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'partnerships' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+              <span>Partnerships</span>
+            </button>
+
+            <button
               onClick={() => { setCurrentPage('settings'); window.history.pushState({}, '', '/admin/settings'); }}
               className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'settings' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              <span>Admin Settings</span>
+              <span>Settings</span>
             </button>
-            
             
             <a
               href="/volunteer/dashboard"
@@ -276,6 +297,8 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
         {currentPage === 'database' && <AdminDatabase user={user} club={club} />}
         {currentPage === 'history' && <AdminHistory user={user} club={club} />}
         {currentPage === 'settings' && <AdminSettings user={user} club={club} />}
+        {currentPage === 'events' && <AdminEvents user={user} club={club} />}
+        {currentPage === 'partnerships' && <AdminPartnerships user={user} club={club} />}
       </div>
     </div>
   );

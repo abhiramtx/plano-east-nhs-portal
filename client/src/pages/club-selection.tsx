@@ -359,6 +359,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
               <p className="text-gray-500">
                 Browse volunteer opportunities from organizations. You don't need to join a club to help!
               </p>
+              <p className="text-sm text-gray-400 mt-2">
+                Are you a food bank, nonprofit, or business looking to receive volunteer hours? Register as a <strong>Partnership</strong> in the admin panel to appear here and track hours from any club's volunteers.
+              </p>
             </div>
             
             {requestsLoading ? (

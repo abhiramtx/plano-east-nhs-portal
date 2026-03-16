@@ -54,6 +54,34 @@ Preferred communication style: Simple, everyday language.
 - **Location Capture**: Hours submission form includes optional location search using Nominatim API
 - **Rendering**: GeoJSON polygons with hex colors and separate opacity properties (MapLibre doesn't support rgba() strings in data-driven styling)
 
+### Events System
+- **Types**: Open (no auth), Password-protected, scan_qr (admin scans volunteer QR), show_qr (admin displays sign-in/sign-out codes)
+- **Time Tracking**: QR events record check-in/check-out times; attendance duration used for conditional hours granting
+- **Conditionals**: Rules like "less than / exactly / more than X hours → grant Y hours" applied when granting hours
+- **Grant Hours**: Admins can grant hours to all attendees or select individual volunteers, with per-person overrides
+- **Volunteer QR**: Each volunteer has a personal QR code (email encoded) for scan_qr events
+
+### Partnerships System
+- **Purpose**: External organizations (food banks, businesses, nonprofits) can register as Partnerships to receive volunteer hours from any club's members without those members joining the org
+- **Affiliation**: Clubs can request to affiliate with partnerships; partnerships can auto-approve or manually approve
+- **Partnership Verified Badge**: Partners with requireApproval=false auto-approve hour submissions
+- **Admin Dashboard**: Partnership owners get full management (events, volunteers, affiliations, settings tabs)
+- **Hours Form**: Volunteers can submit hours to "My Club" or "A Partnership" from the hours submission form
+
+### Admin Settings Reorganization (v2)
+- Tabs: Club | Members | Logs | Approvals | Territory | Partnerships
+- **Club**: Name, description, color, home base location, optional password
+- **Members**: Profile field visibility toggles + custom fields
+- **Logs**: Hours tracking periods management
+- **Approvals**: Multi-admin approval/rejection threshold configuration
+- **Territory**: Decay rate, max decay floor, high-need bonus multiplier + formula reference
+- **Partnerships**: Affiliation management
+
+### Grant Hours (Admin)
+- Admins can grant hours directly from the Volunteers tab
+- Special submissions tagged "Granted by Admin" with a badge in the submission list
+- Inline edit of existing submission hours
+
 ## External Dependencies
 
 - **Authentication**: Google OAuth (via Firebase Authentication).
