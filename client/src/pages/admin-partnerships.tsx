@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  User, Club, Partnership, PartnershipAffiliation, ClubEvent,
+  User, Club, Partnership, PartnershipAffiliation, ClubEvent, EventAttendance,
   getAllPartnerships, getPartnershipsByOwner, createPartnership, updatePartnership, deletePartnership,
   getPartnershipAffiliations, getClubAffiliations, requestAffiliation, respondToAffiliation,
-  getPartnershipEvents, createEvent, updateEvent, deleteEvent, getPartnershipSubmissions, getClubs
+  getPartnershipEvents, createEvent, updateEvent, deleteEvent, getPartnershipSubmissions, getClubs,
+  getEventAttendance, checkInUser, checkOutUser, grantEventHours
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Trash2, Save, Building2, Users, Clock, Award, ChevronRight,
   BarChart3, Calendar, Handshake, Settings, Globe, Check, X, AlertCircle,
-  Upload, Image, LayoutDashboard, Search
+  Upload, Image, LayoutDashboard, Search, QrCode, ScanLine, CheckCircle2, XCircle, RefreshCw
 } from "lucide-react";
+import QRCode from "react-qr-code";
+import { Html5Qrcode } from "html5-qrcode";
 
 interface AdminPartnershipsProps {
   user: User;
@@ -29,6 +33,64 @@ interface AdminPartnershipsProps {
 
 type PartnershipView = 'list' | 'manage' | 'browse-detail';
 type ManageTab = 'overview' | 'events' | 'volunteers' | 'affiliations' | 'settings';
+type PartnershipEventTab = 'information' | 'qrcode' | 'grant';
+type QRSubTab = 'checkin' | 'checkout';
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  none: 'Open', password: 'Password Protected', scan_qr: 'Scan QR Code', show_qr: 'Show QR Code',
+};
+const EVENT_TYPE_COLORS: Record<string, string> = {
+  none: 'bg-green-100 text-green-700', password: 'bg-yellow-100 text-yellow-700',
+  scan_qr: 'bg-blue-100 text-blue-700', show_qr: 'bg-purple-100 text-purple-700',
+};
+
+const formatTime = (date?: Date) => {
+  if (!date) return '—';
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+};
+const formatMinutes = (minutes?: number) => {
+  if (minutes == null) return '—';
+  const h = Math.floor(minutes / 60); const m = minutes % 60;
+  return h === 0 ? `${m}m` : `${h}h ${m}m`;
+};
+
+function QRScanner({ onScan }: { onScan: (text: string) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [started, setStarted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    return () => { if (scannerRef.current && started) scannerRef.current.stop().catch(() => {}); };
+  }, [started]);
+  const startScanner = async () => {
+    if (!containerRef.current) return;
+    const id = `qr-ps-${Math.random().toString(36).slice(2)}`;
+    containerRef.current.id = id;
+    try {
+      const scanner = new Html5Qrcode(id);
+      scannerRef.current = scanner;
+      await scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, (text) => { onScan(text); }, () => {});
+      setStarted(true); setError(null);
+    } catch (err: any) { setError(err?.message || "Camera access failed"); }
+  };
+  const stopScanner = async () => {
+    if (scannerRef.current) { await scannerRef.current.stop().catch(() => {}); scannerRef.current = null; }
+    setStarted(false);
+  };
+  return (
+    <div className="space-y-3">
+      <div ref={containerRef} className={`w-full rounded-xl overflow-hidden bg-black ${started ? 'h-64' : 'h-0'}`} />
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      {!started ? (
+        <Button onClick={startScanner} className="w-full bg-black hover:bg-gray-800 text-white">
+          <ScanLine className="w-4 h-4 mr-2" /> Start Camera
+        </Button>
+      ) : (
+        <Button onClick={stopScanner} variant="outline" className="w-full">Stop Camera</Button>
+      )}
+    </div>
+  );
+}
 
 const ORG_TYPE_LABELS: Record<string, string> = {
   business: 'Business',
@@ -86,8 +148,14 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
   const [editEventName, setEditEventName] = useState('');
   const [editEventDesc, setEditEventDesc] = useState('');
-  const [editEventType, setEditEventType] = useState<'none' | 'password'>('none');
+  const [editEventType, setEditEventType] = useState<ClubEvent['type']>('none');
   const [editEventPassword, setEditEventPassword] = useState('');
+  const [activePartnershipEventTab, setActivePartnershipEventTab] = useState<PartnershipEventTab>('information');
+  const [qrSubTab, setQrSubTab] = useState<QRSubTab>('checkin');
+  const [scanResult, setScanResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
+  const [overrideHours, setOverrideHours] = useState<Record<string, string>>({});
+  const [defaultHours, setDefaultHours] = useState('');
 
   // Volunteer search
   const [volunteerSearch, setVolunteerSearch] = useState('');
@@ -146,8 +214,13 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     if (selectedPartnershipEvent) {
       setEditEventName(selectedPartnershipEvent.name);
       setEditEventDesc(selectedPartnershipEvent.description || '');
-      setEditEventType(selectedPartnershipEvent.type as 'none' | 'password');
+      setEditEventType(selectedPartnershipEvent.type);
       setEditEventPassword(selectedPartnershipEvent.password || '');
+      setActivePartnershipEventTab('information');
+      setScanResult(null);
+      setSelectedAttendees([]);
+      setOverrideHours({});
+      setDefaultHours('');
     }
   }, [selectedPartnershipEvent?.id]);
 
@@ -256,6 +329,55 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       setSelectedPartnershipEvent(null);
       toast({ title: "Event deleted" });
     },
+  });
+
+  const { data: attendance = [], refetch: refetchAttendance } = useQuery<EventAttendance[]>({
+    queryKey: ['firebase-event-attendance', selectedPartnershipEvent?.id],
+    queryFn: () => getEventAttendance(selectedPartnershipEvent!.id),
+    enabled: !!selectedPartnershipEvent?.id,
+    refetchInterval: 5000,
+  });
+
+  const handleCheckInScan = async (text: string) => {
+    try {
+      const email = text.trim();
+      const existing = attendance.find(a => a.userEmail === email && !a.checkOutTime);
+      if (existing) { setScanResult({ success: false, message: `${email} is already checked in` }); return; }
+      await checkInUser(selectedPartnershipEvent!.id, selectedPartnershipEvent!.name, email, email, undefined, selectedPartnership?.id);
+      setScanResult({ success: true, message: `✓ ${email} checked in` });
+      refetchAttendance();
+    } catch (e: any) { setScanResult({ success: false, message: e.message || 'Check-in failed' }); }
+  };
+
+  const handleCheckOutScan = async (text: string) => {
+    try {
+      const email = text.trim();
+      const record = attendance.find(a => a.userEmail === email && !a.checkOutTime);
+      if (!record) { setScanResult({ success: false, message: `${email} is not checked in` }); return; }
+      await checkOutUser(record.id);
+      setScanResult({ success: true, message: `✓ ${email} checked out` });
+      refetchAttendance();
+    } catch (e: any) { setScanResult({ success: false, message: e.message || 'Check-out failed' }); }
+  };
+
+  const grantMutation = useMutation({
+    mutationFn: () => grantEventHours({
+      eventId: selectedPartnershipEvent!.id,
+      eventName: selectedPartnershipEvent!.name,
+      attendanceIds: selectedAttendees.length > 0 ? selectedAttendees : attendance.map(a => a.id),
+      defaultHours: parseFloat(defaultHours) || 0,
+      overrideHours: Object.fromEntries(Object.entries(overrideHours).map(([k, v]) => [k, parseFloat(v)])),
+      conditionals: [],
+      partnershipId: selectedPartnership?.id,
+    }),
+    onSuccess: () => {
+      refetchAttendance();
+      setSelectedAttendees([]);
+      setOverrideHours({});
+      setDefaultHours('');
+      toast({ title: "Hours granted!" });
+    },
+    onError: (e: any) => toast({ title: "Failed to grant hours", description: e?.message, variant: "destructive" }),
   });
 
   const sendAffiliationMutation = useMutation({
@@ -495,8 +617,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                       <div>
                         <div className="flex items-center gap-2">
                           <h2 className="text-xl font-bold text-gray-900">{selectedPartnershipEvent.name}</h2>
-                          <Badge className={selectedPartnershipEvent.type === 'none' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                            {selectedPartnershipEvent.type === 'none' ? 'Open' : 'Password'}
+                          <Badge className={EVENT_TYPE_COLORS[selectedPartnershipEvent.type] || 'bg-gray-100 text-gray-600'}>
+                            {EVENT_TYPE_LABELS[selectedPartnershipEvent.type] || selectedPartnershipEvent.type}
                           </Badge>
                         </div>
                         {selectedPartnershipEvent.description && (
@@ -514,52 +636,230 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                       </Button>
                     </div>
                     <div className="flex gap-1 mt-3 border-b border-gray-200 -mb-4 pb-0">
-                      <button className="px-4 py-2 text-sm font-medium border-b-2 border-gray-900 text-gray-900">
-                        Information
-                      </button>
+                      {(['information', 'qrcode', 'grant'] as PartnershipEventTab[]).map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setActivePartnershipEventTab(tab)}
+                          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activePartnershipEventTab === tab ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        >
+                          {tab === 'information' && 'Information'}
+                          {tab === 'qrcode' && <span className="flex items-center gap-1"><QrCode className="w-4 h-4" /> QR Code</span>}
+                          {tab === 'grant' && <span className="flex items-center gap-1"><Award className="w-4 h-4" /> Grant Hours</span>}
+                        </button>
+                      ))}
                     </div>
                   </div>
                   <div className="flex-1 overflow-auto p-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Event Settings</CardTitle>
-                        <CardDescription>Update the event name, description, and check-in method.</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-1">
-                          <Label>Event Name</Label>
-                          <Input value={editEventName} onChange={e => setEditEventName(e.target.value)} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Description</Label>
-                          <Textarea value={editEventDesc} onChange={e => setEditEventDesc(e.target.value)} rows={3} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label>Check-in Method</Label>
-                          <Select value={editEventType} onValueChange={(v) => setEditEventType(v as 'none' | 'password')}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent className="z-[200]">
-                              <SelectItem value="none">Open — No check-in required</SelectItem>
-                              <SelectItem value="password">Password Protected</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        {editEventType === 'password' && (
+
+                    {/* INFORMATION TAB */}
+                    {activePartnershipEventTab === 'information' && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Event Settings</CardTitle>
+                          <CardDescription>Update the event name, description, and check-in method.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
                           <div className="space-y-1">
-                            <Label>Password</Label>
-                            <Input value={editEventPassword} onChange={e => setEditEventPassword(e.target.value)} />
+                            <Label>Event Name</Label>
+                            <Input value={editEventName} onChange={e => setEditEventName(e.target.value)} />
                           </div>
+                          <div className="space-y-1">
+                            <Label>Description</Label>
+                            <Textarea value={editEventDesc} onChange={e => setEditEventDesc(e.target.value)} rows={3} />
+                          </div>
+                          <div className="space-y-1">
+                            <Label>Check-in Method</Label>
+                            <Select value={editEventType} onValueChange={(v) => setEditEventType(v as ClubEvent['type'])}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent className="z-[200]">
+                                <SelectItem value="none">Open — No check-in required</SelectItem>
+                                <SelectItem value="password">Password Protected</SelectItem>
+                                <SelectItem value="scan_qr">Scan QR — You scan volunteers' QR codes</SelectItem>
+                                <SelectItem value="show_qr">Show QR — Volunteers scan your QR codes</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {editEventType === 'password' && (
+                            <div className="space-y-1">
+                              <Label>Password</Label>
+                              <Input value={editEventPassword} onChange={e => setEditEventPassword(e.target.value)} />
+                            </div>
+                          )}
+                          <Button
+                            onClick={() => updateEventMutation.mutate()}
+                            disabled={updateEventMutation.isPending}
+                            className="w-full bg-black hover:bg-gray-800 text-white"
+                          >
+                            <Save className="w-4 h-4 mr-2" />
+                            {updateEventMutation.isPending ? "Saving..." : "Save Changes"}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* QR CODE TAB */}
+                    {activePartnershipEventTab === 'qrcode' && (
+                      <div className="space-y-5">
+                        {(selectedPartnershipEvent.type === 'none') && (
+                          <Card>
+                            <CardContent className="pt-6 text-center py-10">
+                              <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                              <p className="text-gray-600 font-medium">This event has no QR code</p>
+                              <p className="text-sm text-gray-400 mt-1">Change the check-in method to "Scan QR" or "Show QR" in the Information tab.</p>
+                            </CardContent>
+                          </Card>
                         )}
-                        <Button
-                          onClick={() => updateEventMutation.mutate()}
-                          disabled={updateEventMutation.isPending}
-                          className="w-full bg-black hover:bg-gray-800 text-white"
-                        >
-                          <Save className="w-4 h-4 mr-2" />
-                          {updateEventMutation.isPending ? "Saving..." : "Save Changes"}
-                        </Button>
-                      </CardContent>
-                    </Card>
+                        {selectedPartnershipEvent.type === 'password' && (
+                          <Card>
+                            <CardContent className="pt-6 text-center py-10">
+                              <p className="text-gray-600 font-medium">Password-protected event</p>
+                              <p className="text-sm text-gray-400 mt-1">Volunteers enter a password when submitting hours. No QR scanning needed.</p>
+                            </CardContent>
+                          </Card>
+                        )}
+                        {selectedPartnershipEvent.type === 'show_qr' && (
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-base flex items-center gap-2"><QrCode className="w-5 h-5" /> Event QR Codes</CardTitle>
+                              <CardDescription>Display these on a screen or print them out. Volunteers scan the Check-in QR when they arrive and the Check-out QR when they leave.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="grid grid-cols-2 gap-6">
+                                <div className="text-center space-y-3">
+                                  <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                                    <CheckCircle2 className="w-4 h-4" /> Check-in
+                                  </div>
+                                  <div className="p-4 bg-white border-2 border-green-200 rounded-xl inline-block">
+                                    <QRCode value={JSON.stringify({ eventId: selectedPartnershipEvent.id, action: 'checkin', partnershipId: selectedPartnership?.id })} size={160} />
+                                  </div>
+                                  <p className="text-xs text-gray-500">Scan this to check IN</p>
+                                </div>
+                                <div className="text-center space-y-3">
+                                  <div className="inline-flex items-center gap-1.5 bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-sm font-medium">
+                                    <XCircle className="w-4 h-4" /> Check-out
+                                  </div>
+                                  <div className="p-4 bg-white border-2 border-red-200 rounded-xl inline-block">
+                                    <QRCode value={JSON.stringify({ eventId: selectedPartnershipEvent.id, action: 'checkout', partnershipId: selectedPartnership?.id })} size={160} />
+                                  </div>
+                                  <p className="text-xs text-gray-500">Scan this to check OUT</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                        {selectedPartnershipEvent.type === 'scan_qr' && (
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-base flex items-center gap-2"><ScanLine className="w-5 h-5" /> QR Code Scanner</CardTitle>
+                              <CardDescription>Leave this device at the event table. Volunteers show their personal QR codes (found in their profile).</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="flex gap-2 border-b border-gray-200">
+                                {(['checkin', 'checkout'] as QRSubTab[]).map(sub => (
+                                  <button key={sub} onClick={() => setQrSubTab(sub)}
+                                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${qrSubTab === sub ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500'}`}>
+                                    {sub === 'checkin' ? '✓ Check-in Scanner' : '✗ Check-out Scanner'}
+                                  </button>
+                                ))}
+                              </div>
+                              {scanResult && (
+                                <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${scanResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                  {scanResult.success ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                  {scanResult.message}
+                                </div>
+                              )}
+                              {qrSubTab === 'checkin' && <QRScanner onScan={handleCheckInScan} />}
+                              {qrSubTab === 'checkout' && <QRScanner onScan={handleCheckOutScan} />}
+                              {attendance.length > 0 && (
+                                <div className="mt-4">
+                                  <p className="text-sm font-medium text-gray-700 mb-2">Current Attendance ({attendance.length})</p>
+                                  <div className="space-y-1 max-h-48 overflow-auto">
+                                    {attendance.map(a => (
+                                      <div key={a.id} className="flex items-center justify-between text-xs py-1 px-2 bg-gray-50 rounded">
+                                        <span className="font-medium text-gray-900">{a.userEmail}</span>
+                                        <div className="flex items-center gap-2 text-gray-500">
+                                          <span>In: {formatTime(a.checkInTime)}</span>
+                                          {a.checkOutTime && <span>Out: {formatTime(a.checkOutTime)}</span>}
+                                          {a.minutesAttended != null && <span className="text-blue-600">{formatMinutes(a.minutesAttended)}</span>}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    )}
+
+                    {/* GRANT HOURS TAB */}
+                    {activePartnershipEventTab === 'grant' && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Grant Hours to Attendees</CardTitle>
+                          <CardDescription>Set a default hours amount for all selected attendees, or set custom amounts per person.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {attendance.length === 0 ? (
+                            <div className="text-center py-8">
+                              <Users className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                              <p className="text-sm text-gray-500">No attendees yet</p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {selectedPartnershipEvent.type === 'none' ? "Attendees are added when volunteers submit hours for this event." : "Attendees will appear here after checking in."}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={selectedAttendees.length === attendance.length}
+                                    onCheckedChange={(checked) => setSelectedAttendees(checked ? attendance.map(a => a.id) : [])}
+                                  />
+                                  <span className="text-sm text-gray-600">{selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'Select all'}</span>
+                                </div>
+                                <Button variant="outline" size="sm" onClick={() => refetchAttendance()}>
+                                  <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+                                </Button>
+                              </div>
+                              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                                <Label className="text-sm whitespace-nowrap">Default hours for all:</Label>
+                                <Input type="number" step="0.5" min="0" value={defaultHours} onChange={e => setDefaultHours(e.target.value)} placeholder="e.g. 2.5" className="w-28 h-8" />
+                                <p className="text-xs text-gray-500">Applied to everyone without a custom amount</p>
+                              </div>
+                              <div className="space-y-2 max-h-96 overflow-auto">
+                                {attendance.map(a => {
+                                  const isSelected = selectedAttendees.includes(a.id);
+                                  return (
+                                    <div key={a.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isSelected ? 'bg-gray-50 border-gray-300' : 'bg-white border-gray-200'}`}>
+                                      <Checkbox checked={isSelected} onCheckedChange={(checked) => setSelectedAttendees(prev => checked ? [...prev, a.id] : prev.filter(id => id !== a.id))} />
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-gray-900 truncate">{a.userName || a.userEmail}</p>
+                                        <p className="text-xs text-gray-500 truncate">{a.userEmail}</p>
+                                      </div>
+                                      <div className="text-xs text-gray-500 space-y-0.5 text-right flex-shrink-0">
+                                        {a.checkInTime && <div>In: {formatTime(a.checkInTime)}</div>}
+                                        {a.checkOutTime && <div>Out: {formatTime(a.checkOutTime)}</div>}
+                                        {a.minutesAttended != null && <div className="text-blue-600 font-medium">{formatMinutes(a.minutesAttended)}</div>}
+                                      </div>
+                                      {(a as any).grantStatus === 'granted' && (
+                                        <Badge className="bg-green-100 text-green-700 text-xs">✓ {(a as any).hoursGranted}h granted</Badge>
+                                      )}
+                                      <Input type="number" step="0.5" min="0" placeholder="Override" value={overrideHours[a.id] || ''} onChange={e => setOverrideHours(prev => ({ ...prev, [a.id]: e.target.value }))} className="w-24 h-7 text-xs" />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <Button onClick={() => grantMutation.mutate()} disabled={grantMutation.isPending} className="w-full bg-black hover:bg-gray-800 text-white">
+                                <Award className="w-4 h-4 mr-2" />
+                                {grantMutation.isPending ? "Granting..." : `Grant Hours to ${selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'all attendees'}`}
+                              </Button>
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 </div>
               )}
