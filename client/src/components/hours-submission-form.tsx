@@ -112,7 +112,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
     enabled: !!selectedPartnershipId && source === 'partnership',
   });
 
-  const availableEvents = source === 'club' ? clubEvents : partnershipEvents;
+  const availableEvents = (source === 'club' ? clubEvents : partnershipEvents).filter(e => e.isOpen !== false);
   const selectedEvent = availableEvents.find(e => e.id === selectedEventId) || null;
   const selectedPartnership = allPartnerships.find(p => p.id === selectedPartnershipId) || null;
 
@@ -268,7 +268,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
               <SelectTrigger className="bg-white">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[200]">
                 <SelectItem value="club">My Club</SelectItem>
                 <SelectItem value="partnership">A Partnership (food bank, business, etc.)</SelectItem>
               </SelectContent>
@@ -285,7 +285,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="Choose a partnership..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   {allPartnerships.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       <span className="flex items-center gap-2">
@@ -317,7 +317,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                 <SelectTrigger className="bg-white">
                   <SelectValue placeholder="No event (general submission)" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   <SelectItem value="__none__">No event — general submission</SelectItem>
                   {availableEvents.map(e => (
                     <SelectItem key={e.id} value={e.id}>
