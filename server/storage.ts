@@ -860,15 +860,13 @@ export class FirestoreStorage implements IStorage {
   }
 
   private calculateTerritoryRadius(hours: number, peopleCount: number, lastActivityDate?: Date): number {
-    const baseMiles = 5;
-    const maxMiles = 20;
+    const baseMiles = 4;
+    const maxMiles = 25;
     const baseKm = baseMiles * 1.60934;
     const maxKm = maxMiles * 1.60934;
 
-    // Growth factor: fewer people with more hours = greater radius
-    // inversely proportional to people count, proportional to hours
-    const hoursPerPerson = peopleCount > 0 ? hours / peopleCount : hours;
-    const growthFactor = Math.log10(hoursPerPerson + 1) / Math.log10(100);
+    // Growth on a log scale: 4 miles at 0 hours → 25 miles at 1000 hours
+    const growthFactor = Math.log10(hours + 1) / Math.log10(1000);
     let radiusKm = baseKm + (maxKm - baseKm) * Math.min(1, growthFactor);
 
     // Apply decay for inactive circles

@@ -49,8 +49,8 @@ Preferred communication style: Simple, everyday language.
 
 ### Territory System (Per-Location)
 - **Per-Location Circles**: Each volunteer hour submission can include a location. Circles grow independently at each location based on hours logged there.
-- **Radius Formula**: Base 5 miles + (15 miles range) * min(1, log₁₀(hours+1) / log₁₀(1000))
-- **Range**: 5-20 miles radius based on approved hours at that specific location
+- **Radius Formula**: Base 4 miles + (21 miles range) * min(1, log₁₀(hours+1) / log₁₀(1000))
+- **Range**: 4-25 miles radius based on total approved hours at that specific location
 - **Metaball Physics**: When circles from the same club are close (within 1.5x combined radii), they merge visually using metaball-style blending
 - **Decay System**: Circles decay by 0.25 miles per week of inactivity, capped at 10% of the circle's highest radius
 - **Location Capture**: Hours submission form includes optional location search using Nominatim API
