@@ -329,7 +329,7 @@ export default function Profile() {
 
   const isLoading = profileLoading || customFieldsLoading;
 
-  if (isLoading) {
+  if (!user || isLoading) {
     return (
       <div className="flex-1 flex flex-col bg-white min-h-0">
         <div className="flex items-center justify-center py-12">
