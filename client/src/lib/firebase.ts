@@ -1682,6 +1682,10 @@ export const grantEventHours = async (
   }
 
   await batch.commit();
+
+  if (clubId) {
+    await recalculateClubHours(clubId);
+  }
 };
 
 export const grantPartnershipHoursAsPending = async (
