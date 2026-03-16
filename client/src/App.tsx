@@ -39,6 +39,7 @@ import { AdminSettings } from "@/pages/admin-settings";
 import { AdminEvents } from "@/pages/admin-events";
 import { AdminPartnerships } from "@/pages/admin-partnerships";
 import { PartnershipsPage } from "@/pages/partnerships";
+import ClubJoin from "@/pages/club-join";
 
 function VolunteerInterface({ 
   user, 
@@ -399,6 +400,9 @@ function App() {
             ) : (
               <Landing onSignIn={() => {}} />
             )}
+          </Route>
+          <Route path="/join/:code">
+            {(params) => <ClubJoin />}
           </Route>
           <Route path="/landing">
             <Landing onSignIn={() => {}} />

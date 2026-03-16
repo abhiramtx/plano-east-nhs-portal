@@ -54,6 +54,7 @@ export interface Club {
   logoUrl?: string;
   isPrivate: boolean;
   password?: string;
+  inviteCode?: string;
   creatorEmail: string;
   totalApprovedHours: number;
   bonusHours: number;
@@ -323,6 +324,28 @@ export const updateClub = async (clubId: string, updates: Partial<Club>): Promis
     ...updates,
     updatedAt: Timestamp.fromDate(new Date()),
   });
+};
+
+export const generateInviteCode = async (clubId: string): Promise<string> => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const code = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  await updateDoc(doc(db, "clubs", clubId), { inviteCode: code, updatedAt: Timestamp.fromDate(new Date()) });
+  return code;
+};
+
+export const getClubByInviteCode = async (code: string): Promise<Club | null> => {
+  const q = query(collection(db, "clubs"), where("inviteCode", "==", code));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  const data = d.data();
+  return {
+    id: d.id,
+    ...data,
+    lastActivityAt: toDate(data.lastActivityAt),
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+  } as Club;
 };
 
 export const recalculateClubHours = async (clubId: string): Promise<void> => {

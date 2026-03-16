@@ -6,6 +6,7 @@ import {
   getAdminSettings, updateAdminSettings, updateClub, recalculateClubHours,
   getClubAffiliations, respondToAffiliation, removeAffiliation,
   getPartnershipEvents, getEventAttendance, getMemberships, grantPartnershipHoursAsPending,
+  generateInviteCode,
 } from "@/lib/firebase";
 import type { HoursLog } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Save, Settings, Eye, Clock, MapPin, Palette, Lock, FileText, BookOpen,
   CheckCircle, Upload, Image, Check, X, Handshake, Calendar, ChevronDown,
-  ChevronRight, Users, Award, Globe, ScanLine, QrCode
+  ChevronRight, Users, Award, Globe, ScanLine, QrCode, Link2, Copy, RefreshCw
 } from "lucide-react";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -357,6 +358,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
   const [clubLogoUrl, setClubLogoUrl] = useState(club.logoUrl || '');
   const [clubLatitude, setClubLatitude] = useState(club.latitude?.toString() || '');
   const [clubLongitude, setClubLongitude] = useState(club.longitude?.toString() || '');
+  const [currentInviteCode, setCurrentInviteCode] = useState(club.inviteCode || '');
   const clubLogoRef = useRef<HTMLInputElement>(null);
 
   const [showStudentId, setShowStudentId] = useState(true);
@@ -423,6 +425,17 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
     },
     onError: (error: any) => {
       toast({ title: "Sync failed", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const generateInviteMutation = useMutation({
+    mutationFn: () => generateInviteCode(club.id),
+    onSuccess: (code) => {
+      setCurrentInviteCode(code);
+      toast({ title: "Invite link generated", description: "A new invite link has been created." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to generate link", description: error.message, variant: "destructive" });
     }
   });
 
@@ -742,6 +755,63 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                       <Save className="w-4 h-4 mr-2" />Save Password
                     </Button>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Link2 className="w-5 h-5" />
+                  Invite Link
+                </CardTitle>
+                <CardDescription>
+                  Share this link so volunteers can join your club directly — they'll be prompted to sign in with Google first.
+                  {club.isPrivate && " They'll also need to enter the club password."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {currentInviteCode ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        readOnly
+                        value={`${window.location.origin}/join/${currentInviteCode}`}
+                        className="font-mono text-sm bg-gray-50 border-gray-200"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-shrink-0 border-gray-200"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/join/${currentInviteCode}`);
+                          toast({ title: "Copied!", description: "Invite link copied to clipboard." });
+                        }}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-gray-200 text-gray-600"
+                      onClick={() => generateInviteMutation.mutate()}
+                      disabled={generateInviteMutation.isPending}
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 mr-2" />
+                      {generateInviteMutation.isPending ? "Regenerating..." : "Regenerate Link"}
+                    </Button>
+                    <p className="text-xs text-gray-400">Regenerating creates a new link — the old one will stop working immediately.</p>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full bg-black hover:bg-gray-800 text-white"
+                    onClick={() => generateInviteMutation.mutate()}
+                    disabled={generateInviteMutation.isPending}
+                  >
+                    <Link2 className="w-4 h-4 mr-2" />
+                    {generateInviteMutation.isPending ? "Generating..." : "Generate Invite Link"}
+                  </Button>
                 )}
               </CardContent>
             </Card>

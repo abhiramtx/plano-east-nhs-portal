@@ -17,7 +17,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe } from "lucide-react";
+import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe, Link2, Copy } from "lucide-react";
 
 interface ClubDashboardProps {
   user: User;
@@ -170,6 +170,33 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
           </CardContent>
         </Card>
       </div>
+
+      {club.inviteCode && (
+        <Card className="bg-gray-50 border-gray-200">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-white border border-gray-200 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Link2 className="w-4 h-4 text-gray-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900">Invite Link</p>
+                <p className="text-xs text-gray-500 font-mono truncate">{`${window.location.origin}/join/${club.inviteCode}`}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-shrink-0 border-gray-200 bg-white"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/join/${club.inviteCode}`);
+                }}
+              >
+                <Copy className="w-3.5 h-3.5 mr-1.5" />
+                Copy
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="members" className="space-y-4">
         <TabsList className="bg-gray-100 border-gray-200">
