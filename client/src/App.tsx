@@ -400,6 +400,9 @@ function App() {
               <Landing onSignIn={() => {}} />
             )}
           </Route>
+          <Route path="/landing">
+            <Landing onSignIn={() => {}} />
+          </Route>
           <Route path="/clubs">
             {user ? (
               <ClubSelection 
