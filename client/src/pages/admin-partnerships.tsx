@@ -17,7 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Plus, Trash2, Save, Building2, Users, Clock, Award, ChevronRight,
-  BarChart3, Calendar, Handshake, Settings, Globe, Check, X, AlertCircle, Upload, Image
+  BarChart3, Calendar, Handshake, Settings, Globe, Check, X, AlertCircle,
+  Upload, Image, LayoutDashboard, Search
 } from "lucide-react";
 
 interface AdminPartnershipsProps {
@@ -26,7 +27,7 @@ interface AdminPartnershipsProps {
   hideHeader?: boolean;
 }
 
-type PartnershipView = 'list' | 'manage';
+type PartnershipView = 'list' | 'manage' | 'browse-detail';
 type ManageTab = 'overview' | 'events' | 'volunteers' | 'affiliations' | 'settings';
 
 const ORG_TYPE_LABELS: Record<string, string> = {
@@ -51,9 +52,11 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
 
   const [view, setView] = useState<PartnershipView>('list');
   const [selectedPartnership, setSelectedPartnership] = useState<Partnership | null>(null);
+  const [browsePartnership, setBrowsePartnership] = useState<Partnership | null>(null);
   const [activeTab, setActiveTab] = useState<ManageTab>('overview');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [affiliateClubSearch, setAffiliateClubSearch] = useState('');
+  const [partnershipSearch, setPartnershipSearch] = useState('');
 
   const createLogoRef = useRef<HTMLInputElement>(null);
   const editLogoRef = useRef<HTMLInputElement>(null);
@@ -78,13 +81,13 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   const [newEventType, setNewEventType] = useState<'none' | 'password'>('none');
   const [newEventPassword, setNewEventPassword] = useState('');
 
-  const { data: myPartnerships = [], isLoading } = useQuery<Partnership[]>({
+  const { data: myPartnerships = [], isLoading: myLoading } = useQuery<Partnership[]>({
     queryKey: ['firebase-partnerships-owned', user.email],
     queryFn: () => getPartnershipsByOwner(user.email),
     enabled: !!user.email,
   });
 
-  const { data: allPartnerships = [] } = useQuery<Partnership[]>({
+  const { data: allPartnerships = [], isLoading: allLoading } = useQuery<Partnership[]>({
     queryKey: ['firebase-all-partnerships'],
     queryFn: getAllPartnerships,
   });
@@ -100,16 +103,16 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     enabled: !!selectedPartnership?.id,
   });
 
+  const { data: browseEvents = [] } = useQuery<ClubEvent[]>({
+    queryKey: ['firebase-partnership-events', browsePartnership?.id],
+    queryFn: () => getPartnershipEvents(browsePartnership!.id),
+    enabled: !!browsePartnership?.id,
+  });
+
   const { data: affiliations = [] } = useQuery<PartnershipAffiliation[]>({
     queryKey: ['firebase-partnership-affiliations', selectedPartnership?.id],
     queryFn: () => getPartnershipAffiliations(selectedPartnership!.id),
     enabled: !!selectedPartnership?.id,
-  });
-
-  const { data: clubAffiliations = [] } = useQuery<PartnershipAffiliation[]>({
-    queryKey: ['firebase-club-affiliations', club?.id],
-    queryFn: () => getClubAffiliations(club!.id),
-    enabled: !!club?.id,
   });
 
   const { data: partnershipSubmissions = [] } = useQuery({
@@ -200,7 +203,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       toast({ title: "Event created" });
     },
     onError: (error: any) => {
-      toast({ title: "Failed to create event", description: error?.message || "An error occurred. Check your permissions.", variant: "destructive" });
+      toast({ title: "Failed to create event", description: error?.message || "An error occurred.", variant: "destructive" });
     },
   });
 
@@ -217,625 +220,769 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     },
   });
 
-  // Stats
-  const totalHours = partnershipSubmissions
-    .filter((s: any) => s.status === 'approved')
-    .reduce((sum: number, s: any) => sum + (s.hours || 0), 0);
-  const uniqueVolunteers = new Set(partnershipSubmissions.map((s: any) => s.userEmail)).size;
-  const pendingCount = partnershipSubmissions.filter((s: any) => s.status === 'pending').length;
+  const totalHours = (partnershipSubmissions as any[])
+    .filter(s => s.status === 'approved')
+    .reduce((sum, s) => sum + (s.hours || 0), 0);
+  const uniqueVolunteers = new Set((partnershipSubmissions as any[]).map(s => s.userEmail)).size;
+  const pendingCount = (partnershipSubmissions as any[]).filter(s => s.status === 'pending').length;
+  const pendingAffiliations = affiliations.filter(a => a.status === 'pending');
+  const approvedAffiliations = affiliations.filter(a => a.status === 'approved');
 
   const filteredClubsForAffiliation = allClubs.filter(c =>
     c.name.toLowerCase().includes(affiliateClubSearch.toLowerCase()) &&
     !affiliations.find(a => a.clubId === c.id && a.status !== 'rejected')
   );
 
-  const pendingAffiliations = affiliations.filter(a => a.status === 'pending');
-  const approvedAffiliations = affiliations.filter(a => a.status === 'approved');
+  const isOwner = (p: Partnership) => p.ownerEmail === user.email;
 
+  const filteredAll = allPartnerships.filter(p =>
+    p.name.toLowerCase().includes(partnershipSearch.toLowerCase()) ||
+    (p.description || '').toLowerCase().includes(partnershipSearch.toLowerCase())
+  );
+
+  // ─── MANAGE VIEW (sidebar layout) ─────────────────────────────────────────
   if (view === 'manage' && selectedPartnership) {
+    const sidebarItems: { id: ManageTab; label: string; icon: any; badge?: number }[] = [
+      { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+      { id: 'events', label: 'Events', icon: Calendar },
+      { id: 'volunteers', label: 'Volunteers', icon: Users },
+      { id: 'affiliations', label: 'Affiliations', icon: Handshake, badge: pendingAffiliations.length || undefined },
+      { id: 'settings', label: 'Settings', icon: Settings },
+    ];
+
     return (
-      <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <button onClick={() => { setView('list'); setSelectedPartnership(null); }} className="text-gray-400 hover:text-gray-700 text-sm">
-              ← Partnerships
+      <div className="flex h-full min-h-screen bg-white">
+        {/* Sidebar */}
+        <div className="w-60 border-r border-gray-200 flex-shrink-0 flex flex-col bg-gray-50">
+          {/* Partnership identity */}
+          <div className="p-4 border-b border-gray-200">
+            <button
+              onClick={() => { setView('list'); setSelectedPartnership(null); }}
+              className="text-xs text-gray-400 hover:text-gray-600 mb-3 flex items-center gap-1"
+            >
+              ← Back to Partnerships
             </button>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <div
-                className="w-7 h-7 rounded-lg flex-shrink-0 overflow-hidden"
+                className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden border border-gray-200"
                 style={{ backgroundColor: selectedPartnership.logoUrl ? undefined : selectedPartnership.color }}
               >
                 {selectedPartnership.logoUrl
                   ? <img src={selectedPartnership.logoUrl} alt={selectedPartnership.name} className="w-full h-full object-cover" />
                   : null}
               </div>
-              <span className="font-semibold text-gray-900">{selectedPartnership.name}</span>
-              <Badge className={ORG_TYPE_COLORS[selectedPartnership.orgType]}>{ORG_TYPE_LABELS[selectedPartnership.orgType]}</Badge>
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900 text-sm truncate">{selectedPartnership.name}</p>
+                <Badge className={`text-xs ${ORG_TYPE_COLORS[selectedPartnership.orgType]}`}>
+                  {ORG_TYPE_LABELS[selectedPartnership.orgType]}
+                </Badge>
+              </div>
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-1 mt-3 border-b border-gray-200 -mb-4">
-            {(['overview', 'events', 'volunteers', 'affiliations', 'settings'] as ManageTab[]).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize ${
-                  activeTab === tab ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab === 'affiliations' && pendingAffiliations.length > 0 ? (
-                  <span className="flex items-center gap-1">
-                    Affiliations <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full">{pendingAffiliations.length}</span>
+          {/* Nav */}
+          <nav className="flex-1 p-3 space-y-0.5">
+            {sidebarItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === item.id
+                      ? 'bg-gray-900 text-white'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <Icon className="w-4 h-4" />
+                    {item.label}
                   </span>
-                ) : tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
+                  {item.badge ? (
+                    <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full leading-none">
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        <div className="flex-1 overflow-auto p-6">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6 max-w-4xl">
-              <div className="grid grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center gap-3">
-                      <Award className="w-8 h-8 text-blue-600" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">{totalHours.toFixed(1)}</p>
-                        <p className="text-xs text-gray-500">Total Hours</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center gap-3">
-                      <Users className="w-8 h-8 text-green-600" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">{uniqueVolunteers}</p>
-                        <p className="text-xs text-gray-500">Unique Volunteers</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center gap-3">
-                      <Clock className="w-8 h-8 text-yellow-600" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">{pendingCount}</p>
-                        <p className="text-xs text-gray-500">Pending Submissions</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center gap-3">
-                      <Handshake className="w-8 h-8 text-purple-600" />
-                      <div>
-                        <p className="text-2xl font-bold text-gray-900">{approvedAffiliations.length}</p>
-                        <p className="text-xs text-gray-500">Affiliated Clubs</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+        {/* Main content */}
+        <div className="flex-1 overflow-auto">
+          <div className="p-8 max-w-4xl">
 
-              <div className="grid grid-cols-2 gap-6">
+            {/* Overview Tab */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">{selectedPartnership.name}</h2>
+                  {selectedPartnership.description && (
+                    <p className="text-gray-500 mt-1">{selectedPartnership.description}</p>
+                  )}
+                  {selectedPartnership.address && (
+                    <p className="text-sm text-gray-400 mt-1">{selectedPartnership.address}</p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3">
+                        <Award className="w-8 h-8 text-blue-600" />
+                        <div>
+                          <p className="text-2xl font-bold text-gray-900">{totalHours.toFixed(1)}</p>
+                          <p className="text-xs text-gray-500">Total Hours</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3">
+                        <Users className="w-8 h-8 text-green-600" />
+                        <div>
+                          <p className="text-2xl font-bold text-gray-900">{uniqueVolunteers}</p>
+                          <p className="text-xs text-gray-500">Volunteers</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3">
+                        <Clock className="w-8 h-8 text-yellow-600" />
+                        <div>
+                          <p className="text-2xl font-bold text-gray-900">{pendingCount}</p>
+                          <p className="text-xs text-gray-500">Pending</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3">
+                        <Handshake className="w-8 h-8 text-purple-600" />
+                        <div>
+                          <p className="text-2xl font-bold text-gray-900">{approvedAffiliations.length}</p>
+                          <p className="text-xs text-gray-500">Affiliated Clubs</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm">Recent Submissions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {(partnershipSubmissions as any[]).length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-4">No submissions yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {(partnershipSubmissions as any[]).slice(0, 5).map((s) => (
+                            <div key={s.id} className="flex items-center justify-between text-sm">
+                              <span className="text-gray-700 truncate">{s.userName || s.userEmail}</span>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="font-medium">{s.hours}h</span>
+                                <Badge className={s.status === 'approved' ? 'bg-green-100 text-green-700' : s.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}>
+                                  {s.status}
+                                </Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm">Top Volunteers</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {uniqueVolunteers === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-4">No volunteers yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {Object.entries(
+                            (partnershipSubmissions as any[])
+                              .filter(s => s.status === 'approved')
+                              .reduce((acc: Record<string, { name: string; hours: number }>, s) => {
+                                if (!acc[s.userEmail]) acc[s.userEmail] = { name: s.userName || s.userEmail, hours: 0 };
+                                acc[s.userEmail].hours += s.hours;
+                                return acc;
+                              }, {})
+                          )
+                            .sort(([, a], [, b]) => (b as any).hours - (a as any).hours)
+                            .slice(0, 5)
+                            .map(([email, data]: [string, any]) => (
+                              <div key={email} className="flex items-center justify-between text-sm">
+                                <span className="text-gray-700 truncate">{data.name}</span>
+                                <span className="font-medium text-gray-900">{data.hours.toFixed(1)}h</span>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+
+            {/* Events Tab */}
+            {activeTab === 'events' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Events</h2>
+                  <p className="text-gray-500 mt-1">Create events volunteers can submit hours for.</p>
+                </div>
+
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm">Recent Submissions</CardTitle>
+                    <CardTitle className="text-base">Create New Event</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="space-y-1">
+                      <Label>Event Name</Label>
+                      <Input value={newEventName} onChange={e => setNewEventName(e.target.value)} placeholder="Volunteer Day, Community Fair..." />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Description <span className="text-gray-400">(optional)</span></Label>
+                      <Textarea value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} rows={2} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Access Type</Label>
+                      <Select value={newEventType} onValueChange={(v) => setNewEventType(v as 'none' | 'password')}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Open</SelectItem>
+                          <SelectItem value="password">Password Protected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {newEventType === 'password' && (
+                      <div className="space-y-1">
+                        <Label>Password</Label>
+                        <Input value={newEventPassword} onChange={e => setNewEventPassword(e.target.value)} />
+                      </div>
+                    )}
+                    <Button
+                      className="w-full bg-black hover:bg-gray-800 text-white"
+                      onClick={() => createEventMutation.mutate()}
+                      disabled={!newEventName.trim() || createEventMutation.isPending}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {createEventMutation.isPending ? "Creating..." : "Create Event"}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {partnershipEvents.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <Calendar className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                    <p>No events yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {partnershipEvents.map(event => (
+                      <div key={event.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+                        <div>
+                          <p className="font-semibold text-gray-900">{event.name}</p>
+                          {event.description && <p className="text-sm text-gray-500 mt-0.5">{event.description}</p>}
+                        </div>
+                        <Badge className="text-xs">
+                          {event.type === 'none' ? 'Open' : event.type === 'password' ? 'Password' : event.type}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Volunteers Tab */}
+            {activeTab === 'volunteers' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Volunteer Submissions</h2>
+                  <p className="text-gray-500 mt-1">All hours submitted to this partnership.</p>
+                </div>
+                {(partnershipSubmissions as any[]).length === 0 ? (
+                  <div className="text-center py-16">
+                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">No submissions yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Volunteers can submit hours from their Hours page</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {(partnershipSubmissions as any[]).map(s => (
+                      <div key={s.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+                        <div>
+                          <p className="font-semibold text-gray-900">{s.userName || s.userEmail}</p>
+                          <p className="text-sm text-gray-500">{s.activityName || s.description}</p>
+                          {s.partnershipVerified && (
+                            <Badge className="bg-green-100 text-green-700 text-xs mt-1">Partnership Verified</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-gray-900">{s.hours}h</span>
+                          <Badge className={s.status === 'approved' ? 'bg-green-100 text-green-700' : s.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}>
+                            {s.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Affiliations Tab */}
+            {activeTab === 'affiliations' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Club Affiliations</h2>
+                  <p className="text-gray-500 mt-1">Request clubs to affiliate with your partnership. Club admins approve or reject.</p>
+                </div>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Request Affiliation</CardTitle>
+                    <CardDescription>Search clubs and send an affiliation request.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Input
+                      placeholder="Search clubs..."
+                      value={affiliateClubSearch}
+                      onChange={e => setAffiliateClubSearch(e.target.value)}
+                    />
+                    {affiliateClubSearch && (
+                      <div className="space-y-2 max-h-48 overflow-auto">
+                        {filteredClubsForAffiliation.length === 0 ? (
+                          <p className="text-sm text-gray-400 text-center py-2">No clubs found</p>
+                        ) : (
+                          filteredClubsForAffiliation.map(c => (
+                            <div key={c.id} className="flex items-center justify-between p-2 border border-gray-200 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <div className="w-5 h-5 rounded overflow-hidden flex-shrink-0" style={{ backgroundColor: c.color }} />
+                                <span className="text-sm font-medium text-gray-900">{c.name}</span>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="h-7 text-xs bg-black hover:bg-gray-800 text-white"
+                                onClick={() => sendAffiliationMutation.mutate({ id: c.id, name: c.name })}
+                                disabled={sendAffiliationMutation.isPending}
+                              >
+                                Request
+                              </Button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {pendingAffiliations.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base text-yellow-700">Pending ({pendingAffiliations.length})</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {pendingAffiliations.map(aff => (
+                        <div key={aff.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl">
+                          <p className="font-medium text-gray-900 text-sm">{aff.clubName}</p>
+                          <Badge className="bg-yellow-100 text-yellow-700">Awaiting approval</Badge>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Affiliated Clubs ({approvedAffiliations.length})</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {partnershipSubmissions.length === 0 ? (
-                      <p className="text-sm text-gray-400 text-center py-4">No submissions yet</p>
+                    {approvedAffiliations.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-4">No clubs affiliated yet</p>
                     ) : (
                       <div className="space-y-2">
-                        {partnershipSubmissions.slice(0, 5).map((s: any) => (
-                          <div key={s.id} className="flex items-center justify-between text-sm">
-                            <span className="text-gray-700 truncate">{s.userName || s.userEmail}</span>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className="font-medium">{s.hours}h</span>
-                              <Badge className={s.status === 'approved' ? 'bg-green-100 text-green-700' : s.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}>
-                                {s.status}
-                              </Badge>
-                            </div>
+                        {approvedAffiliations.map(aff => (
+                          <div key={aff.id} className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
+                            <span className="font-medium text-gray-900 text-sm">{aff.clubName}</span>
+                            <Badge className="bg-green-100 text-green-700">Affiliated</Badge>
                           </div>
                         ))}
                       </div>
                     )}
                   </CardContent>
                 </Card>
+              </div>
+            )}
 
-                <Card>
+            {/* Settings Tab */}
+            {activeTab === 'settings' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+                  <p className="text-gray-500 mt-1">Manage your partnership details.</p>
+                </div>
+
+                <Card className="max-w-xl">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="space-y-1">
+                      <Label>Logo</Label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={editLogoRef}
+                        className="hidden"
+                        onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], setEditLogoUrl)}
+                      />
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                          style={{ backgroundColor: editLogoUrl ? undefined : editColor }}
+                          onClick={() => editLogoRef.current?.click()}
+                        >
+                          {editLogoUrl
+                            ? <img src={editLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                            : <Image className="w-6 h-6 text-white opacity-60" />
+                          }
+                        </div>
+                        <div>
+                          <Button type="button" variant="outline" size="sm" onClick={() => editLogoRef.current?.click()}>
+                            <Upload className="w-3 h-3 mr-1" /> {editLogoUrl ? 'Change Logo' : 'Upload Logo'}
+                          </Button>
+                          {editLogoUrl && (
+                            <Button type="button" variant="ghost" size="sm" className="ml-2 text-red-500 h-8" onClick={() => setEditLogoUrl('')}>
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Name</Label>
+                      <Input value={editName} onChange={e => setEditName(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Description</Label>
+                      <Textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={2} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Address / Location</Label>
+                      <Input value={editAddress} onChange={e => setEditAddress(e.target.value)} placeholder="123 Main St, City, State" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>Color</Label>
+                      <div className="flex items-center gap-2">
+                        <Input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} className="w-12 h-10" />
+                        <Input value={editColor} onChange={e => setEditColor(e.target.value)} className="flex-1" />
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full bg-black hover:bg-gray-800 text-white"
+                      onClick={() => updateMutation.mutate()}
+                      disabled={updateMutation.isPending}
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {updateMutation.isPending ? "Saving..." : "Save Settings"}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-red-200 max-w-xl">
                   <CardHeader>
-                    <CardTitle className="text-sm">Top Volunteers</CardTitle>
+                    <CardTitle className="text-base text-red-700">Danger Zone</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {uniqueVolunteers === 0 ? (
-                      <p className="text-sm text-gray-400 text-center py-4">No volunteers yet</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {Object.entries(
-                          partnershipSubmissions
-                            .filter((s: any) => s.status === 'approved')
-                            .reduce((acc: Record<string, { name: string; hours: number }>, s: any) => {
-                              if (!acc[s.userEmail]) acc[s.userEmail] = { name: s.userName || s.userEmail, hours: 0 };
-                              acc[s.userEmail].hours += s.hours;
-                              return acc;
-                            }, {})
-                        )
-                          .sort(([, a], [, b]) => (b as any).hours - (a as any).hours)
-                          .slice(0, 5)
-                          .map(([email, data]: [string, any]) => (
-                            <div key={email} className="flex items-center justify-between text-sm">
-                              <span className="text-gray-700 truncate">{data.name}</span>
-                              <span className="font-medium text-gray-900">{data.hours.toFixed(1)}h</span>
-                            </div>
-                          ))}
-                      </div>
-                    )}
+                    <Button
+                      variant="outline"
+                      className="text-red-600 border-red-200 hover:bg-red-50"
+                      onClick={() => deleteMutation.mutate(selectedPartnership.id)}
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Partnership
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
-            </div>
-          )}
-
-          {/* Events Tab */}
-          {activeTab === 'events' && (
-            <div className="max-w-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">Partnership Events</h3>
-                  <p className="text-sm text-gray-500">Events for this partnership. Volunteers can submit hours for these specific events.</p>
-                </div>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Create Event</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-1">
-                    <Label>Event Name</Label>
-                    <Input value={newEventName} onChange={e => setNewEventName(e.target.value)} placeholder="Volunteer Day, Community Fair..." />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Description <span className="text-gray-400">(optional)</span></Label>
-                    <Textarea value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} rows={2} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Type</Label>
-                    <Select value={newEventType} onValueChange={(v) => setNewEventType(v as 'none' | 'password')}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Open</SelectItem>
-                        <SelectItem value="password">Password Protected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {newEventType === 'password' && (
-                    <div className="space-y-1">
-                      <Label>Password</Label>
-                      <Input value={newEventPassword} onChange={e => setNewEventPassword(e.target.value)} />
-                    </div>
-                  )}
-                  <Button
-                    className="w-full bg-black hover:bg-gray-800 text-white"
-                    onClick={() => createEventMutation.mutate()}
-                    disabled={!newEventName.trim() || createEventMutation.isPending}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Event
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <div className="space-y-2">
-                {partnershipEvents.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">No events yet</p>
-                ) : (
-                  partnershipEvents.map(event => (
-                    <div key={event.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">{event.name}</p>
-                        {event.description && <p className="text-xs text-gray-500">{event.description}</p>}
-                      </div>
-                      <Badge className="text-xs">
-                        {event.type === 'none' ? 'Open' : event.type === 'password' ? 'Password' : event.type === 'scan_qr' ? 'Scan QR' : 'Show QR'}
-                      </Badge>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Volunteers Tab */}
-          {activeTab === 'volunteers' && (
-            <div className="max-w-2xl space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900">Volunteer Submissions</h3>
-                <p className="text-sm text-gray-500">All hours submitted to this partnership.</p>
-              </div>
-              {partnershipSubmissions.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">No submissions yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Volunteers can submit hours to your partnership from their Hours page</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {partnershipSubmissions.map((s: any) => (
-                    <div key={s.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900 text-sm">{s.userName || s.userEmail}</p>
-                        <p className="text-xs text-gray-500">{s.activityName || s.description}</p>
-                        {s.partnershipVerified && (
-                          <Badge className="bg-green-100 text-green-700 text-xs mt-1">Partnership Verified</Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="font-semibold text-gray-900">{s.hours}h</span>
-                        <Badge className={s.status === 'approved' ? 'bg-green-100 text-green-700' : s.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}>
-                          {s.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Affiliations Tab */}
-          {activeTab === 'affiliations' && (
-            <div className="max-w-2xl space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">Club Affiliations</h3>
-                  <p className="text-sm text-gray-500">Request clubs to affiliate with your partnership. Club admins will approve or reject your request.</p>
-                </div>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Request Affiliation with a Club</CardTitle>
-                  <CardDescription>Search clubs and send an affiliation request. The club admin must approve it.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Input
-                    placeholder="Search clubs..."
-                    value={affiliateClubSearch}
-                    onChange={e => setAffiliateClubSearch(e.target.value)}
-                  />
-                  {affiliateClubSearch && (
-                    <div className="space-y-2 max-h-48 overflow-auto">
-                      {filteredClubsForAffiliation.length === 0 ? (
-                        <p className="text-sm text-gray-400 text-center py-2">No clubs found</p>
-                      ) : (
-                        filteredClubsForAffiliation.map(c => (
-                          <div key={c.id} className="flex items-center justify-between p-2 border border-gray-200 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded overflow-hidden flex-shrink-0" style={{ backgroundColor: c.color }} />
-                              <span className="text-sm font-medium text-gray-900">{c.name}</span>
-                            </div>
-                            <Button
-                              size="sm"
-                              className="h-7 text-xs bg-black hover:bg-gray-800 text-white"
-                              onClick={() => sendAffiliationMutation.mutate({ id: c.id, name: c.name })}
-                              disabled={sendAffiliationMutation.isPending}
-                            >
-                              Request
-                            </Button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {pendingAffiliations.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base text-yellow-700">Pending ({pendingAffiliations.length})</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {pendingAffiliations.map(aff => (
-                      <div key={aff.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                        <p className="font-medium text-gray-900 text-sm">{aff.clubName}</p>
-                        <Badge className="bg-yellow-100 text-yellow-700">Awaiting approval</Badge>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Affiliated Clubs ({approvedAffiliations.length})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {approvedAffiliations.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-4">No clubs affiliated yet</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {approvedAffiliations.map(aff => (
-                        <div key={aff.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                          <span className="font-medium text-gray-900 text-sm">{aff.clubName}</span>
-                          <Badge className="bg-green-100 text-green-700">Affiliated</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Settings Tab */}
-          {activeTab === 'settings' && (
-            <div className="max-w-xl space-y-5">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Partnership Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-1">
-                    <Label>Logo</Label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      ref={editLogoRef}
-                      className="hidden"
-                      onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], setEditLogoUrl)}
-                    />
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
-                        style={{ backgroundColor: editLogoUrl ? undefined : editColor }}
-                        onClick={() => editLogoRef.current?.click()}
-                      >
-                        {editLogoUrl
-                          ? <img src={editLogoUrl} alt="Logo" className="w-full h-full object-cover" />
-                          : <Image className="w-6 h-6 text-white opacity-60" />
-                        }
-                      </div>
-                      <div className="flex-1">
-                        <Button type="button" variant="outline" size="sm" onClick={() => editLogoRef.current?.click()}>
-                          <Upload className="w-3 h-3 mr-1" /> {editLogoUrl ? 'Change Logo' : 'Upload Logo'}
-                        </Button>
-                        {editLogoUrl && (
-                          <Button type="button" variant="ghost" size="sm" className="ml-2 text-red-500 h-8" onClick={() => setEditLogoUrl('')}>
-                            Remove
-                          </Button>
-                        )}
-                        <p className="text-xs text-gray-400 mt-1">Max 2MB. Square images work best.</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Name</Label>
-                    <Input value={editName} onChange={e => setEditName(e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Description</Label>
-                    <Textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={2} />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Address / Location</Label>
-                    <Input value={editAddress} onChange={e => setEditAddress(e.target.value)} placeholder="123 Main St, City, State" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Color</Label>
-                    <div className="flex items-center gap-2">
-                      <Input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} className="w-12 h-10" />
-                      <Input value={editColor} onChange={e => setEditColor(e.target.value)} className="flex-1" />
-                    </div>
-                  </div>
-                  <Button
-                    className="w-full bg-black hover:bg-gray-800 text-white"
-                    onClick={() => updateMutation.mutate()}
-                    disabled={updateMutation.isPending}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Settings
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="border-red-200">
-                <CardHeader>
-                  <CardTitle className="text-base text-red-700">Danger Zone</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    variant="outline"
-                    className="text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => deleteMutation.mutate(selectedPartnership.id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Partnership
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
-  // List view
+  // ─── LIST VIEW ─────────────────────────────────────────────────────────────
+  const myPartnershipIds = new Set(myPartnerships.map(p => p.id));
+
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0 overflow-hidden">
+    <div className="flex flex-col bg-white min-h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          {!hideHeader ? (
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Partnerships</h2>
-              <p className="text-sm text-gray-500 mt-0.5">
-                Partnerships let volunteers submit hours to organizations like food banks, businesses, and nonprofits — without joining them as a club.
-                <br />
-                <span className="text-blue-600 font-medium">Own a food bank or nonprofit? Create a partnership instead of a club.</span>
-              </p>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Partnerships</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Organizations that accept volunteer hours from any club</p>
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-black hover:bg-gray-800 text-white">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Create Partnership
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Create a Partnership</DialogTitle>
-                  <p className="text-sm text-gray-500">
-                    Partnerships are for organizations like food banks, small businesses, and nonprofits that want to receive volunteer hours without managing a full club.
-                  </p>
-                </DialogHeader>
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-1">
-                    <Label>Logo <span className="text-gray-400">(optional)</span></Label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      ref={createLogoRef}
-                      className="hidden"
-                      onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], setNewLogoUrl)}
-                    />
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-gray-100"
-                        onClick={() => createLogoRef.current?.click()}
-                      >
-                        {newLogoUrl
-                          ? <img src={newLogoUrl} alt="Logo" className="w-full h-full object-cover" />
-                          : <Image className="w-6 h-6 text-gray-400" />
-                        }
-                      </div>
-                      <div className="flex-1">
-                        <Button type="button" variant="outline" size="sm" onClick={() => createLogoRef.current?.click()}>
-                          <Upload className="w-3 h-3 mr-1" /> {newLogoUrl ? 'Change Logo' : 'Upload Logo'}
+      <div className="px-6 py-5 border-b border-gray-200">
+        <div className="flex items-start justify-between gap-4 max-w-7xl mx-auto">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Partnerships</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Organizations that accept volunteer hours from any club — food banks, businesses, nonprofits, and more.
+            </p>
+          </div>
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button className="bg-black hover:bg-gray-800 text-white flex-shrink-0">
+                <Plus className="w-4 h-4 mr-1.5" />
+                Create Partnership
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create a Partnership</DialogTitle>
+                <p className="text-sm text-gray-500">
+                  For organizations like food banks, businesses, and nonprofits that want to receive volunteer hours.
+                </p>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-1">
+                  <Label>Logo <span className="text-gray-400">(optional)</span></Label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={createLogoRef}
+                    className="hidden"
+                    onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], setNewLogoUrl)}
+                  />
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-gray-100"
+                      onClick={() => createLogoRef.current?.click()}
+                    >
+                      {newLogoUrl
+                        ? <img src={newLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                        : <Image className="w-6 h-6 text-gray-400" />
+                      }
+                    </div>
+                    <div>
+                      <Button type="button" variant="outline" size="sm" onClick={() => createLogoRef.current?.click()}>
+                        <Upload className="w-3 h-3 mr-1" /> {newLogoUrl ? 'Change' : 'Upload Logo'}
+                      </Button>
+                      {newLogoUrl && (
+                        <Button type="button" variant="ghost" size="sm" className="ml-2 text-red-500 h-8" onClick={() => setNewLogoUrl('')}>
+                          Remove
                         </Button>
-                        {newLogoUrl && (
-                          <Button type="button" variant="ghost" size="sm" className="ml-2 text-red-500 h-8" onClick={() => setNewLogoUrl('')}>
-                            Remove
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label>Organization Name</Label>
-                    <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="City Food Bank, Community Center..." />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Description</Label>
-                    <Textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={2} placeholder="What does your organization do?" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Organization Type</Label>
-                    <Select value={newOrgType} onValueChange={(v) => setNewOrgType(v as Partnership['orgType'])}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="nonprofit">Nonprofit</SelectItem>
-                        <SelectItem value="business">Business</SelectItem>
-                        <SelectItem value="school">School</SelectItem>
-                        <SelectItem value="government">Government</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label>Address <span className="text-gray-400">(optional)</span></Label>
-                    <Input value={newAddress} onChange={e => setNewAddress(e.target.value)} placeholder="123 Main St, City" />
-                  </div>
-                  <Button
-                    className="w-full bg-black hover:bg-gray-800 text-white"
-                    onClick={() => createMutation.mutate()}
-                    disabled={!newName.trim() || createMutation.isPending}
-                  >
-                    {createMutation.isPending ? "Creating..." : "Create Partnership"}
-                  </Button>
                 </div>
-              </DialogContent>
-            </Dialog>
+                <div className="space-y-1">
+                  <Label>Organization Name</Label>
+                  <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="City Food Bank, Community Center..." />
+                </div>
+                <div className="space-y-1">
+                  <Label>Description</Label>
+                  <Textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={2} placeholder="What does your organization do?" />
+                </div>
+                <div className="space-y-1">
+                  <Label>Organization Type</Label>
+                  <Select value={newOrgType} onValueChange={(v) => setNewOrgType(v as Partnership['orgType'])}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nonprofit">Nonprofit</SelectItem>
+                      <SelectItem value="business">Business</SelectItem>
+                      <SelectItem value="school">School</SelectItem>
+                      <SelectItem value="government">Government</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>Address <span className="text-gray-400">(optional)</span></Label>
+                  <Input value={newAddress} onChange={e => setNewAddress(e.target.value)} placeholder="123 Main St, City" />
+                </div>
+                <Button
+                  className="w-full bg-black hover:bg-gray-800 text-white"
+                  onClick={() => createMutation.mutate()}
+                  disabled={!newName.trim() || createMutation.isPending}
+                >
+                  {createMutation.isPending ? "Creating..." : "Create Partnership"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Search */}
+        <div className="mt-4 max-w-7xl mx-auto">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              className="pl-9"
+              placeholder="Search partnerships..."
+              value={partnershipSearch}
+              onChange={e => setPartnershipSearch(e.target.value)}
+            />
           </div>
         </div>
       </div>
 
+      {/* Grid */}
+      <div className="flex-1 p-6">
+        <div className="max-w-7xl mx-auto">
+          {allLoading ? (
+            <div className="text-center py-16 text-gray-400">Loading partnerships...</div>
+          ) : filteredAll.length === 0 ? (
+            <div className="text-center py-16 max-w-md mx-auto">
+              <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-700">
+                {partnershipSearch ? 'No results' : 'No partnerships yet'}
+              </h3>
+              <p className="text-sm text-gray-500 mt-2">
+                {partnershipSearch
+                  ? 'Try a different search term.'
+                  : 'Create the first partnership for your organization.'}
+              </p>
+              {!partnershipSearch && (
+                <Button className="mt-4 bg-black hover:bg-gray-800 text-white" onClick={() => setShowCreateDialog(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Partnership
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredAll.map(p => {
+                const owned = myPartnershipIds.has(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      if (owned) {
+                        setSelectedPartnership(p);
+                        setActiveTab('overview');
+                        setView('manage');
+                      } else {
+                        setBrowsePartnership(p);
+                      }
+                    }}
+                    className="text-left p-4 border border-gray-200 rounded-2xl hover:border-gray-400 hover:shadow-sm transition-all bg-white group"
+                  >
+                    {/* Logo + name row */}
+                    <div className="flex items-start gap-3 mb-3">
+                      <div
+                        className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100"
+                        style={{ backgroundColor: p.logoUrl ? undefined : (p.color || '#3B82F6') }}
+                      >
+                        {p.logoUrl
+                          ? <img src={p.logoUrl} alt={p.name} className="w-full h-full object-cover" />
+                          : <div className="w-full h-full flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-white opacity-70" />
+                            </div>
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate leading-tight">{p.name}</p>
+                        <Badge className={`text-xs mt-1 ${ORG_TYPE_COLORS[p.orgType]}`}>
+                          {ORG_TYPE_LABELS[p.orgType]}
+                        </Badge>
+                      </div>
+                    </div>
 
-      <div className="flex-1 overflow-auto p-6">
-        {isLoading ? (
-          <div className="text-center py-12 text-gray-400">Loading partnerships...</div>
-        ) : myPartnerships.length === 0 ? (
-          <div className="text-center py-16 max-w-md mx-auto">
-            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700">No partnerships yet</h3>
-            <p className="text-sm text-gray-500 mt-2">
-              Create a partnership if you own or manage a food bank, community center, business, or any other organization that receives volunteer hours.
-            </p>
-            <Button
-              className="mt-4 bg-black hover:bg-gray-800 text-white"
-              onClick={() => setShowCreateDialog(true)}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Your First Partnership
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl">
-            {myPartnerships.map(p => (
-              <button
-                key={p.id}
-                onClick={() => { setSelectedPartnership(p); setActiveTab('overview'); setView('manage'); }}
-                className="text-left p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-9 h-9 rounded-lg flex-shrink-0 overflow-hidden"
-                      style={{ backgroundColor: p.logoUrl ? undefined : p.color }}
-                    >
-                      {p.logoUrl
-                        ? <img src={p.logoUrl} alt={p.name} className="w-full h-full object-cover" />
-                        : null}
+                    {p.description && (
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-3">{p.description}</p>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">{p.affiliatedClubIds?.length || 0} clubs affiliated</span>
+                      {owned ? (
+                        <Badge className="bg-gray-900 text-white text-xs">Manage</Badge>
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+                      )}
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">{p.name}</p>
-                      <Badge className={`text-xs ${ORG_TYPE_COLORS[p.orgType]}`}>{ORG_TYPE_LABELS[p.orgType]}</Badge>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                </div>
-                {p.description && (
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-2">{p.description}</p>
-                )}
-                <div className="flex items-center gap-3 text-xs text-gray-500">
-                  <span>{p.affiliatedClubIds.length} clubs affiliated</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Browse dialog (non-owned partnerships) */}
+      <Dialog open={!!browsePartnership} onOpenChange={open => !open && setBrowsePartnership(null)}>
+        <DialogContent className="max-w-lg">
+          {browsePartnership && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100"
+                    style={{ backgroundColor: browsePartnership.logoUrl ? undefined : (browsePartnership.color || '#3B82F6') }}
+                  >
+                    {browsePartnership.logoUrl
+                      ? <img src={browsePartnership.logoUrl} alt={browsePartnership.name} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center">
+                          <Building2 className="w-5 h-5 text-white opacity-70" />
+                        </div>
+                    }
+                  </div>
+                  <div>
+                    <DialogTitle className="text-lg">{browsePartnership.name}</DialogTitle>
+                    <Badge className={`text-xs mt-0.5 ${ORG_TYPE_COLORS[browsePartnership.orgType]}`}>
+                      {ORG_TYPE_LABELS[browsePartnership.orgType]}
+                    </Badge>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-4 mt-2">
+                {browsePartnership.description && (
+                  <p className="text-sm text-gray-600">{browsePartnership.description}</p>
+                )}
+                {browsePartnership.address && (
+                  <p className="text-sm text-gray-400">{browsePartnership.address}</p>
+                )}
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-2 text-sm">Available Events</h4>
+                  {browseEvents.length === 0 ? (
+                    <div className="text-center py-6 text-sm text-gray-400 bg-gray-50 rounded-xl">
+                      <Calendar className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      No events at this time
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {browseEvents.map(event => (
+                        <div key={event.id} className="flex items-start justify-between p-3 border border-gray-200 rounded-xl">
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">{event.name}</p>
+                            {event.description && (
+                              <p className="text-xs text-gray-500 mt-0.5">{event.description}</p>
+                            )}
+                          </div>
+                          <Badge className="text-xs flex-shrink-0 ml-2">
+                            {event.type === 'none' ? 'Open' : event.type === 'password' ? 'Password' : event.type}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-xs text-gray-400 pt-1 border-t border-gray-100">
+                  To submit hours to this partnership, go to Log Hours and select "A Partnership".
+                </p>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

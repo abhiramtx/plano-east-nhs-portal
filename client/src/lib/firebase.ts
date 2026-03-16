@@ -327,11 +327,12 @@ export const updateClub = async (clubId: string, updates: Partial<Club>): Promis
 export const recalculateClubHours = async (clubId: string): Promise<void> => {
   const q = query(
     collection(db, "submissions"),
-    where("clubId", "==", clubId),
-    where("status", "==", "approved")
+    where("clubId", "==", clubId)
   );
   const snap = await getDocs(q);
-  const total = snap.docs.reduce((sum, d) => sum + (d.data().hours || 0), 0);
+  const total = snap.docs
+    .filter(d => d.data().status === "approved")
+    .reduce((sum, d) => sum + (d.data().hours || 0), 0);
   await updateDoc(doc(db, "clubs", clubId), {
     totalApprovedHours: total,
     updatedAt: Timestamp.fromDate(new Date()),
