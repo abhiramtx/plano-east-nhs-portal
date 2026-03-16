@@ -56,6 +56,7 @@ const emailToKey = (email: string) => email.replace(/\./g, ',');
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState<'profile' | 'qr'>('profile');
   const [customFieldValues, setCustomFieldValues] = useState<{ [key: string]: string }>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -354,11 +355,48 @@ export default function Profile() {
               </div>
             </div>
           </div>
+          <div className="flex gap-1 mt-4 border-b border-gray-200 -mb-4 lg:-mb-6 pb-0">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'profile' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              Profile
+            </button>
+            <button
+              onClick={() => setActiveTab('qr')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === 'qr' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              QR Code
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-auto p-4 lg:p-6">
-        <Card className="bg-white border-gray-200 mb-6">
+      {activeTab === 'qr' ? (
+        <div className="max-w-sm mx-auto mt-8">
+          <Card className="bg-white border-gray-200">
+            <CardHeader className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <QrCode className="w-5 h-5 text-gray-700" />
+                <CardTitle className="text-gray-900">Your QR Code</CardTitle>
+              </div>
+              <p className="text-sm text-gray-500">
+                Show this to your club admin when attending Scan QR events. Your email is encoded so you can be checked in and out automatically.
+              </p>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-4 pb-8">
+              <div className="p-4 bg-white border-2 border-gray-200 rounded-xl inline-block">
+                <QRCode value={user.email} size={200} />
+              </div>
+              <p className="text-xs text-gray-400 font-mono">{user.email}</p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="space-y-6">
+        <Card className="bg-white border-gray-200">
           <CardHeader>
             <CardTitle className="text-gray-900">Personal Information</CardTitle>
             <p className="text-sm text-gray-500">
@@ -506,23 +544,8 @@ export default function Profile() {
           </Card>
         )}
 
-        <Card className="bg-white border-gray-200">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-gray-700" />
-              <CardTitle className="text-gray-900">Your QR Code</CardTitle>
-            </div>
-            <p className="text-sm text-gray-500">
-              Show this to your club admin when attending Scan QR events. Your email is encoded so you can be checked in and out automatically.
-            </p>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4 pb-6">
-            <div className="p-4 bg-white border-2 border-gray-200 rounded-xl inline-block">
-              <QRCode value={user.email} size={180} />
-            </div>
-            <p className="text-xs text-gray-400 font-mono">{user.email}</p>
-          </CardContent>
-        </Card>
+        </div>
+      )}
       </div>
     </div>
   );
