@@ -61,8 +61,8 @@ function QRScanner({ onScan }: { onScan: (text: string) => void }) {
   const [started, setStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    return () => { if (scannerRef.current && started) scannerRef.current.stop().catch(() => {}); };
-  }, [started]);
+    return () => { if (scannerRef.current) scannerRef.current.stop().catch(() => {}); };
+  }, []);
   const startScanner = async () => {
     if (!containerRef.current) return;
     const id = `qr-ps-${Math.random().toString(36).slice(2)}`;
@@ -80,7 +80,18 @@ function QRScanner({ onScan }: { onScan: (text: string) => void }) {
   };
   return (
     <div className="space-y-3">
-      <div ref={containerRef} className={`w-full rounded-xl overflow-hidden bg-black ${started ? 'h-96' : 'h-0'}`} />
+      <div
+        ref={containerRef}
+        className="w-full rounded-xl border border-gray-200 bg-gray-50 min-h-[300px] flex items-center justify-center overflow-hidden"
+      >
+        {!started && (
+          <div className="text-center p-6">
+            <ScanLine className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-500 font-medium">Camera not started</p>
+            <p className="text-xs text-gray-400 mt-1">Click below to start the QR scanner</p>
+          </div>
+        )}
+      </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
       {!started ? (
         <Button onClick={startScanner} className="w-full bg-black hover:bg-gray-800 text-white">
@@ -927,7 +938,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                                       <SelectTrigger>
                                         <SelectValue placeholder="Choose a club…" />
                                       </SelectTrigger>
-                                      <SelectContent>
+                                      <SelectContent className="z-[200]">
                                         {approvedAffiliations.map(aff => (
                                           <SelectItem key={aff.clubId} value={aff.clubId}>{aff.clubName}</SelectItem>
                                         ))}
@@ -947,7 +958,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                                     <SelectTrigger>
                                       <SelectValue placeholder={selectedTargetClubId ? 'No log selected' : 'Select a club first'} />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="z-[200]">
                                       <SelectItem value="_none">No log</SelectItem>
                                       {targetClubLogs.map(l => (
                                         <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
@@ -972,7 +983,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                                       <span className="text-sm text-gray-700">If stayed</span>
                                       <Select value={cond.type} onValueChange={(v) => updateConditional(cond.id, 'type', v)}>
                                         <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="z-[200]">
                                           <SelectItem value="less">less than</SelectItem>
                                           <SelectItem value="exact">exactly</SelectItem>
                                           <SelectItem value="more">at least</SelectItem>
@@ -1592,7 +1603,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                   <Label>Organization Type</Label>
                   <Select value={newOrgType} onValueChange={(v) => setNewOrgType(v as Partnership['orgType'])}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[200]">
                       <SelectItem value="nonprofit">Nonprofit</SelectItem>
                       <SelectItem value="business">Business</SelectItem>
                       <SelectItem value="school">School</SelectItem>
