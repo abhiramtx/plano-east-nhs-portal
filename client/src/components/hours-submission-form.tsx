@@ -122,7 +122,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
     enabled: !!selectedPartnershipId && source === 'partnership',
   });
 
-  const availableEvents = (source === 'club' ? clubEvents : partnershipEvents).filter(e => e.isOpen !== false);
+  const availableEvents = (source === 'club' ? clubEvents : partnershipEvents).filter(e => e.isOpen !== false && e.type !== 'scan_qr' && e.type !== 'show_qr');
   const selectedEvent = availableEvents.find(e => e.id === selectedEventId) || null;
   const selectedPartnership = allPartnerships.find(p => p.id === selectedPartnershipId) || null;
 
