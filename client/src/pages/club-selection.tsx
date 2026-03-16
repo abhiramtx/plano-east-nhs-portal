@@ -195,14 +195,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     club.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (userClubLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
   const handleCreateClub = () => {
     if (!newClub.name.trim()) {
       toast({ title: "Name required", description: "Please enter a club name.", variant: "destructive" });
@@ -269,7 +261,11 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 py-12">
-        {currentClub ? (
+        {userClubLoading ? (
+          <div className="flex items-center justify-center py-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        ) : currentClub ? (
           <div className="mb-10">
             <div className="flex items-center space-x-4 p-5 bg-gray-50 border border-gray-200 rounded-2xl">
               <div
