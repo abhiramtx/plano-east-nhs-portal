@@ -9,9 +9,11 @@ import {
   createMembership,
   ensureClubCreatorIsAdmin,
   recalculateClubHours,
+  deleteClub,
   Club as FirebaseClub,
   Membership as FirebaseMembership,
 } from "@/lib/firebase";
+
 import { AdminPartnerships } from "@/pages/admin-partnerships";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -22,7 +24,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, Trophy, Upload, Image, Handshake, ChevronRight, UserCircle, MapPin } from "lucide-react";
+import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, Trophy, Upload, Image, Handshake, ChevronRight, UserCircle, MapPin, X } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
 import { LocationPicker } from "@/components/world-map";
 
@@ -36,6 +38,8 @@ const CLUB_COLORS = [
   "#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444", 
   "#EC4899", "#6366F1", "#14B8A6", "#F97316", "#84CC16"
 ];
+
+const SUPERADMIN_EMAIL = 'abhiram.tx@gmail.com';
 
 export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubSelectionProps) {
   const [, setLocation] = useLocation();
@@ -60,6 +64,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   });
 
   const userEmail = user.email || '';
+  const isSuperAdmin = userEmail === SUPERADMIN_EMAIL;
 
   const { data: userClubData, isLoading: userClubLoading } = useQuery({
     queryKey: ['firebase-user-club', userEmail],
@@ -175,6 +180,17 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     },
     onError: (error: any) => {
       toast({ title: "Failed to join club", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const deleteClubMutation = useMutation({
+    mutationFn: (clubId: string) => deleteClub(clubId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      toast({ title: "Club deleted" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to delete club", description: error.message, variant: "destructive" });
     }
   });
 
@@ -424,14 +440,30 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                               <p className="text-sm text-gray-500 line-clamp-1">{club.description || "No description"}</p>
                             </div>
                           </div>
-                          <Button 
-                            size="sm"
-                            onClick={() => handleJoinClub(club)}
-                            disabled={joinClubMutation.isPending || !!currentClub}
-                            className="bg-black text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {club.id === currentClub?.id ? 'Current' : 'Join'}
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            {isSuperAdmin && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm(`Delete "${club.name}"? This cannot be undone.`)) {
+                                    deleteClubMutation.mutate(club.id);
+                                  }
+                                }}
+                                className="p-1 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                title="Delete club"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            )}
+                            <Button 
+                              size="sm"
+                              onClick={() => handleJoinClub(club)}
+                              disabled={joinClubMutation.isPending || !!currentClub}
+                              className="bg-black text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {club.id === currentClub?.id ? 'Current' : 'Join'}
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -485,9 +517,25 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                           </div>
                           <p className="text-xs text-gray-500">{club.description || ''}</p>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="font-semibold text-gray-900 text-sm">{club.totalApprovedHours.toFixed(0)}</p>
-                          <p className="text-xs text-gray-400">hours</p>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right flex-shrink-0">
+                            <p className="font-semibold text-gray-900 text-sm">{club.totalApprovedHours.toFixed(0)}</p>
+                            <p className="text-xs text-gray-400">hours</p>
+                          </div>
+                          {isSuperAdmin && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`Delete "${club.name}"? This cannot be undone.`)) {
+                                  deleteClubMutation.mutate(club.id);
+                                }
+                              }}
+                              className="p-1 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                              title="Delete club"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}

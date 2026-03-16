@@ -120,9 +120,12 @@ const ORG_TYPE_COLORS: Record<string, string> = {
   other: 'bg-gray-100 text-gray-600',
 };
 
+const SUPERADMIN_EMAIL = 'abhiram.tx@gmail.com';
+
 export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsProps) {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const isSuperAdmin = user.email === SUPERADMIN_EMAIL;
 
   const [view, setView] = useState<PartnershipView>('list');
   const [selectedPartnership, setSelectedPartnership] = useState<Partnership | null>(null);
@@ -2055,6 +2058,21 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                         {ORG_TYPE_LABELS[p.orgType]}
                       </Badge>
                     </div>
+                    {isSuperAdmin && (
+                      <span
+                        role="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete "${p.name}"? This cannot be undone.`)) {
+                            deleteMutation.mutate(p.id);
+                          }
+                        }}
+                        className="p-1 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 cursor-pointer"
+                        title="Delete partnership"
+                      >
+                        <X className="w-4 h-4" />
+                      </span>
+                    )}
                   </div>
                   {p.description && (
                     <p className="text-xs text-gray-500 line-clamp-2 mb-3">{p.description}</p>
