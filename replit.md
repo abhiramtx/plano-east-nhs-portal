@@ -27,6 +27,8 @@ Preferred communication style: Simple, everyday language.
 - **Dashboard**: Overview of service hours and statistics.
 - **Hours Management**: Submission, viewing, editing, and deletion of service hours with image proof.
 - **Hours Logs**: Named tracking periods (e.g., "Fall Semester") with hours requirements. Admins create/edit/toggle logs in Settings > Logs. Volunteers see open logs as tabs and submit hours to specific logs. Admin filters and CSV export include per-log met/not-met status.
+- **Query History (Admin)**: Admins can search any club member by name/email and see their complete archived history (all periods, clubs, stats, and full submission details with images, descriptions, and partnerships).
+- **Grouped Navigation**: Both volunteer and admin sidebars use section headers (e.g., Home/Community/Partners/History/Profile for volunteers; Overview/Data/Events/Admin for admins).
 - **Service Requests**: Creation and joining of volunteer opportunities, including location-based matching.
 - **World Map**: Interactive visualization of club territories and service request pins using MapLibre GL. Territories grow logarithmically based on volunteer hours.
 - **Leaderboards**: Global club rankings integrated with the territory map.
