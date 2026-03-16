@@ -38,6 +38,7 @@ import { AdminCustomFields } from "@/pages/admin-custom-fields";
 import { AdminSettings } from "@/pages/admin-settings";
 import { AdminEvents } from "@/pages/admin-events";
 import { AdminPartnerships } from "@/pages/admin-partnerships";
+import { PartnershipsPage } from "@/pages/partnerships";
 
 function VolunteerInterface({ 
   user, 
@@ -109,6 +110,9 @@ function VolunteerInterface({
           </Route>
           <Route path="/volunteer/history">
             <AdminHistory club={club} isVolunteerView={true} />
+          </Route>
+          <Route path="/volunteer/partners">
+            <PartnershipsPage club={club} />
           </Route>
           <Route path="/volunteer">
             <Dashboard club={club} />
