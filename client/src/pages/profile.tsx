@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { User, getCurrentUser } from "@/lib/firebase";
+import { User, getCurrentUser, getActiveScanQRCheckIn } from "@/lib/firebase";
 import { insertUserProfileSchema, type UserProfile } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserIcon, Save, Loader2, QrCode } from "lucide-react";
+import { UserIcon, Save, Loader2, QrCode, CheckCircle2 } from "lucide-react";
 import QRCode from "react-qr-code";
 
 interface CustomField {
@@ -92,6 +92,14 @@ export default function Profile() {
       if (!response.ok) throw new Error('Failed to fetch custom field values');
       return response.json() as Promise<CustomFieldValue[]>;
     }
+  });
+
+  const { data: activeCheckIn = null } = useQuery<{ eventId: string; eventName: string } | null>({
+    queryKey: ['active-checkin', user?.email],
+    queryFn: () => getActiveScanQRCheckIn(user!.email),
+    enabled: !!user?.email && activeTab === 'qr',
+    refetchInterval: 5000,
+    staleTime: 0,
   });
 
   useEffect(() => {
@@ -375,7 +383,18 @@ export default function Profile() {
 
       <div className="flex-1 overflow-auto p-4 lg:p-6">
       {activeTab === 'qr' ? (
-        <div className="max-w-sm mx-auto mt-8">
+        <div className="max-w-sm mx-auto mt-8 space-y-4">
+          {activeCheckIn && (
+            <div className="flex items-start gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
+              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-green-800">You're checked in!</p>
+                <p className="text-xs text-green-700 mt-0.5">
+                  <span className="font-medium">{activeCheckIn.eventName}</span> — remember to check out once the event is done.
+                </p>
+              </div>
+            </div>
+          )}
           <Card className="bg-white border-gray-200">
             <CardHeader className="text-center">
               <div className="flex items-center justify-center gap-2 mb-1">

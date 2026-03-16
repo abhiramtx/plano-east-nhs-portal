@@ -1762,6 +1762,22 @@ export const checkOutByQR = async (eventId: string, userEmail: string): Promise<
   return { success: true, message: `Checked out: ${userName}` };
 };
 
+export const getActiveScanQRCheckIn = async (userEmail: string): Promise<{ eventId: string; eventName: string } | null> => {
+  const snap = await getDocs(
+    query(collection(db, "eventAttendance"), where("userEmail", "==", userEmail))
+  );
+  const active = snap.docs
+    .map(d => ({ id: d.id, ...(d.data() as any) }))
+    .filter((r: any) => !r.checkOutTime);
+  for (const record of active) {
+    const eventSnap = await getDoc(doc(db, "events", record.eventId));
+    if (eventSnap.exists() && eventSnap.data().type === 'scan_qr' && eventSnap.data().isOpen !== false) {
+      return { eventId: record.eventId, eventName: record.eventName || eventSnap.data().name };
+    }
+  }
+  return null;
+};
+
 // ============ PARTNERSHIPS FIRESTORE FUNCTIONS ============
 
 const toPartnership = (docSnap: any): Partnership => {
