@@ -360,25 +360,25 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         {activeSection === 'clubs' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {!currentClub && (
-                <Card 
-                  className="cursor-pointer bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200 hover:border-gray-300 transition-all hover:scale-[1.02]"
-                  onClick={() => setCreateDialogOpen(true)}
-                >
-                  <CardHeader className="text-center py-8">
-                    <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <Plus className="w-8 h-8 text-white" />
-                    </div>
-                    <CardTitle className="text-xl text-gray-900">Create a Club</CardTitle>
-                    <CardDescription className="text-gray-500">Start your own volunteer club and invite friends</CardDescription>
-                  </CardHeader>
-                  <CardContent className="text-center pb-8">
-                    <Button className="bg-black text-white hover:bg-gray-800">
-                      Create <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+              <Card 
+                className={`bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200 transition-all ${!currentClub ? 'cursor-pointer hover:border-gray-300 hover:scale-[1.02]' : 'opacity-50 cursor-not-allowed'}`}
+                onClick={() => !currentClub && setCreateDialogOpen(true)}
+              >
+                <CardHeader className="text-center py-8">
+                  <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Plus className="w-8 h-8 text-white" />
+                  </div>
+                  <CardTitle className="text-xl text-gray-900">Create a Club</CardTitle>
+                  <CardDescription className="text-gray-500">
+                    {currentClub ? 'Leave your current club first' : 'Start your own volunteer club and invite friends'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-center pb-8">
+                  <Button className="bg-black text-white hover:bg-gray-800" disabled={!!currentClub}>
+                    Create <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
 
               <Card className="bg-white border-gray-200">
                 <CardHeader>
