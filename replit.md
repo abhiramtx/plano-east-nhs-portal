@@ -45,7 +45,7 @@ Preferred communication style: Simple, everyday language.
 - **Theme Colors**: Complete light mode - white backgrounds, gray-100/200 borders, gray-900 text, gray-500/600 secondary text.
 - **Icons**: Lucide React.
 - **Responsiveness**: Mobile-first design with adaptive breakpoints.
-- **Map Style**: CARTO Positron (https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json)
+- **Map Style**: CARTO Voyager (https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json) — colorful tiles with street/school/park labels
 
 ### Territory System (Per-Location)
 - **Per-Location Circles**: Each volunteer hour submission can include a location. Circles grow independently at each location based on hours logged there.

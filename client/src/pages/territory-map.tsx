@@ -24,7 +24,7 @@ import {
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-nolabels-gl-style/style.json';
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 12;
@@ -572,27 +572,25 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
         >
           <NavigationControl position="bottom-right" showCompass={false} />
           
-          {territoriesGeoJson.features.length > 0 && (
-            <Source id="territories" type="geojson" data={territoriesGeoJson}>
-              <Layer
-                id="territory-fill"
-                type="fill"
-                paint={{
-                  'fill-color': ['get', 'color'],
-                  'fill-opacity': 0.35
-                }}
-              />
-              <Layer
-                id="territory-outline"
-                type="line"
-                paint={{
-                  'line-color': ['get', 'color'],
-                  'line-width': 3,
-                  'line-opacity': 0.9
-                }}
-              />
-            </Source>
-          )}
+          <Source id="territories" type="geojson" data={territoriesGeoJson}>
+            <Layer
+              id="territory-fill"
+              type="fill"
+              paint={{
+                'fill-color': ['get', 'color'],
+                'fill-opacity': ['case', ['>', ['get', 'hours'], 0], 0.35, 0.2]
+              }}
+            />
+            <Layer
+              id="territory-outline"
+              type="line"
+              paint={{
+                'line-color': ['get', 'color'],
+                'line-width': 2.5,
+                'line-opacity': 0.85
+              }}
+            />
+          </Source>
           
           {clubs.map(club => {
             if (!club.latitude || !club.longitude) return null;
