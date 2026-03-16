@@ -146,7 +146,12 @@ export default function Hours({ club }: HoursProps) {
               <DialogContent
                 className="max-w-2xl bg-white border-gray-200 flex flex-col max-h-[90vh] overflow-hidden p-0"
                 onPointerDownOutside={e => {
-                  if ((e.target as HTMLElement)?.closest('[data-location-suggestions]')) e.preventDefault();
+                  const target = ((e as any).detail?.originalEvent?.target ?? e.target) as HTMLElement | null;
+                  if (target?.closest?.('[data-location-suggestions]')) e.preventDefault();
+                }}
+                onInteractOutside={e => {
+                  const target = ((e as any).detail?.originalEvent?.target ?? e.target) as HTMLElement | null;
+                  if (target?.closest?.('[data-location-suggestions]')) e.preventDefault();
                 }}
               >
                 <DialogHeader className="px-6 pt-6 pb-0 flex-shrink-0">
