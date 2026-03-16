@@ -335,7 +335,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [leaderboardMode, setLeaderboardMode] = useState<'alltime' | 'yearly'>('alltime');
+  const [leaderboardYear, setLeaderboardYear] = useState<number | null>(null);
   const user = getCurrentUser();
   const userEmail = user?.email || '';
 
@@ -446,14 +446,37 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
 
   const currentClub = clubs.find(c => c.id === currentClubId);
 
+  // Derive available years from all submissions
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    allSubmissions.forEach(s => {
+      const d = new Date(s.date);
+      if (!isNaN(d.getTime())) years.add(d.getFullYear());
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [allSubmissions]);
+
+  // Compute per-club approved hours for a selected year
+  const clubHoursByYear = useMemo(() => {
+    if (!leaderboardYear) return null;
+    const map = new Map<string, number>();
+    allSubmissions.forEach(s => {
+      if (s.status !== 'approved') return;
+      const d = new Date(s.date);
+      if (isNaN(d.getTime()) || d.getFullYear() !== leaderboardYear) return;
+      map.set(s.clubId, (map.get(s.clubId) || 0) + s.hours);
+    });
+    return map;
+  }, [allSubmissions, leaderboardYear]);
+
   const sortedLeaderboard = useMemo(() => {
-    if (leaderboardMode === 'yearly') {
+    if (clubHoursByYear) {
       return [...leaderboardClubs].sort((a, b) =>
-        (b.yearlyApprovedHours || 0) - (a.yearlyApprovedHours || 0)
+        (clubHoursByYear.get(b.id) || 0) - (clubHoursByYear.get(a.id) || 0)
       );
     }
     return leaderboardClubs;
-  }, [leaderboardClubs, leaderboardMode]);
+  }, [leaderboardClubs, clubHoursByYear]);
 
   const currentClubRank = sortedLeaderboard.findIndex(c => c.id === currentClubId) + 1;
 
@@ -691,21 +714,17 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             Leaderboard
           </h2>
 
-          {/* Mode toggle */}
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-medium">
-            <button
-              className={`flex-1 py-1.5 transition-colors ${leaderboardMode === 'alltime' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
-              onClick={() => setLeaderboardMode('alltime')}
-            >
-              All Time
-            </button>
-            <button
-              className={`flex-1 py-1.5 transition-colors border-l border-gray-200 ${leaderboardMode === 'yearly' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
-              onClick={() => setLeaderboardMode('yearly')}
-            >
-              {new Date().getFullYear()}
-            </button>
-          </div>
+          {/* Year dropdown */}
+          <select
+            value={leaderboardYear ?? ''}
+            onChange={e => setLeaderboardYear(e.target.value ? Number(e.target.value) : null)}
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-300"
+          >
+            <option value="">All Time</option>
+            {availableYears.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
 
           {currentClub && currentClubRank > 0 && (
             <div className="bg-gray-50 rounded-lg px-3 py-2">
@@ -721,8 +740,8 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
               <p className="text-center text-gray-500 py-4">No clubs yet</p>
             ) : (
               sortedLeaderboard.slice(0, 50).map((club, index) => {
-                const displayHours = leaderboardMode === 'yearly'
-                  ? (club.yearlyApprovedHours || 0)
+                const displayHours = clubHoursByYear
+                  ? (clubHoursByYear.get(club.id) || 0)
                   : calculateTotalHours(club);
                 const isCurrentClub = club.id === currentClubId;
                 return (
@@ -769,8 +788,8 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Your Hours</span>
               <span className="text-gray-900 font-medium">
-                {leaderboardMode === 'yearly'
-                  ? (currentClub.yearlyApprovedHours || 0).toFixed(1)
+                {clubHoursByYear
+                  ? (clubHoursByYear.get(currentClub.id) || 0).toFixed(1)
                   : calculateTotalHours(currentClub).toFixed(1)}
               </span>
             </div>

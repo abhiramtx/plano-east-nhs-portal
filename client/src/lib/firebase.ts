@@ -1213,6 +1213,53 @@ export const archiveYearData = async (schoolYear: string, clubId?: string, clubN
     profiles: profiles.map(p => stripUndefined({ ...p })),
     archivedAt: Timestamp.fromDate(now),
   }));
+
+  // Save master archive snapshot (global across all clubs)
+  await saveMasterArchiveSnapshot(schoolYear, now, submissions);
+};
+
+export const saveMasterArchiveSnapshot = async (period: string, now: Date, allSubmissions: HoursSubmission[]): Promise<void> => {
+  const clubs = await getClubs();
+  const approvedSubs = allSubmissions.filter(s => s.status === 'approved');
+
+  const clubSnapshots = clubs.map(club => {
+    const clubSubs = approvedSubs.filter(s => s.clubId === club.id);
+    const totalApprovedHours = club.totalApprovedHours;
+
+    // Group by location to build territory circles
+    const locationMap = new Map<string, { lat: number; lng: number; hours: number; locationName: string }>();
+    for (const s of clubSubs) {
+      if (!s.latitude || !s.longitude) continue;
+      const key = `${Math.round(s.latitude * 1000) / 1000},${Math.round(s.longitude * 1000) / 1000}`;
+      if (!locationMap.has(key)) {
+        locationMap.set(key, { lat: s.latitude, lng: s.longitude, hours: 0, locationName: typeof s.location === 'string' ? s.location : '' });
+      }
+      locationMap.get(key)!.hours += s.hours;
+    }
+
+    const circles = Array.from(locationMap.values()).map(c => {
+      const radiusMiles = 4 + 16 * Math.min(1, Math.log10(c.hours + 1) / Math.log10(1000));
+      return stripUndefined({ lat: c.lat, lng: c.lng, hours: c.hours, radiusMiles, locationName: c.locationName });
+    });
+
+    return stripUndefined({
+      clubId: club.id,
+      clubName: club.name,
+      clubColor: club.color,
+      totalApprovedHours,
+      yearlyApprovedHours: club.yearlyApprovedHours || 0,
+      latitude: club.latitude ?? null,
+      longitude: club.longitude ?? null,
+      circles,
+    });
+  });
+
+  await setDoc(doc(db, "masterArchives", period), stripUndefined({
+    period,
+    archivedAt: Timestamp.fromDate(now),
+    totalClubs: clubs.length,
+    clubs: clubSnapshots,
+  }));
 };
 
 export const wipeDatabase = async (): Promise<void> => {
