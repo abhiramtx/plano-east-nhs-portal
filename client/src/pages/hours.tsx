@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit } from "lucide-react";
+import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit, Zap } from "lucide-react";
 import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -239,6 +239,12 @@ export default function Hours({ club }: HoursProps) {
                               {getStatusIcon(submission.status)}
                               <span className="ml-1 capitalize">{submission.status}</span>
                             </Badge>
+                            {submission.eventId && (
+                              <Badge className="bg-purple-100 text-purple-700 border border-purple-200">
+                                <Zap className="w-3 h-3 mr-1" />
+                                Event
+                              </Badge>
+                            )}
                             <div className="flex items-center text-sm text-gray-500">
                               <Calendar className="w-4 h-4 mr-1" />
                               {formatDate(submission.date)}
