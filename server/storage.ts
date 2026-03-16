@@ -690,7 +690,7 @@ export class FirestoreStorage implements IStorage {
           clubId,
           latitude: clubLat,
           longitude: clubLng,
-          radiusKm: 4 * 1.60934, // 4 miles in km
+          radiusKm: 5 * 1.60934, // 5 miles in km
           hoursContributed: 0,
           peopleCount: 0,
           locationName: `${club.name} (Home Base)`,
@@ -799,7 +799,7 @@ export class FirestoreStorage implements IStorage {
   }
 
   private calculateTerritoryRadius(hours: number, peopleCount: number, lastActivityDate?: Date): number {
-    const baseMiles = 4;
+    const baseMiles = 5;
     const maxMiles = 20;
     const baseKm = baseMiles * 1.60934;
     const maxKm = maxMiles * 1.60934;

@@ -4,7 +4,7 @@ import { Trophy, MapPin, Clock, TrendingUp, Users, Search, X } from "lucide-reac
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import MapGlComponent, { Marker, NavigationControl, MapRef, Source, Layer } from 'react-map-gl/maplibre';
+import MapGlComponent, { Marker, NavigationControl, MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { 
   getClubs, 
@@ -27,7 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
 
 const MIN_ZOOM = 3;
-const MAX_ZOOM = 12;
+const MAX_ZOOM = 20;
 
 interface TerritoryMapProps {
   currentClubId?: string;
@@ -337,6 +337,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [leaderboardYear, setLeaderboardYear] = useState<number | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const user = getCurrentUser();
   const userEmail = user?.email || '';
 
@@ -544,18 +545,40 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     })
   }), [serverCircles]);
 
-  // Debug logging and circle calculation trigger
+  // Native MapLibre territory rendering (bypasses react-map-gl Source/Layer quirks)
+  const applyTerritoryLayers = useCallback((map: any) => {
+    const data = territoriesGeoJson;
+    if (map.getSource('territories')) {
+      (map.getSource('territories') as any).setData(data);
+    } else {
+      map.addSource('territories', { type: 'geojson', data });
+      map.addLayer({
+        id: 'territory-fill',
+        type: 'fill',
+        source: 'territories',
+        paint: {
+          'fill-color': ['get', 'color'],
+          'fill-opacity': 0.3,
+        },
+      });
+      map.addLayer({
+        id: 'territory-outline',
+        type: 'line',
+        source: 'territories',
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': 2.5,
+          'line-opacity': 0.9,
+        },
+      });
+    }
+  }, [territoriesGeoJson]);
+
   useEffect(() => {
-    console.log('=== Territory Map State ===');
-    console.log('Current Club ID:', currentClubId);
-    console.log('Territories GeoJSON features:', territoriesGeoJson.features.length);
-    console.log('Features:', territoriesGeoJson.features.map(f => ({ 
-      id: f.properties?.id, 
-      name: f.properties?.name,
-      radius: f.properties?.radius 
-    })));
-    console.log('Server circles:', serverCircles);
-  }, [territoriesGeoJson, serverCircles, currentClubId]);
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current.getMap();
+    applyTerritoryLayers(map);
+  }, [mapLoaded, applyTerritoryLayers]);
 
   return (
     <div className="h-screen w-full flex bg-white overflow-hidden">
@@ -569,28 +592,19 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
           attributionControl={false}
           minZoom={MIN_ZOOM}
           maxZoom={MAX_ZOOM}
+          onLoad={evt => {
+            setMapLoaded(true);
+            const map = evt.target;
+            applyTerritoryLayers(map);
+            // Re-apply whenever style reloads (e.g. theme change)
+            map.on('styledata', () => {
+              if (!map.getSource('territories')) {
+                applyTerritoryLayers(map);
+              }
+            });
+          }}
         >
           <NavigationControl position="bottom-right" showCompass={false} />
-          
-          <Source id="territories" type="geojson" data={territoriesGeoJson}>
-            <Layer
-              id="territory-fill"
-              type="fill"
-              paint={{
-                'fill-color': ['get', 'color'],
-                'fill-opacity': ['case', ['>', ['get', 'hours'], 0], 0.35, 0.2]
-              }}
-            />
-            <Layer
-              id="territory-outline"
-              type="line"
-              paint={{
-                'line-color': ['get', 'color'],
-                'line-width': 2.5,
-                'line-opacity': 0.85
-              }}
-            />
-          </Source>
           
           {clubs.map(club => {
             if (!club.latitude || !club.longitude) return null;
