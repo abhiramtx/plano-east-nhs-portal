@@ -386,6 +386,16 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     },
   });
 
+  const toggleEventMutation = useMutation({
+    mutationFn: ({ id, isOpen }: { id: string; isOpen: boolean }) => updateEvent(id, { isOpen }),
+    onSuccess: (_, { id, isOpen }) => {
+      qc.invalidateQueries({ queryKey: ['firebase-partnership-events', selectedPartnership?.id] });
+      qc.invalidateQueries({ queryKey: ['firebase-all-open-events'] });
+      setSelectedPartnershipEvent(prev => prev?.id === id ? { ...prev, isOpen } : prev);
+      toast({ title: isOpen ? "Event opened" : "Event closed" });
+    },
+  });
+
   const { data: attendance = [], refetch: refetchAttendance } = useQuery<EventAttendance[]>({
     queryKey: ['firebase-event-attendance', selectedPartnershipEvent?.id],
     queryFn: () => getEventAttendance(selectedPartnershipEvent!.id),
@@ -682,22 +692,42 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                   )}
                   {partnershipEvents.map(event => {
                     const isSelected = selectedPartnershipEvent?.id === event.id;
+                    const isOpen = event.isOpen !== false;
                     return (
-                      <button
+                      <div
                         key={event.id}
-                        onClick={() => setSelectedPartnershipEvent(event)}
-                        className={`w-full text-left rounded-lg border p-3 transition-colors ${isSelected ? 'bg-gray-100 border-gray-400' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                        className={`rounded-lg border transition-colors ${isSelected ? 'bg-gray-100 border-gray-400' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 text-sm truncate">{event.name}</p>
-                            {event.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{event.description}</p>}
+                        <button
+                          onClick={() => setSelectedPartnershipEvent(event)}
+                          className="w-full text-left p-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                              <span className={`w-2 h-2 rounded-full flex-shrink-0 mt-0.5 ${isOpen ? 'bg-green-500' : 'bg-gray-300'}`} />
+                              <div className="min-w-0">
+                                <p className="font-medium text-gray-900 text-sm truncate">{event.name}</p>
+                                {event.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{event.description}</p>}
+                              </div>
+                            </div>
+                            <Badge className={`text-xs flex-shrink-0 ${EVENT_TYPE_COLORS[event.type] || 'bg-gray-100 text-gray-600'}`}>
+                              {EVENT_TYPE_LABELS[event.type] || event.type}
+                            </Badge>
                           </div>
-                          <Badge className={`text-xs flex-shrink-0 ${EVENT_TYPE_COLORS[event.type] || 'bg-gray-100 text-gray-600'}`}>
-                            {EVENT_TYPE_LABELS[event.type] || event.type}
-                          </Badge>
+                        </button>
+                        <div className="px-3 pb-2 flex justify-end">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleEventMutation.mutate({ id: event.id, isOpen: !isOpen });
+                            }}
+                            disabled={toggleEventMutation.isPending}
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full border transition-colors ${isOpen ? 'border-green-200 text-green-700 bg-green-50 hover:bg-green-100' : 'border-gray-200 text-gray-500 bg-gray-50 hover:bg-gray-100'}`}
+                          >
+                            {isOpen ? 'Close event' : 'Open event'}
+                          </button>
                         </div>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>

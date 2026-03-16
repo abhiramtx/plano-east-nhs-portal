@@ -1461,6 +1461,12 @@ export const getClubEvents = async (clubId: string): Promise<ClubEvent[]> => {
   return snap.docs.map(toEvent);
 };
 
+export const getAllOpenEvents = async (): Promise<ClubEvent[]> => {
+  const q = query(collection(db, "events"), where("isOpen", "==", true));
+  const snap = await getDocs(q);
+  return snap.docs.map(toEvent);
+};
+
 export const getPartnershipEvents = async (partnershipId: string): Promise<ClubEvent[]> => {
   const q = query(collection(db, "events"), where("partnershipId", "==", partnershipId));
   const snap = await getDocs(q);

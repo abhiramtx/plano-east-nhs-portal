@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Trophy, MapPin, Clock, TrendingUp, Users, Search, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Trophy, Clock, TrendingUp, Users, Search, X, Building2, Flag } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,19 +10,16 @@ import {
   getClubs, 
   getLeaderboard, 
   Club, 
-  ServiceRequest,
-  getOpenServiceRequests,
-  getUserParticipations,
-  joinServiceRequest,
-  ServiceRequestParticipant,
   getCurrentUser,
   getAllSubmissions,
   HoursSubmission,
   getAllTerritoryCircles,
   TerritoryCircle,
+  getAllOpenEvents,
+  ClubEvent,
+  getAllPartnerships,
+  Partnership,
 } from "@/lib/firebase";
-import { queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
 
@@ -49,9 +46,10 @@ function createCirclePolygon(lng: number, lat: number, radiusKm: number, segment
 
 
 export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
-  const { toast } = useToast();
   const mapRef = useRef<MapRef>(null);
   const [hoveredClubId, setHoveredClubId] = useState<string | null>(null);
+  const [hoveredPartnerId, setHoveredPartnerId] = useState<string | null>(null);
+  const [hoveredCheckpointId, setHoveredCheckpointId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -77,10 +75,16 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     queryFn: getLeaderboard,
   });
 
-  const { data: serviceRequests = [] } = useQuery<ServiceRequest[]>({
-    queryKey: ['firebase-open-service-requests'],
-    queryFn: getOpenServiceRequests,
-    refetchInterval: 30000,
+  const { data: allOpenEvents = [] } = useQuery<ClubEvent[]>({
+    queryKey: ['firebase-all-open-events'],
+    queryFn: getAllOpenEvents,
+    refetchInterval: 60000,
+  });
+
+  const { data: allPartnerships = [] } = useQuery<Partnership[]>({
+    queryKey: ['firebase-all-partnerships'],
+    queryFn: getAllPartnerships,
+    refetchInterval: 60000,
   });
 
   const { data: allSubmissions = [] } = useQuery<HoursSubmission[]>({
@@ -95,27 +99,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     queryFn: () => clubs.length > 0 ? getAllTerritoryCircles(clubs) : Promise.resolve([]),
     enabled: clubs.length > 0,
     refetchInterval: 60000,
-  });
-
-  const { data: myParticipations } = useQuery<ServiceRequestParticipant[]>({
-    queryKey: ['firebase-my-participations', userEmail],
-    queryFn: () => getUserParticipations(userEmail),
-    enabled: !!userEmail,
-  });
-
-  const joinedRequestIds = myParticipations?.map(p => p.requestId) || [];
-
-  const joinMutation = useMutation({
-    mutationFn: async (request: ServiceRequest) => {
-      return await joinServiceRequest(request.id, userEmail, user?.name || userEmail.split('@')[0]);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-my-participations'] });
-      toast({ title: "Joined!", description: "You've successfully joined this service request." });
-    },
-    onError: (error: any) => {
-      toast({ title: "Failed to join", description: error.message, variant: "destructive" });
-    }
   });
 
   const handleSearch = async () => {
@@ -159,7 +142,19 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     });
   }, []);
 
-  const requestsWithLocation = serviceRequests.filter(r => r.latitude && r.longitude);
+  // Partnerships that have a fixed location → show as HQ pins
+  const partnershipsWithHQ = useMemo(() =>
+    allPartnerships.filter(p => p.latitude != null && p.longitude != null),
+  [allPartnerships]);
+
+  // Open events that belong to a partnership with NO location AND have their own lat/lng → checkpoint pins
+  const checkpointEvents = useMemo(() =>
+    allOpenEvents.filter(e => {
+      if (!e.partnershipId || !e.latitude || !e.longitude) return false;
+      const partner = allPartnerships.find(p => p.id === e.partnershipId);
+      return partner && (partner.latitude == null || partner.longitude == null);
+    }),
+  [allOpenEvents, allPartnerships]);
 
   const calculateTotalHours = (club: Club) => {
     return club.totalApprovedHours + club.bonusHours - club.decayedHours;
@@ -308,6 +303,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
         >
           <NavigationControl position="bottom-right" showCompass={false} />
           
+          {/* Club HQ markers */}
           {clubs.map(club => {
             if (!club.latitude || !club.longitude) return null;
             const lat = parseFloat(String(club.latitude));
@@ -317,6 +313,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             const totalHours = calculateTotalHours(club);
             const isHovered = hoveredClubId === club.id;
             const isCurrentClub = club.id === currentClubId;
+            const clubEvents = allOpenEvents.filter(e => e.clubId === club.id);
             
             return (
               <Marker 
@@ -346,15 +343,23 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                   
                   {isHovered && (
                     <div 
-                      className="absolute left-12 top-1/2 -translate-y-1/2 bg-white rounded-lg px-4 py-3 whitespace-nowrap z-50 border border-gray-200 shadow-xl"
-                      style={{ minWidth: 140 }}
+                      className="absolute left-12 top-1/2 -translate-y-1/2 bg-white rounded-lg px-4 py-3 z-50 border border-gray-200 shadow-xl"
+                      style={{ minWidth: 160, maxWidth: 220 }}
                     >
-                      <p className="text-gray-900 text-sm font-semibold truncate max-w-40">
+                      <p className="text-gray-900 text-sm font-semibold truncate">
                         {club.name}
                       </p>
                       <p className="text-gray-500 text-xs mt-1">
                         {totalHours.toFixed(1)} volunteer hours
                       </p>
+                      {clubEvents.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gray-100">
+                          <p className="text-xs font-medium text-gray-500 mb-1">Active Events</p>
+                          {clubEvents.map(ev => (
+                            <p key={ev.id} className="text-xs text-gray-700 truncate">• {ev.name}</p>
+                          ))}
+                        </div>
+                      )}
                       <div 
                         className="w-full h-1 rounded-full mt-2"
                         style={{ backgroundColor: club.color }}
@@ -365,28 +370,99 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
               </Marker>
             );
           })}
-          
-          {requestsWithLocation.map(request => {
-            const lat = parseFloat(String(request.latitude));
-            const lng = parseFloat(String(request.longitude));
+
+          {/* Partnership HQ markers (partnerships that have a location) */}
+          {partnershipsWithHQ.map(partner => {
+            const lat = parseFloat(String(partner.latitude));
+            const lng = parseFloat(String(partner.longitude));
             if (isNaN(lat) || isNaN(lng)) return null;
-            
-            const isJoined = joinedRequestIds.includes(request.id);
-            
+            const isHovered = hoveredPartnerId === partner.id;
+            const partnerEvents = allOpenEvents.filter(e => e.partnershipId === partner.id);
+
             return (
-              <Marker 
-                key={request.id} 
-                longitude={lng} 
-                latitude={lat}
-                anchor="bottom"
-              >
-                <div className="cursor-pointer transform hover:scale-110 transition-transform">
-                  <MapPin 
-                    className="w-6 h-6 drop-shadow-lg" 
-                    fill={isJoined ? '#22c55e' : '#ffffff'} 
-                    color={isJoined ? '#16a34a' : '#000000'}
-                    strokeWidth={1.5}
-                  />
+              <Marker key={`partner-${partner.id}`} longitude={lng} latitude={lat} anchor="center">
+                <div
+                  className="relative flex items-center justify-center cursor-pointer"
+                  onMouseEnter={() => setHoveredPartnerId(partner.id)}
+                  onMouseLeave={() => setHoveredPartnerId(null)}
+                >
+                  <div
+                    className="relative flex items-center justify-center rounded-lg transition-all hover:scale-110"
+                    style={{
+                      width: 32,
+                      height: 32,
+                      backgroundColor: partner.color || '#6366f1',
+                      border: '3px solid white',
+                      boxShadow: `0 0 16px ${partner.color || '#6366f1'}80, 0 2px 8px rgba(0,0,0,0.4)`,
+                    }}
+                  >
+                    <Building2 className="w-4 h-4 text-white" />
+                  </div>
+
+                  {isHovered && (
+                    <div
+                      className="absolute left-12 top-1/2 -translate-y-1/2 bg-white rounded-lg px-4 py-3 z-50 border border-gray-200 shadow-xl"
+                      style={{ minWidth: 160, maxWidth: 220 }}
+                    >
+                      <p className="text-gray-900 text-sm font-semibold truncate">{partner.name}</p>
+                      <p className="text-gray-400 text-xs mt-0.5 capitalize">{partner.orgType}</p>
+                      {partnerEvents.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gray-100">
+                          <p className="text-xs font-medium text-gray-500 mb-1">Active Events</p>
+                          {partnerEvents.map(ev => (
+                            <p key={ev.id} className="text-xs text-gray-700 truncate">• {ev.name}</p>
+                          ))}
+                        </div>
+                      )}
+                      <div
+                        className="w-full h-1 rounded-full mt-2"
+                        style={{ backgroundColor: partner.color || '#6366f1' }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </Marker>
+            );
+          })}
+
+          {/* Checkpoint markers: partnership events with a location but no partnership HQ */}
+          {checkpointEvents.map(event => {
+            const lat = parseFloat(String(event.latitude));
+            const lng = parseFloat(String(event.longitude));
+            if (isNaN(lat) || isNaN(lng)) return null;
+            const isHovered = hoveredCheckpointId === event.id;
+            const partner = allPartnerships.find(p => p.id === event.partnershipId);
+
+            return (
+              <Marker key={`checkpoint-${event.id}`} longitude={lng} latitude={lat} anchor="bottom">
+                <div
+                  className="relative flex flex-col items-center cursor-pointer"
+                  onMouseEnter={() => setHoveredCheckpointId(event.id)}
+                  onMouseLeave={() => setHoveredCheckpointId(null)}
+                >
+                  <div
+                    className="flex items-center justify-center rounded-full transition-all hover:scale-110"
+                    style={{
+                      width: 28,
+                      height: 28,
+                      backgroundColor: partner?.color || '#f59e0b',
+                      border: '3px solid white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                    }}
+                  >
+                    <Flag className="w-3.5 h-3.5 text-white" />
+                  </div>
+
+                  {isHovered && (
+                    <div
+                      className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-white rounded-lg px-3 py-2 z-50 border border-gray-200 shadow-xl whitespace-nowrap"
+                    >
+                      {partner && (
+                        <p className="text-gray-500 text-xs font-medium">{partner.name}</p>
+                      )}
+                      <p className="text-gray-900 text-sm font-semibold">{event.name}</p>
+                    </div>
+                  )}
                 </div>
               </Marker>
             );
@@ -560,8 +636,8 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             <span className="text-gray-900 font-medium">{clubs.length}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Service Requests</span>
-            <span className="text-gray-900 font-medium">{requestsWithLocation.length}</span>
+            <span className="text-gray-500">Partnerships</span>
+            <span className="text-gray-900 font-medium">{allPartnerships.length}</span>
           </div>
           {currentClub && (
             <div className="flex justify-between text-sm">
