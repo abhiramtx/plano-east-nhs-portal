@@ -240,7 +240,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     (p.description || '').toLowerCase().includes(partnershipSearch.toLowerCase())
   );
 
-  // ─── MANAGE VIEW (sidebar layout) ─────────────────────────────────────────
+  // ─── MANAGE VIEW (full-screen overlay with black sidebar) ─────────────────
   if (view === 'manage' && selectedPartnership) {
     const sidebarItems: { id: ManageTab; label: string; icon: any; badge?: number }[] = [
       { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -250,32 +250,56 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       { id: 'settings', label: 'Settings', icon: Settings },
     ];
 
+    // compute richer stats
+    const approvedSubs = (partnershipSubmissions as any[]).filter(s => s.status === 'approved');
+    const rejectedSubs = (partnershipSubmissions as any[]).filter(s => s.status === 'rejected');
+    const totalSubmissions = (partnershipSubmissions as any[]).length;
+    const approvalRate = totalSubmissions > 0 ? Math.round((approvedSubs.length / totalSubmissions) * 100) : 0;
+
+    const volunteerLeaderboard = Object.entries(
+      approvedSubs.reduce((acc: Record<string, { name: string; hours: number; submissions: number }>, s: any) => {
+        if (!acc[s.userEmail]) acc[s.userEmail] = { name: s.userName || s.userEmail, hours: 0, submissions: 0 };
+        acc[s.userEmail].hours += s.hours;
+        acc[s.userEmail].submissions += 1;
+        return acc;
+      }, {})
+    ).sort(([, a], [, b]) => (b as any).hours - (a as any).hours);
+
+    const clubHoursBreakdown = Object.entries(
+      approvedSubs.reduce((acc: Record<string, { name: string; hours: number }>, s: any) => {
+        const key = s.clubId || 'unknown';
+        const name = s.clubName || s.clubId || 'Unknown Club';
+        if (!acc[key]) acc[key] = { name, hours: 0 };
+        acc[key].hours += s.hours;
+        return acc;
+      }, {})
+    ).sort(([, a], [, b]) => (b as any).hours - (a as any).hours);
+
     return (
-      <div className="flex h-full min-h-screen bg-white">
-        {/* Sidebar */}
-        <div className="w-60 border-r border-gray-200 flex-shrink-0 flex flex-col bg-gray-50">
-          {/* Partnership identity */}
-          <div className="p-4 border-b border-gray-200">
+      <div className="fixed inset-0 z-[100] flex bg-white overflow-hidden">
+        {/* Black Sidebar */}
+        <div className="w-56 bg-gray-900 flex-shrink-0 flex flex-col">
+          {/* Back + branding */}
+          <div className="px-4 pt-5 pb-4 border-b border-gray-700">
             <button
               onClick={() => { setView('list'); setSelectedPartnership(null); }}
-              className="text-xs text-gray-400 hover:text-gray-600 mb-3 flex items-center gap-1"
+              className="text-xs text-gray-400 hover:text-gray-200 mb-4 flex items-center gap-1.5 transition-colors"
             >
-              ← Back to Partnerships
+              ← Back
             </button>
             <div className="flex items-center gap-3">
               <div
-                className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden border border-gray-200"
-                style={{ backgroundColor: selectedPartnership.logoUrl ? undefined : selectedPartnership.color }}
+                className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden border border-gray-700"
+                style={{ backgroundColor: selectedPartnership.logoUrl ? undefined : (selectedPartnership.color || '#3B82F6') }}
               >
                 {selectedPartnership.logoUrl
                   ? <img src={selectedPartnership.logoUrl} alt={selectedPartnership.name} className="w-full h-full object-cover" />
-                  : null}
+                  : <Building2 className="w-5 h-5 text-white opacity-60 mx-auto mt-2.5" />
+                }
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-gray-900 text-sm truncate">{selectedPartnership.name}</p>
-                <Badge className={`text-xs ${ORG_TYPE_COLORS[selectedPartnership.orgType]}`}>
-                  {ORG_TYPE_LABELS[selectedPartnership.orgType]}
-                </Badge>
+                <p className="font-semibold text-white text-sm truncate leading-tight">{selectedPartnership.name}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{ORG_TYPE_LABELS[selectedPartnership.orgType]}</p>
               </div>
             </div>
           </div>
@@ -290,8 +314,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === item.id
-                      ? 'bg-gray-900 text-white'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-white text-gray-900'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                   }`}
                 >
                   <span className="flex items-center gap-3">
@@ -307,128 +331,168 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
               );
             })}
           </nav>
+
+          {/* Footer info */}
+          <div className="p-4 border-t border-gray-700">
+            <p className="text-xs text-gray-500">Partnership Admin</p>
+            <p className="text-xs text-gray-600 truncate mt-0.5">{user.email}</p>
+          </div>
         </div>
 
         {/* Main content */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-8 max-w-4xl">
+        <div className="flex-1 overflow-auto bg-gray-50">
+          <div className="p-8">
 
             {/* Overview Tab */}
             {activeTab === 'overview' && (
-              <div className="space-y-6">
+              <div className="space-y-6 max-w-5xl">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedPartnership.name}</h2>
+                  <h1 className="text-3xl font-bold text-gray-900">{selectedPartnership.name}</h1>
+                  <div className="flex items-center gap-3 mt-1">
+                    <Badge className={ORG_TYPE_COLORS[selectedPartnership.orgType]}>{ORG_TYPE_LABELS[selectedPartnership.orgType]}</Badge>
+                    {selectedPartnership.address && (
+                      <span className="text-sm text-gray-400">{selectedPartnership.address}</span>
+                    )}
+                  </div>
                   {selectedPartnership.description && (
-                    <p className="text-gray-500 mt-1">{selectedPartnership.description}</p>
-                  )}
-                  {selectedPartnership.address && (
-                    <p className="text-sm text-gray-400 mt-1">{selectedPartnership.address}</p>
+                    <p className="text-gray-600 mt-2 text-sm max-w-2xl">{selectedPartnership.description}</p>
                   )}
                 </div>
 
+                {/* Primary stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <Award className="w-8 h-8 text-blue-600" />
-                        <div>
-                          <p className="text-2xl font-bold text-gray-900">{totalHours.toFixed(1)}</p>
-                          <p className="text-xs text-gray-500">Total Hours</p>
+                  {[
+                    { label: 'Total Hours', value: totalHours.toFixed(1), icon: Award, color: 'text-blue-600', bg: 'bg-blue-50' },
+                    { label: 'Volunteers', value: uniqueVolunteers, icon: Users, color: 'text-green-600', bg: 'bg-green-50' },
+                    { label: 'Affiliated Clubs', value: approvedAffiliations.length, icon: Handshake, color: 'text-purple-600', bg: 'bg-purple-50' },
+                    { label: 'Active Events', value: partnershipEvents.length, icon: Calendar, color: 'text-orange-600', bg: 'bg-orange-50' },
+                  ].map(stat => {
+                    const Icon = stat.icon;
+                    return (
+                      <div key={stat.label} className="bg-white rounded-2xl border border-gray-200 p-5">
+                        <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center mb-3`}>
+                          <Icon className={`w-5 h-5 ${stat.color}`} />
                         </div>
+                        <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                        <p className="text-sm text-gray-500 mt-0.5">{stat.label}</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <Users className="w-8 h-8 text-green-600" />
-                        <div>
-                          <p className="text-2xl font-bold text-gray-900">{uniqueVolunteers}</p>
-                          <p className="text-xs text-gray-500">Volunteers</p>
-                        </div>
+                    );
+                  })}
+                </div>
+
+                {/* Secondary stats bar */}
+                <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Submission Breakdown</h3>
+                  <div className="grid grid-cols-4 divide-x divide-gray-100">
+                    {[
+                      { label: 'Total Submissions', value: totalSubmissions, color: 'text-gray-900' },
+                      { label: 'Approved', value: approvedSubs.length, color: 'text-green-600' },
+                      { label: 'Pending', value: pendingCount, color: 'text-yellow-600' },
+                      { label: 'Approval Rate', value: `${approvalRate}%`, color: approvalRate >= 75 ? 'text-green-600' : approvalRate >= 50 ? 'text-yellow-600' : 'text-red-600' },
+                    ].map(item => (
+                      <div key={item.label} className="px-5 first:pl-0 last:pr-0">
+                        <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{item.label}</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <Clock className="w-8 h-8 text-yellow-600" />
-                        <div>
-                          <p className="text-2xl font-bold text-gray-900">{pendingCount}</p>
-                          <p className="text-xs text-gray-500">Pending</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="pt-4 pb-4">
-                      <div className="flex items-center gap-3">
-                        <Handshake className="w-8 h-8 text-purple-600" />
-                        <div>
-                          <p className="text-2xl font-bold text-gray-900">{approvedAffiliations.length}</p>
-                          <p className="text-xs text-gray-500">Affiliated Clubs</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    ))}
+                  </div>
+                  {totalSubmissions > 0 && (
+                    <div className="mt-4 h-2 bg-gray-100 rounded-full overflow-hidden flex">
+                      <div className="h-full bg-green-500 transition-all" style={{ width: `${(approvedSubs.length / totalSubmissions) * 100}%` }} />
+                      <div className="h-full bg-yellow-400 transition-all" style={{ width: `${(pendingCount / totalSubmissions) * 100}%` }} />
+                      <div className="h-full bg-red-400 transition-all" style={{ width: `${(rejectedSubs.length / totalSubmissions) * 100}%` }} />
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Recent Submissions</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {(partnershipSubmissions as any[]).length === 0 ? (
-                        <p className="text-sm text-gray-400 text-center py-4">No submissions yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {(partnershipSubmissions as any[]).slice(0, 5).map((s) => (
-                            <div key={s.id} className="flex items-center justify-between text-sm">
-                              <span className="text-gray-700 truncate">{s.userName || s.userEmail}</span>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className="font-medium">{s.hours}h</span>
-                                <Badge className={s.status === 'approved' ? 'bg-green-100 text-green-700' : s.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}>
-                                  {s.status}
-                                </Badge>
+                  {/* Volunteer leaderboard */}
+                  <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-4">Top Volunteers</h3>
+                    {volunteerLeaderboard.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Users className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                        <p className="text-sm text-gray-400">No approved submissions yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {volunteerLeaderboard.slice(0, 6).map(([email, data]: [string, any], i) => (
+                          <div key={email} className="flex items-center gap-3">
+                            <div className="w-6 text-center flex-shrink-0">
+                              {i === 0 ? <span>🥇</span> : i === 1 ? <span>🥈</span> : i === 2 ? <span>🥉</span> : (
+                                <span className="text-xs text-gray-400 font-semibold">#{i + 1}</span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{data.name}</p>
+                              <p className="text-xs text-gray-400">{data.submissions} submission{data.submissions !== 1 ? 's' : ''}</p>
+                            </div>
+                            <p className="text-sm font-bold text-gray-900 flex-shrink-0">{data.hours.toFixed(1)}h</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Club breakdown */}
+                  <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-4">Hours by Club</h3>
+                    {clubHoursBreakdown.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Handshake className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                        <p className="text-sm text-gray-400">No club data yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {clubHoursBreakdown.slice(0, 6).map(([clubId, data]: [string, any]) => {
+                          const maxHours = (clubHoursBreakdown[0][1] as any).hours;
+                          const pct = maxHours > 0 ? (data.hours / maxHours) * 100 : 0;
+                          return (
+                            <div key={clubId}>
+                              <div className="flex items-center justify-between text-sm mb-1">
+                                <span className="font-medium text-gray-700 truncate">{data.name}</span>
+                                <span className="font-bold text-gray-900 ml-2 flex-shrink-0">{data.hours.toFixed(1)}h</span>
+                              </div>
+                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-gray-900 rounded-full" style={{ width: `${pct}%` }} />
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Top Volunteers</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {uniqueVolunteers === 0 ? (
-                        <p className="text-sm text-gray-400 text-center py-4">No volunteers yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {Object.entries(
-                            (partnershipSubmissions as any[])
-                              .filter(s => s.status === 'approved')
-                              .reduce((acc: Record<string, { name: string; hours: number }>, s) => {
-                                if (!acc[s.userEmail]) acc[s.userEmail] = { name: s.userName || s.userEmail, hours: 0 };
-                                acc[s.userEmail].hours += s.hours;
-                                return acc;
-                              }, {})
-                          )
-                            .sort(([, a], [, b]) => (b as any).hours - (a as any).hours)
-                            .slice(0, 5)
-                            .map(([email, data]: [string, any]) => (
-                              <div key={email} className="flex items-center justify-between text-sm">
-                                <span className="text-gray-700 truncate">{data.name}</span>
-                                <span className="font-medium text-gray-900">{data.hours.toFixed(1)}h</span>
-                              </div>
-                            ))}
+                {/* Recent activity */}
+                <div className="bg-white rounded-2xl border border-gray-200 p-5">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Recent Activity</h3>
+                  {(partnershipSubmissions as any[]).length === 0 ? (
+                    <div className="text-center py-8">
+                      <Clock className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+                      <p className="text-sm text-gray-400">No activity yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {(partnershipSubmissions as any[]).slice(0, 8).map((s: any) => (
+                        <div key={s.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'approved' ? 'bg-green-500' : s.status === 'rejected' ? 'bg-red-400' : 'bg-yellow-400'}`} />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">{s.userName || s.userEmail}</p>
+                              <p className="text-xs text-gray-400 truncate">{s.activityName || s.description || 'No description'}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                            <span className="text-sm font-bold text-gray-900">{s.hours}h</span>
+                            <Badge className={`text-xs ${s.status === 'approved' ? 'bg-green-100 text-green-700' : s.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                              {s.status}
+                            </Badge>
+                          </div>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
