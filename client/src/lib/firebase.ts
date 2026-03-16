@@ -647,6 +647,48 @@ export const getAllArchivedSubmissions = async (clubId: string): Promise<(HoursS
   return [...newResults, ...deduped];
 };
 
+export const getAllUserArchivedSubmissions = async (userEmail: string): Promise<(HoursSubmission & { clubName?: string; archivePeriod?: string; archivedAt?: Date })[]> => {
+  const q = query(collection(db, "submissionArchive"), where("userEmail", "==", userEmail));
+  const snap = await getDocs(q);
+  const newResults = snap.docs.map(d => ({
+    id: d.id,
+    ...d.data(),
+    submittedAt: d.data().submittedAt ? toDate(d.data().submittedAt) : new Date(),
+    reviewedAt: d.data().reviewedAt ? toDate(d.data().reviewedAt) : undefined,
+    archivedAt: d.data().archivedAt ? toDate(d.data().archivedAt) : undefined,
+  })) as (HoursSubmission & { clubName?: string; archivePeriod?: string; archivedAt?: Date })[];
+
+  const legacySnap = await getDocs(collection(db, "yearlyArchives"));
+  const legacyResults: (HoursSubmission & { clubName?: string; archivePeriod?: string; archivedAt?: Date })[] = [];
+  for (const archiveDoc of legacySnap.docs) {
+    const data = archiveDoc.data();
+    const period = data.schoolYear || archiveDoc.id;
+    const archivedAt = data.archivedAt ? toDate(data.archivedAt) : undefined;
+    for (const s of (data.submissions || []) as any[]) {
+      if (s.userEmail === userEmail) {
+        legacyResults.push({
+          ...s,
+          id: `${archiveDoc.id}_${s.id || s.userEmail}_${s.date}`,
+          archivePeriod: period,
+          archivedAt,
+          submittedAt: s.submittedAt ? toDate(s.submittedAt) : new Date(),
+          reviewedAt: s.reviewedAt ? toDate(s.reviewedAt) : undefined,
+        });
+      }
+    }
+  }
+
+  const seen = new Set(newResults.map(r => `${r.clubId}_${r.date}_${r.hours}_${r.archivePeriod}`));
+  const deduped = legacyResults.filter(r => {
+    const key = `${r.clubId}_${r.date}_${r.hours}_${r.archivePeriod}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return [...newResults, ...deduped];
+};
+
 export const getYearlyArchivePeriods = async (): Promise<{ id: string; schoolYear: string; archivedAt?: Date; submissionCount: number }[]> => {
   const snap = await getDocs(collection(db, "yearlyArchives"));
   return snap.docs.map(d => ({
