@@ -368,6 +368,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       qc.invalidateQueries({ queryKey: ['firebase-all-partnerships'] });
       toast({ title: "Partnership updated" });
     },
+    onError: (e: any) => toast({ title: "Failed to save", description: e?.message || "Check Firestore permissions.", variant: "destructive" }),
   });
 
   const deleteMutation = useMutation({

@@ -1738,8 +1738,12 @@ export const createPartnership = async (data: Omit<Partnership, 'id' | 'createdA
 };
 
 export const updatePartnership = async (partnershipId: string, updates: Partial<Partnership>): Promise<void> => {
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(updates)) {
+    if (v !== undefined) clean[k] = v;
+  }
   await updateDoc(doc(db, "partnerships", partnershipId), {
-    ...updates,
+    ...clean,
     updatedAt: Timestamp.fromDate(new Date()),
   });
 };
