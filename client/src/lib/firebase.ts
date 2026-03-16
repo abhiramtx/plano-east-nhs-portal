@@ -601,7 +601,10 @@ export const createSubmission = async (data: Omit<HoursSubmission, 'id' | 'submi
 
 export const updateSubmission = async (submissionId: string, updates: Partial<HoursSubmission>): Promise<void> => {
   const docRef = doc(db, "submissions", submissionId);
-  const updateData: any = { ...updates };
+  const updateData: any = {};
+  for (const [k, v] of Object.entries(updates)) {
+    if (v !== undefined) updateData[k] = v;
+  }
   if (updates.reviewedAt) {
     updateData.reviewedAt = Timestamp.fromDate(updates.reviewedAt);
   }

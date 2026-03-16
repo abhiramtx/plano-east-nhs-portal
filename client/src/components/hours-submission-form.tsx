@@ -407,7 +407,12 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                 className="bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto"
               >
                 {locationResults.map((result, index) => (
-                  <button key={index} type="button" onClick={() => handleLocationSelect(result)} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 border-b border-gray-100 last:border-b-0">
+                  <button
+                    key={index}
+                    type="button"
+                    onMouseDown={e => { e.preventDefault(); handleLocationSelect(result); }}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                  >
                     {result.display_name}
                   </button>
                 ))}
