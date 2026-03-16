@@ -687,8 +687,8 @@ export class FirestoreStorage implements IStorage {
     const locationMap = new Map<string, { lat: number; lng: number; hours: number; people: Set<string>; lastActivity: Date; name: string }>();
     
     for (const sub of submissions) {
-      let lat = sub.locationLat ? parseFloat(String(sub.locationLat)) : null;
-      let lng = sub.locationLng ? parseFloat(String(sub.locationLng)) : null;
+      let lat = sub.latitude ? parseFloat(String(sub.latitude)) : null;
+      let lng = sub.longitude ? parseFloat(String(sub.longitude)) : null;
       const submitDate = new Date(sub.date || sub.createdAt || 0);
       
       // Skip submissions at the main club location
