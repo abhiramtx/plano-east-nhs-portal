@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   User, Club, Partnership, PartnershipAffiliation, ClubEvent, EventAttendance,
   getAllPartnerships, getPartnershipsByOwner, createPartnership, updatePartnership, deletePartnership,
-  getPartnershipAffiliations, getClubAffiliations, requestAffiliation, respondToAffiliation,
+  getPartnershipAffiliations, getClubAffiliations, requestAffiliation, respondToAffiliation, removeAffiliation,
   getPartnershipEvents, createEvent, updateEvent, deleteEvent, getPartnershipSubmissions, getClubs,
   getEventAttendance, checkInUser, checkOutUser, grantEventHours
 } from "@/lib/firebase";
@@ -390,6 +390,18 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     },
     onError: (e: any) => {
       toast({ title: "Failed", description: e.message, variant: "destructive" });
+    },
+  });
+
+  const removeAffiliationMutation = useMutation({
+    mutationFn: ({ id, clubId }: { id: string; clubId: string }) =>
+      removeAffiliation(id, selectedPartnership!.id, clubId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['firebase-partnership-affiliations', selectedPartnership?.id] });
+      toast({ title: "Affiliation removed" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Failed to remove", description: e.message, variant: "destructive" });
     },
   });
 
@@ -1156,7 +1168,18 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                       {pendingAffiliations.map(aff => (
                         <div key={aff.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl">
                           <p className="font-medium text-gray-900 text-sm">{aff.clubName}</p>
-                          <Badge className="bg-yellow-100 text-yellow-700">Awaiting approval</Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-yellow-100 text-yellow-700">Awaiting approval</Badge>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-200 hover:bg-red-50 h-7 text-xs"
+                              onClick={() => removeAffiliationMutation.mutate({ id: aff.id, clubId: aff.clubId })}
+                              disabled={removeAffiliationMutation.isPending}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </CardContent>
@@ -1175,7 +1198,18 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                         {approvedAffiliations.map(aff => (
                           <div key={aff.id} className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
                             <span className="font-medium text-gray-900 text-sm">{aff.clubName}</span>
-                            <Badge className="bg-green-100 text-green-700">Affiliated</Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-green-100 text-green-700">Affiliated</Badge>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 border-red-200 hover:bg-red-50 h-7 text-xs"
+                                onClick={() => removeAffiliationMutation.mutate({ id: aff.id, clubId: aff.clubId })}
+                                disabled={removeAffiliationMutation.isPending}
+                              >
+                                Remove
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>

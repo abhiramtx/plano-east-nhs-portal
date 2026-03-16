@@ -1566,3 +1566,15 @@ export const respondToAffiliation = async (affiliationId: string, partnershipId:
     }
   }
 };
+
+export const removeAffiliation = async (affiliationId: string, partnershipId: string, clubId: string): Promise<void> => {
+  await deleteDoc(doc(db, "partnershipAffiliations", affiliationId));
+  const partnershipDoc = await getDoc(doc(db, "partnerships", partnershipId));
+  if (partnershipDoc.exists()) {
+    const current: string[] = partnershipDoc.data().affiliatedClubIds || [];
+    await updateDoc(doc(db, "partnerships", partnershipId), {
+      affiliatedClubIds: current.filter(id => id !== clubId),
+      updatedAt: Timestamp.fromDate(new Date()),
+    });
+  }
+};

@@ -4,7 +4,7 @@ import {
   User, Club, Partnership, PartnershipAffiliation,
   AdminSettings as AdminSettingsType,
   getAdminSettings, updateAdminSettings, updateClub, recalculateClubHours,
-  getClubAffiliations, respondToAffiliation
+  getClubAffiliations, respondToAffiliation, removeAffiliation
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -119,6 +119,18 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
     },
     onError: (error: any) => {
       toast({ title: "Failed", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const removeAffiliationMutation = useMutation({
+    mutationFn: ({ id, partnershipId }: { id: string; partnershipId: string }) =>
+      removeAffiliation(id, partnershipId, club.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-affiliations', club.id] });
+      toast({ title: "Affiliation removed" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to remove", description: error.message, variant: "destructive" });
     }
   });
 
@@ -564,7 +576,18 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                     {clubAffiliations.filter(a => a.status === 'approved').map(aff => (
                       <div key={aff.id} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                         <span className="font-medium text-gray-900 text-sm">{aff.partnershipName}</span>
-                        <Badge className="bg-green-100 text-green-700">Affiliated</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-green-100 text-green-700">Affiliated</Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-200 hover:bg-red-50 h-7 text-xs"
+                            onClick={() => removeAffiliationMutation.mutate({ id: aff.id, partnershipId: aff.partnershipId })}
+                            disabled={removeAffiliationMutation.isPending}
+                          >
+                            Remove
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
