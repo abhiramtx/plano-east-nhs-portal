@@ -141,7 +141,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [selectedEvent, setSelectedEvent] = useState<ClubEvent | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<EventTab>('information');
   const [qrSubTab, setQrSubTab] = useState<QRSubTab>('checkin');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -171,6 +171,9 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
     queryKey: ['firebase-club-events', club.id],
     queryFn: () => getClubEvents(club.id),
   });
+
+  // Derive selectedEvent from live events list so QR tab always reflects latest saved data
+  const selectedEvent = events.find(e => e.id === selectedEventId) ?? null;
 
   const { data: hoursLogs = [] } = useQuery<HoursLog[]>({
     queryKey: ['/api/hours-logs', club.id],
@@ -262,7 +265,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
     mutationFn: (id: string) => deleteEvent(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-club-events', club.id] });
-      setSelectedEvent(null);
+      setSelectedEventId(null);
       toast({ title: "Event deleted" });
     },
   });
@@ -406,7 +409,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                   <Label>Check-in Method</Label>
                   <Select value={newType} onValueChange={(v) => setNewType(v as ClubEvent['type'])}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[200]">
                       <SelectItem value="none">Open — No check-in required</SelectItem>
                       <SelectItem value="password">Password — Volunteers enter a password</SelectItem>
                       <SelectItem value="scan_qr">Scan QR — You scan volunteers' QR codes (time-tracked)</SelectItem>
@@ -453,7 +456,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
             return (
               <button
                 key={event.id}
-                onClick={() => { setSelectedEvent(event); setActiveTab('information'); }}
+                onClick={() => { setSelectedEventId(event.id); setActiveTab('information'); }}
                 className={`w-full text-left rounded-lg border p-3 transition-colors ${isSelected ? 'bg-gray-100 border-gray-400' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
               >
                 <div className="flex items-start justify-between gap-2">

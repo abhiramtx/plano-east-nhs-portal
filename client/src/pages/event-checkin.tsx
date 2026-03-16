@@ -18,7 +18,7 @@ type Stage =
   | { type: 'loading' }
   | { type: 'event-not-found' }
   | { type: 'event-closed' }
-  | { type: 'signin'; event: ClubEvent }
+  | { type: 'signin'; event?: ClubEvent }
   | { type: 'checking'; event: ClubEvent }
   | { type: 'not-member'; event: ClubEvent }
   | { type: 'processing'; event: ClubEvent; email: string }
@@ -40,33 +40,32 @@ export default function EventCheckin() {
   const eventId = params.get('eventId') || '';
   const action = (params.get('action') || 'checkin') as 'checkin' | 'checkout';
 
-  const [stage, setStage] = useState<Stage>({ type: 'loading' });
+  // Start in signin stage (no event loaded yet) — load event only after auth
+  const [stage, setStage] = useState<Stage>(eventId ? { type: 'signin' } : { type: 'event-not-found' });
   const [signingIn, setSigningIn] = useState(false);
 
-  // Load event on mount
-  useEffect(() => {
-    if (!eventId) { setStage({ type: 'event-not-found' }); return; }
-    getEventById(eventId).then(event => {
-      if (!event) return setStage({ type: 'event-not-found' });
-      if (event.isOpen === false) return setStage({ type: 'event-closed' });
-      setStage({ type: 'signin', event });
-    }).catch(() => setStage({ type: 'event-not-found' }));
-  }, [eventId]);
-
-  // Auth state — once we have event, proceed based on signed-in state
+  // Auth listener: when user signs in, move to 'loading' so we can fetch the event with auth
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, user => {
       setStage(prev => {
-        if (prev.type === 'loading' || prev.type === 'event-not-found' || prev.type === 'event-closed') return prev;
-        if (prev.type === 'signin') {
-          if (user) return { type: 'checking', event: prev.event };
-          return prev;
-        }
+        if (prev.type === 'event-not-found' || prev.type === 'event-closed') return prev;
+        if (prev.type === 'signin' && user) return { type: 'loading' };
         return prev;
       });
     });
     return () => unsub();
   }, []);
+
+  // When stage becomes 'loading' (user is now authenticated), load the event
+  useEffect(() => {
+    if (stage.type !== 'loading') return;
+    if (!eventId) { setStage({ type: 'event-not-found' }); return; }
+    getEventById(eventId).then(event => {
+      if (!event) return setStage({ type: 'event-not-found' });
+      if (event.isOpen === false) return setStage({ type: 'event-closed' });
+      setStage({ type: 'checking', event });
+    }).catch(() => setStage({ type: 'event-not-found' }));
+  }, [stage.type]);
 
   // When stage becomes 'checking', do membership check then act
   useEffect(() => {
@@ -127,11 +126,10 @@ export default function EventCheckin() {
 
   const handleSignIn = async () => {
     if (stage.type !== 'signin') return;
-    const { event } = stage;
     setSigningIn(true);
     try {
       await signInWithGoogle();
-      setStage({ type: 'checking', event });
+      // Auth listener will fire and transition to 'loading', then 'checking'
     } catch (err: any) {
       setSigningIn(false);
     }
