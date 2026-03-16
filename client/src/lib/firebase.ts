@@ -19,6 +19,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   Timestamp,
   writeBatch,
   setDoc
