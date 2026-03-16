@@ -151,7 +151,8 @@ export default function Hours({ club }: HoursProps) {
                 </DialogHeader>
                 <HoursSubmissionForm 
                   user={user} 
-                  onSuccess={handleFormSuccess} 
+                  onSuccess={handleFormSuccess}
+                  onCancel={() => setIsFormOpen(false)}
                   editingSubmission={editingSubmission}
                   clubId={club.id}
                   logId={editingSubmission ? (editingSubmission as any).logId : (selectedLogId || undefined)}

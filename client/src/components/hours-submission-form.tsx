@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, MapPin, Search, Loader2, Calendar, Building2 } from "lucide-react";
+import { Upload, X, MapPin, Loader2, Calendar, Building2 } from "lucide-react";
 
 const compressImage = (file: File): Promise<File> => {
   return new Promise((resolve) => {
@@ -50,6 +50,7 @@ type FormData = z.infer<typeof formSchema>;
 interface HoursSubmissionFormProps {
   user: User | null;
   onSuccess: () => void;
+  onCancel?: () => void;
   editingSubmission?: HoursSubmission | null;
   clubId?: string;
   logId?: string;
@@ -57,7 +58,7 @@ interface HoursSubmissionFormProps {
   requireProofImage?: boolean;
 }
 
-export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId, logId, logName, requireProofImage = false }: HoursSubmissionFormProps) {
+export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmission, clubId, logId, logName, requireProofImage = false }: HoursSubmissionFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(editingSubmission?.proofImageUrl || null);
   const [locationSearch, setLocationSearch] = useState(editingSubmission?.location || "");
@@ -74,7 +75,6 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
     editingSubmission?.partnershipId ? 'partnership' : 'club'
   );
   const [selectedPartnershipId, setSelectedPartnershipId] = useState(editingSubmission?.partnershipId || '');
-  const [eventSearch, setEventSearch] = useState('');
   const [selectedEventId, setSelectedEventId] = useState(editingSubmission?.eventId || '');
   const [eventPassword, setEventPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -111,9 +111,6 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
   });
 
   const availableEvents = source === 'club' ? clubEvents : partnershipEvents;
-  const filteredEvents = availableEvents.filter(e =>
-    e.name.toLowerCase().includes(eventSearch.toLowerCase())
-  );
   const selectedEvent = availableEvents.find(e => e.id === selectedEventId) || null;
   const selectedPartnership = allPartnerships.find(p => p.id === selectedPartnershipId) || null;
 
@@ -314,36 +311,25 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
                 Event <span className="text-gray-400 font-normal">(optional)</span>
               </Label>
               <p className="text-xs text-gray-500">Link these hours to a specific event</p>
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    value={eventSearch}
-                    onChange={e => setEventSearch(e.target.value)}
-                    placeholder="Search events..."
-                    className="pl-10 bg-white"
-                  />
-                </div>
-                <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v === '__none__' ? '' : v); setPasswordError(''); setEventPassword(''); }}>
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="No event (general submission)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">No event — general submission</SelectItem>
-                    {filteredEvents.map(e => (
-                      <SelectItem key={e.id} value={e.id}>
-                        <span className="flex items-center gap-2">
-                          {e.name}
-                          {e.type === 'password' && <Badge className="text-xs bg-yellow-100 text-yellow-700">Password</Badge>}
-                        </span>
-                      </SelectItem>
-                    ))}
-                    {availableEvents.length === 0 && (
-                      <SelectItem value="no-events" disabled>No events available</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v === '__none__' ? '' : v); setPasswordError(''); setEventPassword(''); }}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="No event (general submission)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No event — general submission</SelectItem>
+                  {availableEvents.map(e => (
+                    <SelectItem key={e.id} value={e.id}>
+                      <span className="flex items-center gap-2">
+                        {e.name}
+                        {e.type === 'password' && <Badge className="text-xs bg-yellow-100 text-yellow-700">Password</Badge>}
+                      </span>
+                    </SelectItem>
+                  ))}
+                  {availableEvents.length === 0 && (
+                    <SelectItem value="no-events" disabled>No events available</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
 
               {/* Event password */}
               {selectedEvent?.type === 'password' && (
@@ -444,7 +430,7 @@ export function HoursSubmissionForm({ user, onSuccess, editingSubmission, clubId
 
       <div className="flex justify-end space-x-3 pt-4">
         <Button type="button" variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100"
-          onClick={() => { form.reset(); setSelectedFile(null); setImagePreview(null); setSelectedLocation(null); setLocationSearch(""); setSelectedEventId(''); setEventPassword(''); }}>
+          onClick={() => { form.reset(); setSelectedFile(null); setImagePreview(null); setSelectedLocation(null); setLocationSearch(""); setSelectedEventId(''); setEventPassword(''); onCancel?.(); }}>
           Cancel
         </Button>
         <Button type="submit" disabled={submitMutation.isPending} className="bg-black hover:bg-gray-800 text-white">
