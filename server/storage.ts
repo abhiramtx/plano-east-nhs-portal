@@ -678,29 +678,10 @@ export class FirestoreStorage implements IStorage {
 
     const circles: TerritoryCircle[] = [];
     
-    // Always create a home base circle at the club's location
-    if (club.latitude && club.longitude) {
-      const clubLat = parseFloat(String(club.latitude));
-      const clubLng = parseFloat(String(club.longitude));
-      
-      if (!isNaN(clubLat) && !isNaN(clubLng)) {
-        // Home base: always 4 miles (6.4 km)
-        circles.push({
-          id: `${clubId}_home`,
-          clubId,
-          latitude: clubLat,
-          longitude: clubLng,
-          radiusKm: 5 * 1.60934, // 5 miles in km
-          hoursContributed: 0,
-          peopleCount: 0,
-          locationName: `${club.name} (Home Base)`,
-          isMainClubLocation: true,
-          lastActivityAt: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as TerritoryCircle);
-      }
-    }
+    // Accumulate hours from submissions with no location → go to HQ circle
+    let hqHours = 0;
+    const hqPeople = new Set<string>();
+    let hqLastActivity: Date | undefined;
 
     // Group submissions by location (geohash)
     const locationMap = new Map<string, { lat: number; lng: number; hours: number; people: Set<string>; lastActivity: Date; name: string }>();
@@ -708,6 +689,7 @@ export class FirestoreStorage implements IStorage {
     for (const sub of submissions) {
       let lat = sub.locationLat ? parseFloat(String(sub.locationLat)) : null;
       let lng = sub.locationLng ? parseFloat(String(sub.locationLng)) : null;
+      const submitDate = new Date(sub.date || sub.createdAt || 0);
       
       // Skip submissions at the main club location
       if (club.latitude && club.longitude) {
@@ -716,11 +698,16 @@ export class FirestoreStorage implements IStorage {
         if (lat === clubLat && lng === clubLng) continue;
       }
       
-      if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) continue;
+      if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+        // No location — roll into HQ circle
+        hqHours += parseFloat(String(sub.hours)) || 0;
+        hqPeople.add(sub.userId);
+        if (!hqLastActivity || submitDate > hqLastActivity) hqLastActivity = submitDate;
+        continue;
+      }
 
       const geohash = this.geohashId(lat, lng);
       const existing = locationMap.get(geohash);
-      const submitDate = new Date(sub.date || sub.createdAt || 0);
 
       if (existing) {
         existing.hours += parseFloat(String(sub.hours)) || 0;
@@ -735,6 +722,32 @@ export class FirestoreStorage implements IStorage {
           lastActivity: submitDate,
           name: sub.activityName || `Volunteer Location`,
         });
+      }
+    }
+
+    // Build the HQ circle (base 5 miles + hours from no-location submissions)
+    if (club.latitude && club.longitude) {
+      const clubLat = parseFloat(String(club.latitude));
+      const clubLng = parseFloat(String(club.longitude));
+      if (!isNaN(clubLat) && !isNaN(clubLng)) {
+        const baseKm = 5 * 1.60934;
+        const hqRadiusKm = hqHours > 0
+          ? Math.max(baseKm, this.calculateTerritoryRadius(hqHours, hqPeople.size, hqLastActivity))
+          : baseKm;
+        circles.push({
+          id: `${clubId}_home`,
+          clubId,
+          latitude: clubLat,
+          longitude: clubLng,
+          radiusKm: hqRadiusKm,
+          hoursContributed: hqHours,
+          peopleCount: hqPeople.size,
+          locationName: `${club.name} (Home Base)`,
+          isMainClubLocation: true,
+          lastActivityAt: hqLastActivity || new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as TerritoryCircle);
       }
     }
 
