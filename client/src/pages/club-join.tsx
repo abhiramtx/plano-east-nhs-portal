@@ -87,7 +87,7 @@ export default function ClubJoin() {
   const { data: club, isLoading: clubLoading, error: clubError } = useQuery<Club | null>({
     queryKey: ["club-by-invite", code],
     queryFn: () => getClubByInviteCode(code!),
-    enabled: !!code,
+    enabled: !!code && !!authUser,
   });
 
   const { data: clubStats } = useQuery({
@@ -141,6 +141,29 @@ export default function ClubJoin() {
     return pageShell(
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-10 flex items-center justify-center">
         <Loader2 className="w-7 h-7 text-gray-300 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return pageShell(
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8 flex flex-col items-center gap-5 text-center">
+        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100">
+          <LogIn className="w-7 h-7 text-gray-400" />
+        </div>
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">Sign in to join</h1>
+          <p className="text-gray-400 mt-1.5 text-sm leading-relaxed">
+            You need to sign in with Google before you can view and join this club.
+          </p>
+        </div>
+        <Button
+          className="w-full bg-black hover:bg-gray-900 text-white rounded-xl h-11 font-medium"
+          onClick={() => signInWithGoogle()}
+        >
+          <LogIn className="w-4 h-4 mr-2" />
+          Continue with Google
+        </Button>
       </div>
     );
   }
