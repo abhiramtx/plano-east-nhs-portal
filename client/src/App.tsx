@@ -41,6 +41,7 @@ import { AdminPartnerships } from "@/pages/admin-partnerships";
 import { AdminQueryHistory } from "@/pages/admin-query-history";
 import { PartnershipsPage } from "@/pages/partnerships";
 import ClubJoin from "@/pages/club-join";
+import EventCheckin from "@/pages/event-checkin";
 
 function VolunteerInterface({ 
   user, 
@@ -382,6 +383,15 @@ function App() {
     setLocation('/clubs');
   };
 
+  // Let the event check-in page render immediately — it manages its own auth state
+  if (window.location.pathname === '/event-checkin') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <EventCheckin />
+      </QueryClientProvider>
+    );
+  }
+
   if (initializing || (user && !clubChecked)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -418,6 +428,9 @@ function App() {
             ) : (
               <Landing onSignIn={() => {}} />
             )}
+          </Route>
+          <Route path="/event-checkin">
+            <EventCheckin />
           </Route>
           <Route path="/join/:code">
             {(params) => <ClubJoin />}

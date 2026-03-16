@@ -654,7 +654,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                         <div className="p-6 flex flex-col items-center gap-3">
                           <div className="bg-white rounded-xl p-4 shadow-sm border border-green-100">
                             <QRCode
-                              value={JSON.stringify({ eventId: selectedEvent.id, action: 'checkin', clubId: club.id })}
+                              value={`${window.location.origin}/event-checkin?eventId=${selectedEvent.id}&action=checkin`}
                               size={180}
                             />
                           </div>
@@ -671,7 +671,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                         <div className="p-6 flex flex-col items-center gap-3">
                           <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
                             <QRCode
-                              value={JSON.stringify({ eventId: selectedEvent.id, action: 'checkout', clubId: club.id })}
+                              value={`${window.location.origin}/event-checkin?eventId=${selectedEvent.id}&action=checkout`}
                               size={180}
                             />
                           </div>

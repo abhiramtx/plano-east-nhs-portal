@@ -1458,6 +1458,12 @@ const toEvent = (docSnap: any): ClubEvent => {
   } as ClubEvent;
 };
 
+export const getEventById = async (eventId: string): Promise<ClubEvent | null> => {
+  const docSnap = await getDoc(doc(db, "events", eventId));
+  if (!docSnap.exists()) return null;
+  return toEvent(docSnap);
+};
+
 export const getClubEvents = async (clubId: string): Promise<ClubEvent[]> => {
   const q = query(collection(db, "events"), where("clubId", "==", clubId));
   const snap = await getDocs(q);
