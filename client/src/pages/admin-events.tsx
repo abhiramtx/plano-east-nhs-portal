@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   User, Club, ClubEvent, EventAttendance, EventConditional,
   getClubEvents, createEvent, updateEvent, deleteEvent,
-  getEventAttendance, checkInUser, checkOutUser, updateAttendanceHours, grantEventHours
+  getEventAttendance, checkInUser, checkOutUser, updateAttendanceHours, grantEventHours, recalculateClubHours
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -297,12 +297,20 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
         hoursLogs.find(l => String(l.id) === editLogId)?.name,
       );
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       qc.invalidateQueries({ queryKey: ['firebase-event-attendance', selectedEvent?.id] });
       setSelectedAttendees([]);
       setDefaultHours('');
       setOverrideHours({});
       toast({ title: "Hours granted successfully!" });
+      if (club?.id) {
+        try {
+          await recalculateClubHours(club.id);
+          qc.invalidateQueries({ queryKey: ['firebase-clubs'] });
+        } catch {
+          toast({ title: "Hours granted, but total update failed", description: "Club totals may be stale. Try refreshing.", variant: "destructive" });
+        }
+      }
     },
     onError: (e: any) => toast({ title: "Failed to grant hours", description: e.message, variant: "destructive" }),
   });

@@ -108,7 +108,7 @@ export default function Hours({ club }: HoursProps) {
   };
 
   const filteredSubmissions = selectedLogId
-    ? submissions.filter(s => s.logId === selectedLogId)
+    ? submissions.filter(s => s.logId === selectedLogId || ((s.eventId || s.grantedByAdmin) && !s.logId))
     : submissions;
 
   const formatDate = (dateString: string) => {
