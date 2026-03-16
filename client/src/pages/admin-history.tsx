@@ -42,76 +42,69 @@ interface AdminHistoryProps {
 
 type ArchivedSub = HoursSubmission & { clubName?: string; archivePeriod?: string; archivedAt?: Date };
 
-// ─── Expandable submission row (used in dashboard list) ───────────────────────
+// ─── Submission row (used in dashboard list) ──────────────────────────────────
 function SubmissionRow({ s }: { s: ArchivedSub }) {
-  const [expanded, setExpanded] = useState(false);
   const [imgOpen, setImgOpen] = useState(false);
   const activityName = (s as any).activityName || s.description || '—';
-  const location = s.location as any;
-  const locationLabel = location?.name || location?.address || null;
-  const hasDetails = s.proofImageUrl || s.partnershipName || locationLabel || (s.description && s.description !== activityName) || (s as any).rejectReason;
+  const description = s.description || null;
+  const locationLabel = typeof s.location === 'string' && s.location ? s.location : null;
+  const logName = s.logName || null;
 
   return (
-    <div className="border-b border-gray-50 last:border-0">
-      <button
-        className="w-full flex items-center justify-between py-2 text-left group"
-        onClick={() => hasDetails && setExpanded(v => !v)}
-      >
-        <div className="flex-1 min-w-0 mr-2">
-          <p className="text-sm text-gray-900 truncate">{activityName}</p>
+    <div className="py-3 border-b border-gray-50 last:border-0 space-y-2">
+      {/* Top row: name + hours + status */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-gray-900">{activityName}</p>
           <p className="text-xs text-gray-400">{new Date(s.date).toLocaleDateString()}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-sm font-medium text-gray-900">{s.hours}h</span>
-          <Badge
-            className={`text-xs ${s.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : s.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-red-100 text-red-700 border-red-200'}`}
-          >
+          <span className="text-sm font-semibold text-gray-900">{s.hours}h</span>
+          <Badge className={`text-xs ${s.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : s.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
             {s.status}
           </Badge>
-          {hasDetails && (
-            <span className={`text-xs text-gray-400 transition-transform ${expanded ? 'rotate-90' : ''}`}>›</span>
-          )}
         </div>
-      </button>
-      {expanded && (
-        <div className="pb-3 space-y-2 text-xs text-gray-500 pl-1">
-          {s.description && s.description !== activityName && (
-            <p className="text-gray-600 italic">"{s.description}"</p>
-          )}
-          {s.partnershipName && (
-            <div className="flex items-center gap-1.5 text-blue-600">
-              <Handshake className="w-3 h-3" />
-              <span>{s.partnershipName}</span>
-            </div>
-          )}
-          {locationLabel && (
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-3 h-3" />
-              <span>{locationLabel}</span>
-            </div>
-          )}
-          {(s as any).rejectReason && (
-            <div className="p-2 bg-red-50 border border-red-100 rounded text-red-700">
-              <span className="font-semibold">Reason: </span>{(s as any).rejectReason}
-            </div>
-          )}
-          {s.proofImageUrl && (
-            <div>
-              <button
-                onClick={() => setImgOpen(v => !v)}
-                className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
-              >
-                <Image className="w-3 h-3" />
-                {imgOpen ? 'Hide proof' : 'View proof image'}
-              </button>
-              {imgOpen && (
-                <img
-                  src={s.proofImageUrl}
-                  alt="Proof"
-                  className="mt-1.5 max-w-full max-h-48 rounded border border-gray-200 object-contain"
-                />
-              )}
-            </div>
+      </div>
+
+      {/* Description / notes */}
+      {description && (
+        <p className="text-xs text-gray-500 italic leading-relaxed">"{description}"</p>
+      )}
+
+      {/* Meta pills */}
+      <div className="flex flex-wrap gap-1.5">
+        {logName && (
+          <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            <Calendar className="w-3 h-3" />{logName}
+          </span>
+        )}
+        {s.partnershipName && (
+          <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+            <Handshake className="w-3 h-3" />{s.partnershipName}
+          </span>
+        )}
+        {locationLabel && (
+          <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            <MapPin className="w-3 h-3" />{locationLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Rejection reason */}
+      {s.status === 'rejected' && (s as any).rejectReason && (
+        <div className="p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
+          <span className="font-semibold">Reason: </span>{(s as any).rejectReason}
+        </div>
+      )}
+
+      {/* Proof image */}
+      {s.proofImageUrl && (
+        <div>
+          <button onClick={() => setImgOpen(v => !v)} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800">
+            <Image className="w-3 h-3" />{imgOpen ? 'Hide proof' : 'View proof image'}
+          </button>
+          {imgOpen && (
+            <img src={s.proofImageUrl} alt="Proof" className="mt-1.5 max-w-full max-h-48 rounded border border-gray-200 object-contain" />
           )}
         </div>
       )}
@@ -123,12 +116,14 @@ function SubmissionRow({ s }: { s: ArchivedSub }) {
 function SubmissionDetailCard({ s }: { s: ArchivedSub }) {
   const [imgOpen, setImgOpen] = useState(false);
   const activityName = (s as any).activityName || s.description || '—';
-  const location = s.location as any;
-  const locationLabel = location?.name || location?.address || null;
+  const description = s.description || null;
+  const locationLabel = typeof s.location === 'string' && s.location ? s.location : null;
+  const logName = s.logName || null;
 
   return (
     <Card className="bg-white border-gray-200">
       <CardContent className="p-4 space-y-3">
+        {/* Volunteer */}
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
             <Users className="w-3.5 h-3.5 text-gray-500" />
@@ -139,20 +134,25 @@ function SubmissionDetailCard({ s }: { s: ArchivedSub }) {
           </div>
         </div>
 
-        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+        {/* Core fields */}
+        <div className="bg-gray-50 rounded-lg p-3 space-y-2.5">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-gray-400 uppercase font-medium mb-0.5">Activity</p>
               <p className="text-sm text-gray-900 font-medium">{activityName}</p>
-              {s.description && s.description !== activityName && (
-                <p className="text-xs text-gray-500 mt-0.5 italic">"{s.description}"</p>
-              )}
             </div>
             <div className="flex-shrink-0 text-right">
               <p className="text-xs text-gray-400 uppercase font-medium mb-0.5">Hours</p>
               <p className="text-sm font-bold text-gray-900">{s.hours}h</p>
             </div>
           </div>
+
+          {description && (
+            <div>
+              <p className="text-xs text-gray-400 uppercase font-medium mb-0.5">Description</p>
+              <p className="text-xs text-gray-600 leading-relaxed">{description}</p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-gray-200">
             <div>
@@ -163,6 +163,12 @@ function SubmissionDetailCard({ s }: { s: ArchivedSub }) {
               <div>
                 <p className="text-gray-400 font-medium uppercase">Period</p>
                 <p className="text-gray-700">{s.archivePeriod}</p>
+              </div>
+            )}
+            {logName && (
+              <div className="col-span-2 flex items-center gap-1.5 text-gray-600">
+                <Calendar className="w-3 h-3 flex-shrink-0" />
+                <span>{logName}</span>
               </div>
             )}
             {locationLabel && (
@@ -180,10 +186,9 @@ function SubmissionDetailCard({ s }: { s: ArchivedSub }) {
           </div>
         </div>
 
+        {/* Status */}
         <div className="flex items-center gap-2">
-          <Badge
-            className={`text-xs ${s.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : s.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-red-100 text-red-700 border-red-200'}`}
-          >
+          <Badge className={`text-xs ${s.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : s.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
             {s.status}
           </Badge>
           {(s as any).reviewedBy && (
@@ -191,27 +196,22 @@ function SubmissionDetailCard({ s }: { s: ArchivedSub }) {
           )}
         </div>
 
+        {/* Rejection reason */}
         {s.status === 'rejected' && (s as any).rejectReason && (
           <div className="p-2 bg-red-50 border border-red-100 rounded text-xs text-red-700">
             <span className="font-semibold">Reason: </span>{(s as any).rejectReason}
           </div>
         )}
 
+        {/* Proof image */}
         {s.proofImageUrl && (
           <div>
-            <button
-              onClick={() => setImgOpen(v => !v)}
-              className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800"
-            >
+            <button onClick={() => setImgOpen(v => !v)} className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800">
               <Image className="w-3 h-3" />
               {imgOpen ? 'Hide proof image' : 'View proof image'}
             </button>
             {imgOpen && (
-              <img
-                src={s.proofImageUrl}
-                alt="Proof"
-                className="mt-2 max-w-full max-h-64 rounded-lg border border-gray-200 object-contain"
-              />
+              <img src={s.proofImageUrl} alt="Proof" className="mt-2 max-w-full max-h-64 rounded-lg border border-gray-200 object-contain" />
             )}
           </div>
         )}

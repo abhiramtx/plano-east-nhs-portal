@@ -38,57 +38,61 @@ type ArchivedSub = HoursSubmission & { clubName?: string; archivePeriod?: string
 function SubmissionCard({ s }: { s: ArchivedSub }) {
   const [imgOpen, setImgOpen] = useState(false);
   const activityName = (s as any).activityName || s.description || '—';
-  const location = s.location as any;
-  const locationLabel = location?.name || location?.address || null;
+  const description = s.description || null;
+  const locationLabel = typeof s.location === 'string' && s.location ? s.location : null;
+  const logName = s.logName || null;
 
   return (
     <Card className="bg-white border-gray-200">
       <CardContent className="p-4 space-y-3">
+        {/* Activity + hours + status */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900">{activityName}</p>
-            {s.description && s.description !== activityName && (
-              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{s.description}</p>
-            )}
+            <p className="text-xs text-gray-400 mt-0.5">{new Date(s.date).toLocaleDateString()}</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-sm font-bold text-gray-900">{s.hours}h</span>
-            <Badge
-              className={`text-xs ${s.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : s.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-red-100 text-red-700 border-red-200'}`}
-            >
+            <Badge className={`text-xs ${s.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : s.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
               {s.status}
             </Badge>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="flex items-center gap-1.5 text-gray-500">
-            <Calendar className="w-3 h-3 flex-shrink-0" />
-            <span>{new Date(s.date).toLocaleDateString()}</span>
+        {/* Description */}
+        {description && (
+          <div>
+            <p className="text-xs text-gray-400 uppercase font-medium mb-0.5">Description</p>
+            <p className="text-xs text-gray-600 leading-relaxed">{description}</p>
           </div>
+        )}
+
+        {/* Meta */}
+        <div className="flex flex-wrap gap-1.5 text-xs">
           {s.archivePeriod && (
-            <div className="flex items-center gap-1.5 text-gray-500">
-              <Archive className="w-3 h-3 flex-shrink-0" />
-              <span>{s.archivePeriod}</span>
-            </div>
+            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+              <Archive className="w-3 h-3" />{s.archivePeriod}
+            </span>
           )}
           {s.clubName && (
-            <div className="flex items-center gap-1.5 text-gray-500">
-              <User className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{s.clubName}</span>
-            </div>
+            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+              <User className="w-3 h-3" />{s.clubName}
+            </span>
+          )}
+          {logName && (
+            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+              <Calendar className="w-3 h-3" />{logName}
+            </span>
           )}
           {locationLabel && (
-            <div className="flex items-center gap-1.5 text-gray-500">
-              <MapPin className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{locationLabel}</span>
-            </div>
+            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+              <MapPin className="w-3 h-3" />{locationLabel}
+            </span>
           )}
           {s.partnershipName && (
-            <div className="flex items-center gap-1.5 text-blue-600 col-span-2">
-              <Handshake className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate font-medium">{s.partnershipName}</span>
-            </div>
+            <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+              <Handshake className="w-3 h-3" />{s.partnershipName}
+            </span>
           )}
         </div>
 
@@ -104,19 +108,12 @@ function SubmissionCard({ s }: { s: ArchivedSub }) {
 
         {s.proofImageUrl && (
           <div>
-            <button
-              onClick={() => setImgOpen(v => !v)}
-              className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800"
-            >
+            <button onClick={() => setImgOpen(v => !v)} className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800">
               <Image className="w-3 h-3" />
               {imgOpen ? 'Hide proof image' : 'View proof image'}
             </button>
             {imgOpen && (
-              <img
-                src={s.proofImageUrl}
-                alt="Proof"
-                className="mt-2 max-w-full max-h-64 rounded-lg border border-gray-200 object-contain"
-              />
+              <img src={s.proofImageUrl} alt="Proof" className="mt-2 max-w-full max-h-64 rounded-lg border border-gray-200 object-contain" />
             )}
           </div>
         )}
