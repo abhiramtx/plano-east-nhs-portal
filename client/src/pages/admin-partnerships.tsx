@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   User, Club, Partnership, PartnershipAffiliation, ClubEvent,
   getAllPartnerships, getPartnershipsByOwner, createPartnership, updatePartnership, deletePartnership,
   getPartnershipAffiliations, getClubAffiliations, requestAffiliation, respondToAffiliation,
-  getPartnershipEvents, createEvent, getPartnershipSubmissions
+  getPartnershipEvents, createEvent, getPartnershipSubmissions, getClubs
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import {
   Plus, Trash2, Save, Building2, Users, Clock, Award, ChevronRight,
-  BarChart3, Calendar, Handshake, Settings, Globe, Check, X, AlertCircle, ExternalLink
+  BarChart3, Calendar, Handshake, Settings, Globe, Check, X, AlertCircle, Upload, Image
 } from "lucide-react";
 
 interface AdminPartnershipsProps {
@@ -54,21 +53,24 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   const [selectedPartnership, setSelectedPartnership] = useState<Partnership | null>(null);
   const [activeTab, setActiveTab] = useState<ManageTab>('overview');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showAffiliateDialog, setShowAffiliateDialog] = useState(false);
-  const [affiliateSearch, setAffiliateSearch] = useState('');
+  const [affiliateClubSearch, setAffiliateClubSearch] = useState('');
+
+  const createLogoRef = useRef<HTMLInputElement>(null);
+  const editLogoRef = useRef<HTMLInputElement>(null);
 
   // Create form
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newOrgType, setNewOrgType] = useState<Partnership['orgType']>('nonprofit');
   const [newAddress, setNewAddress] = useState('');
+  const [newLogoUrl, setNewLogoUrl] = useState('');
 
   // Edit settings
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
-  const [editRequireApproval, setEditRequireApproval] = useState(true);
   const [editAddress, setEditAddress] = useState('');
   const [editColor, setEditColor] = useState('#3B82F6');
+  const [editLogoUrl, setEditLogoUrl] = useState('');
 
   // Create event form
   const [newEventName, setNewEventName] = useState('');
@@ -85,6 +87,11 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   const { data: allPartnerships = [] } = useQuery<Partnership[]>({
     queryKey: ['firebase-all-partnerships'],
     queryFn: getAllPartnerships,
+  });
+
+  const { data: allClubs = [] } = useQuery({
+    queryKey: ['firebase-clubs'],
+    queryFn: getClubs,
   });
 
   const { data: partnershipEvents = [] } = useQuery<ClubEvent[]>({
@@ -115,11 +122,21 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     if (selectedPartnership) {
       setEditName(selectedPartnership.name);
       setEditDesc(selectedPartnership.description || '');
-      setEditRequireApproval(selectedPartnership.requireApproval);
       setEditAddress(selectedPartnership.address || '');
       setEditColor(selectedPartnership.color || '#3B82F6');
+      setEditLogoUrl(selectedPartnership.logoUrl || '');
     }
   }, [selectedPartnership]);
+
+  const handleLogoUpload = (file: File, setUrl: (url: string) => void) => {
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Logo must be under 2MB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => setUrl(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const createMutation = useMutation({
     mutationFn: () => createPartnership({
@@ -131,12 +148,13 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       requireApproval: true,
       address: newAddress,
       color: '#3B82F6',
+      logoUrl: newLogoUrl || undefined,
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-partnerships-owned', user.email] });
       qc.invalidateQueries({ queryKey: ['firebase-all-partnerships'] });
       setShowCreateDialog(false);
-      setNewName(''); setNewDesc(''); setNewAddress(''); setNewColor('#3B82F6');
+      setNewName(''); setNewDesc(''); setNewAddress(''); setNewLogoUrl('');
       toast({ title: "Partnership created!" });
     },
   });
@@ -145,9 +163,9 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     mutationFn: () => updatePartnership(selectedPartnership!.id, {
       name: editName,
       description: editDesc,
-      requireApproval: editRequireApproval,
       address: editAddress,
       color: editColor,
+      logoUrl: editLogoUrl || undefined,
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-partnerships-owned', user.email] });
@@ -186,23 +204,16 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     },
   });
 
-  const requestAffiliationMutation = useMutation({
-    mutationFn: (partnership: Partnership) =>
-      requestAffiliation(partnership.id, partnership.name, club?.id ?? '', club?.name ?? '', user.email),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['firebase-club-affiliations', club?.id] });
-      setShowAffiliateDialog(false);
-      toast({ title: "Affiliation requested!", description: "The partnership will review your request." });
-    },
-  });
-
-  const respondMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: 'approved' | 'rejected' }) =>
-      respondToAffiliation(id, selectedPartnership!.id, affiliations.find(a => a.id === id)?.clubId || '', status),
+  const sendAffiliationMutation = useMutation({
+    mutationFn: (targetClub: { id: string; name: string }) =>
+      requestAffiliation(selectedPartnership!.id, selectedPartnership!.name, targetClub.id, targetClub.name, user.email),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-partnership-affiliations', selectedPartnership?.id] });
-      qc.invalidateQueries({ queryKey: ['firebase-partnerships-owned', user.email] });
-      toast({ title: "Responded to affiliation request" });
+      setAffiliateClubSearch('');
+      toast({ title: "Affiliation requested!", description: "The club admin will review your request." });
+    },
+    onError: (e: any) => {
+      toast({ title: "Failed", description: e.message, variant: "destructive" });
     },
   });
 
@@ -213,8 +224,9 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   const uniqueVolunteers = new Set(partnershipSubmissions.map((s: any) => s.userEmail)).size;
   const pendingCount = partnershipSubmissions.filter((s: any) => s.status === 'pending').length;
 
-  const filteredPartnerships = allPartnerships.filter(p =>
-    p.name.toLowerCase().includes(affiliateSearch.toLowerCase())
+  const filteredClubsForAffiliation = allClubs.filter(c =>
+    c.name.toLowerCase().includes(affiliateClubSearch.toLowerCase()) &&
+    !affiliations.find(a => a.clubId === c.id && a.status !== 'rejected')
   );
 
   const pendingAffiliations = affiliations.filter(a => a.status === 'pending');
@@ -231,12 +243,16 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             </button>
             <ChevronRight className="w-4 h-4 text-gray-400" />
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded" style={{ backgroundColor: selectedPartnership.color }} />
+              <div
+                className="w-7 h-7 rounded-lg flex-shrink-0 overflow-hidden"
+                style={{ backgroundColor: selectedPartnership.logoUrl ? undefined : selectedPartnership.color }}
+              >
+                {selectedPartnership.logoUrl
+                  ? <img src={selectedPartnership.logoUrl} alt={selectedPartnership.name} className="w-full h-full object-cover" />
+                  : null}
+              </div>
               <span className="font-semibold text-gray-900">{selectedPartnership.name}</span>
               <Badge className={ORG_TYPE_COLORS[selectedPartnership.orgType]}>{ORG_TYPE_LABELS[selectedPartnership.orgType]}</Badge>
-              {pendingAffiliations.length > 0 && (
-                <Badge className="bg-orange-100 text-orange-700">{pendingAffiliations.length} pending affiliations</Badge>
-              )}
             </div>
           </div>
 
@@ -481,33 +497,61 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
           {/* Affiliations Tab */}
           {activeTab === 'affiliations' && (
             <div className="max-w-2xl space-y-4">
-              <div>
-                <h3 className="font-semibold text-gray-900">Club Affiliations</h3>
-                <p className="text-sm text-gray-500">Clubs that have requested to affiliate with your partnership. Affiliated clubs' volunteers' hours submissions show up here as well.</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Club Affiliations</h3>
+                  <p className="text-sm text-gray-500">Request clubs to affiliate with your partnership. Club admins will approve or reject your request.</p>
+                </div>
               </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Request Affiliation with a Club</CardTitle>
+                  <CardDescription>Search clubs and send an affiliation request. The club admin must approve it.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Input
+                    placeholder="Search clubs..."
+                    value={affiliateClubSearch}
+                    onChange={e => setAffiliateClubSearch(e.target.value)}
+                  />
+                  {affiliateClubSearch && (
+                    <div className="space-y-2 max-h-48 overflow-auto">
+                      {filteredClubsForAffiliation.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-2">No clubs found</p>
+                      ) : (
+                        filteredClubsForAffiliation.map(c => (
+                          <div key={c.id} className="flex items-center justify-between p-2 border border-gray-200 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded overflow-hidden flex-shrink-0" style={{ backgroundColor: c.color }} />
+                              <span className="text-sm font-medium text-gray-900">{c.name}</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs bg-black hover:bg-gray-800 text-white"
+                              onClick={() => sendAffiliationMutation.mutate({ id: c.id, name: c.name })}
+                              disabled={sendAffiliationMutation.isPending}
+                            >
+                              Request
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {pendingAffiliations.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base text-orange-700">Pending Requests ({pendingAffiliations.length})</CardTitle>
+                    <CardTitle className="text-base text-yellow-700">Pending ({pendingAffiliations.length})</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {pendingAffiliations.map(aff => (
-                      <div key={aff.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">{aff.clubName}</p>
-                          <p className="text-xs text-gray-500">Requested by {aff.requestedBy}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white h-7 text-xs"
-                            onClick={() => respondMutation.mutate({ id: aff.id, status: 'approved' })}>
-                            <Check className="w-3 h-3 mr-1" /> Approve
-                          </Button>
-                          <Button size="sm" variant="outline" className="text-red-600 border-red-200 h-7 text-xs"
-                            onClick={() => respondMutation.mutate({ id: aff.id, status: 'rejected' })}>
-                            <X className="w-3 h-3 mr-1" /> Decline
-                          </Button>
-                        </div>
+                      <div key={aff.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                        <p className="font-medium text-gray-900 text-sm">{aff.clubName}</p>
+                        <Badge className="bg-yellow-100 text-yellow-700">Awaiting approval</Badge>
                       </div>
                     ))}
                   </CardContent>
@@ -545,6 +589,39 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-1">
+                    <Label>Logo</Label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={editLogoRef}
+                      className="hidden"
+                      onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], setEditLogoUrl)}
+                    />
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                        style={{ backgroundColor: editLogoUrl ? undefined : editColor }}
+                        onClick={() => editLogoRef.current?.click()}
+                      >
+                        {editLogoUrl
+                          ? <img src={editLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                          : <Image className="w-6 h-6 text-white opacity-60" />
+                        }
+                      </div>
+                      <div className="flex-1">
+                        <Button type="button" variant="outline" size="sm" onClick={() => editLogoRef.current?.click()}>
+                          <Upload className="w-3 h-3 mr-1" /> {editLogoUrl ? 'Change Logo' : 'Upload Logo'}
+                        </Button>
+                        {editLogoUrl && (
+                          <Button type="button" variant="ghost" size="sm" className="ml-2 text-red-500 h-8" onClick={() => setEditLogoUrl('')}>
+                            Remove
+                          </Button>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">Max 2MB. Square images work best.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
                     <Label>Name</Label>
                     <Input value={editName} onChange={e => setEditName(e.target.value)} />
                   </div>
@@ -562,13 +639,6 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                       <Input type="color" value={editColor} onChange={e => setEditColor(e.target.value)} className="w-12 h-10" />
                       <Input value={editColor} onChange={e => setEditColor(e.target.value)} className="flex-1" />
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Require Approval</p>
-                      <p className="text-xs text-gray-500">If off, submissions are auto-verified as "Partnership Verified"</p>
-                    </div>
-                    <Switch checked={editRequireApproval} onCheckedChange={setEditRequireApproval} />
                   </div>
                   <Button
                     className="w-full bg-black hover:bg-gray-800 text-white"
@@ -642,6 +712,37 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                 </DialogHeader>
                 <div className="space-y-4 pt-2">
                   <div className="space-y-1">
+                    <Label>Logo <span className="text-gray-400">(optional)</span></Label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={createLogoRef}
+                      className="hidden"
+                      onChange={e => e.target.files?.[0] && handleLogoUpload(e.target.files[0], setNewLogoUrl)}
+                    />
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-gray-100"
+                        onClick={() => createLogoRef.current?.click()}
+                      >
+                        {newLogoUrl
+                          ? <img src={newLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                          : <Image className="w-6 h-6 text-gray-400" />
+                        }
+                      </div>
+                      <div className="flex-1">
+                        <Button type="button" variant="outline" size="sm" onClick={() => createLogoRef.current?.click()}>
+                          <Upload className="w-3 h-3 mr-1" /> {newLogoUrl ? 'Change Logo' : 'Upload Logo'}
+                        </Button>
+                        {newLogoUrl && (
+                          <Button type="button" variant="ghost" size="sm" className="ml-2 text-red-500 h-8" onClick={() => setNewLogoUrl('')}>
+                            Remove
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
                     <Label>Organization Name</Label>
                     <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="City Food Bank, Community Center..." />
                   </div>
@@ -680,16 +781,6 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
         </div>
       </div>
 
-      {/* Club affiliations banner */}
-      {clubAffiliations.filter(a => a.status === 'approved').length > 0 && (
-        <div className="px-6 py-3 bg-blue-50 border-b border-blue-100">
-          <p className="text-sm text-blue-700">
-            <Handshake className="w-4 h-4 inline mr-1" />
-            Your club is affiliated with {clubAffiliations.filter(a => a.status === 'approved').length} partnerships:{' '}
-            {clubAffiliations.filter(a => a.status === 'approved').map(a => a.partnershipName).join(', ')}
-          </p>
-        </div>
-      )}
 
       <div className="flex-1 overflow-auto p-6">
         {isLoading ? (
@@ -719,7 +810,14 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
               >
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg flex-shrink-0" style={{ backgroundColor: p.color }} />
+                    <div
+                      className="w-9 h-9 rounded-lg flex-shrink-0 overflow-hidden"
+                      style={{ backgroundColor: p.logoUrl ? undefined : p.color }}
+                    >
+                      {p.logoUrl
+                        ? <img src={p.logoUrl} alt={p.name} className="w-full h-full object-cover" />
+                        : null}
+                    </div>
                     <div>
                       <p className="font-semibold text-gray-900 text-sm">{p.name}</p>
                       <Badge className={`text-xs ${ORG_TYPE_COLORS[p.orgType]}`}>{ORG_TYPE_LABELS[p.orgType]}</Badge>
@@ -732,9 +830,6 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                 )}
                 <div className="flex items-center gap-3 text-xs text-gray-500">
                   <span>{p.affiliatedClubIds.length} clubs affiliated</span>
-                  {!p.requireApproval && (
-                    <Badge className="bg-green-100 text-green-700 text-xs">Auto-approve</Badge>
-                  )}
                 </div>
               </button>
             ))}

@@ -1,6 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, Club, AdminSettings as AdminSettingsType, getAdminSettings, updateAdminSettings } from "@/lib/firebase";
+import {
+  User, Club, Partnership, PartnershipAffiliation,
+  AdminSettings as AdminSettingsType,
+  getAdminSettings, updateAdminSettings, updateClub,
+  getClubAffiliations, respondToAffiliation
+} from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { AdminCustomFields } from "./admin-custom-fields";
@@ -10,7 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, Settings, Eye, Clock, MapPin, Palette, Lock, FileText, BookOpen, CheckCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Save, Settings, Eye, Clock, MapPin, Palette, Lock, FileText, BookOpen, CheckCircle, Upload, Image, Check, X, Handshake } from "lucide-react";
 
 interface AdminSettingsProps {
   user: User;
@@ -26,8 +32,10 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
   const [showPasswordField, setShowPasswordField] = useState(false);
   const [clubPassword, setClubPassword] = useState('');
   const [clubColor, setClubColor] = useState(club.color || '#000000');
-  const [clubLatitude, setClubLatitude] = useState(club.latitude || '');
-  const [clubLongitude, setClubLongitude] = useState(club.longitude || '');
+  const [clubLogoUrl, setClubLogoUrl] = useState(club.logoUrl || '');
+  const [clubLatitude, setClubLatitude] = useState(club.latitude?.toString() || '');
+  const [clubLongitude, setClubLongitude] = useState(club.longitude?.toString() || '');
+  const clubLogoRef = useRef<HTMLInputElement>(null);
 
   const [showStudentId, setShowStudentId] = useState(true);
   const [showGradeLevel, setShowGradeLevel] = useState(true);
@@ -72,6 +80,46 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
       toast({ title: "Failed to update", description: error.message, variant: "destructive" });
     }
   });
+
+  const updateClubMutation = useMutation({
+    mutationFn: (updates: Partial<Club>) => updateClub(club.id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-club', club.id] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      toast({ title: "Club updated", description: "Changes saved successfully." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update club", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const { data: clubAffiliations = [] } = useQuery<PartnershipAffiliation[]>({
+    queryKey: ['firebase-club-affiliations', club.id],
+    queryFn: () => getClubAffiliations(club.id),
+    enabled: innerPage === 'partnerships',
+  });
+
+  const respondMutation = useMutation({
+    mutationFn: ({ id, partnershipId, status }: { id: string; partnershipId: string; status: 'approved' | 'rejected' }) =>
+      respondToAffiliation(id, partnershipId, club.id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-affiliations', club.id] });
+      toast({ title: "Response saved" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleClubLogoUpload = (file: File) => {
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Logo must be under 2MB.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => setClubLogoUrl(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const handleSaveVisibility = () => {
     updateSettingsMutation.mutate({
@@ -210,6 +258,39 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  <Label>Club Logo</Label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={clubLogoRef}
+                    className="hidden"
+                    onChange={e => e.target.files?.[0] && handleClubLogoUpload(e.target.files[0])}
+                  />
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-16 h-16 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                      style={{ backgroundColor: clubLogoUrl ? undefined : clubColor }}
+                      onClick={() => clubLogoRef.current?.click()}
+                    >
+                      {clubLogoUrl
+                        ? <img src={clubLogoUrl} alt="Logo" className="w-full h-full object-cover" />
+                        : <Image className="w-7 h-7 text-white opacity-60" />
+                      }
+                    </div>
+                    <div className="flex-1">
+                      <Button type="button" variant="outline" size="sm" onClick={() => clubLogoRef.current?.click()}>
+                        <Upload className="w-3 h-3 mr-1" /> {clubLogoUrl ? 'Change Logo' : 'Upload Logo'}
+                      </Button>
+                      {clubLogoUrl && (
+                        <Button type="button" variant="ghost" size="sm" className="ml-2 text-red-500 h-8" onClick={() => setClubLogoUrl('')}>
+                          Remove
+                        </Button>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">Optional. Max 2MB. Square images work best.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="clubName">Club Name</Label>
                   <Input id="clubName" value={clubName} onChange={(e) => setClubName(e.target.value)} placeholder="Club name" />
                 </div>
@@ -225,7 +306,11 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                   </div>
                   <p className="text-xs text-gray-500">Used for your territory circles on the world map</p>
                 </div>
-                <Button onClick={() => toast({ title: "Info", description: "Club settings update coming soon" })} className="w-full bg-black hover:bg-gray-800 text-white">
+                <Button
+                  onClick={() => updateClubMutation.mutate({ name: clubName, description: clubDescription, color: clubColor, logoUrl: clubLogoUrl || undefined })}
+                  disabled={updateClubMutation.isPending}
+                  className="w-full bg-black hover:bg-gray-800 text-white"
+                >
                   <Save className="w-4 h-4 mr-2" />Save Club Info
                 </Button>
               </CardContent>
@@ -251,7 +336,14 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500">Tip: Find coordinates by right-clicking any location on Google Maps.</p>
-                <Button onClick={() => toast({ title: "Info", description: "Location update coming soon" })} className="w-full bg-black hover:bg-gray-800 text-white">
+                <Button
+                  onClick={() => updateClubMutation.mutate({
+                    latitude: parseFloat(clubLatitude) || undefined,
+                    longitude: parseFloat(clubLongitude) || undefined
+                  })}
+                  disabled={updateClubMutation.isPending}
+                  className="w-full bg-black hover:bg-gray-800 text-white"
+                >
                   <Save className="w-4 h-4 mr-2" />Save Location
                 </Button>
               </CardContent>
@@ -386,20 +478,75 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
           <div className="space-y-6">
             <div className="border-b border-gray-200 pb-4">
               <h2 className="text-xl font-semibold text-gray-900">Partnerships</h2>
-              <p className="text-sm text-gray-500 mt-1">Partnerships let volunteers from your club log hours at external organizations — food banks, hospitals, community orgs — without that org needing to be a club. Manage how your club affiliates with partner organizations.</p>
+              <p className="text-sm text-gray-500 mt-1">External organizations can request to affiliate with your club. When affiliated, your club members can log volunteer hours with those organizations. Review and respond to incoming requests here.</p>
             </div>
+
+            {/* Pending requests */}
+            {clubAffiliations.filter(a => a.status === 'pending').length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-700">
+                    <Handshake className="w-5 h-5" />
+                    Pending Requests ({clubAffiliations.filter(a => a.status === 'pending').length})
+                  </CardTitle>
+                  <CardDescription>These partnerships have requested to affiliate with your club.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {clubAffiliations.filter(a => a.status === 'pending').map(aff => (
+                    <div key={aff.id} className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{aff.partnershipName}</p>
+                        <p className="text-xs text-gray-500">Requested by {aff.requestedBy}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white h-8 text-xs"
+                          onClick={() => respondMutation.mutate({ id: aff.id, partnershipId: aff.partnershipId, status: 'approved' })}
+                          disabled={respondMutation.isPending}
+                        >
+                          <Check className="w-3 h-3 mr-1" /> Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 border-red-200 h-8 text-xs"
+                          onClick={() => respondMutation.mutate({ id: aff.id, partnershipId: aff.partnershipId, status: 'rejected' })}
+                          disabled={respondMutation.isPending}
+                        >
+                          <X className="w-3 h-3 mr-1" /> Decline
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Approved affiliations */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  Affiliation Requests
+                  <Handshake className="w-5 h-5" />
+                  Affiliated Partnerships ({clubAffiliations.filter(a => a.status === 'approved').length})
                 </CardTitle>
-                <CardDescription>When a Partnership (external org) invites your club or your club requests to affiliate with a Partnership, those requests appear here for approval.</CardDescription>
+                <CardDescription>Organizations your club is currently affiliated with. Your members can log hours with these organizations.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-600 text-center">
-                  Affiliation request management is available in the Partnerships page.
-                </div>
+                {clubAffiliations.filter(a => a.status === 'approved').length === 0 ? (
+                  <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-500 text-center">
+                    No approved affiliations yet. Partnerships can request to affiliate with your club.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {clubAffiliations.filter(a => a.status === 'approved').map(aff => (
+                      <div key={aff.id} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <span className="font-medium text-gray-900 text-sm">{aff.partnershipName}</span>
+                        <Badge className="bg-green-100 text-green-700">Affiliated</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

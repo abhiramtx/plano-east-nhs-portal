@@ -61,21 +61,22 @@ Preferred communication style: Simple, everyday language.
 - **Grant Hours**: Admins can grant hours to all attendees or select individual volunteers, with per-person overrides
 - **Volunteer QR**: Each volunteer has a personal QR code (email encoded) for scan_qr events
 
-### Partnerships System
+### Partnerships System (v2 - Reversed Affiliation Flow)
 - **Purpose**: External organizations (food banks, businesses, nonprofits) can register as Partnerships to receive volunteer hours from any club's members without those members joining the org
-- **Affiliation**: Clubs can request to affiliate with partnerships; partnerships can auto-approve or manually approve
-- **Partnership Verified Badge**: Partners with requireApproval=false auto-approve hour submissions
-- **Admin Dashboard**: Partnership owners get full management (events, volunteers, affiliations, settings tabs)
+- **Affiliation Flow (reversed)**: Partnerships REQUEST to affiliate with clubs (not the other way). Partnership owners search clubs and send a request. Club admins respond (approve/reject) in Settings > Partnerships tab
+- **No requireApproval toggle**: Removed from partnership settings UI (field kept in DB for legacy)
+- **Partnership Logos**: Partnerships and clubs both support logo image upload (base64, max 2MB, stored in Firestore). Logo shown in list cards, manage header, etc.
+- **Admin Dashboard**: Partnership owners get full management (events, volunteers, affiliations, settings tabs). Affiliations tab shows outgoing requests + approved clubs
 - **Hours Form**: Volunteers can submit hours to "My Club" or "A Partnership" from the hours submission form
 
 ### Admin Settings Reorganization (v2)
 - Tabs: Club | Members | Logs | Approvals | Territory | Partnerships
-- **Club**: Name, description, color, home base location, optional password
+- **Club**: Name, description, color, club logo upload, home base location (lat/lng), optional password — all saved via `updateClub()`
 - **Members**: Profile field visibility toggles + custom fields
 - **Logs**: Hours tracking periods management
 - **Approvals**: Multi-admin approval/rejection threshold configuration
 - **Territory**: Decay rate, max decay floor, high-need bonus multiplier + formula reference
-- **Partnerships**: Affiliation management
+- **Partnerships**: Shows incoming affiliation requests from partnerships (approve/reject). Shows currently affiliated partnerships
 
 ### Grant Hours (Admin)
 - Admins can grant hours directly from the Volunteers tab

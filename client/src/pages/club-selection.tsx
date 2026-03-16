@@ -20,7 +20,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, Trophy, Upload, Image, Handshake, ChevronRight, UserCircle } from "lucide-react";
+import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, Trophy, Upload, Image, Handshake, ChevronRight, UserCircle, MapPin } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
 import { LocationPicker } from "@/components/world-map";
 
@@ -426,13 +426,70 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 </CardContent>
               </Card>
             </div>
+
+            {/* Club Leaderboard */}
+            {!clubsLoading && clubs.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Trophy className="w-5 h-5 text-gray-700" />
+                  <h2 className="text-lg font-semibold text-gray-900">Club Leaderboard</h2>
+                </div>
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                  {[...clubs]
+                    .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours)
+                    .map((club, index) => (
+                      <div
+                        key={club.id}
+                        className={`flex items-center gap-4 px-5 py-4 ${
+                          index !== clubs.length - 1 ? 'border-b border-gray-100' : ''
+                        } ${club.id === currentClub?.id ? 'bg-gray-50' : ''}`}
+                      >
+                        <div className="w-8 text-center flex-shrink-0">
+                          {index === 0 ? (
+                            <span className="text-xl">🥇</span>
+                          ) : index === 1 ? (
+                            <span className="text-xl">🥈</span>
+                          ) : index === 2 ? (
+                            <span className="text-xl">🥉</span>
+                          ) : (
+                            <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
+                          )}
+                        </div>
+                        <div
+                          className="w-9 h-9 rounded-xl flex-shrink-0 overflow-hidden"
+                          style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
+                        >
+                          {club.logoUrl
+                            ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
+                            : null}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-gray-900 text-sm">{club.name}</p>
+                            {club.id === currentClub?.id && (
+                              <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">You</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500">{club.description || ''}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-semibold text-gray-900 text-sm">{club.totalApprovedHours.toFixed(0)}</p>
+                          <p className="text-xs text-gray-400">hours</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
-
-        {activeSection === 'partnerships' && (
-          <AdminPartnerships user={user} club={currentClub} hideHeader />
-        )}
       </div>
+
+      {activeSection === 'partnerships' && (
+        <div className="w-full">
+          <AdminPartnerships user={user} club={currentClub} hideHeader />
+        </div>
+      )}
 
       {/* Create Club Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

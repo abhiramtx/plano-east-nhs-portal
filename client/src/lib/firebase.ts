@@ -1161,6 +1161,7 @@ export interface Partnership {
   longitude?: number;
   address?: string;
   color: string;
+  logoUrl?: string;
   affiliatedClubIds: string[];
   createdAt: Date;
   updatedAt: Date;
