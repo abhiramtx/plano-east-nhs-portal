@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   User, Club, ClubEvent, EventAttendance, EventConditional,
   getClubEvents, createEvent, updateEvent, deleteEvent,
-  getEventAttendance, checkInUser, checkOutUser, updateAttendanceHours, grantEventHours
+  getEventAttendance, checkInUser, checkOutUser, grantEventHours
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -276,16 +276,28 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
         ? attendance.filter(a => selectedAttendees.includes(a.id))
         : attendance;
 
-      // Apply individual overrides first
+      const useConditionals = editConditionals.length > 0 && ['scan_qr', 'show_qr', 'password'].includes(editType);
+      const defHours = defaultHours ? parseFloat(defaultHours) : null;
+      const logIdParam = (editLogId && editLogId !== '_none') ? editLogId : undefined;
+      const logNameParam = hoursLogs.find(l => String(l.id) === editLogId)?.name;
+
+      // Grant hours for attendees with individual overrides (creates submission + updates attendance)
       for (const record of targetRecords) {
         if (overrideHours[record.id]) {
-          await updateAttendanceHours(record.id, parseFloat(overrideHours[record.id]));
+          await grantEventHours(
+            selectedEvent!.id,
+            selectedEvent!.name,
+            [record],
+            parseFloat(overrideHours[record.id]),
+            [],
+            club.id,
+            logIdParam,
+            logNameParam,
+          );
         }
       }
 
-      const useConditionals = editConditionals.length > 0 && ['scan_qr', 'show_qr', 'password'].includes(editType);
-      const defHours = defaultHours ? parseFloat(defaultHours) : null;
-
+      // Grant hours for remaining attendees using default/conditional logic
       await grantEventHours(
         selectedEvent!.id,
         selectedEvent!.name,
@@ -293,8 +305,8 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
         defHours,
         useConditionals ? editConditionals : [],
         club.id,
-        (editLogId && editLogId !== '_none') ? editLogId : undefined,
-        hoursLogs.find(l => String(l.id) === editLogId)?.name,
+        logIdParam,
+        logNameParam,
       );
     },
     onSuccess: () => {
@@ -1020,7 +1032,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
                         <Button
                           onClick={() => grantMutation.mutate()}
-                          disabled={grantMutation.isPending || !editLogId || editLogId === '_none' || (selectedAttendees.length === 0 && !defaultHours && editConditionals.length === 0)}
+                          disabled={grantMutation.isPending || !editLogId || editLogId === '_none' || (selectedAttendees.length === 0 && !defaultHours && editConditionals.length === 0 && !Object.values(overrideHours).some(Boolean))}
                           className="w-full bg-black hover:bg-gray-800 text-white"
                         >
                           <Award className="w-4 h-4 mr-2" />

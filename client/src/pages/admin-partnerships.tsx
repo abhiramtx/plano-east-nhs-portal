@@ -5,7 +5,7 @@ import {
   getAllPartnerships, getPartnershipsByOwner, createPartnership, updatePartnership, deletePartnership,
   getPartnershipAffiliations, getClubAffiliations, requestAffiliation, respondToAffiliation, removeAffiliation,
   getPartnershipEvents, createEvent, updateEvent, deleteEvent, getPartnershipSubmissions, getClubs,
-  getEventAttendance, checkInUser, checkOutUser, grantEventHours, updateAttendanceHours
+  getEventAttendance, checkInUser, checkOutUser, grantEventHours
 } from "@/lib/firebase";
 import type { HoursLog } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -502,16 +502,30 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
         ? attendance.filter(a => selectedAttendees.includes(a.id))
         : attendance;
 
-      for (const record of targetRecords) {
-        if (overrideHours[record.id]) {
-          await updateAttendanceHours(record.id, parseFloat(overrideHours[record.id]));
-        }
-      }
-
       const isPasswordType = selectedPartnershipEvent?.type === 'password';
       const useConditionals = (isQRType || isPasswordType) && editConditionals.length > 0;
       const defHours = defaultHours ? parseFloat(defaultHours) : null;
+      const logIdParam = (editLogId && editLogId !== '_none') ? editLogId : undefined;
+      const logNameParam = targetClubLogs.find(l => String(l.id) === editLogId)?.name;
 
+      // Grant hours for attendees with individual overrides (creates submission + updates attendance)
+      for (const record of targetRecords) {
+        if (overrideHours[record.id]) {
+          await grantEventHours(
+            selectedPartnershipEvent!.id,
+            selectedPartnershipEvent!.name,
+            [record],
+            parseFloat(overrideHours[record.id]),
+            [],
+            undefined,
+            logIdParam,
+            logNameParam,
+            selectedPartnership?.id,
+          );
+        }
+      }
+
+      // Grant hours for remaining attendees using default/conditional logic
       await grantEventHours(
         selectedPartnershipEvent!.id,
         selectedPartnershipEvent!.name,
@@ -519,8 +533,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
         defHours,
         useConditionals ? editConditionals : [],
         undefined,
-        (editLogId && editLogId !== '_none') ? editLogId : undefined,
-        targetClubLogs.find(l => String(l.id) === editLogId)?.name,
+        logIdParam,
+        logNameParam,
         selectedPartnership?.id,
       );
     },
