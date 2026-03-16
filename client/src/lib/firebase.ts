@@ -1462,9 +1462,10 @@ export const getClubEvents = async (clubId: string): Promise<ClubEvent[]> => {
 };
 
 export const getAllOpenEvents = async (): Promise<ClubEvent[]> => {
-  const q = query(collection(db, "events"), where("isOpen", "==", true));
-  const snap = await getDocs(q);
-  return snap.docs.map(toEvent);
+  // Fetch all events and filter client-side: treat missing isOpen as open (true),
+  // only exclude events explicitly set to false.
+  const snap = await getDocs(collection(db, "events"));
+  return snap.docs.map(toEvent).filter(e => e.isOpen !== false);
 };
 
 export const getPartnershipEvents = async (partnershipId: string): Promise<ClubEvent[]> => {
@@ -1475,9 +1476,11 @@ export const getPartnershipEvents = async (partnershipId: string): Promise<ClubE
 
 export const createEvent = async (data: Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClubEvent> => {
   const now = new Date();
+  // Default isOpen to true so new events are always visible on the map
+  const dataWithDefaults = { isOpen: true, ...data };
   // Strip undefined values — Firestore rejects them
   const clean: Record<string, any> = {};
-  for (const [k, v] of Object.entries(data)) {
+  for (const [k, v] of Object.entries(dataWithDefaults)) {
     if (v !== undefined) clean[k] = v;
   }
   const docRef = await addDoc(collection(db, "events"), {
@@ -1485,7 +1488,7 @@ export const createEvent = async (data: Omit<ClubEvent, 'id' | 'createdAt' | 'up
     createdAt: Timestamp.fromDate(now),
     updatedAt: Timestamp.fromDate(now),
   });
-  return { id: docRef.id, ...data, createdAt: now, updatedAt: now };
+  return { id: docRef.id, ...dataWithDefaults, createdAt: now, updatedAt: now };
 };
 
 export const updateEvent = async (eventId: string, updates: Partial<ClubEvent>): Promise<void> => {
