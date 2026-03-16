@@ -520,7 +520,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
             {/* ============ INFORMATION TAB ============ */}
             {activeTab === 'information' && (
-              <div className="max-w-xl space-y-5">
+              <div className="space-y-5">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Event Settings</CardTitle>
@@ -568,7 +568,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
             {/* ============ QR CODE TAB ============ */}
             {activeTab === 'qrcode' && (
-              <div className="max-w-2xl space-y-6">
+              <div className="space-y-6">
                 {selectedEvent.type === 'none' && (
                   <Card>
                     <CardContent className="pt-6 text-center">
@@ -776,7 +776,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
             {/* ============ GRANT HOURS TAB ============ */}
             {activeTab === 'grant' && (
-              <div className="max-w-3xl space-y-5">
+              <div className="space-y-5">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Grant Hours to Attendees</CardTitle>
