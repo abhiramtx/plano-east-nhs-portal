@@ -649,6 +649,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 <LocationPicker
                   value={newClub.latitude && newClub.longitude ? { lat: newClub.latitude, lng: newClub.longitude } : null}
                   onChange={(lat, lng) => setNewClub({ ...newClub, latitude: lat, longitude: lng })}
+                  color={newClub.color}
                 />
               </div>
               {newClub.latitude && newClub.longitude && (

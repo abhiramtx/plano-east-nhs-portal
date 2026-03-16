@@ -342,11 +342,13 @@ export function WorldMap({
 export function LocationPicker({ 
   value, 
   onChange,
-  height = '100%'
+  height = '100%',
+  color = '#6366f1'
 }: { 
   value?: { lat: number; lng: number } | null;
   onChange: (lat: number, lng: number) => void;
   height?: string;
+  color?: string;
 }) {
   const mapRef = useRef<MapRef>(null);
   const [viewState, setViewState] = useState({
@@ -408,8 +410,8 @@ export function LocationPicker({
             anchor="center"
           >
             <div className="relative">
-              <div className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 bg-white/40 rounded-full animate-ping" />
-              <div className="w-4 h-4 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full border-2 border-white shadow-lg" />
+              <div className="absolute w-6 h-6 -translate-x-1/2 -translate-y-1/2 rounded-full animate-ping" style={{ backgroundColor: color + '66' }} />
+              <div className="w-4 h-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-lg" style={{ backgroundColor: color }} />
             </div>
           </Marker>
         )}
