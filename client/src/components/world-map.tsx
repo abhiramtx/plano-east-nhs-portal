@@ -415,7 +415,7 @@ export function LocationPicker({
         )}
       </Map>
       
-      <div className="absolute top-3 left-3 right-3 z-10">
+      <div className="absolute top-3 left-3 right-3 z-[200]">
         <div className="relative">
           <input
             type="text"
@@ -426,7 +426,7 @@ export function LocationPicker({
             className="w-full px-4 py-2 bg-black/80 border border-white/20 rounded-lg text-white placeholder:text-gray-500 text-sm backdrop-blur-lg"
           />
           {searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-black/95 border border-white/20 rounded-lg overflow-hidden backdrop-blur-lg max-h-48 overflow-y-auto">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-black/95 border border-white/20 rounded-lg overflow-hidden backdrop-blur-lg max-h-48 overflow-y-auto z-[200]">
               {searchResults.map((result, index) => (
                 <button
                   key={index}

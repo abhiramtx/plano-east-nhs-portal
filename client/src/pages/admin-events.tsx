@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Trash2, Save, Calendar, Users, Clock, QrCode, Award, ChevronRight,
-  Camera, ScanLine, RefreshCw, CheckCircle2, XCircle, AlertCircle, Edit2, X
+  Camera, ScanLine, RefreshCw, CheckCircle2, XCircle, AlertCircle, Edit2, X, Printer
 } from "lucide-react";
 import QRCode from "react-qr-code";
 import { Html5Qrcode } from "html5-qrcode";
@@ -589,45 +589,61 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                 )}
 
                 {selectedEvent.type === 'show_qr' && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <QrCode className="w-5 h-5" />
-                        Event QR Codes
-                      </CardTitle>
-                      <CardDescription>
-                        Display these on a screen or print them out. Volunteers scan the Check-in QR when they arrive and the Check-out QR when they leave. Their time is automatically recorded.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="text-center space-y-3">
-                          <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium">
-                            <CheckCircle2 className="w-4 h-4" /> Check-in
-                          </div>
-                          <div className="p-4 bg-white border-2 border-green-200 rounded-xl inline-block">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                          <QrCode className="w-4 h-4" /> Event QR Codes
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Display on a screen or print. Volunteers scan to check in and out — time is recorded automatically.</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-gray-200 text-gray-600 flex-shrink-0"
+                        onClick={() => window.print()}
+                      >
+                        <Printer className="w-3.5 h-3.5 mr-1.5" />
+                        Print
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Check-in */}
+                      <div className="rounded-2xl border border-green-200 bg-green-50 overflow-hidden">
+                        <div className="bg-green-500 px-4 py-3 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-white" />
+                          <span className="text-sm font-semibold text-white">Check-in</span>
+                        </div>
+                        <div className="p-6 flex flex-col items-center gap-3">
+                          <div className="bg-white rounded-xl p-4 shadow-sm border border-green-100">
                             <QRCode
                               value={JSON.stringify({ eventId: selectedEvent.id, action: 'checkin', clubId: club.id })}
-                              size={160}
+                              size={180}
                             />
                           </div>
-                          <p className="text-xs text-gray-500">Scan this to check IN</p>
-                        </div>
-                        <div className="text-center space-y-3">
-                          <div className="inline-flex items-center gap-1.5 bg-red-100 text-red-700 px-3 py-1.5 rounded-full text-sm font-medium">
-                            <XCircle className="w-4 h-4" /> Check-out
-                          </div>
-                          <div className="p-4 bg-white border-2 border-red-200 rounded-xl inline-block">
-                            <QRCode
-                              value={JSON.stringify({ eventId: selectedEvent.id, action: 'checkout', clubId: club.id })}
-                              size={160}
-                            />
-                          </div>
-                          <p className="text-xs text-gray-500">Scan this to check OUT</p>
+                          <p className="text-xs font-medium text-green-700">Volunteers scan when they <strong>arrive</strong></p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+
+                      {/* Check-out */}
+                      <div className="rounded-2xl border border-red-200 bg-red-50 overflow-hidden">
+                        <div className="bg-red-500 px-4 py-3 flex items-center gap-2">
+                          <XCircle className="w-4 h-4 text-white" />
+                          <span className="text-sm font-semibold text-white">Check-out</span>
+                        </div>
+                        <div className="p-6 flex flex-col items-center gap-3">
+                          <div className="bg-white rounded-xl p-4 shadow-sm border border-red-100">
+                            <QRCode
+                              value={JSON.stringify({ eventId: selectedEvent.id, action: 'checkout', clubId: club.id })}
+                              size={180}
+                            />
+                          </div>
+                          <p className="text-xs font-medium text-red-700">Volunteers scan when they <strong>leave</strong></p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {selectedEvent.type === 'scan_qr' && (
