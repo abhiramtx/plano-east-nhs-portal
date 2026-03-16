@@ -24,6 +24,7 @@ import {
 interface AdminPartnershipsProps {
   user: User;
   club?: Club;
+  hideHeader?: boolean;
 }
 
 type PartnershipView = 'list' | 'manage';
@@ -45,7 +46,7 @@ const ORG_TYPE_COLORS: Record<string, string> = {
   other: 'bg-gray-100 text-gray-600',
 };
 
-export function AdminPartnerships({ user, club }: AdminPartnershipsProps) {
+export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsProps) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -169,8 +170,8 @@ export function AdminPartnerships({ user, club }: AdminPartnershipsProps) {
   const createEventMutation = useMutation({
     mutationFn: () => createEvent({
       partnershipId: selectedPartnership!.id,
-      name: newEventName,
-      description: newEventDesc,
+      name: newEventName.trim(),
+      description: newEventDesc.trim() || undefined,
       type: newEventType,
       password: newEventType === 'password' ? newEventPassword : undefined,
       conditionals: [],
@@ -179,6 +180,9 @@ export function AdminPartnerships({ user, club }: AdminPartnershipsProps) {
       qc.invalidateQueries({ queryKey: ['firebase-partnership-events', selectedPartnership?.id] });
       setNewEventName(''); setNewEventDesc(''); setNewEventType('none'); setNewEventPassword('');
       toast({ title: "Event created" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to create event", description: error?.message || "An error occurred. Check your permissions.", variant: "destructive" });
     },
   });
 
@@ -606,72 +610,22 @@ export function AdminPartnerships({ user, club }: AdminPartnershipsProps) {
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">Partnerships</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Partnerships let volunteers submit hours to organizations like food banks, businesses, and nonprofits — without joining them as a club.
-              <br />
-              <span className="text-blue-600 font-medium">Own a food bank or nonprofit? Create a partnership instead of a club.</span>
-            </p>
-          </div>
+          {!hideHeader ? (
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Partnerships</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                Partnerships let volunteers submit hours to organizations like food banks, businesses, and nonprofits — without joining them as a club.
+                <br />
+                <span className="text-blue-600 font-medium">Own a food bank or nonprofit? Create a partnership instead of a club.</span>
+              </p>
+            </div>
+          ) : (
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Partnerships</h2>
+              <p className="text-sm text-gray-500 mt-0.5">Organizations that accept volunteer hours from any club</p>
+            </div>
+          )}
           <div className="flex gap-2">
-            <Dialog open={showAffiliateDialog} onOpenChange={setShowAffiliateDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <Handshake className="w-4 h-4" />
-                  Affiliate with Partnership
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Affiliate Your Club with a Partnership</DialogTitle>
-                  <p className="text-sm text-gray-500">
-                    Affiliating lets your club's volunteers show up in the partnership's volunteer list, and affiliated events appear in your club's Affiliations tab.
-                  </p>
-                </DialogHeader>
-                <div className="space-y-3 pt-2">
-                  <Input
-                    placeholder="Search partnerships..."
-                    value={affiliateSearch}
-                    onChange={e => setAffiliateSearch(e.target.value)}
-                  />
-                  <div className="space-y-2 max-h-64 overflow-auto">
-                    {filteredPartnerships.map(p => {
-                      const existing = clubAffiliations.find(a => a.partnershipId === p.id);
-                      return (
-                        <div key={p.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                              <p className="text-xs text-gray-500">{ORG_TYPE_LABELS[p.orgType]}</p>
-                            </div>
-                          </div>
-                          {existing ? (
-                            <Badge className={existing.status === 'approved' ? 'bg-green-100 text-green-700' : existing.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}>
-                              {existing.status}
-                            </Badge>
-                          ) : (
-                            <Button
-                              size="sm"
-                              className="h-7 text-xs bg-black hover:bg-gray-800 text-white"
-                              onClick={() => requestAffiliationMutation.mutate(p)}
-                              disabled={requestAffiliationMutation.isPending}
-                            >
-                              Request
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {filteredPartnerships.length === 0 && (
-                      <p className="text-sm text-gray-400 text-center py-4">No partnerships found</p>
-                    )}
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-black hover:bg-gray-800 text-white">

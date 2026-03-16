@@ -9,11 +9,6 @@ import {
   ensureClubCreatorIsAdmin,
   Club as FirebaseClub,
   Membership as FirebaseMembership,
-  getOpenServiceRequests,
-  ServiceRequest,
-  joinServiceRequest,
-  getUserParticipations,
-  ServiceRequestParticipant,
 } from "@/lib/firebase";
 import { AdminPartnerships } from "@/pages/admin-partnerships";
 import { useToast } from "@/hooks/use-toast";
@@ -25,8 +20,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, HandHeart, MapPin, Trophy, Clock, Building, Mail, Upload, Image, Handshake, ChevronRight } from "lucide-react";
+import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, Trophy, Upload, Image, Handshake, ChevronRight, UserCircle } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
 import { LocationPicker } from "@/components/world-map";
 
@@ -48,7 +42,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const [selectedClub, setSelectedClub] = useState<FirebaseClub | null>(null);
   const [joinPassword, setJoinPassword] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSection, setActiveSection] = useState<'clubs' | 'services' | 'partnerships'>('clubs');
+  const [activeSection, setActiveSection] = useState<'clubs' | 'partnerships'>('clubs');
   const logoFileRef = useRef<HTMLInputElement>(null);
 
   const [newClub, setNewClub] = useState({
@@ -75,18 +69,18 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     queryFn: getClubs,
   });
 
-  const { data: serviceRequests = [], isLoading: requestsLoading } = useQuery<ServiceRequest[]>({
-    queryKey: ['firebase-open-service-requests'],
-    queryFn: getOpenServiceRequests,
-  });
-
-  const { data: myParticipations = [] } = useQuery<ServiceRequestParticipant[]>({
-    queryKey: ['firebase-my-participations', userEmail],
-    queryFn: () => getUserParticipations(userEmail),
-    enabled: !!userEmail,
-  });
-
-  const joinedRequestIds = myParticipations.map(p => p.requestId);
+  const createDefaultLog = async (clubId: string) => {
+    try {
+      await fetch('/api/hours-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: 'General Service', hoursRequired: 0, clubId }),
+      });
+    } catch {
+      // Non-critical, ignore
+    }
+  };
 
   const createClubMutation = useMutation({
     mutationFn: async (clubData: typeof newClub) => {
@@ -108,6 +102,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         role: 'admin',
       });
       await ensureClubCreatorIsAdmin(club.id, userEmail);
+      await createDefaultLog(club.id);
       return { club, membership };
     },
     onSuccess: async ({ club, membership }) => {
@@ -119,6 +114,39 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     },
     onError: (error: any) => {
       toast({ title: "Failed to create club", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const goSoloMutation = useMutation({
+    mutationFn: async () => {
+      const randomPassword = Math.random().toString(36).substring(2, 10);
+      const userName = user.name || userEmail.split('@')[0];
+      const club = await createClub({
+        name: `${userName}'s Hub`,
+        description: 'My personal volunteer hub',
+        isPrivate: true,
+        password: randomPassword,
+        color: CLUB_COLORS[Math.floor(Math.random() * CLUB_COLORS.length)],
+        creatorEmail: userEmail,
+      });
+      const membership = await createMembership({
+        clubId: club.id,
+        userEmail: userEmail,
+        userName: userName,
+        role: 'admin',
+      });
+      await ensureClubCreatorIsAdmin(club.id, userEmail);
+      await createDefaultLog(club.id);
+      return { club, membership };
+    },
+    onSuccess: ({ club, membership }) => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-club', userEmail] });
+      toast({ title: "Welcome!", description: "Your personal hub is ready." });
+      onClubSelected(club, membership);
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed", description: error.message, variant: "destructive" });
     }
   });
 
@@ -147,19 +175,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     }
   });
 
-  const joinRequestMutation = useMutation({
-    mutationFn: async (request: ServiceRequest) => {
-      return await joinServiceRequest(request.id, userEmail, user.name || userEmail.split('@')[0]);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-my-participations'] });
-      toast({ title: "Joined!", description: "You've successfully joined this service request." });
-    },
-    onError: (error: any) => {
-      toast({ title: "Failed to join", description: error.message, variant: "destructive" });
-    }
-  });
-
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -177,12 +192,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const filteredClubs = clubs.filter(club => 
     club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     club.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredRequests = serviceRequests.filter(req =>
-    req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    req.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    req.organizationName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (userClubLoading) {
@@ -279,9 +288,26 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
             </div>
           </div>
         ) : (
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Choose Your Path</h1>
-            <p className="text-xl text-gray-500">Join a club to compete, or find service opportunities</p>
+          <div className="mb-10">
+            <div className="flex items-center space-x-4 p-5 bg-gray-50 border border-gray-200 rounded-2xl">
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-200">
+                <UserCircle className="w-7 h-7 text-gray-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-0.5">No Club Yet</p>
+                <h2 className="text-lg font-semibold text-gray-900">Go Solo</h2>
+                <p className="text-sm text-gray-500">Start your own personal volunteer hub — just for you</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => goSoloMutation.mutate()}
+                disabled={goSoloMutation.isPending}
+                className="bg-black text-white hover:bg-gray-800"
+              >
+                {goSoloMutation.isPending ? "Setting up..." : "Go Solo"}
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
           </div>
         )}
 
@@ -297,15 +323,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
               Clubs
             </button>
             <button
-              onClick={() => setActiveSection('services')}
-              className={`px-5 py-2.5 rounded-xl font-medium transition-all text-sm ${
-                activeSection === 'services' ? 'bg-black text-white' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              <HandHeart className="w-4 h-4 inline-block mr-1.5" />
-              Service Requests
-            </button>
-            <button
               onClick={() => setActiveSection('partnerships')}
               className={`px-5 py-2.5 rounded-xl font-medium transition-all text-sm ${
                 activeSection === 'partnerships' ? 'bg-black text-white' : 'text-gray-500 hover:text-gray-900'
@@ -317,11 +334,11 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           </div>
         </div>
 
-        {activeSection !== 'partnerships' && (
+        {activeSection === 'clubs' && (
           <div className="relative mb-8">
             <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder={activeSection === 'clubs' ? "Search clubs..." : "Search service requests..."}
+              placeholder="Search clubs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 h-12 rounded-xl"
@@ -412,93 +429,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           </div>
         )}
 
-        {activeSection === 'services' && (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <p className="text-gray-500">
-                Browse volunteer opportunities from organizations. You don't need to join a club to help!
-              </p>
-            </div>
-            
-            {requestsLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              </div>
-            ) : filteredRequests.length === 0 ? (
-              <Card className="bg-gray-50 border-gray-200 p-12 text-center">
-                <HandHeart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No service requests yet</h3>
-                <p className="text-gray-500">Check back later for volunteer opportunities</p>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredRequests.map((request) => {
-                  const isJoined = joinedRequestIds.includes(request.id);
-                  return (
-                    <Card key={request.id} className="bg-white border-gray-200 hover:border-gray-300 transition-all">
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <CardTitle className="text-lg text-gray-900">{request.title}</CardTitle>
-                            {request.organizationName && (
-                              <p className="text-sm text-gray-500 flex items-center mt-1">
-                                <Building className="w-4 h-4 mr-1" />
-                                {request.organizationName}
-                              </p>
-                            )}
-                          </div>
-                          <Badge className="bg-green-100 text-green-700 border-green-200">
-                            <Clock className="w-3 h-3 mr-1" />
-                            {request.hoursOffered}h
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="text-sm text-gray-500 line-clamp-2">{request.description}</p>
-                        {request.location && (
-                          <p className="text-sm text-gray-500 flex items-center">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            {request.location}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between pt-2">
-                          {request.contactEmail && (
-                            <a 
-                              href={`mailto:${request.contactEmail}`}
-                              className="text-sm text-blue-600 hover:text-blue-500 flex items-center"
-                            >
-                              <Mail className="w-4 h-4 mr-1" />
-                              Contact
-                            </a>
-                          )}
-                          {isJoined ? (
-                            <Badge variant="secondary" className="bg-green-100 text-green-700">
-                              Joined
-                            </Badge>
-                          ) : (
-                            <Button 
-                              size="sm"
-                              onClick={() => joinRequestMutation.mutate(request)}
-                              disabled={joinRequestMutation.isPending}
-                              className="bg-black text-white hover:bg-gray-800"
-                            >
-                              Join Request
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
         {activeSection === 'partnerships' && (
-          <div className="space-y-2">
-            <AdminPartnerships user={user} club={currentClub} />
-          </div>
+          <AdminPartnerships user={user} club={currentClub} hideHeader />
         )}
       </div>
 

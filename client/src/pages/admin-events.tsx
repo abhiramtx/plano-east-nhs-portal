@@ -197,8 +197,8 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
   const createMutation = useMutation({
     mutationFn: () => createEvent({
       clubId: club.id,
-      name: newName,
-      description: newDesc,
+      name: newName.trim(),
+      description: newDesc.trim() || undefined,
       type: newType,
       password: newType === 'password' ? newPassword : undefined,
       conditionals: [],
@@ -208,6 +208,9 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
       setShowCreateDialog(false);
       setNewName(''); setNewDesc(''); setNewType('none'); setNewPassword('');
       toast({ title: "Event created" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to create event", description: error?.message || "An error occurred. Check your permissions.", variant: "destructive" });
     },
   });
 
