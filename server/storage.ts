@@ -725,36 +725,84 @@ export class FirestoreStorage implements IStorage {
       }
     }
 
-    // Build the HQ circle (base 5 miles + hours from no-location submissions)
-    if (club.latitude && club.longitude) {
-      const clubLat = parseFloat(String(club.latitude));
-      const clubLng = parseFloat(String(club.longitude));
-      if (!isNaN(clubLat) && !isNaN(clubLng)) {
-        const baseKm = 5 * 1.60934;
-        const hqRadiusKm = hqHours > 0
-          ? Math.max(baseKm, this.calculateTerritoryRadius(hqHours, hqPeople.size, hqLastActivity))
-          : baseKm;
-        circles.push({
-          id: `${clubId}_home`,
-          clubId,
-          latitude: clubLat,
-          longitude: clubLng,
-          radiusKm: hqRadiusKm,
-          hoursContributed: hqHours,
-          peopleCount: hqPeople.size,
-          locationName: `${club.name} (Home Base)`,
-          isMainClubLocation: true,
-          lastActivityAt: hqLastActivity || new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as TerritoryCircle);
+    // Containment absorption: if a named location's center falls inside another
+    // circle's radius, merge it into that circle instead of creating a new one.
+    type LocEntry = {
+      lat: number; lng: number; hours: number;
+      people: Set<string>; lastActivity: Date; name: string;
+    };
+    const locArray: LocEntry[] = Array.from(locationMap.values());
+
+    // Sort descending by hours so larger circles absorb smaller neighbours
+    locArray.sort((a, b) => b.hours - a.hours);
+
+    const baseKm = 5 * 1.60934;
+    const absorbed = new Set<number>();
+
+    // Recompute HQ radius after each absorption (it may grow and absorb more)
+    const hqRadius = (): number => hqHours > 0
+      ? Math.max(baseKm, this.calculateTerritoryRadius(hqHours, hqPeople.size, hqLastActivity))
+      : baseKm;
+
+    const hasHq = club.latitude && club.longitude;
+    const clubLat = hasHq ? parseFloat(String(club.latitude)) : 0;
+    const clubLng = hasHq ? parseFloat(String(club.longitude)) : 0;
+
+    for (let i = 0; i < locArray.length; i++) {
+      const loc = locArray[i];
+
+      // Check against HQ first
+      if (hasHq && !isNaN(clubLat) && !isNaN(clubLng)) {
+        if (this.getDistanceKm(loc.lat, loc.lng, clubLat, clubLng) <= hqRadius()) {
+          hqHours += loc.hours;
+          loc.people.forEach(p => hqPeople.add(p));
+          if (!hqLastActivity || loc.lastActivity > hqLastActivity) hqLastActivity = loc.lastActivity;
+          absorbed.add(i);
+          continue;
+        }
+      }
+
+      // Check against larger named circles (earlier in sorted array = more hours)
+      for (let j = 0; j < i; j++) {
+        if (absorbed.has(j)) continue;
+        const other = locArray[j];
+        const otherRadius = this.calculateTerritoryRadius(other.hours, other.people.size, other.lastActivity);
+        if (this.getDistanceKm(loc.lat, loc.lng, other.lat, other.lng) <= otherRadius) {
+          other.hours += loc.hours;
+          loc.people.forEach(p => other.people.add(p));
+          if (loc.lastActivity > other.lastActivity) other.lastActivity = loc.lastActivity;
+          absorbed.add(i);
+          break;
+        }
       }
     }
 
-    // Calculate and create circles for other locations
-    for (const [, location] of locationMap.entries()) {
+    // Build HQ circle
+    if (hasHq && !isNaN(clubLat) && !isNaN(clubLng)) {
+      const hqRadiusKm = hqHours > 0
+        ? Math.max(baseKm, this.calculateTerritoryRadius(hqHours, hqPeople.size, hqLastActivity))
+        : baseKm;
+      circles.push({
+        id: `${clubId}_home`,
+        clubId,
+        latitude: clubLat,
+        longitude: clubLng,
+        radiusKm: hqRadiusKm,
+        hoursContributed: hqHours,
+        peopleCount: hqPeople.size,
+        locationName: `${club.name} (Home Base)`,
+        isMainClubLocation: true,
+        lastActivityAt: hqLastActivity || new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as TerritoryCircle);
+    }
+
+    // Build circles for non-absorbed named locations
+    for (let i = 0; i < locArray.length; i++) {
+      if (absorbed.has(i)) continue;
+      const location = locArray[i];
       const radiusKm = this.calculateTerritoryRadius(location.hours, location.people.size, location.lastActivity);
-      
       circles.push({
         id: this.geohashId(location.lat, location.lng),
         clubId,
@@ -837,6 +885,16 @@ export class FirestoreStorage implements IStorage {
     }
 
     return radiusKm;
+  }
+
+  private getDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
 
   // Custom Field Management
