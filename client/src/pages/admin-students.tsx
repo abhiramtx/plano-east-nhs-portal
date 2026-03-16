@@ -1573,7 +1573,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   <SelectValue placeholder="No log" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No log</SelectItem>
+                  <SelectItem value="_none">No log</SelectItem>
                   {(hoursLogs as any[]).map(l => (
                     <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
                   ))}

@@ -220,7 +220,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
       description: editDesc,
       type: editType,
       password: editType === 'password' ? editPassword : undefined,
-      logId: editLogId || undefined,
+      logId: (editLogId && editLogId !== '_none') ? editLogId : undefined,
       logName: hoursLogs.find(l => String(l.id) === editLogId)?.name,
       conditionals: editConditionals,
     }),
@@ -262,7 +262,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
         defHours,
         useConditionals ? editConditionals : [],
         club.id,
-        editLogId || undefined,
+        (editLogId && editLogId !== '_none') ? editLogId : undefined,
         hoursLogs.find(l => String(l.id) === editLogId)?.name,
       );
     },
@@ -751,7 +751,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                             <SelectValue placeholder="No log selected" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">No log</SelectItem>
+                            <SelectItem value="_none">No log</SelectItem>
                             {hoursLogs.map(l => (
                               <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
                             ))}
