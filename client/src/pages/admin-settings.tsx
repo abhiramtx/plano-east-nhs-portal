@@ -127,22 +127,23 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
         </div>
       </div>
 
-      <div className="flex-1 p-6 overflow-auto bg-white">
+      <div className="flex-1 overflow-auto bg-white">
+        <div className="p-6 lg:p-8">
         {innerPage === 'logs' && (
-          <div className="space-y-4 max-w-2xl">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Hours Logs</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Logs are named time periods (e.g., "Fall Semester", "Spring 2026") with an hours requirement. Volunteers see open logs in their Hours tab and submit entries to specific logs. You can view per-log progress in the Volunteers tab.</p>
+          <div className="space-y-6">
+            <div className="border-b border-gray-200 pb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Hours Logs</h2>
+              <p className="text-sm text-gray-500 mt-1">Logs are named time periods (e.g., "Fall Semester", "Spring 2026") with an hours requirement. Volunteers see open logs in their Hours tab and submit entries to specific logs. You can view per-log progress in the Volunteers tab.</p>
             </div>
             <AdminLogs user={user} club={club} />
           </div>
         )}
 
         {innerPage === 'approvals' && (
-          <div className="space-y-6 max-w-2xl">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Approvals</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Configure how the hours approval workflow works. You can require multiple admins to approve or reject before a submission is finalized — great for clubs with multiple admins who want checks and balances.</p>
+          <div className="space-y-6">
+            <div className="border-b border-gray-200 pb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Approvals</h2>
+              <p className="text-sm text-gray-500 mt-1">Configure how the hours approval workflow works. You can require multiple admins to approve or reject before a submission is finalized — great for clubs with multiple admins who want checks and balances.</p>
             </div>
             <Card>
               <CardHeader>
@@ -194,10 +195,10 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
         )}
 
         {innerPage === 'club' && (
-          <div className="space-y-6 max-w-2xl">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Club</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Your club's public identity on the platform — name, color, and home base location for territory calculations.</p>
+          <div className="space-y-6">
+            <div className="border-b border-gray-200 pb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Club</h2>
+              <p className="text-sm text-gray-500 mt-1">Your club's public identity on the platform — name, color, and home base location for territory calculations.</p>
             </div>
             <Card>
               <CardHeader>
@@ -287,10 +288,10 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
         )}
 
         {innerPage === 'members' && (
-          <div className="space-y-6 max-w-2xl">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Members</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Control what information volunteers provide in their profiles, which fields are visible on reports, and add custom fields for your club's specific needs.</p>
+          <div className="space-y-6">
+            <div className="border-b border-gray-200 pb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Members</h2>
+              <p className="text-sm text-gray-500 mt-1">Control what information volunteers provide in their profiles, which fields are visible on reports, and add custom fields for your club's specific needs.</p>
             </div>
             <Card>
               <CardHeader>
@@ -332,10 +333,10 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
         )}
 
         {innerPage === 'territory' && (
-          <div className="space-y-6 max-w-2xl">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Territory</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Territory circles on the world map grow as your club logs hours at a location. Configure how quickly inactive territories shrink (decay) and whether high-need areas earn bonus credit.</p>
+          <div className="space-y-6">
+            <div className="border-b border-gray-200 pb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Territory</h2>
+              <p className="text-sm text-gray-500 mt-1">Territory circles on the world map grow as your club logs hours at a location. Configure how quickly inactive territories shrink (decay) and whether high-need areas earn bonus credit.</p>
             </div>
             <Card>
               <CardHeader>
@@ -382,10 +383,10 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
         )}
 
         {innerPage === 'partnerships' && (
-          <div className="space-y-6 max-w-2xl">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Partnerships</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Partnerships let volunteers from your club log hours at external organizations — food banks, hospitals, community orgs — without that org needing to be a club. Manage how your club affiliates with partner organizations.</p>
+          <div className="space-y-6">
+            <div className="border-b border-gray-200 pb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Partnerships</h2>
+              <p className="text-sm text-gray-500 mt-1">Partnerships let volunteers from your club log hours at external organizations — food banks, hospitals, community orgs — without that org needing to be a club. Manage how your club affiliates with partner organizations.</p>
             </div>
             <Card>
               <CardHeader>
@@ -403,6 +404,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
             </Card>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
