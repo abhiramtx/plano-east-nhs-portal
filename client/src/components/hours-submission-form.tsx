@@ -6,7 +6,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   User, HoursSubmission, createSubmission, updateSubmission,
-  getClubEvents, getPartnershipEvents, getAllPartnerships, ClubEvent, Partnership
+  getClubEvents, getPartnershipEvents, getAllPartnerships, ClubEvent, Partnership,
+  checkInUser
 } from "@/lib/firebase";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -225,6 +226,20 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
           }
         }
         await createSubmission(submissionData);
+
+        // Record attendance so the person appears in the event's Grant Hours tab
+        if (selectedEventId && selectedEvent) {
+          try {
+            await checkInUser(
+              selectedEventId,
+              selectedEvent.name,
+              user?.email || '',
+              user?.name || '',
+              source === 'club' ? (clubId || undefined) : undefined,
+              source === 'partnership' ? selectedPartnershipId || undefined : undefined,
+            );
+          } catch {}
+        }
       }
     },
     onSuccess: () => {
