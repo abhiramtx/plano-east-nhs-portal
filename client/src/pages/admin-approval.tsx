@@ -35,7 +35,8 @@ import {
   UserX,
   BookOpen,
   ChevronDown,
-  Filter
+  Filter,
+  Handshake
 } from 'lucide-react';
 
 interface AdminApprovalProps {
@@ -437,11 +438,19 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                         <Calendar className="w-3 h-3 mr-1" />
                         {formatDate(submission.date)}
                       </div>
-                      {submission.logName && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          {submission.logName}
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {submission.partnershipId && (
+                          <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] px-1.5 py-0">
+                            <Handshake className="w-2.5 h-2.5 mr-0.5" />
+                            Partnership
+                          </Badge>
+                        )}
+                        {submission.logName && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            {submission.logName}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -454,9 +463,17 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
           {selectedSubmission ? (
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {selectedSubmission.activityName || 'Unnamed Activity'}
-                </h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {selectedSubmission.activityName || 'Unnamed Activity'}
+                  </h2>
+                  {selectedSubmission.partnershipId && (
+                    <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-200">
+                      <Handshake className="w-3 h-3 mr-1" />
+                      Partnership
+                    </Badge>
+                  )}
+                </div>
                 <div className="flex items-center space-x-3">
                   {(approvalsRequired > 1 || rejectionsRequired > 1) && (
                     <span className="text-xs text-gray-500 mr-2">
