@@ -100,6 +100,7 @@ export interface HoursSubmission {
   partnershipId?: string;
   partnershipName?: string;
   grantedByAdmin?: boolean;
+  grantedByPartnershipClub?: boolean;
   approvals?: string[];
   rejections?: string[];
   rejectionReasons?: { [adminEmail: string]: string };
@@ -1421,6 +1422,58 @@ export const grantEventHours = async (
       grantedByAdmin: true,
       submittedAt: Timestamp.fromDate(now),
       reviewedAt: Timestamp.fromDate(now),
+      createdAt: now.toISOString(),
+    });
+  }
+
+  await batch.commit();
+};
+
+export const grantPartnershipHoursAsPending = async (
+  eventId: string,
+  eventName: string,
+  attendanceRecords: EventAttendance[],
+  defaultHours: number | null,
+  conditionals: EventConditional[],
+  clubId: string,
+  logId?: string,
+  logName?: string,
+  partnershipId?: string,
+  partnershipName?: string,
+): Promise<void> => {
+  const batch = writeBatch(db);
+  const now = new Date();
+
+  for (const record of attendanceRecords) {
+    let hours = defaultHours;
+    if (conditionals.length > 0 && record.minutesAttended != null) {
+      const hoursAttended = record.minutesAttended / 60;
+      for (const cond of conditionals) {
+        if (cond.type === 'less' && hoursAttended < cond.thresholdHours) { hours = cond.grantHours; break; }
+        if (cond.type === 'exact' && Math.abs(hoursAttended - cond.thresholdHours) < 0.1) { hours = cond.grantHours; break; }
+        if (cond.type === 'more' && hoursAttended >= cond.thresholdHours) { hours = cond.grantHours; break; }
+      }
+    }
+    if (hours == null || hours <= 0) continue;
+
+    const submissionRef = doc(collection(db, "submissions"));
+    batch.set(submissionRef, {
+      clubId,
+      partnershipId: partnershipId || null,
+      partnershipName: partnershipName || null,
+      userEmail: record.userEmail,
+      userName: record.userName,
+      hours,
+      description: `Partnership event: ${eventName}${record.minutesAttended != null ? ` (${Math.floor(record.minutesAttended / 60)}h ${record.minutesAttended % 60}m attended)` : ''}`,
+      activityName: eventName,
+      date: now.toISOString().split('T')[0],
+      status: 'pending',
+      logId: logId || null,
+      logName: logName || null,
+      eventId,
+      eventName,
+      grantedByPartnershipClub: true,
+      submittedAt: Timestamp.fromDate(now),
       createdAt: now.toISOString(),
     });
   }
