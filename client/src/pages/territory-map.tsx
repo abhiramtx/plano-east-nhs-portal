@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Trophy, MapPin, Clock, TrendingUp, Users, Search, X } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import MapGlComponent, { Marker, NavigationControl, MapRef, Source, Layer } from 'react-map-gl/maplibre';
@@ -478,6 +479,28 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     return leaderboardClubs;
   }, [leaderboardClubs, clubHoursByYear]);
 
+  // Monthly cumulative progress for the chart year
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const chartYear = leaderboardYear ?? new Date().getFullYear();
+  const nowMonth = new Date().getMonth(); // 0-indexed
+
+  const monthlyProgress = useMemo(() => {
+    const monthly = new Array(12).fill(0);
+    allSubmissions.forEach(s => {
+      if (s.status !== 'approved') return;
+      const d = new Date(s.date);
+      if (isNaN(d.getTime()) || d.getFullYear() !== chartYear) return;
+      monthly[d.getMonth()] += s.hours;
+    });
+    // Only show up to current month for the current year; full year for past years
+    const limit = chartYear === new Date().getFullYear() ? nowMonth + 1 : 12;
+    let cumulative = 0;
+    return MONTHS.slice(0, limit).map((m, i) => {
+      cumulative += monthly[i];
+      return { month: m, hours: Math.round(cumulative * 10) / 10 };
+    });
+  }, [allSubmissions, chartYear]);
+
   const currentClubRank = sortedLeaderboard.findIndex(c => c.id === currentClubId) + 1;
 
   // Convert server circles to the TerritoryCircle format for grouping
@@ -725,6 +748,48 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
+
+          {/* Monthly cumulative progress chart */}
+          {monthlyProgress.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs font-medium text-gray-500">
+                  {chartYear} Progress
+                </p>
+                <p className="text-xs font-semibold text-gray-900">
+                  {monthlyProgress[monthlyProgress.length - 1].hours.toFixed(0)} hrs
+                </p>
+              </div>
+              <div className="h-20">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={monthlyProgress} margin={{ top: 2, right: 2, left: -28, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="progressGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#111827" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#111827" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="month" axisLine={false} tickLine={false}
+                      tick={{ fontSize: 9, fill: '#9CA3AF' }} />
+                    <YAxis axisLine={false} tickLine={false}
+                      tick={{ fontSize: 9, fill: '#9CA3AF' }} />
+                    <Tooltip
+                      content={({ active, payload, label }) =>
+                        active && payload?.length ? (
+                          <div className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow text-xs">
+                            <p className="font-semibold text-gray-900">{label}</p>
+                            <p className="text-gray-600">{payload[0].value} hrs total</p>
+                          </div>
+                        ) : null
+                      }
+                    />
+                    <Area type="monotone" dataKey="hours" stroke="#111827" strokeWidth={2}
+                      fill="url(#progressGrad)" dot={false} activeDot={{ r: 3, fill: '#111827' }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
 
           {currentClub && currentClubRank > 0 && (
             <div className="bg-gray-50 rounded-lg px-3 py-2">
