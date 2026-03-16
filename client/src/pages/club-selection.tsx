@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, 
@@ -37,6 +38,7 @@ const CLUB_COLORS = [
 ];
 
 export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubSelectionProps) {
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
@@ -235,7 +237,10 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       <nav className="bg-white/90 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
+            <div
+              className="flex items-center space-x-3 cursor-pointer"
+              onClick={() => setLocation('/landing')}
+            >
               <img src={logoImg} alt="VolunteerClub" className="w-10 h-10 rounded-xl" />
               <span className="text-xl font-bold">VolunteerClub</span>
             </div>

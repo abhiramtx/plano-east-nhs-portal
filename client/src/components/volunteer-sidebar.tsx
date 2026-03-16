@@ -95,7 +95,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
         <div className="flex flex-col h-full">
           <div
             className="flex items-center justify-between px-4 py-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50"
-            onClick={() => { setLocation('/landing'); setMobileMenuOpen(false); }}
+            onClick={() => { setLocation('/clubs'); setMobileMenuOpen(false); }}
           >
             <div className="flex items-center space-x-3">
               <img src={logoImg} alt="VolunteerClub" className="w-10 h-10 rounded-xl" />

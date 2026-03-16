@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { signInWithGoogle } from "@/lib/firebase";
+import { signInWithGoogle, auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Users, Trophy, MapPin, ArrowRight, Zap, Shield, Target, ChevronDown, Sparkles,
@@ -77,8 +78,14 @@ function GlowOrb({ color, size, position, animation }: { color: string; size: st
 export default function Landing({ onSignIn }: LandingProps) {
   const [loading, setLoading] = useState(false);
   const [scrollY, setScrollY] = useState(0);
+  const [isSignedIn, setIsSignedIn] = useState(!!auth.currentUser);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, user => setIsSignedIn(!!user));
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
@@ -127,13 +134,22 @@ export default function Landing({ onSignIn }: LandingProps) {
               <button onClick={() => scrollTo('partnerships')} className="text-gray-400 hover:text-white transition-colors text-sm">Partnerships</button>
               <button onClick={() => scrollTo('how-it-works')} className="text-gray-400 hover:text-white transition-colors text-sm">How It Works</button>
             </div>
-            <button
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="px-5 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-100 transition-all duration-300 hover:scale-105 disabled:opacity-50"
-            >
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
+            {isSignedIn ? (
+              <button
+                onClick={() => setLocation('/')}
+                className="px-5 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-100 transition-all duration-300 hover:scale-105"
+              >
+                Go to App
+              </button>
+            ) : (
+              <button
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="px-5 py-2 bg-white text-black text-sm font-semibold rounded-full hover:bg-gray-100 transition-all duration-300 hover:scale-105 disabled:opacity-50"
+              >
+                {loading ? "Signing in..." : "Sign In"}
+              </button>
+            )}
           </div>
         </div>
       </nav>
@@ -165,11 +181,11 @@ export default function Landing({ onSignIn }: LandingProps) {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
-              onClick={handleGoogleSignIn}
+              onClick={isSignedIn ? () => setLocation('/') : handleGoogleSignIn}
               disabled={loading}
               className="group flex items-center gap-3 px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-gray-100 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_rgba(255,255,255,0.3)] disabled:opacity-50"
             >
-              {loading ? "Signing in..." : "Get Started Free"}
+              {isSignedIn ? "Go to App" : loading ? "Signing in..." : "Get Started Free"}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
@@ -637,11 +653,11 @@ export default function Landing({ onSignIn }: LandingProps) {
               Join clubs competing to cover the globe in service hours. Every minute you volunteer puts your name on the map — literally.
             </p>
             <button
-              onClick={handleGoogleSignIn}
+              onClick={isSignedIn ? () => setLocation('/') : handleGoogleSignIn}
               disabled={loading}
               className="group inline-flex items-center gap-3 px-10 py-5 bg-white text-black text-lg font-semibold rounded-full hover:bg-gray-100 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_70px_rgba(255,255,255,0.25)] disabled:opacity-50"
             >
-              {loading ? "Signing in..." : "Start Volunteering Now"}
+              {isSignedIn ? "Go to App" : loading ? "Signing in..." : "Start Volunteering Now"}
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </button>
           </AnimatedSection>
