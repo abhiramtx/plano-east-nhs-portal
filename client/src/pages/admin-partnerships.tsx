@@ -165,12 +165,24 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   const [editConditionals, setEditConditionals] = useState<EventConditional[]>([]);
   const [editLogId, setEditLogId] = useState('');
   const [selectedTargetClubId, setSelectedTargetClubId] = useState('');
+  const [editEventLat, setEditEventLat] = useState<number | null>(null);
+  const [editEventLng, setEditEventLng] = useState<number | null>(null);
+  const [editEventLocationQuery, setEditEventLocationQuery] = useState('');
+  const [editEventLocationSuggestions, setEditEventLocationSuggestions] = useState<any[]>([]);
+  const [editEventLocationSearching, setEditEventLocationSearching] = useState(false);
   const [activePartnershipEventTab, setActivePartnershipEventTab] = useState<PartnershipEventTab>('information');
   const [qrSubTab, setQrSubTab] = useState<QRSubTab>('checkin');
   const [scanResult, setScanResult] = useState<{ success: boolean; message: string } | null>(null);
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
   const [overrideHours, setOverrideHours] = useState<Record<string, string>>({});
   const [defaultHours, setDefaultHours] = useState('');
+
+  // Settings - location search for partnership HQ
+  const [editLat, setEditLat] = useState<number | null>(null);
+  const [editLng, setEditLng] = useState<number | null>(null);
+  const [editAddressQuery, setEditAddressQuery] = useState('');
+  const [editAddressSuggestions, setEditAddressSuggestions] = useState<any[]>([]);
+  const [editAddressSearching, setEditAddressSearching] = useState(false);
 
   // Volunteer search
   const [volunteerSearch, setVolunteerSearch] = useState('');
@@ -232,6 +244,10 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       setEditAddress(selectedPartnership.address || '');
       setEditColor(selectedPartnership.color || '#3B82F6');
       setEditLogoUrl(selectedPartnership.logoUrl || '');
+      setEditLat(selectedPartnership.latitude ?? null);
+      setEditLng(selectedPartnership.longitude ?? null);
+      setEditAddressQuery(selectedPartnership.address || '');
+      setEditAddressSuggestions([]);
     }
   }, [selectedPartnership]);
 
@@ -244,6 +260,12 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       setEditConditionals(selectedPartnershipEvent.conditionals || []);
       setEditLogId(selectedPartnershipEvent.logId || '');
       setSelectedTargetClubId(selectedPartnershipEvent.targetClubId || '');
+      setEditEventLat(selectedPartnershipEvent.latitude ?? null);
+      setEditEventLng(selectedPartnershipEvent.longitude ?? null);
+      setEditEventLocationQuery(
+        selectedPartnershipEvent.latitude != null ? '(location saved)' : ''
+      );
+      setEditEventLocationSuggestions([]);
       setActivePartnershipEventTab('information');
       setScanResult(null);
       setSelectedAttendees([]);
@@ -251,6 +273,34 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       setDefaultHours('');
     }
   }, [selectedPartnershipEvent?.id]);
+
+  // Nominatim search: partnership HQ address
+  useEffect(() => {
+    const run = async () => {
+      if (editAddressQuery.length < 3) { setEditAddressSuggestions([]); return; }
+      setEditAddressSearching(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(editAddressQuery)}&limit=5`);
+        setEditAddressSuggestions(await res.json());
+      } catch {} finally { setEditAddressSearching(false); }
+    };
+    const t = setTimeout(run, 300);
+    return () => clearTimeout(t);
+  }, [editAddressQuery]);
+
+  // Nominatim search: event location
+  useEffect(() => {
+    const run = async () => {
+      if (editEventLocationQuery.length < 3 || editEventLat) { setEditEventLocationSuggestions([]); return; }
+      setEditEventLocationSearching(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(editEventLocationQuery)}&limit=5`);
+        setEditEventLocationSuggestions(await res.json());
+      } catch {} finally { setEditEventLocationSearching(false); }
+    };
+    const t = setTimeout(run, 300);
+    return () => clearTimeout(t);
+  }, [editEventLocationQuery]);
 
   const addConditional = () => {
     setEditConditionals(prev => [...prev, { id: Math.random().toString(36).slice(2), type: 'more', thresholdHours: 1, grantHours: 1 }]);
@@ -307,7 +357,9 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     mutationFn: () => updatePartnership(selectedPartnership!.id, {
       name: editName,
       description: editDesc,
-      address: editAddress,
+      address: editAddressQuery || editAddress,
+      latitude: editLat ?? undefined,
+      longitude: editLng ?? undefined,
       color: editColor,
       logoUrl: editLogoUrl || undefined,
     }),
@@ -359,6 +411,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       logId: (editLogId && editLogId !== '_none') ? editLogId : undefined,
       logName: targetClubLogs.find(l => String(l.id) === editLogId)?.name,
       targetClubId: selectedTargetClubId || undefined,
+      latitude: editEventLat ?? undefined,
+      longitude: editEventLng ?? undefined,
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-partnership-events', selectedPartnership?.id] });
@@ -831,10 +885,99 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                               <Input value={editEventPassword} onChange={e => setEditEventPassword(e.target.value)} />
                             </div>
                           )}
+
+                          <div className="border-t border-gray-100 pt-4 space-y-4">
+                            {/* Club affiliation */}
+                            <div className="space-y-1">
+                              <Label>Club Affiliation <span className="text-gray-400 font-normal text-xs">(optional)</span></Label>
+                              <Select value={selectedTargetClubId || '_none'} onValueChange={v => setSelectedTargetClubId(v === '_none' ? '' : v)}>
+                                <SelectTrigger><SelectValue placeholder="No affiliation" /></SelectTrigger>
+                                <SelectContent className="z-[200]">
+                                  <SelectItem value="_none">No affiliation</SelectItem>
+                                  {approvedAffiliations.map(a => (
+                                    <SelectItem key={a.clubId} value={a.clubId}>{a.clubName}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-gray-400">Links this event to a club — it will appear in that club's map pin. If no affiliation, a location is required.</p>
+                            </div>
+
+                            {/* Event location */}
+                            <div className="space-y-1 relative">
+                              <div className="flex items-center justify-between">
+                                <Label>
+                                  Event Location
+                                  {!selectedTargetClubId && <span className="text-red-500 ml-1">*</span>}
+                                </Label>
+                                {selectedPartnership?.latitude != null && selectedPartnership?.longitude != null && (
+                                  <button
+                                    type="button"
+                                    className="text-xs text-blue-600 hover:underline"
+                                    onClick={() => {
+                                      setEditEventLat(selectedPartnership.latitude!);
+                                      setEditEventLng(selectedPartnership.longitude!);
+                                      setEditEventLocationQuery('Partnership HQ');
+                                      setEditEventLocationSuggestions([]);
+                                    }}
+                                  >
+                                    Use HQ
+                                  </button>
+                                )}
+                              </div>
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                                <Input
+                                  className="pl-9 pr-9"
+                                  value={editEventLocationQuery}
+                                  onChange={e => { setEditEventLocationQuery(e.target.value); setEditEventLat(null); setEditEventLng(null); }}
+                                  placeholder="Search location..."
+                                />
+                                {editEventLocationSearching && (
+                                  <RefreshCw className="absolute right-7 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+                                )}
+                                {editEventLat && editEventLng && (
+                                  <button
+                                    type="button"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                                    onClick={() => { setEditEventLat(null); setEditEventLng(null); setEditEventLocationQuery(''); }}
+                                  >
+                                    <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                                  </button>
+                                )}
+                              </div>
+                              {editEventLocationSuggestions.length > 0 && (
+                                <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                                  {editEventLocationSuggestions.map((s: any, i: number) => (
+                                    <button
+                                      key={i}
+                                      type="button"
+                                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                                      onClick={() => {
+                                        const name = s.display_name.split(',').slice(0, 3).join(',').trim();
+                                        setEditEventLocationQuery(name);
+                                        setEditEventLat(parseFloat(s.lat));
+                                        setEditEventLng(parseFloat(s.lon));
+                                        setEditEventLocationSuggestions([]);
+                                      }}
+                                    >
+                                      {s.display_name.split(',').slice(0, 3).join(', ')}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {editEventLat && editEventLng && (
+                                <p className="text-xs text-green-600">Location set: {editEventLat.toFixed(4)}, {editEventLng.toFixed(4)}</p>
+                              )}
+                              {!selectedTargetClubId && !editEventLat && (
+                                <p className="text-xs text-amber-600">A location is required when no club affiliation is set — the event won't appear on the map otherwise.</p>
+                              )}
+                            </div>
+                          </div>
+
                           <Button
                             onClick={() => updateEventMutation.mutate()}
-                            disabled={updateEventMutation.isPending}
-                            className="w-full bg-black hover:bg-gray-800 text-white"
+                            disabled={updateEventMutation.isPending || (!selectedTargetClubId && !editEventLat)}
+                            className="w-full bg-black hover:bg-gray-800 text-white disabled:opacity-50"
                           >
                             <Save className="w-4 h-4 mr-2" />
                             {updateEventMutation.isPending ? "Saving..." : "Save Changes"}
@@ -1528,9 +1671,50 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                       <Label>Description</Label>
                       <Textarea value={editDesc} onChange={e => setEditDesc(e.target.value)} rows={2} />
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 relative">
                       <Label>Address / Location</Label>
-                      <Input value={editAddress} onChange={e => setEditAddress(e.target.value)} placeholder="123 Main St, City, State" />
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        <Input
+                          className="pl-9 pr-9"
+                          value={editAddressQuery}
+                          onChange={e => { setEditAddressQuery(e.target.value); setEditLat(null); setEditLng(null); }}
+                          placeholder="Search address or place..."
+                        />
+                        {editAddressSearching && (
+                          <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+                        )}
+                        {editLat && editLng && !editAddressSearching && (
+                          <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                        )}
+                      </div>
+                      {editAddressSuggestions.length > 0 && (
+                        <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+                          {editAddressSuggestions.map((s: any, i: number) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                              onClick={() => {
+                                const name = s.display_name.split(',').slice(0, 3).join(',').trim();
+                                setEditAddressQuery(name);
+                                setEditAddress(name);
+                                setEditLat(parseFloat(s.lat));
+                                setEditLng(parseFloat(s.lon));
+                                setEditAddressSuggestions([]);
+                              }}
+                            >
+                              {s.display_name.split(',').slice(0, 3).join(', ')}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {editLat && editLng && (
+                        <p className="text-xs text-green-600">Location pinned: {editLat.toFixed(5)}, {editLng.toFixed(5)}</p>
+                      )}
+                      {!editLat && !editLng && editAddressQuery && (
+                        <p className="text-xs text-gray-400">Type to search — select a result to pin coordinates</p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label>Color</Label>

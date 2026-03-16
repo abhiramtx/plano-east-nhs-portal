@@ -314,6 +314,12 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             const isHovered = hoveredClubId === club.id;
             const isCurrentClub = club.id === currentClubId;
             const clubEvents = allOpenEvents.filter(e => e.clubId === club.id);
+            const affiliatedPartnerIds = new Set(
+              allPartnerships.filter(p => p.affiliatedClubIds?.includes(club.id)).map(p => p.id)
+            );
+            const affiliatedPartnerEvents = allOpenEvents.filter(
+              e => e.partnershipId && affiliatedPartnerIds.has(e.partnershipId)
+            );
             
             return (
               <Marker 
@@ -363,6 +369,23 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                               )}
                             </div>
                           ))}
+                        </div>
+                      )}
+                      {affiliatedPartnerEvents.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-gray-100 space-y-1.5">
+                          <p className="text-xs font-medium text-gray-500">Partner Events</p>
+                          {affiliatedPartnerEvents.map(ev => {
+                            const partner = allPartnerships.find(p => p.id === ev.partnershipId);
+                            return (
+                              <div key={ev.id}>
+                                <p className="text-xs font-medium text-gray-800 truncate">• {ev.name}</p>
+                                {partner && <p className="text-xs text-gray-400 pl-3 truncate">{partner.name}</p>}
+                                {ev.description && (
+                                  <p className="text-xs text-gray-500 pl-3 line-clamp-1">{ev.description}</p>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       <div 
