@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -70,6 +70,16 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
       : null
   );
   const locationInputRef = useRef<HTMLInputElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (locationResults.length > 0 && locationInputRef.current) {
+      const r = locationInputRef.current.getBoundingClientRect();
+      setDropdownPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    } else {
+      setDropdownPos(null);
+    }
+  }, [locationResults.length]);
 
   // New: source / event selection
   const [source, setSource] = useState<'club' | 'partnership'>(
@@ -394,14 +404,14 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
               className="pl-10 bg-white border-gray-200 text-gray-900"
             />
             {isSearchingLocation && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
-            {locationResults.length > 0 && locationInputRef.current && (
+            {dropdownPos && locationResults.length > 0 && (
               <div
                 style={{
                   position: 'fixed',
                   zIndex: 9999,
-                  top: locationInputRef.current.getBoundingClientRect().bottom + 4,
-                  left: locationInputRef.current.getBoundingClientRect().left,
-                  width: locationInputRef.current.getBoundingClientRect().width,
+                  top: dropdownPos.top,
+                  left: dropdownPos.left,
+                  width: dropdownPos.width,
                 }}
                 className="bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto"
               >
