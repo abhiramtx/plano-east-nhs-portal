@@ -246,6 +246,15 @@ export const initializeAuth = () => {
 
 // ============ FIRESTORE DATA OPERATIONS ============
 
+// Strip undefined values from objects before writing to Firestore (Firestore rejects undefined)
+const stripUndefined = (obj: Record<string, any>): Record<string, any> => {
+  const result: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) result[k] = v;
+  }
+  return result;
+};
+
 // Helper to convert Firestore Timestamp to Date
 const toDate = (timestamp: any): Date => {
   if (timestamp instanceof Timestamp) {
@@ -1171,25 +1180,25 @@ export const archiveYearData = async (schoolYear: string, clubId?: string, clubN
   for (const s of clubSubmissions) {
     const archiveDocRef = doc(collection(db, "submissionArchive"));
     const { id: _id, ...rest } = s as any;
-    archiveBatch.set(archiveDocRef, {
+    archiveBatch.set(archiveDocRef, stripUndefined({
       ...rest,
       clubName: clubName || rest.clubName || '',
       archivePeriod: schoolYear,
       archivedAt: Timestamp.fromDate(now),
-      submittedAt: s.submittedAt instanceof Date ? Timestamp.fromDate(s.submittedAt) : s.submittedAt,
+      submittedAt: s.submittedAt instanceof Date ? Timestamp.fromDate(s.submittedAt) : (s.submittedAt ?? null),
       reviewedAt: s.reviewedAt instanceof Date ? Timestamp.fromDate(s.reviewedAt) : (s.reviewedAt ?? null),
-    });
+    }));
   }
   await archiveBatch.commit();
 
   // Also keep the yearlyArchives snapshot for admin reference
   const archiveRef = doc(db, "yearlyArchives", schoolYear);
-  await setDoc(archiveRef, {
+  await setDoc(archiveRef, stripUndefined({
     schoolYear,
-    submissions: clubSubmissions.map(s => ({ ...s })),
-    profiles: profiles.map(p => ({ ...p })),
+    submissions: clubSubmissions.map(s => stripUndefined({ ...s })),
+    profiles: profiles.map(p => stripUndefined({ ...p })),
     archivedAt: Timestamp.fromDate(now),
-  });
+  }));
 };
 
 export const wipeDatabase = async (): Promise<void> => {
