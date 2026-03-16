@@ -1074,14 +1074,6 @@ export const getPendingSubmissionsForUserInClub = async (userEmail: string, club
 
 export const archiveYearData = async (schoolYear: string): Promise<void> => {
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const mayFirst = new Date(currentYear, 4, 1);
-  const augFirst = new Date(currentYear, 7, 1);
-  
-  if (now < mayFirst || now > augFirst) {
-    throw new Error("Archive operations are only allowed between May 1st and August 1st");
-  }
-  
   const submissions = await getAllSubmissions();
   const profiles = await getAllUserProfiles();
   
@@ -1095,15 +1087,6 @@ export const archiveYearData = async (schoolYear: string): Promise<void> => {
 };
 
 export const wipeDatabase = async (): Promise<void> => {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const mayFirst = new Date(currentYear, 4, 1);
-  const augFirst = new Date(currentYear, 7, 1);
-  
-  if (now < mayFirst || now > augFirst) {
-    throw new Error("Database wipe is only allowed between May 1st and August 1st");
-  }
-  
   const batch = writeBatch(db);
   
   const submissionsSnapshot = await getDocs(collection(db, "submissions"));
@@ -1182,6 +1165,7 @@ export interface ClubEvent {
   logId?: string;
   logName?: string;
   targetClubId?: string;
+  isOpen?: boolean;
   conditionals: EventConditional[];
   latitude?: number;
   longitude?: number;

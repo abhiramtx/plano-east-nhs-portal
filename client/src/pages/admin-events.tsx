@@ -160,6 +160,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
   const [editPassword, setEditPassword] = useState('');
   const [editLogId, setEditLogId] = useState('');
   const [editConditionals, setEditConditionals] = useState<EventConditional[]>([]);
+  const [editIsOpen, setEditIsOpen] = useState(true);
 
   // Grant hours
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
@@ -191,6 +192,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
       setEditPassword(selectedEvent.password || '');
       setEditLogId(selectedEvent.logId || '');
       setEditConditionals(selectedEvent.conditionals || []);
+      setEditIsOpen(selectedEvent.isOpen !== false);
     }
   }, [selectedEvent]);
 
@@ -223,10 +225,20 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
       logId: (editLogId && editLogId !== '_none') ? editLogId : undefined,
       logName: hoursLogs.find(l => String(l.id) === editLogId)?.name,
       conditionals: editConditionals,
+      isOpen: editIsOpen,
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-club-events', club.id] });
       toast({ title: "Event updated" });
+    },
+  });
+
+  const toggleOpenMutation = useMutation({
+    mutationFn: (open: boolean) => updateEvent(selectedEvent!.id, { isOpen: open }),
+    onSuccess: (_, open) => {
+      setEditIsOpen(open);
+      qc.invalidateQueries({ queryKey: ['firebase-club-events', club.id] });
+      toast({ title: open ? "Event opened" : "Event closed", description: open ? "Volunteers can now check in." : "No new check-ins will be accepted." });
     },
   });
 
@@ -430,16 +442,18 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 text-sm truncate">{event.name}</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${event.isOpen !== false ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <p className="font-medium text-gray-900 text-sm truncate">{event.name}</p>
+                    </div>
                     {event.description && (
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{event.description}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 pl-3.5">{event.description}</p>
                     )}
                   </div>
                   <Badge className={`text-xs flex-shrink-0 ${EVENT_TYPE_COLORS[event.type]}`}>
                     {EVENT_TYPE_LABELS[event.type]}
                   </Badge>
                 </div>
-                {isSelected && <ChevronRight className="w-4 h-4 text-gray-400 mt-1" />}
               </button>
             );
           })}
@@ -521,6 +535,28 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
             {/* ============ INFORMATION TAB ============ */}
             {activeTab === 'information' && (
               <div className="space-y-5">
+                {/* Open / Closed toggle */}
+                <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 ${editIsOpen ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${editIsOpen ? 'bg-green-500' : 'bg-gray-400'}`} />
+                      <p className="font-semibold text-sm text-gray-900">{editIsOpen ? 'Event is Open' : 'Event is Closed'}</p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5 pl-4.5">
+                      {editIsOpen ? 'Volunteers can currently check in.' : 'Check-in is paused. No new attendance will be recorded.'}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={editIsOpen ? 'outline' : 'default'}
+                    className={editIsOpen ? 'border-gray-300 text-gray-700 hover:bg-gray-100' : 'bg-green-600 hover:bg-green-700 text-white'}
+                    onClick={() => toggleOpenMutation.mutate(!editIsOpen)}
+                    disabled={toggleOpenMutation.isPending}
+                  >
+                    {toggleOpenMutation.isPending ? '...' : editIsOpen ? 'Close Event' : 'Open Event'}
+                  </Button>
+                </div>
+
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Event Settings</CardTitle>
