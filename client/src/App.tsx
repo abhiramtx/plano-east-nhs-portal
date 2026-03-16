@@ -396,7 +396,11 @@ function App() {
   if (window.location.pathname.startsWith('/join/')) {
     return (
       <QueryClientProvider client={queryClient}>
-        <ClubJoin />
+        <Switch>
+          <Route path="/join/:code">
+            <ClubJoin />
+          </Route>
+        </Switch>
       </QueryClientProvider>
     );
   }
