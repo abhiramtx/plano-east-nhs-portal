@@ -153,6 +153,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   const [editEventPassword, setEditEventPassword] = useState('');
   const [editConditionals, setEditConditionals] = useState<EventConditional[]>([]);
   const [editLogId, setEditLogId] = useState('');
+  const [selectedTargetClubId, setSelectedTargetClubId] = useState('');
   const [activePartnershipEventTab, setActivePartnershipEventTab] = useState<PartnershipEventTab>('information');
   const [qrSubTab, setQrSubTab] = useState<QRSubTab>('checkin');
   const [scanResult, setScanResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -208,6 +209,11 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     enabled: !!club?.id,
   });
 
+  const { data: targetClubLogs = [] } = useQuery<HoursLog[]>({
+    queryKey: ['/api/hours-logs', selectedTargetClubId],
+    enabled: !!selectedTargetClubId,
+  });
+
   useEffect(() => {
     if (selectedPartnership) {
       setEditName(selectedPartnership.name);
@@ -226,6 +232,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       setEditEventPassword(selectedPartnershipEvent.password || '');
       setEditConditionals(selectedPartnershipEvent.conditionals || []);
       setEditLogId(selectedPartnershipEvent.logId || '');
+      setSelectedTargetClubId(selectedPartnershipEvent.targetClubId || '');
       setActivePartnershipEventTab('information');
       setScanResult(null);
       setSelectedAttendees([]);
@@ -339,7 +346,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       password: editEventType === 'password' ? editEventPassword : undefined,
       conditionals: editConditionals,
       logId: (editLogId && editLogId !== '_none') ? editLogId : undefined,
-      logName: hoursLogs.find(l => String(l.id) === editLogId)?.name,
+      logName: targetClubLogs.find(l => String(l.id) === editLogId)?.name,
+      targetClubId: selectedTargetClubId || undefined,
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-partnership-events', selectedPartnership?.id] });
@@ -351,6 +359,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
         password: editEventType === 'password' ? editEventPassword : undefined,
         conditionals: editConditionals,
         logId: (editLogId && editLogId !== '_none') ? editLogId : undefined,
+        targetClubId: selectedTargetClubId || undefined,
       } : prev);
       toast({ title: "Event updated" });
     },
@@ -419,7 +428,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
         useConditionals ? editConditionals : [],
         undefined,
         (editLogId && editLogId !== '_none') ? editLogId : undefined,
-        hoursLogs.find(l => String(l.id) === editLogId)?.name,
+        targetClubLogs.find(l => String(l.id) === editLogId)?.name,
         selectedPartnership?.id,
       );
     },
@@ -875,65 +884,123 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                             </Card>
                           )}
 
+                          {/* Multi-club discouragement banner */}
+                          {isQRType && approvedAffiliations.length !== 1 && (
+                            <div className="flex items-start gap-3 p-4 rounded-xl bg-yellow-50 border border-yellow-200">
+                              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-sm font-medium text-yellow-800">
+                                  {approvedAffiliations.length === 0
+                                    ? 'No affiliated clubs yet'
+                                    : `${approvedAffiliations.length} clubs are affiliated`}
+                                </p>
+                                <p className="text-xs text-yellow-700 mt-0.5">
+                                  QR check-in events work best when you're hosting a single affiliated club — logs and hour grants are tied to one club's members.
+                                  {' '}
+                                  <span className="font-semibold">Consider using a Password event instead</span> — volunteers from any affiliated club can submit hours using a shared password without needing to designate a single club.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Conditionals card — QR events only */}
                           {isQRType && (
                             <Card>
                               <CardHeader>
-                                <CardTitle className="text-base">Hour Conditionals</CardTitle>
+                                <CardTitle className="text-base">Hour Conditionals &amp; Log</CardTitle>
                                 <CardDescription>
-                                  Automatically grant different hours based on how long volunteers stayed. Conditionals are checked in order — the first match wins.
+                                  Select which affiliated club this QR event is for, then choose a log. Conditionals automatically grant hours based on time stayed.
                                 </CardDescription>
                               </CardHeader>
-                              <CardContent className="space-y-3">
-                                {editConditionals.length === 0 && (
-                                  <p className="text-sm text-gray-500 italic">No conditionals yet. Add one below, or leave empty to manually set hours in Grant Hours tab.</p>
-                                )}
-                                {editConditionals.map((cond, idx) => (
-                                  <div key={cond.id} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                                    <span className="text-xs text-gray-500 w-4">{idx + 1}.</span>
-                                    <span className="text-sm text-gray-700">If stayed</span>
-                                    <Select value={cond.type} onValueChange={(v) => updateConditional(cond.id, 'type', v)}>
-                                      <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <CardContent className="space-y-4">
+
+                                {/* Step 1: Select affiliated club */}
+                                <div className="space-y-1.5">
+                                  <Label className="text-sm font-semibold flex items-center gap-1.5">
+                                    <span className="w-5 h-5 rounded-full bg-gray-900 text-white text-xs flex items-center justify-center flex-shrink-0">1</span>
+                                    Select affiliated club
+                                  </Label>
+                                  {approvedAffiliations.length === 0 ? (
+                                    <p className="text-xs text-gray-400 italic">No affiliated clubs yet. Approve affiliations in the Affiliations tab first.</p>
+                                  ) : (
+                                    <Select value={selectedTargetClubId} onValueChange={v => { setSelectedTargetClubId(v); setEditLogId(''); }}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Choose a club…" />
+                                      </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="less">less than</SelectItem>
-                                        <SelectItem value="exact">exactly</SelectItem>
-                                        <SelectItem value="more">at least</SelectItem>
+                                        {approvedAffiliations.map(aff => (
+                                          <SelectItem key={aff.clubId} value={aff.clubId}>{aff.clubName}</SelectItem>
+                                        ))}
                                       </SelectContent>
                                     </Select>
-                                    <Input type="number" step="0.5" min="0"
-                                      value={cond.thresholdHours}
-                                      onChange={e => updateConditional(cond.id, 'thresholdHours', parseFloat(e.target.value) || 0)}
-                                      className="w-20 h-8 text-xs" />
-                                    <span className="text-sm text-gray-700">hours → grant</span>
-                                    <Input type="number" step="0.5" min="0"
-                                      value={cond.grantHours}
-                                      onChange={e => updateConditional(cond.id, 'grantHours', parseFloat(e.target.value) || 0)}
-                                      className="w-20 h-8 text-xs" />
-                                    <span className="text-sm text-gray-700">hrs</span>
-                                    <button onClick={() => removeConditional(cond.id)} className="ml-auto text-red-400 hover:text-red-600">
-                                      <X className="w-4 h-4" />
-                                    </button>
-                                  </div>
-                                ))}
-                                <Button variant="outline" size="sm" onClick={addConditional} className="w-full">
-                                  <Plus className="w-4 h-4 mr-1" /> Add Conditional
-                                </Button>
-                                <div className="pt-2 border-t border-gray-100 space-y-1">
-                                  <Label className="text-sm">Append hours to Log <span className="text-gray-400">(optional)</span></Label>
-                                  <Select value={editLogId} onValueChange={setEditLogId}>
-                                    <SelectTrigger><SelectValue placeholder="No log selected" /></SelectTrigger>
+                                  )}
+                                  <p className="text-xs text-gray-400">This event will be scoped to members of the selected club.</p>
+                                </div>
+
+                                {/* Step 2: Select a log — only shown once a club is chosen */}
+                                <div className={`space-y-1.5 ${!selectedTargetClubId ? 'opacity-40 pointer-events-none' : ''}`}>
+                                  <Label className="text-sm font-semibold flex items-center gap-1.5">
+                                    <span className={`w-5 h-5 rounded-full text-xs flex items-center justify-center flex-shrink-0 ${selectedTargetClubId ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-500'}`}>2</span>
+                                    Append hours to Log <span className="text-gray-400 font-normal">(optional)</span>
+                                  </Label>
+                                  <Select value={editLogId} onValueChange={setEditLogId} disabled={!selectedTargetClubId}>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder={selectedTargetClubId ? 'No log selected' : 'Select a club first'} />
+                                    </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="_none">No log</SelectItem>
-                                      {hoursLogs.map(l => (
+                                      {targetClubLogs.map(l => (
                                         <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
                                       ))}
                                     </SelectContent>
                                   </Select>
-                                  <p className="text-xs text-gray-400">Hours granted from this event will count toward the selected log's requirement.</p>
+                                  {selectedTargetClubId && targetClubLogs.length === 0 && (
+                                    <p className="text-xs text-gray-400 italic">This club has no active logs.</p>
+                                  )}
+                                  <p className="text-xs text-gray-400">Granted hours will count toward the selected log's requirement.</p>
                                 </div>
+
+                                <div className="border-t border-gray-100 pt-3 space-y-3">
+                                  <Label className="text-sm font-semibold">Hour Conditionals</Label>
+                                  <p className="text-xs text-gray-500">Automatically grant different hours based on how long volunteers stayed. Checked in order — first match wins.</p>
+                                  {editConditionals.length === 0 && (
+                                    <p className="text-sm text-gray-500 italic">No conditionals yet. Add one below, or leave empty to manually set hours in Grant Hours tab.</p>
+                                  )}
+                                  {editConditionals.map((cond, idx) => (
+                                    <div key={cond.id} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                                      <span className="text-xs text-gray-500 w-4">{idx + 1}.</span>
+                                      <span className="text-sm text-gray-700">If stayed</span>
+                                      <Select value={cond.type} onValueChange={(v) => updateConditional(cond.id, 'type', v)}>
+                                        <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="less">less than</SelectItem>
+                                          <SelectItem value="exact">exactly</SelectItem>
+                                          <SelectItem value="more">at least</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <Input type="number" step="0.5" min="0"
+                                        value={cond.thresholdHours}
+                                        onChange={e => updateConditional(cond.id, 'thresholdHours', parseFloat(e.target.value) || 0)}
+                                        className="w-20 h-8 text-xs" />
+                                      <span className="text-sm text-gray-700">hours → grant</span>
+                                      <Input type="number" step="0.5" min="0"
+                                        value={cond.grantHours}
+                                        onChange={e => updateConditional(cond.id, 'grantHours', parseFloat(e.target.value) || 0)}
+                                        className="w-20 h-8 text-xs" />
+                                      <span className="text-sm text-gray-700">hrs</span>
+                                      <button onClick={() => removeConditional(cond.id)} className="ml-auto text-red-400 hover:text-red-600">
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                  <Button variant="outline" size="sm" onClick={addConditional} className="w-full">
+                                    <Plus className="w-4 h-4 mr-1" /> Add Conditional
+                                  </Button>
+                                </div>
+
                                 <Button onClick={() => updateEventMutation.mutate()} disabled={updateEventMutation.isPending} className="w-full bg-black hover:bg-gray-800 text-white">
                                   <Save className="w-4 h-4 mr-2" />
-                                  Save Conditionals
+                                  Save
                                 </Button>
                               </CardContent>
                             </Card>

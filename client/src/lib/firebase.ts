@@ -1158,6 +1158,7 @@ export interface ClubEvent {
   password?: string;
   logId?: string;
   logName?: string;
+  targetClubId?: string;
   conditionals: EventConditional[];
   latitude?: number;
   longitude?: number;
