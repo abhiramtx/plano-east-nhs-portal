@@ -848,6 +848,35 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
             {/* ============ GRANT HOURS TAB ============ */}
             {activeTab === 'grant' && (
               <div className="space-y-5">
+                {/* Required log selector */}
+                <Card className={!editLogId || editLogId === '_none' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}>
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-sm font-semibold">
+                          Append hours to Log <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={editLogId} onValueChange={setEditLogId}>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Select a log (required)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {hoursLogs.length === 0
+                              ? <SelectItem value="_none" disabled>No logs created yet</SelectItem>
+                              : hoursLogs.map(l => (
+                                  <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
+                                ))
+                            }
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {(!editLogId || editLogId === '_none') && (
+                      <p className="text-xs text-amber-700 mt-2">You must select a log before granting hours. Create logs in Settings → Logs.</p>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Conditionals card — password events only (in Grant Hours tab) */}
                 {selectedEvent.type === 'password' && (
                   <Card>
@@ -991,7 +1020,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
                         <Button
                           onClick={() => grantMutation.mutate()}
-                          disabled={grantMutation.isPending || (selectedAttendees.length === 0 && !defaultHours && editConditionals.length === 0)}
+                          disabled={grantMutation.isPending || !editLogId || editLogId === '_none' || (selectedAttendees.length === 0 && !defaultHours && editConditionals.length === 0)}
                           className="w-full bg-black hover:bg-gray-800 text-white"
                         >
                           <Award className="w-4 h-4 mr-2" />

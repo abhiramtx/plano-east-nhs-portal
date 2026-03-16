@@ -1232,6 +1232,52 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                       const conditionalsActive = (isQRType || isPasswordType) && editConditionals.length > 0;
                       return (
                         <div className="space-y-5">
+                          {/* Required club + log selector */}
+                          <Card className={!selectedTargetClubId || !editLogId || editLogId === '_none' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}>
+                            <CardContent className="pt-4 pb-4 space-y-3">
+                              <div className="space-y-1">
+                                <Label className="text-sm font-semibold">
+                                  Club <span className="text-red-500">*</span>
+                                </Label>
+                                {approvedAffiliations.length === 0 ? (
+                                  <p className="text-xs text-amber-700">No affiliated clubs yet. Approve affiliations in the Affiliations tab first.</p>
+                                ) : (
+                                  <Select value={selectedTargetClubId} onValueChange={v => { setSelectedTargetClubId(v); setEditLogId(''); }}>
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="Select a club" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[200]">
+                                      {approvedAffiliations.map(a => (
+                                        <SelectItem key={a.clubId} value={a.clubId}>{a.clubName}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-sm font-semibold">
+                                  Log <span className="text-red-500">*</span>
+                                </Label>
+                                <Select value={editLogId} onValueChange={setEditLogId} disabled={!selectedTargetClubId}>
+                                  <SelectTrigger className="bg-white">
+                                    <SelectValue placeholder={selectedTargetClubId ? "Select a log (required)" : "Select a club first"} />
+                                  </SelectTrigger>
+                                  <SelectContent className="z-[200]">
+                                    {targetClubLogs.length === 0
+                                      ? <SelectItem value="_none" disabled>No logs for this club</SelectItem>
+                                      : targetClubLogs.map(l => (
+                                          <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
+                                        ))
+                                    }
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              {(!selectedTargetClubId || !editLogId || editLogId === '_none') && (
+                                <p className="text-xs text-amber-700">Select a club and log before granting hours.</p>
+                              )}
+                            </CardContent>
+                          </Card>
+
                           {/* Conditionals card — password events only (in Grant Hours tab) */}
                           {isPasswordType && (
                             <Card>
@@ -1342,7 +1388,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                                       );
                                     })}
                                   </div>
-                                  <Button onClick={() => grantMutation.mutate()} disabled={grantMutation.isPending} className="w-full bg-black hover:bg-gray-800 text-white">
+                                  <Button onClick={() => grantMutation.mutate()} disabled={grantMutation.isPending || !selectedTargetClubId || !editLogId || editLogId === '_none'} className="w-full bg-black hover:bg-gray-800 text-white">
                                     <Award className="w-4 h-4 mr-2" />
                                     {grantMutation.isPending ? "Granting..." : `Grant Hours to ${selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'all attendees'}`}
                                   </Button>
