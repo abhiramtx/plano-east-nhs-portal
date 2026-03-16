@@ -504,9 +504,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
       {/* Create Club Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-4xl w-[95vw] h-[90vh] bg-white border-gray-200 text-gray-900 p-0 overflow-hidden">
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] bg-white border-gray-200 text-gray-900 p-0 overflow-hidden">
           <div className="flex h-full">
-            <div className="w-1/2 p-6 overflow-y-auto border-r border-gray-200">
+            <div className="w-[340px] min-w-[300px] p-6 overflow-y-auto border-r border-gray-200 flex-shrink-0">
               <DialogHeader className="mb-6">
                 <DialogTitle className="text-2xl text-gray-900">Create Your Club</DialogTitle>
                 <DialogDescription className="text-gray-500">
@@ -637,7 +637,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 </div>
               </div>
             </div>
-            <div className="w-1/2 flex flex-col">
+            <div className="flex-1 flex flex-col min-w-0">
               <div className="p-4 border-b border-gray-200">
                 <Label className="flex items-center gap-2 text-gray-700">
                   <MapPin className="w-4 h-4" />
