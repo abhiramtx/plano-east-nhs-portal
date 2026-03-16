@@ -50,6 +50,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const [hoveredClubId, setHoveredClubId] = useState<string | null>(null);
   const [hoveredPartnerId, setHoveredPartnerId] = useState<string | null>(null);
   const [hoveredCheckpointId, setHoveredCheckpointId] = useState<string | null>(null);
+  const [territoryTooltip, setTerritoryTooltip] = useState<{ x: number; y: number; name: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -309,6 +310,18 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                 applyTerritoryLayers(map);
               }
             });
+            // Territory hover tooltip
+            map.on('mousemove', 'territory-fill', (e: any) => {
+              if (e.features?.length > 0) {
+                const name = e.features[0].properties?.clubName || '';
+                setTerritoryTooltip({ x: e.point.x, y: e.point.y, name });
+                map.getCanvas().style.cursor = 'pointer';
+              }
+            });
+            map.on('mouseleave', 'territory-fill', () => {
+              setTerritoryTooltip(null);
+              map.getCanvas().style.cursor = '';
+            });
           }}
         >
           <NavigationControl position="bottom-right" showCompass={false} />
@@ -509,6 +522,16 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             );
           })}
         </MapGlComponent>
+
+        {/* Territory hover tooltip */}
+        {territoryTooltip && (
+          <div
+            style={{ left: territoryTooltip.x + 12, top: territoryTooltip.y - 36, pointerEvents: 'none' }}
+            className="absolute z-20 bg-white rounded-lg px-3 py-1.5 shadow-lg border border-gray-200 text-sm font-semibold text-gray-900 whitespace-nowrap"
+          >
+            {territoryTooltip.name}
+          </div>
+        )}
 
         <div className="absolute top-4 left-4 right-80 z-10">
           <div className="relative max-w-md">
