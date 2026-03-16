@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -69,6 +70,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
       ? { lat: editingSubmission.latitude, lng: editingSubmission.longitude, name: editingSubmission.location || "" }
       : null
   );
+  const locationInputRef = useRef<HTMLInputElement>(null);
 
   // New: source / event selection
   const [source, setSource] = useState<'club' | 'partnership'>(
@@ -384,17 +386,33 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
           </div>
         ) : (
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input value={locationSearch} onChange={e => setLocationSearch(e.target.value)} placeholder="Search for a location..." className="pl-10 bg-white border-gray-200 text-gray-900" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
+            <Input
+              ref={locationInputRef}
+              value={locationSearch}
+              onChange={e => setLocationSearch(e.target.value)}
+              placeholder="Search for a location..."
+              className="pl-10 bg-white border-gray-200 text-gray-900"
+            />
             {isSearchingLocation && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
-            {locationResults.length > 0 && (
-              <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+            {locationResults.length > 0 && locationInputRef.current && createPortal(
+              <div
+                style={{
+                  position: 'fixed',
+                  zIndex: 9999,
+                  top: locationInputRef.current.getBoundingClientRect().bottom + 4,
+                  left: locationInputRef.current.getBoundingClientRect().left,
+                  width: locationInputRef.current.getBoundingClientRect().width,
+                }}
+                className="bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto"
+              >
                 {locationResults.map((result, index) => (
                   <button key={index} type="button" onClick={() => handleLocationSelect(result)} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 border-b border-gray-100 last:border-b-0">
                     {result.display_name}
                   </button>
                 ))}
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         )}
