@@ -108,7 +108,7 @@ function QRScanner({ onScan, onError }: { onScan: (text: string) => void; onErro
     <div className="space-y-3">
       <div
         ref={containerRef}
-        className="w-full max-w-sm mx-auto rounded-lg overflow-hidden border border-gray-200 bg-gray-50 min-h-[200px] flex items-center justify-center"
+        className="w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50 min-h-[380px] flex items-center justify-center"
       >
         {!started && (
           <div className="text-center p-4">

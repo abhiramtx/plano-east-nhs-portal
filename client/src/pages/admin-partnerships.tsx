@@ -79,7 +79,7 @@ function QRScanner({ onScan }: { onScan: (text: string) => void }) {
   };
   return (
     <div className="space-y-3">
-      <div ref={containerRef} className={`w-full rounded-xl overflow-hidden bg-black ${started ? 'h-64' : 'h-0'}`} />
+      <div ref={containerRef} className={`w-full rounded-xl overflow-hidden bg-black ${started ? 'h-96' : 'h-0'}`} />
       {error && <p className="text-sm text-red-500">{error}</p>}
       {!started ? (
         <Button onClick={startScanner} className="w-full bg-black hover:bg-gray-800 text-white">
@@ -408,6 +408,22 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
 
   const isOwner = (p: Partnership) => p.ownerEmail === user.email;
 
+  // Restore manage view from URL hash on load
+  useEffect(() => {
+    if (allPartnerships.length === 0) return;
+    const hash = window.location.hash.replace('#', '');
+    const params = new URLSearchParams(hash);
+    const pId = params.get('p');
+    if (pId) {
+      const found = allPartnerships.find(p => p.id === pId);
+      if (found && found.ownerEmail === user.email) {
+        setSelectedPartnership(found);
+        setActiveTab('overview');
+        setView('manage');
+      }
+    }
+  }, [allPartnerships]);
+
   const filteredAll = allPartnerships.filter(p =>
     p.name.toLowerCase().includes(partnershipSearch.toLowerCase()) ||
     (p.description || '').toLowerCase().includes(partnershipSearch.toLowerCase())
@@ -455,7 +471,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
           {/* Back + branding */}
           <div className="px-4 pt-5 pb-4 border-b border-gray-200">
             <button
-              onClick={() => { setView('list'); setSelectedPartnership(null); }}
+              onClick={() => { setView('list'); setSelectedPartnership(null); window.location.hash = ''; }}
               className="text-xs text-gray-500 hover:text-gray-900 mb-4 flex items-center gap-1.5 transition-colors"
             >
               ← Back
@@ -1400,62 +1416,82 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                 </Button>
               )}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredAll.map(p => {
-                const owned = myPartnershipIds.has(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      if (owned) {
-                        setSelectedPartnership(p);
-                        setActiveTab('overview');
-                        setView('manage');
-                      } else {
-                        setBrowsePartnership(p);
+          ) : (() => {
+            const myFiltered = filteredAll.filter(p => myPartnershipIds.has(p.id));
+            const othersFiltered = filteredAll.filter(p => !myPartnershipIds.has(p.id));
+
+            const renderCard = (p: Partnership) => {
+              const owned = myPartnershipIds.has(p.id);
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    if (owned) {
+                      setSelectedPartnership(p);
+                      setActiveTab('overview');
+                      setView('manage');
+                      window.location.hash = `p=${p.id}`;
+                    } else {
+                      setBrowsePartnership(p);
+                    }
+                  }}
+                  className="text-left p-4 border border-gray-200 rounded-2xl hover:border-gray-400 hover:shadow-sm transition-all bg-white group"
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <div
+                      className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100"
+                      style={{ backgroundColor: p.logoUrl ? undefined : (p.color || '#3B82F6') }}
+                    >
+                      {p.logoUrl
+                        ? <img src={p.logoUrl} alt={p.name} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-white opacity-70" />
+                          </div>
                       }
-                    }}
-                    className="text-left p-4 border border-gray-200 rounded-2xl hover:border-gray-400 hover:shadow-sm transition-all bg-white group"
-                  >
-                    {/* Logo + name row */}
-                    <div className="flex items-start gap-3 mb-3">
-                      <div
-                        className="w-12 h-12 rounded-xl flex-shrink-0 overflow-hidden border border-gray-100"
-                        style={{ backgroundColor: p.logoUrl ? undefined : (p.color || '#3B82F6') }}
-                      >
-                        {p.logoUrl
-                          ? <img src={p.logoUrl} alt={p.name} className="w-full h-full object-cover" />
-                          : <div className="w-full h-full flex items-center justify-center">
-                              <Building2 className="w-5 h-5 text-white opacity-70" />
-                            </div>
-                        }
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate leading-tight">{p.name}</p>
-                        <Badge className={`text-xs mt-1 ${ORG_TYPE_COLORS[p.orgType]}`}>
-                          {ORG_TYPE_LABELS[p.orgType]}
-                        </Badge>
-                      </div>
                     </div>
-
-                    {p.description && (
-                      <p className="text-xs text-gray-500 line-clamp-2 mb-3">{p.description}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 truncate leading-tight">{p.name}</p>
+                      <Badge className={`text-xs mt-1 ${ORG_TYPE_COLORS[p.orgType]}`}>
+                        {ORG_TYPE_LABELS[p.orgType]}
+                      </Badge>
+                    </div>
+                  </div>
+                  {p.description && (
+                    <p className="text-xs text-gray-500 line-clamp-2 mb-3">{p.description}</p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">{p.affiliatedClubIds?.length || 0} clubs affiliated</span>
+                    {owned ? (
+                      <Badge className="bg-gray-900 text-white text-xs">Manage</Badge>
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
                     )}
+                  </div>
+                </button>
+              );
+            };
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">{p.affiliatedClubIds?.length || 0} clubs affiliated</span>
-                      {owned ? (
-                        <Badge className="bg-gray-900 text-white text-xs">Manage</Badge>
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
-                      )}
+            return (
+              <div className="space-y-8">
+                {myFiltered.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Your Partnerships</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {myFiltered.map(renderCard)}
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                  </div>
+                )}
+                {othersFiltered.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">All Partnerships</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {othersFiltered.map(renderCard)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
