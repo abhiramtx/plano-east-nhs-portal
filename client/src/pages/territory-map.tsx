@@ -478,7 +478,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                     style={{
                       width: 28,
                       height: 28,
-                      backgroundColor: partner?.color || '#f59e0b',
+                      backgroundColor: '#f59e0b',
                       border: '3px solid white',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
                     }}
