@@ -602,15 +602,59 @@ export const archiveSubmission = async (submission: HoursSubmission, clubName: s
 };
 
 export const getAllArchivedSubmissions = async (clubId: string): Promise<(HoursSubmission & { clubName?: string; archivePeriod?: string; archivedAt?: Date })[]> => {
-  const q = query(collection(db, "submissionArchive"), where("clubId", "==", clubId));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    submittedAt: doc.data().submittedAt ? toDate(doc.data().submittedAt) : new Date(),
-    reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
-    archivedAt: doc.data().archivedAt ? toDate(doc.data().archivedAt) : undefined,
+  // Read from new per-submission collection
+  const newQ = query(collection(db, "submissionArchive"), where("clubId", "==", clubId));
+  const newSnap = await getDocs(newQ);
+  const newResults = newSnap.docs.map(d => ({
+    id: d.id,
+    ...d.data(),
+    submittedAt: d.data().submittedAt ? toDate(d.data().submittedAt) : new Date(),
+    reviewedAt: d.data().reviewedAt ? toDate(d.data().reviewedAt) : undefined,
+    archivedAt: d.data().archivedAt ? toDate(d.data().archivedAt) : undefined,
   })) as (HoursSubmission & { clubName?: string; archivePeriod?: string; archivedAt?: Date })[];
+
+  // Also read from legacy yearlyArchives snapshots (each doc has a `submissions` array)
+  const legacySnap = await getDocs(collection(db, "yearlyArchives"));
+  const legacyResults: (HoursSubmission & { clubName?: string; archivePeriod?: string; archivedAt?: Date })[] = [];
+  for (const archiveDoc of legacySnap.docs) {
+    const data = archiveDoc.data();
+    const period = data.schoolYear || archiveDoc.id;
+    const archivedAt = data.archivedAt ? toDate(data.archivedAt) : undefined;
+    const subs: any[] = data.submissions || [];
+    for (const s of subs) {
+      if (s.clubId === clubId || !s.clubId) {
+        legacyResults.push({
+          ...s,
+          id: `${archiveDoc.id}_${s.id || s.userEmail}`,
+          archivePeriod: period,
+          archivedAt,
+          submittedAt: s.submittedAt ? toDate(s.submittedAt) : new Date(),
+          reviewedAt: s.reviewedAt ? toDate(s.reviewedAt) : undefined,
+        });
+      }
+    }
+  }
+
+  // Merge — deduplicate by a stable key to avoid showing same submission twice
+  const seen = new Set(newResults.map(r => `${r.userEmail}_${r.submittedAt?.getTime?.()}_${r.archivePeriod}`));
+  const deduped = legacyResults.filter(r => {
+    const key = `${r.userEmail}_${r.submittedAt?.getTime?.()}_${r.archivePeriod}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return [...newResults, ...deduped];
+};
+
+export const getYearlyArchivePeriods = async (): Promise<{ id: string; schoolYear: string; archivedAt?: Date; submissionCount: number }[]> => {
+  const snap = await getDocs(collection(db, "yearlyArchives"));
+  return snap.docs.map(d => ({
+    id: d.id,
+    schoolYear: d.data().schoolYear || d.id,
+    archivedAt: d.data().archivedAt ? toDate(d.data().archivedAt) : undefined,
+    submissionCount: (d.data().submissions || []).length,
+  }));
 };
 
 // ============ SERVICE REQUESTS ============

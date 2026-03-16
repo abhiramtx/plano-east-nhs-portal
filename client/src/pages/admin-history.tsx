@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { 
   getAllArchivedSubmissions,
+  getYearlyArchivePeriods,
   getCurrentUser,
   Club,
   HoursSubmission 
@@ -16,7 +16,9 @@ import {
   Clock,
   User,
   Search,
-  Download
+  Archive,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface AdminHistoryProps {
@@ -27,7 +29,7 @@ interface AdminHistoryProps {
 
 export function AdminHistory({ user, club, isVolunteerView = false }: AdminHistoryProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const { toast } = useToast();
+  const [expandedPeriod, setExpandedPeriod] = useState<string | null>(null);
   const authUser = getCurrentUser();
 
   const { data: archivedData = [], isLoading } = useQuery({
@@ -37,20 +39,38 @@ export function AdminHistory({ user, club, isVolunteerView = false }: AdminHisto
     gcTime: 0,
   });
 
+  const { data: archivePeriods = [] } = useQuery({
+    queryKey: ['firebase-archive-periods'],
+    queryFn: () => getYearlyArchivePeriods(),
+    staleTime: 0,
+    gcTime: 0,
+    enabled: !isVolunteerView,
+  });
+
   // Filter to current user's submissions if on volunteer view
   const filteredData = archivedData.filter(item => {
     if (isVolunteerView) {
-      // Volunteer only sees their own history - no search by other users
       return item.userEmail === authUser?.email;
     }
-    
-    // Admin can search by name, email, or archive period
     const matchesSearch = 
       item.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.archivePeriod?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
+
+  // Group submissions by archive period
+  const byPeriod = filteredData.reduce<Record<string, typeof filteredData>>((acc, s) => {
+    const p = s.archivePeriod || 'Unknown';
+    if (!acc[p]) acc[p] = [];
+    acc[p].push(s);
+    return acc;
+  }, {});
+
+  // All period names (union of archive periods from Firestore + submissions)
+  const allPeriodNames = !isVolunteerView
+    ? [...new Set([...archivePeriods.map(p => p.schoolYear), ...Object.keys(byPeriod)])]
+    : Object.keys(byPeriod);
 
   return (
     <div className="flex-1 flex flex-col bg-white min-h-0">
@@ -63,7 +83,7 @@ export function AdminHistory({ user, club, isVolunteerView = false }: AdminHisto
               </h1>
               <p className="text-gray-600 mt-1">
                 {isVolunteerView 
-                  ? 'View your past submissions when data gets reset'
+                  ? 'Your personal submissions from past archived periods'
                   : `View archived submission history for ${club.name}`}
               </p>
             </div>
@@ -90,84 +110,147 @@ export function AdminHistory({ user, club, isVolunteerView = false }: AdminHisto
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400"></div>
           </div>
-        ) : filteredData.length === 0 ? (
-          <Card className="bg-white border-gray-200">
-            <CardContent className="p-6 text-center">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No archived data found</p>
-              <p className="text-sm text-gray-500 mt-1">
-                {isVolunteerView
-                  ? "Your historical data will appear here when submissions are archived"
-                  : "Historical data will appear here when submissions are archived"}
-              </p>
-            </CardContent>
-          </Card>
+        ) : isVolunteerView ? (
+          /* ── Volunteer view: flat list of own submissions ── */
+          filteredData.length === 0 ? (
+            <Card className="bg-white border-gray-200">
+              <CardContent className="p-8 text-center">
+                <Archive className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="font-medium text-gray-700">No personal history found</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Your archived submissions will appear here after an admin archives a school year
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {filteredData.map(s => (
+                <SubmissionCard key={s.id} submission={s} />
+              ))}
+            </div>
+          )
         ) : (
-          <div className="grid gap-4">
-            {filteredData.map((submission) => (
-              <Card key={submission.id} className="bg-white border-gray-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
-                          <User className="w-4 h-4 text-gray-600" />
+          /* ── Admin view: grouped by archive period ── */
+          allPeriodNames.length === 0 ? (
+            <Card className="bg-white border-gray-200">
+              <CardContent className="p-8 text-center">
+                <Archive className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="font-medium text-gray-700">No archives yet</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Use Database Management to archive a school year. Archived submissions will appear here grouped by period.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {allPeriodNames.map(period => {
+                const submissions = byPeriod[period] || [];
+                const meta = archivePeriods.find(p => p.schoolYear === period);
+                const isExpanded = expandedPeriod === period;
+                return (
+                  <Card key={period} className="bg-white border-gray-200 overflow-hidden">
+                    <button
+                      className="w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                      onClick={() => setExpandedPeriod(isExpanded ? null : period)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-9 h-9 bg-gray-100 rounded-lg">
+                          <Archive className="w-4 h-4 text-gray-600" />
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{submission.userName || submission.userEmail}</p>
-                          <p className="text-sm text-gray-500">{submission.userEmail}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                        <div className="grid grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase">Activity</p>
-                            <p className="text-sm text-gray-900 font-medium">{submission.activityName || submission.description}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase">Hours</p>
-                            <p className="text-sm text-gray-900 font-medium">{submission.hours}h</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase">Date</p>
-                            <p className="text-sm text-gray-900">{new Date(submission.date).toLocaleDateString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase">Archive Period</p>
-                            <p className="text-sm text-gray-900">{submission.archivePeriod}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {submission.rejectReason && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
-                          <p className="text-xs font-medium text-red-700 uppercase mb-1">Rejection Reason</p>
-                          <p className="text-sm text-red-600">{submission.rejectReason}</p>
-                        </div>
-                      )}
-
-                      <div className="flex items-center space-x-4">
-                        <Badge variant={submission.status === 'approved' ? 'default' : submission.status === 'rejected' ? 'destructive' : 'secondary'}>
-                          {submission.status}
-                        </Badge>
-                        {submission.reviewedBy && (
+                        <div className="text-left">
+                          <p className="font-semibold text-gray-900">{period}</p>
                           <p className="text-xs text-gray-500">
-                            Reviewed by {submission.reviewedBy}
-                            {submission.reviewedAt && ` on ${new Date(submission.reviewedAt).toLocaleDateString()}`}
+                            {submissions.length} submission{submissions.length !== 1 ? 's' : ''}
+                            {meta?.archivedAt && ` · Archived ${meta.archivedAt.toLocaleDateString()}`}
                           </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">{submissions.length} records</Badge>
+                        {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                      </div>
+                    </button>
+                    {isExpanded && (
+                      <div className="border-t border-gray-100 px-6 py-4 space-y-3 bg-gray-50">
+                        {submissions.length === 0 ? (
+                          <p className="text-sm text-gray-500 py-4 text-center">
+                            No submissions were in the database when this archive was created.
+                          </p>
+                        ) : (
+                          submissions.map(s => <SubmissionCard key={s.id} submission={s} compact />)
                         )}
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          )
         )}
       </div>
     </div>
+  );
+}
+
+function SubmissionCard({ submission, compact = false }: { submission: HoursSubmission & { archivePeriod?: string; archivedAt?: Date }; compact?: boolean }) {
+  return (
+    <Card className="bg-white border-gray-200">
+      <CardContent className={compact ? "p-4" : "p-6"}>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full flex-shrink-0">
+                <User className="w-4 h-4 text-gray-600" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900 text-sm">{submission.userName || submission.userEmail}</p>
+                <p className="text-xs text-gray-500">{submission.userEmail}</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-3 mb-3 grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase">Activity</p>
+                <p className="text-sm text-gray-900">{(submission as any).activityName || submission.description}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase">Hours</p>
+                <p className="text-sm text-gray-900 font-medium">{submission.hours}h</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase">Date</p>
+                <p className="text-sm text-gray-900">{new Date(submission.date).toLocaleDateString()}</p>
+              </div>
+              {submission.archivePeriod && !compact && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 uppercase">Archive Period</p>
+                  <p className="text-sm text-gray-900">{submission.archivePeriod}</p>
+                </div>
+              )}
+            </div>
+
+            {(submission as any).rejectReason && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                <p className="text-xs font-medium text-red-700 uppercase mb-1">Rejection Reason</p>
+                <p className="text-sm text-red-600">{(submission as any).rejectReason}</p>
+              </div>
+            )}
+
+            <div className="flex items-center space-x-3">
+              <Badge variant={submission.status === 'approved' ? 'default' : submission.status === 'rejected' ? 'destructive' : 'secondary'}>
+                {submission.status}
+              </Badge>
+              {(submission as any).reviewedBy && (
+                <p className="text-xs text-gray-500">
+                  Reviewed by {(submission as any).reviewedBy}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
