@@ -414,6 +414,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                   top: dropdownPos.top,
                   left: dropdownPos.left,
                   width: dropdownPos.width,
+                  pointerEvents: 'auto',
                 }}
                 className="bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto"
               >
