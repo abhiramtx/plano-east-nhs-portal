@@ -17,7 +17,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe, Link2, Copy, Map } from "lucide-react";
+import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe, Link2, Copy, Map as MapIcon } from "lucide-react";
 import MapGlComponent, { NavigationControl, MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -273,7 +273,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
             Leaderboard
           </TabsTrigger>
           <TabsTrigger value="map" className="data-[state=active]:bg-white data-[state=active]:text-gray-900 text-gray-600">
-            <Map className="w-4 h-4 mr-2" />
+            <MapIcon className="w-4 h-4 mr-2" />
             Map
           </TabsTrigger>
           {isAdmin && (
