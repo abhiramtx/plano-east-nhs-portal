@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, MapPin, Loader2, Calendar, Building2 } from "lucide-react";
+import { Upload, X, MapPin, Loader2, Calendar, Building2, Search } from "lucide-react";
 
 const compressImage = (file: File): Promise<File> => {
   return new Promise((resolve) => {
