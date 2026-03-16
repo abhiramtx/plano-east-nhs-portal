@@ -140,7 +140,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   // Create event form
   const [newEventName, setNewEventName] = useState('');
   const [newEventDesc, setNewEventDesc] = useState('');
-  const [newEventType, setNewEventType] = useState<'none' | 'password'>('none');
+  const [newEventType, setNewEventType] = useState<ClubEvent['type']>('none');
   const [newEventPassword, setNewEventPassword] = useState('');
 
   // Selected partnership event management
@@ -561,11 +561,13 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                         </div>
                         <div className="space-y-1">
                           <Label>Check-in Method</Label>
-                          <Select value={newEventType} onValueChange={(v) => setNewEventType(v as 'none' | 'password')}>
+                          <Select value={newEventType} onValueChange={(v) => setNewEventType(v as ClubEvent['type'])}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[200]">
                               <SelectItem value="none">Open — No check-in required</SelectItem>
                               <SelectItem value="password">Password — Volunteers enter a password</SelectItem>
+                              <SelectItem value="scan_qr">Scan QR — You scan volunteers' QR codes</SelectItem>
+                              <SelectItem value="show_qr">Show QR — Volunteers scan your QR codes</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -595,8 +597,6 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                   )}
                   {partnershipEvents.map(event => {
                     const isSelected = selectedPartnershipEvent?.id === event.id;
-                    const typeLabel = event.type === 'none' ? 'Open' : event.type === 'password' ? 'Password' : event.type;
-                    const typeColor = event.type === 'none' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
                     return (
                       <button
                         key={event.id}
@@ -608,9 +608,10 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                             <p className="font-medium text-gray-900 text-sm truncate">{event.name}</p>
                             {event.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{event.description}</p>}
                           </div>
-                          <Badge className={`text-xs flex-shrink-0 ${typeColor}`}>{typeLabel}</Badge>
+                          <Badge className={`text-xs flex-shrink-0 ${EVENT_TYPE_COLORS[event.type] || 'bg-gray-100 text-gray-600'}`}>
+                            {EVENT_TYPE_LABELS[event.type] || event.type}
+                          </Badge>
                         </div>
-                        {isSelected && <ChevronRight className="w-4 h-4 text-gray-400 mt-1" />}
                       </button>
                     );
                   })}
