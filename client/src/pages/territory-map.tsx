@@ -514,8 +514,12 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             <span className="text-xs text-gray-700">Club HQ</span>
           </div>
           <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
-            <MapPin className="w-3 h-3 text-gray-700" fill="#374151" />
-            <span className="text-xs text-gray-700">Service Requests</span>
+            <Building2 className="w-3 h-3 text-gray-700" />
+            <span className="text-xs text-gray-700">Partnership HQ</span>
+          </div>
+          <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
+            <Flag className="w-3 h-3 text-gray-700" />
+            <span className="text-xs text-gray-700">Partnership Event</span>
           </div>
         </div>
       </div>
