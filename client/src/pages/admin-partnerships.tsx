@@ -458,6 +458,21 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     refetchInterval: 5000,
   });
 
+  // Pre-fill override hours from submitted hours for password events
+  useEffect(() => {
+    if (selectedPartnershipEvent?.type !== 'password') return;
+    if (attendance.length === 0) return;
+    setOverrideHours(prev => {
+      const fills: Record<string, string> = {};
+      for (const a of attendance) {
+        if (a.minutesAttended != null && !prev[a.id]) {
+          fills[a.id] = String(a.minutesAttended / 60);
+        }
+      }
+      return Object.keys(fills).length > 0 ? { ...fills, ...prev } : prev;
+    });
+  }, [attendance, selectedPartnershipEvent?.type]);
+
   const handleCheckInScan = async (text: string) => {
     try {
       const email = text.trim();
@@ -493,7 +508,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
         }
       }
 
-      const useConditionals = isQRType && editConditionals.length > 0;
+      const isPasswordType = selectedPartnershipEvent?.type === 'password';
+      const useConditionals = (isQRType || isPasswordType) && editConditionals.length > 0;
       const defHours = defaultHours ? parseFloat(defaultHours) : null;
 
       await grantEventHours(
@@ -1212,14 +1228,55 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                     {/* GRANT HOURS TAB */}
                     {activePartnershipEventTab === 'grant' && (() => {
                       const isQRType = ['scan_qr', 'show_qr'].includes(selectedPartnershipEvent.type);
+                      const isPasswordType = selectedPartnershipEvent.type === 'password';
+                      const conditionalsActive = (isQRType || isPasswordType) && editConditionals.length > 0;
                       return (
                         <div className="space-y-5">
+                          {/* Conditionals card — password events only (in Grant Hours tab) */}
+                          {isPasswordType && (
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-base">Hour Conditionals</CardTitle>
+                                <CardDescription>
+                                  Grant different hours based on what the volunteer submitted. Checked in order — first match wins.
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent className="space-y-3">
+                                {editConditionals.length === 0 && (
+                                  <p className="text-sm text-gray-500 italic">No conditionals. Add one below, or leave empty to set hours manually.</p>
+                                )}
+                                {editConditionals.map((cond, idx) => (
+                                  <div key={cond.id} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                                    <span className="text-xs text-gray-500 w-4">{idx + 1}.</span>
+                                    <span className="text-sm text-gray-700">If submitted</span>
+                                    <Select value={cond.type} onValueChange={(v) => updateConditional(cond.id, 'type', v)}>
+                                      <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+                                      <SelectContent className="z-[200]">
+                                        <SelectItem value="less">less than</SelectItem>
+                                        <SelectItem value="exact">exactly</SelectItem>
+                                        <SelectItem value="more">at least</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <Input type="number" step="0.5" min="0" value={cond.thresholdHours} onChange={e => updateConditional(cond.id, 'thresholdHours', parseFloat(e.target.value) || 0)} className="w-20 h-8 text-xs" />
+                                    <span className="text-sm text-gray-700">hours → grant</span>
+                                    <Input type="number" step="0.5" min="0" value={cond.grantHours} onChange={e => updateConditional(cond.id, 'grantHours', parseFloat(e.target.value) || 0)} className="w-20 h-8 text-xs" />
+                                    <span className="text-sm text-gray-700">hrs</span>
+                                    <button onClick={() => removeConditional(cond.id)} className="ml-auto text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
+                                  </div>
+                                ))}
+                                <Button variant="outline" size="sm" onClick={addConditional} className="w-full">
+                                  <Plus className="w-4 h-4 mr-1" /> Add Conditional
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          )}
+
                           <Card>
                             <CardHeader>
                               <CardTitle className="text-base">Grant Hours to Attendees</CardTitle>
                               <CardDescription>
-                                {isQRType && editConditionals.length > 0
-                                  ? "Conditionals are active. Hours will be auto-calculated based on time stayed. You can override individual amounts below."
+                                {conditionalsActive
+                                  ? "Conditionals are active. Hours will be auto-calculated based on submitted amounts. You can override individual amounts below."
                                   : "Set a default hours amount for all selected attendees, or set custom amounts per person."
                                 }
                               </CardDescription>
@@ -1247,7 +1304,7 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                                       <RefreshCw className="w-4 h-4 mr-1" /> Refresh
                                     </Button>
                                   </div>
-                                  {(!isQRType || editConditionals.length === 0) && (
+                                  {!conditionalsActive && (
                                     <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
                                       <Label className="text-sm whitespace-nowrap">Default hours for all:</Label>
                                       <Input type="number" step="0.5" min="0" value={defaultHours} onChange={e => setDefaultHours(e.target.value)} placeholder="e.g. 2.5" className="w-28 h-8" />
@@ -1256,7 +1313,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                                   )}
                                   <div className="space-y-2 max-h-96 overflow-auto">
                                     {attendance.map(a => {
-                                      const conditionalHours = computeConditionalHours(a.minutesAttended);
+                                      const effectiveMinutes = isPasswordType ? a.minutesAttended : a.minutesAttended;
+                                      const conditionalHours = conditionalsActive ? computeConditionalHours(effectiveMinutes) : null;
                                       const isSelected = selectedAttendees.includes(a.id);
                                       return (
                                         <div key={a.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isSelected ? 'bg-gray-50 border-gray-300' : 'bg-white border-gray-200'}`}>
@@ -1266,9 +1324,12 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                                             <p className="text-xs text-gray-500 truncate">{a.userEmail}</p>
                                           </div>
                                           <div className="text-xs text-gray-500 space-y-0.5 text-right flex-shrink-0">
-                                            {a.checkInTime && <div>In: {formatTime(a.checkInTime)}</div>}
-                                            {a.checkOutTime && <div>Out: {formatTime(a.checkOutTime)}</div>}
-                                            {a.minutesAttended != null && <div className="text-blue-600 font-medium">{formatMinutes(a.minutesAttended)}</div>}
+                                            {isPasswordType && a.minutesAttended != null && (
+                                              <div className="text-gray-700 font-medium">Submitted: {a.minutesAttended / 60}h</div>
+                                            )}
+                                            {!isPasswordType && a.checkInTime && <div>In: {formatTime(a.checkInTime)}</div>}
+                                            {!isPasswordType && a.checkOutTime && <div>Out: {formatTime(a.checkOutTime)}</div>}
+                                            {!isPasswordType && a.minutesAttended != null && <div className="text-blue-600 font-medium">{formatMinutes(a.minutesAttended)}</div>}
                                           </div>
                                           {conditionalHours != null && (
                                             <Badge className="bg-blue-100 text-blue-700 text-xs">{conditionalHours}h (auto)</Badge>

@@ -1571,13 +1571,22 @@ export const getEventAttendance = async (eventId: string): Promise<EventAttendan
   return snap.docs.map(toAttendance);
 };
 
-export const checkInUser = async (eventId: string, eventName: string, userEmail: string, userName: string, clubId?: string, partnershipId?: string): Promise<EventAttendance> => {
+export const checkInUser = async (eventId: string, eventName: string, userEmail: string, userName: string, clubId?: string, partnershipId?: string, submittedHours?: number): Promise<EventAttendance> => {
   const now = new Date();
   // Check if already checked in
   const existing = await getEventAttendance(eventId);
   const existingRecord = existing.find(a => a.userEmail === userEmail);
-  if (existingRecord) return existingRecord;
-  const docRef = await addDoc(collection(db, "eventAttendance"), {
+  if (existingRecord) {
+    // Update minutesAttended if new hours submitted
+    if (submittedHours != null) {
+      await updateDoc(doc(db, "eventAttendance", existingRecord.id), {
+        minutesAttended: Math.round(submittedHours * 60),
+      });
+    }
+    return existingRecord;
+  }
+  const minutesAttended = submittedHours != null ? Math.round(submittedHours * 60) : undefined;
+  const docData: any = {
     eventId,
     eventName,
     userEmail,
@@ -1587,8 +1596,10 @@ export const checkInUser = async (eventId: string, eventName: string, userEmail:
     checkInTime: Timestamp.fromDate(now),
     grantStatus: 'pending',
     createdAt: Timestamp.fromDate(now),
-  });
-  return { id: docRef.id, eventId, eventName, userEmail, userName, clubId, partnershipId, checkInTime: now, grantStatus: 'pending', createdAt: now };
+  };
+  if (minutesAttended != null) docData.minutesAttended = minutesAttended;
+  const docRef = await addDoc(collection(db, "eventAttendance"), docData);
+  return { id: docRef.id, eventId, eventName, userEmail, userName, clubId, partnershipId, checkInTime: now, grantStatus: 'pending', createdAt: now, minutesAttended };
 };
 
 export const checkOutUser = async (attendanceId: string): Promise<void> => {

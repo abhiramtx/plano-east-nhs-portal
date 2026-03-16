@@ -237,6 +237,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
               user?.name || '',
               source === 'club' ? (clubId || undefined) : undefined,
               source === 'partnership' ? selectedPartnershipId || undefined : undefined,
+              parseFloat(data.hours),
             );
           } catch {}
         }
