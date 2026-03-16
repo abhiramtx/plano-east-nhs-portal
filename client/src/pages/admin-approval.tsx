@@ -11,6 +11,7 @@ import {
   getAdminAssignmentForClub, 
   getPendingSubmissionsForUserInClub, 
   updateSubmission,
+  recalculateClubHours,
   getUserProfile,
   getAdminSettings,
   AdminSettings,
@@ -77,6 +78,15 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Sync club hours on load to fix any stale totalApprovedHours
+  useEffect(() => {
+    if (club?.id) {
+      recalculateClubHours(club.id).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      }).catch(() => {});
+    }
+  }, [club?.id]);
+
   const toggleLogId = (logId: string) => {
     setSelectedLogIds(prev =>
       prev.includes(logId) ? prev.filter(id => id !== logId) : [...prev, logId]
@@ -125,6 +135,8 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
       const currentRejections = submission?.rejections || [];
       const currentRejectionReasons = submission?.rejectionReasons || {};
 
+      let finalStatus: string | null = null;
+
       if (status === 'approved') {
         const newApprovals = currentApprovals.includes(user.email) 
           ? currentApprovals 
@@ -137,6 +149,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
             reviewedAt: new Date(),
             reviewedBy: user.email
           } as any);
+          finalStatus = 'approved';
         } else {
           await updateSubmission(id, { 
             approvals: newApprovals,
@@ -158,6 +171,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
             reviewedAt: new Date(),
             reviewedBy: user.email
           } as any);
+          finalStatus = 'rejected';
         } else {
           await updateSubmission(id, { 
             rejections: newRejections,
@@ -170,11 +184,21 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
           reviewedAt: new Date(),
           reviewedBy: user.email
         });
+        finalStatus = status;
+      }
+
+      // Recalculate club totalApprovedHours whenever a submission is finalized
+      if (finalStatus === 'approved' || finalStatus === 'rejected') {
+        const submission = studentSubmissions.find((s: HoursSubmission) => s.id === id);
+        if (submission?.clubId) {
+          await recalculateClubHours(submission.clubId);
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['firebase-pending-submissions'] });
       queryClient.invalidateQueries({ queryKey: ['firebase-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
       setRejectingSubmission(null);
       setRejectReason("");
       toast({

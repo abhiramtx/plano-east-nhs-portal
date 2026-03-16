@@ -324,6 +324,20 @@ export const updateClub = async (clubId: string, updates: Partial<Club>): Promis
   });
 };
 
+export const recalculateClubHours = async (clubId: string): Promise<void> => {
+  const q = query(
+    collection(db, "submissions"),
+    where("clubId", "==", clubId),
+    where("status", "==", "approved")
+  );
+  const snap = await getDocs(q);
+  const total = snap.docs.reduce((sum, d) => sum + (d.data().hours || 0), 0);
+  await updateDoc(doc(db, "clubs", clubId), {
+    totalApprovedHours: total,
+    updatedAt: Timestamp.fromDate(new Date()),
+  });
+};
+
 export const deleteClub = async (clubId: string): Promise<void> => {
   await deleteDoc(doc(db, "clubs", clubId));
 };
@@ -1251,8 +1265,13 @@ export const getPartnershipEvents = async (partnershipId: string): Promise<ClubE
 
 export const createEvent = async (data: Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClubEvent> => {
   const now = new Date();
+  // Strip undefined values — Firestore rejects them
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (v !== undefined) clean[k] = v;
+  }
   const docRef = await addDoc(collection(db, "events"), {
-    ...data,
+    ...clean,
     createdAt: Timestamp.fromDate(now),
     updatedAt: Timestamp.fromDate(now),
   });

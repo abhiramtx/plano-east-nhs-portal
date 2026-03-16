@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   User, Club, Partnership, PartnershipAffiliation,
   AdminSettings as AdminSettingsType,
-  getAdminSettings, updateAdminSettings, updateClub,
+  getAdminSettings, updateAdminSettings, updateClub, recalculateClubHours,
   getClubAffiliations, respondToAffiliation
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -90,6 +90,17 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
     },
     onError: (error: any) => {
       toast({ title: "Failed to update club", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const syncHoursMutation = useMutation({
+    mutationFn: () => recalculateClubHours(club.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      toast({ title: "Hours synced", description: "Club total approved hours recalculated from submissions." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Sync failed", description: error.message, variant: "destructive" });
     }
   });
 
@@ -306,13 +317,24 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                   </div>
                   <p className="text-xs text-gray-500">Used for your territory circles on the world map</p>
                 </div>
-                <Button
-                  onClick={() => updateClubMutation.mutate({ name: clubName, description: clubDescription, color: clubColor, logoUrl: clubLogoUrl || undefined })}
-                  disabled={updateClubMutation.isPending}
-                  className="w-full bg-black hover:bg-gray-800 text-white"
-                >
-                  <Save className="w-4 h-4 mr-2" />Save Club Info
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => updateClubMutation.mutate({ name: clubName, description: clubDescription, color: clubColor, logoUrl: clubLogoUrl || undefined })}
+                    disabled={updateClubMutation.isPending}
+                    className="flex-1 bg-black hover:bg-gray-800 text-white"
+                  >
+                    <Save className="w-4 h-4 mr-2" />Save Club Info
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => syncHoursMutation.mutate()}
+                    disabled={syncHoursMutation.isPending}
+                    title="Recalculate total approved hours from all submissions"
+                    className="border-gray-200 text-gray-600 hover:bg-gray-50"
+                  >
+                    {syncHoursMutation.isPending ? "Syncing..." : "Sync Hours"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 

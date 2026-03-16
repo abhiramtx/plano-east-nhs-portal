@@ -486,7 +486,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       </div>
 
       {activeSection === 'partnerships' && (
-        <div className="w-full">
+        <div className="w-full flex flex-col" style={{ minHeight: 'calc(100vh - 180px)' }}>
           <AdminPartnerships user={user} club={currentClub} hideHeader />
         </div>
       )}
