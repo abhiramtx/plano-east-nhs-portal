@@ -392,6 +392,15 @@ function App() {
     );
   }
 
+  // Let the join page render immediately — it manages its own auth state
+  if (window.location.pathname.startsWith('/join/')) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ClubJoin />
+      </QueryClientProvider>
+    );
+  }
+
   if (initializing || (user && !clubChecked)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

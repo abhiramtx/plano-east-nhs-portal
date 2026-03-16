@@ -395,7 +395,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="relative overflow-hidden rounded-b-lg" style={{ height: 480 }}>
+              <div className="relative overflow-hidden rounded-b-lg" style={{ height: 360 }}>
                 <MapGlComponent
                   ref={mapRef}
                   initialViewState={{ longitude: 0, latitude: 20, zoom: 1.5 }}
