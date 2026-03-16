@@ -277,19 +277,19 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
 
     return (
       <div className="fixed inset-0 z-[100] flex bg-white overflow-hidden">
-        {/* Black Sidebar */}
-        <div className="w-56 bg-gray-900 flex-shrink-0 flex flex-col">
+        {/* Sidebar */}
+        <div className="w-56 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col">
           {/* Back + branding */}
-          <div className="px-4 pt-5 pb-4 border-b border-gray-700">
+          <div className="px-4 pt-5 pb-4 border-b border-gray-200">
             <button
               onClick={() => { setView('list'); setSelectedPartnership(null); }}
-              className="text-xs text-gray-400 hover:text-gray-200 mb-4 flex items-center gap-1.5 transition-colors"
+              className="text-xs text-gray-500 hover:text-gray-900 mb-4 flex items-center gap-1.5 transition-colors"
             >
               ← Back
             </button>
             <div className="flex items-center gap-3">
               <div
-                className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden border border-gray-700"
+                className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden border border-gray-200"
                 style={{ backgroundColor: selectedPartnership.logoUrl ? undefined : (selectedPartnership.color || '#3B82F6') }}
               >
                 {selectedPartnership.logoUrl
@@ -298,8 +298,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                 }
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-white text-sm truncate leading-tight">{selectedPartnership.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{ORG_TYPE_LABELS[selectedPartnership.orgType]}</p>
+                <p className="font-medium text-gray-900 text-sm truncate leading-tight">{selectedPartnership.name}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{ORG_TYPE_LABELS[selectedPartnership.orgType]}</p>
               </div>
             </div>
           </div>
@@ -314,8 +314,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === item.id
-                      ? 'bg-white text-gray-900'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                      ? 'bg-gray-100 text-gray-900'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
                   <span className="flex items-center gap-3">
@@ -333,9 +333,9 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
           </nav>
 
           {/* Footer info */}
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-4 border-t border-gray-200">
             <p className="text-xs text-gray-500">Partnership Admin</p>
-            <p className="text-xs text-gray-600 truncate mt-0.5">{user.email}</p>
+            <p className="text-xs text-gray-400 truncate mt-0.5">{user.email}</p>
           </div>
         </div>
 
@@ -346,8 +346,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             {/* Overview Tab */}
             {activeTab === 'overview' && (
               <div className="space-y-7">
-                <div className="pb-4 border-b-2 border-gray-900">
-                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">{selectedPartnership.name}</h1>
+                <div className="pb-4 border-b border-gray-200">
+                  <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">{selectedPartnership.name}</h1>
                   <div className="flex items-center gap-3 mt-2">
                     <Badge className={ORG_TYPE_COLORS[selectedPartnership.orgType]}>{ORG_TYPE_LABELS[selectedPartnership.orgType]}</Badge>
                     {selectedPartnership.address && (
@@ -500,8 +500,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             {/* Events Tab */}
             {activeTab === 'events' && (
               <div className="space-y-6">
-                <div className="pb-4 border-b-2 border-gray-900">
-                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Events</h1>
+                <div className="pb-4 border-b border-gray-200">
+                  <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Events</h1>
                   <p className="text-gray-500 mt-1 text-sm">Create events volunteers can submit hours for.</p>
                 </div>
 
@@ -571,8 +571,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             {/* Volunteers Tab */}
             {activeTab === 'volunteers' && (
               <div className="space-y-6">
-                <div className="pb-4 border-b-2 border-gray-900">
-                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Volunteer Submissions</h1>
+                <div className="pb-4 border-b border-gray-200">
+                  <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Volunteer Submissions</h1>
                   <p className="text-gray-500 mt-1 text-sm">All hours submitted to this partnership.</p>
                 </div>
                 {(partnershipSubmissions as any[]).length === 0 ? (
@@ -608,8 +608,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             {/* Affiliations Tab */}
             {activeTab === 'affiliations' && (
               <div className="space-y-6">
-                <div className="pb-4 border-b-2 border-gray-900">
-                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Club Affiliations</h1>
+                <div className="pb-4 border-b border-gray-200">
+                  <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Club Affiliations</h1>
                   <p className="text-gray-500 mt-1 text-sm">Request clubs to affiliate. Club admins approve or reject.</p>
                 </div>
 
@@ -692,8 +692,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
             {/* Settings Tab */}
             {activeTab === 'settings' && (
               <div className="space-y-6">
-                <div className="pb-4 border-b-2 border-gray-900">
-                  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Settings</h1>
+                <div className="pb-4 border-b border-gray-200">
+                  <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Settings</h1>
                   <p className="text-gray-500 mt-1 text-sm">Manage your partnership details.</p>
                 </div>
 
