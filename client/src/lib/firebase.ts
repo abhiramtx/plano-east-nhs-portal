@@ -1898,3 +1898,25 @@ export const removeAffiliation = async (affiliationId: string, partnershipId: st
     });
   }
 };
+
+export const wipeAllData = async (): Promise<void> => {
+  const COLLECTIONS = [
+    "clubs", "partnerships", "partnershipAffiliations",
+    "events", "eventAttendance",
+    "submissions", "submissionArchive",
+    "memberships", "userProfiles",
+    "hoursLogs", "yearlyArchives",
+    "clubLeaveHistory", "serviceRequests", "serviceRequestParticipants",
+  ];
+  for (const name of COLLECTIONS) {
+    let done = false;
+    while (!done) {
+      const snap = await getDocs(query(collection(db, name), limit(400)));
+      if (snap.empty) { done = true; break; }
+      const batch = writeBatch(db);
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      if (snap.size < 400) done = true;
+    }
+  }
+};

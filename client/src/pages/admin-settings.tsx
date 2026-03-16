@@ -6,7 +6,7 @@ import {
   getAdminSettings, updateAdminSettings, updateClub, recalculateClubHours,
   getClubAffiliations, respondToAffiliation, removeAffiliation,
   getPartnershipEvents, getEventAttendance, getMemberships, grantPartnershipHoursAsPending,
-  generateInviteCode,
+  generateInviteCode, wipeAllData,
 } from "@/lib/firebase";
 import type { HoursLog } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -24,7 +24,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Save, Settings, Eye, Clock, MapPin, Palette, Lock, FileText, BookOpen,
   CheckCircle, Upload, Image, Check, X, Handshake, Calendar, ChevronDown,
-  ChevronRight, Users, Award, Globe, ScanLine, QrCode, Link2, Copy, RefreshCw
+  ChevronRight, Users, Award, Globe, ScanLine, QrCode, Link2, Copy, RefreshCw,
+  Trash2, AlertTriangle
 } from "lucide-react";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -348,7 +349,9 @@ interface AdminSettingsProps {
 
 export function AdminSettings({ user, club }: AdminSettingsProps) {
   const { toast } = useToast();
-  const [innerPage, setInnerPage] = useState<'club' | 'members' | 'logs' | 'approvals' | 'territory' | 'partnerships'>('club');
+  const [innerPage, setInnerPage] = useState<'club' | 'members' | 'logs' | 'approvals' | 'territory' | 'partnerships' | 'danger'>('club');
+  const [wipeConfirmText, setWipeConfirmText] = useState('');
+  const [wiping, setWiping] = useState(false);
 
   const [clubName, setClubName] = useState(club.name || '');
   const [clubDescription, setClubDescription] = useState(club.description || '');
@@ -520,7 +523,8 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
           </h3>
           <p className="text-xs text-gray-500 mt-1">Configure your club</p>
         </div>
-        <div className="flex-1 p-3 space-y-1 overflow-auto">
+        <div className="flex-1 p-3 space-y-1 overflow-auto flex flex-col">
+          <div className="space-y-1 flex-1">
           {([
             { id: 'club', icon: Palette, label: 'Club', desc: 'Name, color, location' },
             { id: 'members', icon: Eye, label: 'Members', desc: 'Profile fields, custom forms' },
@@ -543,6 +547,21 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
               </div>
             </button>
           ))}
+          </div>
+          <div className="pt-2 border-t border-gray-200">
+            <button
+              onClick={() => setInnerPage('danger')}
+              className={`w-full px-3 py-2.5 rounded-lg text-left transition-colors ${innerPage === 'danger' ? 'bg-red-50 text-red-700' : 'text-red-600 hover:bg-red-50'}`}
+            >
+              <div className="flex items-center gap-2">
+                <Trash2 className="w-4 h-4 flex-shrink-0" />
+                <div>
+                  <div className="text-sm font-medium leading-tight">Danger Zone</div>
+                  <div className="text-xs text-red-400 leading-tight">Wipe all data</div>
+                </div>
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -992,6 +1011,61 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                 ))
               )}
             </div>
+          </div>
+        )}
+
+        {innerPage === 'danger' && (
+          <div className="space-y-6">
+            <div className="border-b border-gray-200 pb-4">
+              <h2 className="text-xl font-semibold text-red-600 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Danger Zone
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">Irreversible actions. Proceed with extreme caution.</p>
+            </div>
+            <Card className="border-red-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <Trash2 className="w-5 h-5" />
+                  Wipe All Data
+                </CardTitle>
+                <CardDescription>
+                  Permanently deletes <strong>all clubs, partnerships, users, events, submissions, memberships, and logs</strong> from the database. This cannot be undone.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">
+                    Type <span className="font-mono font-bold">DELETE EVERYTHING</span> to confirm
+                  </Label>
+                  <Input
+                    className="mt-1 border-red-200 focus:border-red-400"
+                    placeholder="DELETE EVERYTHING"
+                    value={wipeConfirmText}
+                    onChange={e => setWipeConfirmText(e.target.value)}
+                  />
+                </div>
+                <Button
+                  variant="destructive"
+                  disabled={wipeConfirmText !== 'DELETE EVERYTHING' || wiping}
+                  onClick={async () => {
+                    setWiping(true);
+                    try {
+                      await wipeAllData();
+                      toast({ title: 'Done', description: 'All data has been wiped. Refresh the page.' });
+                      setWipeConfirmText('');
+                    } catch (err: any) {
+                      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                    } finally {
+                      setWiping(false);
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {wiping ? 'Wiping...' : 'Wipe All Data'}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
         </div>
