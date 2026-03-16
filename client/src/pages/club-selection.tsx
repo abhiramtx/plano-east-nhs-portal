@@ -427,8 +427,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                           <Button 
                             size="sm"
                             onClick={() => handleJoinClub(club)}
-                            disabled={joinClubMutation.isPending || club.id === currentClub?.id}
-                            className="bg-black text-white hover:bg-gray-800"
+                            disabled={joinClubMutation.isPending || !!currentClub}
+                            className="bg-black text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {club.id === currentClub?.id ? 'Current' : 'Join'}
                           </Button>
