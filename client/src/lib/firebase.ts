@@ -1072,15 +1072,35 @@ export const getPendingSubmissionsForUserInClub = async (userEmail: string, club
   })) as HoursSubmission[];
 };
 
-export const archiveYearData = async (schoolYear: string): Promise<void> => {
+export const archiveYearData = async (schoolYear: string, clubId?: string, clubName?: string): Promise<void> => {
   const now = new Date();
   const submissions = await getAllSubmissions();
   const profiles = await getAllUserProfiles();
-  
+
+  // Filter submissions to this club if provided
+  const clubSubmissions = clubId ? submissions.filter(s => s.clubId === clubId) : submissions;
+
+  // Write each submission as an individual record to submissionArchive (what the history page reads)
+  const archiveBatch = writeBatch(db);
+  for (const s of clubSubmissions) {
+    const archiveDocRef = doc(collection(db, "submissionArchive"));
+    const { id: _id, ...rest } = s as any;
+    archiveBatch.set(archiveDocRef, {
+      ...rest,
+      clubName: clubName || rest.clubName || '',
+      archivePeriod: schoolYear,
+      archivedAt: Timestamp.fromDate(now),
+      submittedAt: s.submittedAt instanceof Date ? Timestamp.fromDate(s.submittedAt) : s.submittedAt,
+      reviewedAt: s.reviewedAt instanceof Date ? Timestamp.fromDate(s.reviewedAt) : (s.reviewedAt ?? null),
+    });
+  }
+  await archiveBatch.commit();
+
+  // Also keep the yearlyArchives snapshot for admin reference
   const archiveRef = doc(db, "yearlyArchives", schoolYear);
   await setDoc(archiveRef, {
     schoolYear,
-    submissions: submissions.map(s => ({ ...s })),
+    submissions: clubSubmissions.map(s => ({ ...s })),
     profiles: profiles.map(p => ({ ...p })),
     archivedAt: Timestamp.fromDate(now),
   });

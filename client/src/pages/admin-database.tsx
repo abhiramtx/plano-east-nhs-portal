@@ -31,9 +31,10 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
 
   const archiveYearMutation = useMutation({
     mutationFn: async (year: string) => {
-      await archiveYearData(year);
+      await archiveYearData(year, club.id, club.name);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-archived-submissions'] });
       toast({ title: "Archived", description: "School year archived successfully." });
       setSchoolYear("");
     },
