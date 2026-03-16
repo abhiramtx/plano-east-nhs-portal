@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -395,7 +394,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
               className="pl-10 bg-white border-gray-200 text-gray-900"
             />
             {isSearchingLocation && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
-            {locationResults.length > 0 && locationInputRef.current && createPortal(
+            {locationResults.length > 0 && locationInputRef.current && (
               <div
                 style={{
                   position: 'fixed',
@@ -405,7 +404,6 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                   width: locationInputRef.current.getBoundingClientRect().width,
                 }}
                 className="bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto"
-                onPointerDownCapture={e => e.stopPropagation()}
               >
                 {locationResults.map((result, index) => (
                   <button
@@ -417,8 +415,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                     {result.display_name}
                   </button>
                 ))}
-              </div>,
-              document.body
+              </div>
             )}
           </div>
         )}
