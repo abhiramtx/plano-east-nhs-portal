@@ -57,6 +57,7 @@ export interface Club {
   inviteCode?: string;
   creatorEmail: string;
   totalApprovedHours: number;
+  yearlyApprovedHours: number;
   bonusHours: number;
   decayedHours: number;
   latitude?: number;
@@ -298,6 +299,7 @@ export const createClub = async (clubData: Omit<Club, 'id' | 'createdAt' | 'upda
   const docRef = await addDoc(collection(db, "clubs"), {
     ...clubData,
     totalApprovedHours: 0,
+    yearlyApprovedHours: 0,
     bonusHours: 0,
     decayedHours: 0,
     lastActivityAt: Timestamp.fromDate(now),
@@ -309,6 +311,7 @@ export const createClub = async (clubData: Omit<Club, 'id' | 'createdAt' | 'upda
     id: docRef.id,
     ...clubData,
     totalApprovedHours: 0,
+    yearlyApprovedHours: 0,
     bonusHours: 0,
     decayedHours: 0,
     lastActivityAt: now,
@@ -380,12 +383,23 @@ export const recalculateClubHours = async (clubId: string): Promise<void> => {
     return true;
   });
 
-  const total = allDocs
-    .filter(d => d.data().status === "approved")
+  const currentYear = new Date().getFullYear();
+  const approvedDocs = allDocs.filter(d => d.data().status === "approved");
+
+  const total = approvedDocs.reduce((sum, d) => sum + (d.data().hours || 0), 0);
+
+  const yearly = approvedDocs
+    .filter(d => {
+      const dateStr = d.data().date;
+      if (!dateStr) return false;
+      const year = new Date(dateStr).getFullYear();
+      return year === currentYear;
+    })
     .reduce((sum, d) => sum + (d.data().hours || 0), 0);
 
   await updateDoc(doc(db, "clubs", clubId), {
     totalApprovedHours: total,
+    yearlyApprovedHours: yearly,
     updatedAt: Timestamp.fromDate(new Date()),
   });
 };

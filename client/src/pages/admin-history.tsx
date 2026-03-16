@@ -298,57 +298,54 @@ function ArchiveDashboard({ submissions }: { submissions: ArchivedSub[] }) {
         </Card>
       </div>
 
-      {/* Chart + submission list */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="bg-white border-gray-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm text-gray-900">
-              <TrendingUp className="w-4 h-4 text-gray-500" />
-              Monthly Hours
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6B7280' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6B7280' }} domain={[0, 'dataMax + 1']} />
-                  <Tooltip
-                    content={({ active, payload, label }) =>
-                      active && payload?.length ? (
-                        <div className="bg-white p-2.5 border border-gray-200 rounded-lg shadow text-sm">
-                          <p className="font-medium text-gray-900">{label}</p>
-                          <p className="text-gray-600">{payload[0].value} hrs approved</p>
-                        </div>
-                      ) : null
-                    }
-                  />
-                  <Line type="monotone" dataKey="hours" stroke="#111827" strokeWidth={2.5}
-                    dot={{ fill: '#111827', r: 3 }} activeDot={{ r: 5 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Full-width chart */}
+      <Card className="bg-white border-gray-200">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm text-gray-900">
+            <TrendingUp className="w-4 h-4 text-gray-500" />
+            Monthly Hours
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6B7280' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6B7280' }} domain={[0, 'dataMax + 1']} />
+                <Tooltip
+                  content={({ active, payload, label }) =>
+                    active && payload?.length ? (
+                      <div className="bg-white p-2.5 border border-gray-200 rounded-lg shadow text-sm">
+                        <p className="font-medium text-gray-900">{label}</p>
+                        <p className="text-gray-600">{payload[0].value} hrs approved</p>
+                      </div>
+                    ) : null
+                  }
+                />
+                <Line type="monotone" dataKey="hours" stroke="#111827" strokeWidth={2.5}
+                  dot={{ fill: '#111827', r: 3 }} activeDot={{ r: 5 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="bg-white border-gray-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm text-gray-900">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              Submissions ({submissions.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-72 overflow-y-auto pr-1">
-              {submissions.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">No submissions in this period</p>
-              ) : (
-                submissions.map(s => <SubmissionRow key={s.id} s={s} />)
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Submission cards below */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-gray-500" />
+          Submissions ({submissions.length})
+        </h3>
+        {submissions.length === 0 ? (
+          <div className="text-center py-10 text-sm text-gray-400 bg-gray-50 rounded-xl border border-gray-100">
+            No submissions in this period
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {submissions.map(s => <SubmissionDetailCard key={s.id} s={s} />)}
+          </div>
+        )}
       </div>
     </div>
   );

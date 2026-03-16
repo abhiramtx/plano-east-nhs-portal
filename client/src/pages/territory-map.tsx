@@ -335,6 +335,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [leaderboardMode, setLeaderboardMode] = useState<'alltime' | 'yearly'>('alltime');
   const user = getCurrentUser();
   const userEmail = user?.email || '';
 
@@ -444,7 +445,17 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   };
 
   const currentClub = clubs.find(c => c.id === currentClubId);
-  const currentClubRank = leaderboardClubs.findIndex(c => c.id === currentClubId) + 1;
+
+  const sortedLeaderboard = useMemo(() => {
+    if (leaderboardMode === 'yearly') {
+      return [...leaderboardClubs].sort((a, b) =>
+        (b.yearlyApprovedHours || 0) - (a.yearlyApprovedHours || 0)
+      );
+    }
+    return leaderboardClubs;
+  }, [leaderboardClubs, leaderboardMode]);
+
+  const currentClubRank = sortedLeaderboard.findIndex(c => c.id === currentClubId) + 1;
 
   // Convert server circles to the TerritoryCircle format for grouping
   const territoryCircles: TerritoryCircle[] = serverCircles.map(sc => ({
@@ -674,13 +685,30 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
       </div>
 
       <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 space-y-3">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500" />
             Leaderboard
           </h2>
+
+          {/* Mode toggle */}
+          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs font-medium">
+            <button
+              className={`flex-1 py-1.5 transition-colors ${leaderboardMode === 'alltime' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+              onClick={() => setLeaderboardMode('alltime')}
+            >
+              All Time
+            </button>
+            <button
+              className={`flex-1 py-1.5 transition-colors border-l border-gray-200 ${leaderboardMode === 'yearly' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+              onClick={() => setLeaderboardMode('yearly')}
+            >
+              {new Date().getFullYear()}
+            </button>
+          </div>
+
           {currentClub && currentClubRank > 0 && (
-            <div className="mt-2 bg-gray-50 rounded-lg px-3 py-2">
+            <div className="bg-gray-50 rounded-lg px-3 py-2">
               <p className="text-xs text-gray-500">Your Club Rank</p>
               <p className="text-2xl font-bold text-gray-900">#{currentClubRank}</p>
             </div>
@@ -689,20 +717,20 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
         
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-2">
-            {leaderboardClubs.length === 0 ? (
+            {sortedLeaderboard.length === 0 ? (
               <p className="text-center text-gray-500 py-4">No clubs yet</p>
             ) : (
-              leaderboardClubs.slice(0, 50).map((club, index) => {
-                const totalHours = calculateTotalHours(club);
+              sortedLeaderboard.slice(0, 50).map((club, index) => {
+                const displayHours = leaderboardMode === 'yearly'
+                  ? (club.yearlyApprovedHours || 0)
+                  : calculateTotalHours(club);
                 const isCurrentClub = club.id === currentClubId;
                 return (
                   <button 
                     key={club.id}
                     onClick={() => flyToClub(club)}
                     className={`w-full flex items-center justify-between p-3 rounded-xl transition-all hover:bg-gray-50 ${
-                      isCurrentClub 
-                        ? 'bg-gray-100 ring-1 ring-gray-200' 
-                        : ''
+                      isCurrentClub ? 'bg-gray-100 ring-1 ring-gray-200' : ''
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -714,15 +742,12 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                       }`}>
                         {index + 1}
                       </span>
-                      <div 
-                        className="w-4 h-4 rounded-full ring-1 ring-gray-200"
-                        style={{ backgroundColor: club.color }}
-                      />
+                      <div className="w-4 h-4 rounded-full ring-1 ring-gray-200" style={{ backgroundColor: club.color }} />
                       <span className="font-medium text-gray-900 text-sm truncate max-w-[100px]">{club.name}</span>
                     </div>
                     <div className="flex items-center gap-1 text-gray-500">
                       <TrendingUp className="w-3 h-3" />
-                      <span className="text-sm font-medium">{totalHours.toFixed(0)}</span>
+                      <span className="text-sm font-medium">{displayHours.toFixed(0)}</span>
                     </div>
                   </button>
                 );
@@ -743,7 +768,11 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
           {currentClub && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Your Hours</span>
-              <span className="text-gray-900 font-medium">{calculateTotalHours(currentClub).toFixed(1)}</span>
+              <span className="text-gray-900 font-medium">
+                {leaderboardMode === 'yearly'
+                  ? (currentClub.yearlyApprovedHours || 0).toFixed(1)
+                  : calculateTotalHours(currentClub).toFixed(1)}
+              </span>
             </div>
           )}
         </div>
