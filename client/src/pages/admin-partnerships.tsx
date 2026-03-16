@@ -4,7 +4,7 @@ import {
   User, Club, Partnership, PartnershipAffiliation, ClubEvent,
   getAllPartnerships, getPartnershipsByOwner, createPartnership, updatePartnership, deletePartnership,
   getPartnershipAffiliations, getClubAffiliations, requestAffiliation, respondToAffiliation,
-  getPartnershipEvents, createEvent, getPartnershipSubmissions, getClubs
+  getPartnershipEvents, createEvent, updateEvent, deleteEvent, getPartnershipSubmissions, getClubs
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,17 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
   const [newEventType, setNewEventType] = useState<'none' | 'password'>('none');
   const [newEventPassword, setNewEventPassword] = useState('');
 
+  // Selected partnership event management
+  const [selectedPartnershipEvent, setSelectedPartnershipEvent] = useState<ClubEvent | null>(null);
+  const [showCreateEventDialog, setShowCreateEventDialog] = useState(false);
+  const [editEventName, setEditEventName] = useState('');
+  const [editEventDesc, setEditEventDesc] = useState('');
+  const [editEventType, setEditEventType] = useState<'none' | 'password'>('none');
+  const [editEventPassword, setEditEventPassword] = useState('');
+
+  // Volunteer search
+  const [volunteerSearch, setVolunteerSearch] = useState('');
+
   const { data: myPartnerships = [], isLoading: myLoading } = useQuery<Partnership[]>({
     queryKey: ['firebase-partnerships-owned', user.email],
     queryFn: () => getPartnershipsByOwner(user.email),
@@ -130,6 +141,15 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
       setEditLogoUrl(selectedPartnership.logoUrl || '');
     }
   }, [selectedPartnership]);
+
+  useEffect(() => {
+    if (selectedPartnershipEvent) {
+      setEditEventName(selectedPartnershipEvent.name);
+      setEditEventDesc(selectedPartnershipEvent.description || '');
+      setEditEventType(selectedPartnershipEvent.type as 'none' | 'password');
+      setEditEventPassword(selectedPartnershipEvent.password || '');
+    }
+  }, [selectedPartnershipEvent?.id]);
 
   const handleLogoUpload = (file: File, setUrl: (url: string) => void) => {
     if (file.size > 2 * 1024 * 1024) {
@@ -200,10 +220,33 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['firebase-partnership-events', selectedPartnership?.id] });
       setNewEventName(''); setNewEventDesc(''); setNewEventType('none'); setNewEventPassword('');
+      setShowCreateEventDialog(false);
       toast({ title: "Event created" });
     },
     onError: (error: any) => {
       toast({ title: "Failed to create event", description: error?.message || "An error occurred.", variant: "destructive" });
+    },
+  });
+
+  const updateEventMutation = useMutation({
+    mutationFn: () => updateEvent(selectedPartnershipEvent!.id, {
+      name: editEventName,
+      description: editEventDesc,
+      type: editEventType,
+      password: editEventType === 'password' ? editEventPassword : undefined,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['firebase-partnership-events', selectedPartnership?.id] });
+      toast({ title: "Event updated" });
+    },
+  });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: (id: string) => deleteEvent(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['firebase-partnership-events', selectedPartnership?.id] });
+      setSelectedPartnershipEvent(null);
+      toast({ title: "Event deleted" });
     },
   });
 
@@ -340,7 +383,176 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
         </div>
 
         {/* Main content */}
-        <div className="flex-1 overflow-auto bg-white">
+        <div className="flex-1 bg-white overflow-hidden flex flex-col">
+          {activeTab === 'events' ? (
+            <div className="flex flex-1 min-h-0 overflow-hidden">
+              {/* Left: event list */}
+              <div className="w-72 border-r border-gray-200 flex flex-col flex-shrink-0">
+                <div className="px-4 py-4 border-b border-gray-200 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Events</h3>
+                    <p className="text-xs text-gray-500 mt-0.5">Track attendance via QR code or password. Grant hours to participants.</p>
+                  </div>
+                  <Dialog open={showCreateEventDialog} onOpenChange={setShowCreateEventDialog}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="bg-black hover:bg-gray-800 text-white flex-shrink-0">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Create Event</DialogTitle>
+                        <p className="text-sm text-gray-500">Create an event volunteers can join and submit hours for.</p>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-2">
+                        <div className="space-y-1">
+                          <Label>Event Name</Label>
+                          <Input value={newEventName} onChange={e => setNewEventName(e.target.value)} placeholder="Volunteer Day, Community Fair..." />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Description <span className="text-gray-400">(optional)</span></Label>
+                          <Textarea value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} rows={2} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Check-in Method</Label>
+                          <Select value={newEventType} onValueChange={(v) => setNewEventType(v as 'none' | 'password')}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Open — No check-in required</SelectItem>
+                              <SelectItem value="password">Password — Volunteers enter a password</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {newEventType === 'password' && (
+                          <div className="space-y-1">
+                            <Label>Password</Label>
+                            <Input value={newEventPassword} onChange={e => setNewEventPassword(e.target.value)} />
+                          </div>
+                        )}
+                        <Button
+                          className="w-full bg-black hover:bg-gray-800 text-white"
+                          onClick={() => createEventMutation.mutate()}
+                          disabled={!newEventName.trim() || createEventMutation.isPending}
+                        >
+                          {createEventMutation.isPending ? "Creating..." : "Create Event"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <div className="flex-1 overflow-auto p-3 space-y-2">
+                  {partnershipEvents.length === 0 && (
+                    <div className="text-center py-12">
+                      <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm font-medium text-gray-600">No events yet</p>
+                    </div>
+                  )}
+                  {partnershipEvents.map(event => {
+                    const isSelected = selectedPartnershipEvent?.id === event.id;
+                    const typeLabel = event.type === 'none' ? 'Open' : event.type === 'password' ? 'Password' : event.type;
+                    const typeColor = event.type === 'none' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                    return (
+                      <button
+                        key={event.id}
+                        onClick={() => setSelectedPartnershipEvent(event)}
+                        className={`w-full text-left rounded-lg border p-3 transition-colors ${isSelected ? 'bg-gray-100 border-gray-400' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 text-sm truncate">{event.name}</p>
+                            {event.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{event.description}</p>}
+                          </div>
+                          <Badge className={`text-xs flex-shrink-0 ${typeColor}`}>{typeLabel}</Badge>
+                        </div>
+                        {isSelected && <ChevronRight className="w-4 h-4 text-gray-400 mt-1" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right: event workspace */}
+              {!selectedPartnershipEvent ? (
+                <div className="flex-1 flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-600">Select an Event</h3>
+                    <p className="text-sm text-gray-400 mt-1">Click an event on the left to manage it</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl font-bold text-gray-900">{selectedPartnershipEvent.name}</h2>
+                          <Badge className={selectedPartnershipEvent.type === 'none' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                            {selectedPartnershipEvent.type === 'none' ? 'Open' : 'Password'}
+                          </Badge>
+                        </div>
+                        {selectedPartnershipEvent.description && (
+                          <p className="text-sm text-gray-500 mt-0.5">{selectedPartnershipEvent.description}</p>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={() => deleteEventMutation.mutate(selectedPartnershipEvent.id)}
+                        disabled={deleteEventMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-auto p-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Event Settings</CardTitle>
+                        <CardDescription>Update the event name, description, and check-in method.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-1">
+                          <Label>Event Name</Label>
+                          <Input value={editEventName} onChange={e => setEditEventName(e.target.value)} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Description</Label>
+                          <Textarea value={editEventDesc} onChange={e => setEditEventDesc(e.target.value)} rows={3} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label>Check-in Method</Label>
+                          <Select value={editEventType} onValueChange={(v) => setEditEventType(v as 'none' | 'password')}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">Open — No check-in required</SelectItem>
+                              <SelectItem value="password">Password Protected</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {editEventType === 'password' && (
+                          <div className="space-y-1">
+                            <Label>Password</Label>
+                            <Input value={editEventPassword} onChange={e => setEditEventPassword(e.target.value)} />
+                          </div>
+                        )}
+                        <Button
+                          onClick={() => updateEventMutation.mutate()}
+                          disabled={updateEventMutation.isPending}
+                          className="w-full bg-black hover:bg-gray-800 text-white"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          {updateEventMutation.isPending ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+          <div className="flex-1 overflow-auto">
           <div className="p-8">
 
             {/* Overview Tab */}
@@ -497,77 +709,6 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
               </div>
             )}
 
-            {/* Events Tab */}
-            {activeTab === 'events' && (
-              <div className="space-y-6">
-                <div className="pb-4 border-b border-gray-200">
-                  <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Events</h1>
-                  <p className="text-gray-500 mt-1 text-sm">Create events volunteers can submit hours for.</p>
-                </div>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Create New Event</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-1">
-                      <Label>Event Name</Label>
-                      <Input value={newEventName} onChange={e => setNewEventName(e.target.value)} placeholder="Volunteer Day, Community Fair..." />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Description <span className="text-gray-400">(optional)</span></Label>
-                      <Textarea value={newEventDesc} onChange={e => setNewEventDesc(e.target.value)} rows={2} />
-                    </div>
-                    <div className="space-y-1">
-                      <Label>Access Type</Label>
-                      <Select value={newEventType} onValueChange={(v) => setNewEventType(v as 'none' | 'password')}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">Open</SelectItem>
-                          <SelectItem value="password">Password Protected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {newEventType === 'password' && (
-                      <div className="space-y-1">
-                        <Label>Password</Label>
-                        <Input value={newEventPassword} onChange={e => setNewEventPassword(e.target.value)} />
-                      </div>
-                    )}
-                    <Button
-                      className="w-full bg-black hover:bg-gray-800 text-white"
-                      onClick={() => createEventMutation.mutate()}
-                      disabled={!newEventName.trim() || createEventMutation.isPending}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {createEventMutation.isPending ? "Creating..." : "Create Event"}
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {partnershipEvents.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
-                    <Calendar className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                    <p>No events yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {partnershipEvents.map(event => (
-                      <div key={event.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
-                        <div>
-                          <p className="font-semibold text-gray-900">{event.name}</p>
-                          {event.description && <p className="text-sm text-gray-500 mt-0.5">{event.description}</p>}
-                        </div>
-                        <Badge className="text-xs">
-                          {event.type === 'none' ? 'Open' : event.type === 'password' ? 'Password' : event.type}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Volunteers Tab */}
             {activeTab === 'volunteers' && (
               <div className="space-y-6">
@@ -575,33 +716,58 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
                   <h1 className="text-3xl font-semibold text-gray-900 tracking-tight">Volunteer Submissions</h1>
                   <p className="text-gray-500 mt-1 text-sm">All hours submitted to this partnership.</p>
                 </div>
-                {(partnershipSubmissions as any[]).length === 0 ? (
-                  <div className="text-center py-16">
-                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">No submissions yet</p>
-                    <p className="text-sm text-gray-400 mt-1">Volunteers can submit hours from their Hours page</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {(partnershipSubmissions as any[]).map(s => (
-                      <div key={s.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
-                        <div>
-                          <p className="font-semibold text-gray-900">{s.userName || s.userEmail}</p>
-                          <p className="text-sm text-gray-500">{s.activityName || s.description}</p>
-                          {s.partnershipVerified && (
-                            <Badge className="bg-green-100 text-green-700 text-xs mt-1">Partnership Verified</Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold text-gray-900">{s.hours}h</span>
-                          <Badge className={s.status === 'approved' ? 'bg-green-100 text-green-700' : s.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}>
-                            {s.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+
+                {(partnershipSubmissions as any[]).length > 0 && (
+                  <div className="relative max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      className="pl-9"
+                      placeholder="Search by name, email, or club..."
+                      value={volunteerSearch}
+                      onChange={e => setVolunteerSearch(e.target.value)}
+                    />
                   </div>
                 )}
+
+                {(() => {
+                  const q = volunteerSearch.toLowerCase();
+                  const filtered = (partnershipSubmissions as any[]).filter(s =>
+                    !q ||
+                    (s.userEmail || '').toLowerCase().includes(q) ||
+                    (s.userName || '').toLowerCase().includes(q) ||
+                    (s.clubName || '').toLowerCase().includes(q) ||
+                    (s.activityName || '').toLowerCase().includes(q)
+                  );
+                  if (filtered.length === 0) return (
+                    <div className="text-center py-16">
+                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">{volunteerSearch ? 'No results found' : 'No submissions yet'}</p>
+                      <p className="text-sm text-gray-400 mt-1">{volunteerSearch ? 'Try a different search term' : 'Volunteers can submit hours from their Hours page'}</p>
+                    </div>
+                  );
+                  return (
+                    <div className="space-y-2">
+                      {filtered.map((s: any) => (
+                        <div key={s.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-semibold text-gray-900">{s.userName || s.userEmail}</p>
+                              {s.clubName && <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{s.clubName}</span>}
+                            </div>
+                            <p className="text-sm text-gray-500 mt-0.5">{s.userEmail}</p>
+                            <p className="text-sm text-gray-400">{s.activityName || s.description}</p>
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                            <span className="font-bold text-gray-900">{s.hours}h</span>
+                            <Badge className={s.status === 'approved' ? 'bg-green-100 text-green-700' : s.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}>
+                              {s.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -780,6 +946,8 @@ export function AdminPartnerships({ user, club, hideHeader }: AdminPartnershipsP
               </div>
             )}
           </div>
+          </div>
+          )}
         </div>
       </div>
     );
