@@ -16,6 +16,7 @@ import {
   ensureClubCreatorIsAdmin,
   leaveClubWithArchive,
   clubSlug,
+  getClubs,
   Club,
   Membership,
 } from "@/lib/firebase";
@@ -262,35 +263,48 @@ function ClubScope({
   onLeaveClub,
 }: {
   slug: string;
-  user: User;
+  user: User | null;
   onSignOutClick: () => void;
   onLeaveClub: () => void;
 }) {
-  const [, setLocation] = useLocation();
-
-  const { data: memberships = [], isLoading } = useQuery({
-    queryKey: ['firebase-user-memberships', user.email],
-    queryFn: () => getUserMemberships(user.email || ''),
-    enabled: !!user.email,
+  const { data: memberships = [], isLoading: membershipsLoading } = useQuery({
+    queryKey: ['firebase-user-memberships', user?.email],
+    queryFn: () => getUserMemberships(user!.email || ''),
+    enabled: !!user?.email,
   });
 
   const match = memberships.find(m => clubSlug(m.club.name) === slug);
 
-  useEffect(() => {
-    if (!isLoading && !match) {
-      // No matching membership for this slug → bounce out to the picker.
-      // setLocation here is *relative to /:clubSlug*, so use the absolute path.
-      window.location.href = '/clubs';
-    }
-  }, [isLoading, match, setLocation]);
+  // If the user isn't a member (or isn't signed in), look up the club by slug
+  // so we can bounce them through the join workflow.
+  const needsJoinLookup = !match && (!user || !membershipsLoading);
+  const { data: allClubs = [], isLoading: clubsLoading } = useQuery({
+    queryKey: ['firebase-clubs-for-slug', slug],
+    queryFn: getClubs,
+    enabled: needsJoinLookup,
+  });
 
   useEffect(() => {
-    if (match && match.club.creatorEmail === user.email) {
+    if (match) return;
+    if (user && membershipsLoading) return;
+    if (needsJoinLookup && clubsLoading) return;
+    const targetClub = allClubs.find(c => clubSlug(c.name) === slug);
+    if (targetClub?.inviteCode) {
+      window.location.href = `/join/${targetClub.inviteCode}`;
+    } else if (user) {
+      window.location.href = '/clubs';
+    } else {
+      window.location.href = '/landing';
+    }
+  }, [match, user, membershipsLoading, needsJoinLookup, clubsLoading, allClubs, slug]);
+
+  useEffect(() => {
+    if (match && user && match.club.creatorEmail === user.email) {
       ensureClubCreatorIsAdmin(match.club.id, user.email).catch(() => {});
     }
-  }, [match?.club.id, user.email]);
+  }, [match?.club.id, user?.email]);
 
-  if (isLoading || !match) {
+  if (!user || membershipsLoading || !match) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -481,18 +495,14 @@ function App() {
               prefix from useLocation/Link inside, so inner routes stay as
               /volunteer/... and /admin/... unchanged. */}
           <Route path="/:clubSlug" nest>
-            {(params: any) =>
-              user ? (
-                <ClubScope
-                  slug={params.clubSlug}
-                  user={user}
-                  onSignOutClick={handleSignOutClick}
-                  onLeaveClub={handleLeaveClub}
-                />
-              ) : (
-                <Landing onSignIn={() => {}} />
-              )
-            }
+            {(params: any) => (
+              <ClubScope
+                slug={params.clubSlug}
+                user={user}
+                onSignOutClick={handleSignOutClick}
+                onLeaveClub={handleLeaveClub}
+              />
+            )}
           </Route>
 
           <Route><NotFound /></Route>
