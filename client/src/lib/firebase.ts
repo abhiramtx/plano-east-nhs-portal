@@ -103,6 +103,37 @@ export interface HoursSubmission {
   approvals?: string[];
   rejections?: string[];
   rejectionReasons?: { [adminEmail: string]: string };
+  // Per-superclub approval state for affiliated submissions.
+  // Key = superClubId. Independent of original sub-club approval.
+  superClubStatus?: {
+    [superClubId: string]: {
+      status: 'pending' | 'approved' | 'rejected';
+      hours?: number;
+      approvedBy?: string;
+      approvedAt?: any;
+      rejectReason?: string;
+    };
+  };
+}
+
+export interface Affiliation {
+  id: string;
+  subClubId: string;
+  subClubName: string;
+  superClubId: string;
+  superClubName: string;
+  requestedBy: string; // email of admin who sent request
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: Date;
+  respondedAt?: Date;
+  respondedBy?: string;
+}
+
+export interface ClubBookmark {
+  id: string;
+  userEmail: string;
+  clubId: string;
+  createdAt: Date;
 }
 
 export interface ServiceRequest {
@@ -171,7 +202,8 @@ export interface UserProfile {
   artTeacherName?: string;
   artTeacherEmail?: string;
   phoneNumber?: string;
-  clubId?: string;
+  clubId?: string; // currently-active club (kept for back-compat)
+  clubIds?: string[]; // every club the user has joined
   role?: string;
   joinedAt?: Date;
   createdAt: Date;
@@ -413,17 +445,78 @@ export const deleteClub = async (clubId: string): Promise<void> => {
 // ============ MEMBERSHIPS ============
 
 export const getMemberships = async (clubId: string): Promise<Membership[]> => {
-  const q = query(collection(db, "userProfiles"), where("clubId", "==", clubId));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs
-    .map(doc => ({
-      id: doc.id,
-      clubId: doc.data().clubId,
-      userEmail: doc.data().email,
-      userName: doc.data().goByFirstName || doc.data().displayName || doc.data().email.split('@')[0],
-      role: doc.data().role || 'member',
-      joinedAt: doc.data().joinedAt ? toDate(doc.data().joinedAt) : new Date(),
-    })) as Membership[];
+  // Query both legacy single-club field and the multi-club array, then merge unique-by-email.
+  const [aSnap, bSnap] = await Promise.all([
+    getDocs(query(collection(db, "userProfiles"), where("clubId", "==", clubId))),
+    getDocs(query(collection(db, "userProfiles"), where("clubIds", "array-contains", clubId))),
+  ]);
+  const seen = new Set<string>();
+  const out: Membership[] = [];
+  for (const docSnap of [...aSnap.docs, ...bSnap.docs]) {
+    if (seen.has(docSnap.id)) continue;
+    seen.add(docSnap.id);
+    const d = docSnap.data();
+    out.push({
+      id: docSnap.id,
+      clubId,
+      userEmail: d.email,
+      userName: d.goByFirstName || d.displayName || (d.email || '').split('@')[0],
+      role: d.role || 'member',
+      joinedAt: d.joinedAt ? toDate(d.joinedAt) : new Date(),
+    });
+  }
+  return out;
+};
+
+// Returns every club this user has joined (active + others).
+export const getUserMemberships = async (
+  userEmail: string,
+): Promise<{ membership: Membership; club: Club }[]> => {
+  const q = query(collection(db, "userProfiles"), where("email", "==", userEmail));
+  const snap = await getDocs(q);
+  if (snap.empty) return [];
+  const data = snap.docs[0].data();
+  const ids = new Set<string>();
+  if (Array.isArray(data.clubIds)) data.clubIds.forEach((id: string) => id && ids.add(id));
+  if (data.clubId) ids.add(data.clubId);
+  const out: { membership: Membership; club: Club }[] = [];
+  for (const clubId of Array.from(ids)) {
+    const club = await getClub(clubId);
+    if (!club) continue;
+    out.push({
+      club,
+      membership: {
+        id: snap.docs[0].id,
+        clubId,
+        userEmail: data.email || userEmail,
+        userName: data.goByFirstName || data.displayName || userEmail.split('@')[0],
+        role: clubId === data.clubId ? (data.role || 'member') : 'member',
+        joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
+      },
+    });
+  }
+  // Active club (matching userProfile.clubId) sorted first
+  out.sort((a, b) => {
+    if (a.club.id === data.clubId) return -1;
+    if (b.club.id === data.clubId) return 1;
+    return a.club.name.localeCompare(b.club.name);
+  });
+  return out;
+};
+
+// Switch the active (current) club for a user without touching their memberships.
+export const switchActiveClub = async (userEmail: string, clubId: string): Promise<void> => {
+  const docRef = doc(db, "userProfiles", userEmail);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) return;
+  const data = docSnap.data();
+  const ids: string[] = Array.isArray(data.clubIds) ? data.clubIds.slice() : [];
+  if (!ids.includes(clubId)) ids.push(clubId);
+  await updateDoc(docRef, {
+    clubId,
+    clubIds: ids,
+    updatedAt: Timestamp.fromDate(new Date()),
+  });
 };
 
 export const getUserMembership = async (userEmail: string): Promise<{ membership: Membership; club: Club } | null> => {
@@ -456,10 +549,15 @@ export const createMembership = async (data: { clubId: string; userEmail: string
   const now = new Date();
   const docRef = doc(db, "userProfiles", data.userEmail);
   const docSnap = await getDoc(docRef);
-  
+
   if (docSnap.exists()) {
+    const existing = docSnap.data();
+    const ids: string[] = Array.isArray(existing.clubIds) ? existing.clubIds.slice() : [];
+    if (existing.clubId && !ids.includes(existing.clubId)) ids.push(existing.clubId);
+    if (!ids.includes(data.clubId)) ids.push(data.clubId);
     await updateDoc(docRef, {
-      clubId: data.clubId,
+      clubId: data.clubId, // make this the active club
+      clubIds: ids,
       role: data.role,
       joinedAt: Timestamp.fromDate(now),
       updatedAt: Timestamp.fromDate(now),
@@ -469,6 +567,7 @@ export const createMembership = async (data: { clubId: string; userEmail: string
       email: data.userEmail,
       displayName: data.userName,
       clubId: data.clubId,
+      clubIds: [data.clubId],
       role: data.role,
       joinedAt: Timestamp.fromDate(now),
       profileComplete: false,
@@ -477,7 +576,7 @@ export const createMembership = async (data: { clubId: string; userEmail: string
       updatedAt: Timestamp.fromDate(now),
     }, { merge: true });
   }
-  
+
   return {
     id: data.userEmail,
     ...data,
@@ -502,18 +601,18 @@ export const deleteMembership = async (membershipId: string): Promise<void> => {
 export const deleteMembershipByUserAndClub = async (userEmail: string, clubId: string): Promise<void> => {
   const q = query(collection(db, "userProfiles"), where("email", "==", userEmail));
   const querySnapshot = await getDocs(q);
-  if (!querySnapshot.empty) {
-    const userProfileDoc = querySnapshot.docs[0];
-    const data = userProfileDoc.data();
-    if (data.clubId === clubId) {
-      await updateDoc(userProfileDoc.ref, {
-        clubId: null,
-        role: null,
-        joinedAt: null,
-        updatedAt: Timestamp.fromDate(new Date()),
-      });
-    }
-  }
+  if (querySnapshot.empty) return;
+  const userProfileDoc = querySnapshot.docs[0];
+  const data = userProfileDoc.data();
+  const ids: string[] = Array.isArray(data.clubIds) ? data.clubIds.filter((id: string) => id !== clubId) : [];
+  const newActive = data.clubId === clubId ? (ids[0] || null) : (data.clubId || null);
+  await updateDoc(userProfileDoc.ref, {
+    clubId: newActive,
+    clubIds: ids,
+    role: data.clubId === clubId ? null : data.role,
+    joinedAt: data.clubId === clubId ? null : data.joinedAt,
+    updatedAt: Timestamp.fromDate(new Date()),
+  });
 };
 
 export const updateMembershipRole = async (membershipId: string, role: string): Promise<void> => {
@@ -529,18 +628,12 @@ export const updateMembershipRole = async (membershipId: string, role: string): 
 };
 
 export const ensureClubCreatorIsAdmin = async (clubId: string, creatorEmail: string): Promise<void> => {
-  const q = query(
-    collection(db, "memberships"),
-    where("userEmail", "==", creatorEmail),
-    where("clubId", "==", clubId)
-  );
-  const querySnapshot = await getDocs(q);
-  if (!querySnapshot.empty) {
-    const membershipDoc = querySnapshot.docs[0];
-    if (membershipDoc.data().role !== 'admin') {
-      await updateMembershipRole(membershipDoc.id, 'admin');
-      console.log(`Updated ${creatorEmail} to admin for club ${clubId}`);
-    }
+  const docRef = doc(db, "userProfiles", creatorEmail);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) return;
+  const data = docSnap.data();
+  if (data.clubId === clubId && data.role !== 'admin') {
+    await updateDoc(docRef, { role: 'admin', updatedAt: Timestamp.fromDate(new Date()) });
   }
 };
 
@@ -1680,3 +1773,185 @@ export const getActiveScanQRCheckIn = async (userEmail: string): Promise<{ event
   return null;
 };
 
+
+// ============ AFFILIATIONS ============
+
+const toAffiliation = (docSnap: any): Affiliation => {
+  const d = docSnap.data();
+  return {
+    id: docSnap.id,
+    subClubId: d.subClubId,
+    subClubName: d.subClubName,
+    superClubId: d.superClubId,
+    superClubName: d.superClubName,
+    requestedBy: d.requestedBy,
+    status: d.status,
+    requestedAt: toDate(d.requestedAt),
+    respondedAt: d.respondedAt ? toDate(d.respondedAt) : undefined,
+    respondedBy: d.respondedBy,
+  };
+};
+
+// All outgoing requests this club sent (i.e. trying to become a sub-club of others)
+export const getOutgoingAffiliations = async (subClubId: string): Promise<Affiliation[]> => {
+  const snap = await getDocs(query(collection(db, "affiliations"), where("subClubId", "==", subClubId)));
+  return snap.docs.map(toAffiliation);
+};
+
+// All incoming requests for this club (i.e. other clubs requesting THIS as super-club)
+export const getIncomingAffiliations = async (superClubId: string): Promise<Affiliation[]> => {
+  const snap = await getDocs(query(collection(db, "affiliations"), where("superClubId", "==", superClubId)));
+  return snap.docs.map(toAffiliation);
+};
+
+export const requestAffiliation = async (
+  subClubId: string,
+  subClubName: string,
+  superClubId: string,
+  superClubName: string,
+  requestedBy: string,
+): Promise<Affiliation> => {
+  // Prevent duplicates
+  const existing = await getDocs(query(
+    collection(db, "affiliations"),
+    where("subClubId", "==", subClubId),
+    where("superClubId", "==", superClubId),
+  ));
+  if (!existing.empty) {
+    throw new Error("An affiliation request already exists between these clubs.");
+  }
+  if (subClubId === superClubId) {
+    throw new Error("A club cannot affiliate with itself.");
+  }
+  const now = new Date();
+  const docRef = await addDoc(collection(db, "affiliations"), {
+    subClubId,
+    subClubName,
+    superClubId,
+    superClubName,
+    requestedBy,
+    status: 'pending',
+    requestedAt: Timestamp.fromDate(now),
+  });
+  return {
+    id: docRef.id,
+    subClubId, subClubName, superClubId, superClubName,
+    requestedBy, status: 'pending', requestedAt: now,
+  };
+};
+
+export const respondToAffiliation = async (
+  affiliationId: string,
+  status: 'approved' | 'rejected',
+  respondedBy: string,
+): Promise<void> => {
+  await updateDoc(doc(db, "affiliations", affiliationId), {
+    status,
+    respondedAt: Timestamp.fromDate(new Date()),
+    respondedBy,
+  });
+};
+
+export const removeAffiliation = async (affiliationId: string): Promise<void> => {
+  await deleteDoc(doc(db, "affiliations", affiliationId));
+};
+
+// All approved super-clubs that this sub-club feeds into.
+export const getApprovedSuperClubs = async (subClubId: string): Promise<Affiliation[]> => {
+  const all = await getOutgoingAffiliations(subClubId);
+  return all.filter(a => a.status === 'approved');
+};
+
+// All approved sub-clubs feeding into this super-club.
+export const getApprovedSubClubs = async (superClubId: string): Promise<Affiliation[]> => {
+  const all = await getIncomingAffiliations(superClubId);
+  return all.filter(a => a.status === 'approved');
+};
+
+// Returns submissions made in any approved sub-club of `superClubId`,
+// filtered to ONLY include those whose user is also a member of the super-club
+// (avoids cross-affiliation clashes).
+export const getSuperClubFedSubmissions = async (superClubId: string): Promise<HoursSubmission[]> => {
+  const subAffs = await getApprovedSubClubs(superClubId);
+  if (subAffs.length === 0) return [];
+  const superMembers = await getMemberships(superClubId);
+  const memberEmails = new Set(superMembers.map(m => m.userEmail));
+
+  const all: HoursSubmission[] = [];
+  for (const aff of subAffs) {
+    const subs = await getClubSubmissions(aff.subClubId);
+    for (const s of subs) {
+      // Only sub-club-approved submissions are eligible for super-club approval
+      if (s.status === 'approved' && memberEmails.has(s.userEmail)) all.push(s);
+    }
+  }
+  return all;
+};
+
+export const setSuperClubApprovalStatus = async (
+  submissionId: string,
+  superClubId: string,
+  status: 'pending' | 'approved' | 'rejected',
+  hours: number,
+  approverEmail: string,
+  rejectReason?: string,
+): Promise<void> => {
+  const docRef = doc(db, "submissions", submissionId);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) return;
+  const data = docSnap.data();
+  const existing = data.superClubStatus || {};
+  existing[superClubId] = {
+    status,
+    hours,
+    approvedBy: approverEmail,
+    approvedAt: Timestamp.fromDate(new Date()),
+    ...(rejectReason ? { rejectReason } : {}),
+  };
+  await updateDoc(docRef, { superClubStatus: existing });
+};
+
+// ============ CLUB BOOKMARKS ============
+
+const toBookmark = (docSnap: any): ClubBookmark => {
+  const d = docSnap.data();
+  return {
+    id: docSnap.id,
+    userEmail: d.userEmail,
+    clubId: d.clubId,
+    createdAt: toDate(d.createdAt),
+  };
+};
+
+export const getUserBookmarks = async (userEmail: string): Promise<ClubBookmark[]> => {
+  const snap = await getDocs(query(collection(db, "clubBookmarks"), where("userEmail", "==", userEmail)));
+  return snap.docs.map(toBookmark);
+};
+
+export const addBookmark = async (userEmail: string, clubId: string): Promise<void> => {
+  const existing = await getDocs(query(
+    collection(db, "clubBookmarks"),
+    where("userEmail", "==", userEmail),
+    where("clubId", "==", clubId),
+  ));
+  if (!existing.empty) return;
+  await addDoc(collection(db, "clubBookmarks"), {
+    userEmail,
+    clubId,
+    createdAt: Timestamp.fromDate(new Date()),
+  });
+};
+
+export const removeBookmark = async (userEmail: string, clubId: string): Promise<void> => {
+  const snap = await getDocs(query(
+    collection(db, "clubBookmarks"),
+    where("userEmail", "==", userEmail),
+    where("clubId", "==", clubId),
+  ));
+  for (const d of snap.docs) await deleteDoc(d.ref);
+};
+
+export const getAllApprovedAffiliations = async (): Promise<Affiliation[]> => {
+  const snap = await getDocs(query(collection(db, "affiliations"), where("status", "==", "approved")));
+  return snap.docs.map(toAffiliation);
+};

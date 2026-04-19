@@ -21,6 +21,7 @@ import Landing from "@/pages/landing";
 import ClubSelection from "@/pages/club-selection";
 import ClubDashboard from "@/pages/club-dashboard";
 import TerritoryMap from "@/pages/territory-map";
+import Affiliates from "@/pages/affiliates";
 import ServiceRequests from "@/pages/service-requests";
 import MyRequests from "@/pages/my-requests";
 import Dashboard from "@/pages/dashboard";
@@ -111,6 +112,9 @@ function VolunteerInterface({
           </Route>
           <Route path="/volunteer/history">
             <AdminHistory club={club} isVolunteerView={true} />
+          </Route>
+          <Route path="/volunteer/affiliates">
+            <Affiliates user={user} club={club} />
           </Route>
           <Route path="/volunteer">
             <Dashboard club={club} />

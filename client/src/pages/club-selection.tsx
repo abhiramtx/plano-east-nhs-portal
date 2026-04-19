@@ -4,12 +4,14 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, 
   getClubs, 
-  getUserMembership, 
+  getUserMemberships,
+  switchActiveClub,
   createClub, 
   createMembership,
   ensureClubCreatorIsAdmin,
   recalculateClubHours,
   deleteClub,
+  leaveClubWithArchive,
   Club as FirebaseClub,
   Membership as FirebaseMembership,
 } from "@/lib/firebase";
@@ -64,11 +66,16 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const userEmail = user.email || '';
   const isSuperAdmin = userEmail === SUPERADMIN_EMAIL;
 
-  const { data: userClubData, isLoading: userClubLoading } = useQuery({
-    queryKey: ['firebase-user-club', userEmail],
-    queryFn: () => getUserMembership(userEmail),
+  const { data: userMemberships = [], isLoading: userClubLoading } = useQuery({
+    queryKey: ['firebase-user-memberships', userEmail],
+    queryFn: () => getUserMemberships(userEmail),
     enabled: !!userEmail,
   });
+  // The active club is the first entry whose membership.role might be 'admin'
+  // — we just track it by sorting: active first if marked, otherwise first item.
+  const activeMembership = userMemberships[0];
+  const activeClub = activeMembership?.club;
+  const joinedClubIds = new Set(userMemberships.map(m => m.club.id));
 
   const { data: clubs = [], isLoading: clubsLoading } = useQuery({
     queryKey: ['firebase-clubs'],
@@ -113,7 +120,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     },
     onSuccess: async ({ club, membership }) => {
       queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
-      queryClient.invalidateQueries({ queryKey: ['firebase-user-club', userEmail] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
       setCreateDialogOpen(false);
       toast({ title: "Club created!", description: `${club.name} is ready to grow.` });
       onClubSelected(club, membership);
@@ -147,7 +154,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     },
     onSuccess: ({ club, membership }) => {
       queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
-      queryClient.invalidateQueries({ queryKey: ['firebase-user-club', userEmail] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
       toast({ title: "Welcome!", description: "Your personal hub is ready." });
       onClubSelected(club, membership);
     },
@@ -171,7 +178,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     },
     onSuccess: async ({ club, membership }) => {
       queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
-      queryClient.invalidateQueries({ queryKey: ['firebase-user-club', userEmail] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
       setJoinDialogOpen(false);
       toast({ title: "Joined club!", description: "Welcome to the team!" });
       onClubSelected(club, membership);
@@ -234,10 +241,42 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     }
   };
 
-  const currentClub = userClubData?.club;
-  const currentMembership = userClubData?.membership;
+  const currentClub = activeClub;
+  const currentMembership = activeMembership?.membership;
 
-  // Keep club's totalApprovedHours in sync whenever this page loads
+  const switchClubMutation = useMutation({
+    mutationFn: async (club: FirebaseClub) => {
+      await switchActiveClub(userEmail, club.id);
+      const membership: FirebaseMembership = {
+        id: userEmail,
+        clubId: club.id,
+        userEmail,
+        userName: user.name || userEmail.split('@')[0],
+        role: 'member',
+        joinedAt: new Date(),
+      };
+      return { club, membership };
+    },
+    onSuccess: ({ club, membership }) => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
+      onClubSelected(club, membership);
+    },
+  });
+
+  const leaveSpecificMutation = useMutation({
+    mutationFn: ({ clubId, clubName }: { clubId: string; clubName: string }) =>
+      leaveClubWithArchive(userEmail, clubId, clubName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      toast({ title: 'Left club', description: 'Your submissions in that club were archived.' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Failed to leave club', description: err.message, variant: 'destructive' });
+    },
+  });
+
+  // Keep active club's totalApprovedHours in sync whenever this page loads
   useEffect(() => {
     if (currentClub?.id) {
       recalculateClubHours(currentClub.id)
@@ -284,32 +323,63 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           <div className="flex items-center justify-center py-32">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
-        ) : currentClub ? (
+        ) : userMemberships.length > 0 ? (
           <div className="mb-10">
-            <div className="flex items-center space-x-4 p-5 bg-gray-50 border border-gray-200 rounded-2xl">
-              <div
-                className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: currentClub.logoUrl ? undefined : currentClub.color }}
-              >
-                {currentClub.logoUrl
-                  ? <img src={currentClub.logoUrl} alt={currentClub.name} className="w-full h-full object-cover" />
-                  : <Trophy className="w-7 h-7 text-white" />
-                }
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-0.5">Your Current Club</p>
-                <h2 className="text-lg font-semibold text-gray-900">{currentClub.name}</h2>
-                <p className="text-sm text-gray-500">{currentClub.totalApprovedHours.toFixed(1)} total approved hours · {currentMembership?.role === 'admin' ? 'Admin' : 'Member'}</p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onClubSelected(currentClub, currentMembership!)}
-                className="border-gray-200 text-gray-700 hover:bg-gray-100"
-              >
-                Go to Dashboard
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Your Clubs ({userMemberships.length})</p>
+              <p className="text-xs text-gray-400">Active club is highlighted</p>
+            </div>
+            <div className="space-y-3">
+              {userMemberships.map(({ club, membership }) => {
+                const isActive = club.id === activeClub?.id;
+                return (
+                  <div
+                    key={club.id}
+                    className={`flex items-center space-x-4 p-5 border rounded-2xl ${isActive ? 'bg-gray-50 border-gray-300 ring-1 ring-gray-200' : 'bg-white border-gray-200'}`}
+                  >
+                    <div
+                      className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                      style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
+                    >
+                      {club.logoUrl
+                        ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
+                        : <Trophy className="w-7 h-7 text-white" />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-semibold text-gray-900 truncate">{club.name}</h2>
+                        {isActive && <span className="text-[10px] uppercase font-semibold tracking-wider text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">Active</span>}
+                      </div>
+                      <p className="text-sm text-gray-500">{club.totalApprovedHours.toFixed(1)} total hours · {membership.role === 'admin' ? 'Admin' : 'Member'}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => isActive ? onClubSelected(club, membership) : switchClubMutation.mutate(club)}
+                        disabled={switchClubMutation.isPending}
+                        className="bg-black text-white hover:bg-gray-800"
+                      >
+                        {isActive ? 'Open' : 'Switch'}
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (confirm(`Leave "${club.name}"? Your submissions will be archived.`)) {
+                            leaveSpecificMutation.mutate({ clubId: club.id, clubName: club.name });
+                          }
+                        }}
+                        disabled={leaveSpecificMutation.isPending}
+                        className="border-gray-200 text-gray-600 hover:bg-gray-100"
+                      >
+                        Leave
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -349,8 +419,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card 
-                className={`bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200 transition-all ${!currentClub ? 'cursor-pointer hover:border-gray-300 hover:scale-[1.02]' : 'opacity-50 cursor-not-allowed'}`}
-                onClick={() => !currentClub && setCreateDialogOpen(true)}
+                className="bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200 transition-all cursor-pointer hover:border-gray-300 hover:scale-[1.02]"
+                onClick={() => setCreateDialogOpen(true)}
               >
                 <CardHeader className="text-center py-8">
                   <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -358,11 +428,11 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                   </div>
                   <CardTitle className="text-xl text-gray-900">Create a Club</CardTitle>
                   <CardDescription className="text-gray-500">
-                    {currentClub ? 'Leave your current club first' : 'Start your own volunteer club and invite friends'}
+                    Start your own volunteer club and invite friends
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="text-center pb-8">
-                  <Button className="bg-black text-white hover:bg-gray-800" disabled={!!currentClub}>
+                  <Button className="bg-black text-white hover:bg-gray-800">
                     Create <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </CardContent>
@@ -430,10 +500,10 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                             <Button 
                               size="sm"
                               onClick={() => handleJoinClub(club)}
-                              disabled={joinClubMutation.isPending || !!currentClub}
+                              disabled={joinClubMutation.isPending || joinedClubIds.has(club.id)}
                               className="bg-black text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {club.id === currentClub?.id ? 'Current' : 'Join'}
+                              {joinedClubIds.has(club.id) ? 'Joined' : 'Join'}
                             </Button>
                           </div>
                         </div>

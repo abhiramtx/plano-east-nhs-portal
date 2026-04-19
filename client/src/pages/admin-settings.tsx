@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { AdminCustomFields } from "./admin-custom-fields";
 import { AdminLogs } from "./admin-logs";
+import { AdminAffiliations } from "./admin-affiliations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Save, Settings, Eye, Clock, MapPin, Palette, Lock, BookOpen,
-  CheckCircle, Upload, Image, Link2, Copy, RefreshCw,
+  CheckCircle, Upload, Image, Link2, Copy, RefreshCw, Network,
 } from "lucide-react";
 
 interface AdminSettingsProps {
@@ -28,7 +29,7 @@ interface AdminSettingsProps {
 
 export function AdminSettings({ user, club }: AdminSettingsProps) {
   const { toast } = useToast();
-  const [innerPage, setInnerPage] = useState<'club' | 'members' | 'logs' | 'approvals' | 'territory'>('club');
+  const [innerPage, setInnerPage] = useState<'club' | 'members' | 'logs' | 'approvals' | 'territory' | 'affiliations'>('club');
 
   const [clubName, setClubName] = useState(club.name || '');
   const [clubDescription, setClubDescription] = useState(club.description || '');
@@ -164,6 +165,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
             { id: 'logs', icon: BookOpen, label: 'Logs', desc: 'Hours tracking periods' },
             { id: 'approvals', icon: CheckCircle, label: 'Approvals', desc: 'Hours approval workflow' },
             { id: 'territory', icon: MapPin, label: 'Territory', desc: 'Map decay & bonuses' },
+            { id: 'affiliations', icon: Network, label: 'Affiliations', desc: 'Super / sub-club links' },
           ] as const).map(({ id, icon: Icon, label, desc }) => (
             <button
               key={id}
@@ -549,6 +551,9 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
           </div>
         )}
 
+        {innerPage === 'affiliations' && (
+          <AdminAffiliations user={user} club={club} />
+        )}
 
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { User, Club, Membership, getUserProfile, logClubLeave } from "@/lib/firebase";
+import { User, Club, Membership, getUserProfile, logClubLeave, getApprovedSubClubs } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Globe, LayoutDashboard, Clock, Map, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, ClipboardList, Trophy } from "lucide-react";
+import { Globe, LayoutDashboard, Clock, Map, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, ClipboardList, Trophy, Network } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
 
 interface VolunteerSidebarProps {
@@ -38,6 +38,13 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
     staleTime: 60000,
   });
 
+  const { data: subAffs = [] } = useQuery({
+    queryKey: ['affiliations-sub-approved', club.id],
+    queryFn: () => getApprovedSubClubs(club.id),
+    staleTime: 60000,
+  });
+  const hasSubAffiliates = subAffs.length > 0;
+
   const profileName = profile
     ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ')
     : '';
@@ -56,6 +63,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
       items: [
         { path: "/volunteer/map", icon: Map, label: "Territory Map" },
         { path: "/volunteer/club", icon: Globe, label: "My Club" },
+        ...(hasSubAffiliates ? [{ path: "/volunteer/affiliates", icon: Network, label: "Affiliates" }] : []),
       ],
     },
     {

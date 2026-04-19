@@ -17,6 +17,8 @@ import {
   TerritoryCircle,
   getAllOpenEvents,
   ClubEvent,
+  getAllApprovedAffiliations,
+  Affiliation,
 } from "@/lib/firebase";
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
@@ -85,12 +87,43 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   });
 
   // Load territory circles from server for ALL clubs
-  const { data: serverCircles = [], refetch: refetchCircles } = useQuery<(TerritoryCircle & { clubName: string; clubColor: string })[]>({
+  const { data: rawServerCircles = [], refetch: refetchCircles } = useQuery<(TerritoryCircle & { clubName: string; clubColor: string })[]>({
     queryKey: ['firebase-all-territory-circles', clubs],
     queryFn: () => clubs.length > 0 ? getAllTerritoryCircles(clubs) : Promise.resolve([]),
     enabled: clubs.length > 0,
     refetchInterval: 60000,
   });
+
+  // Approved affiliations let us re-attribute sub-club circles to their super-club
+  const { data: approvedAffiliations = [] } = useQuery<Affiliation[]>({
+    queryKey: ['affiliations-all-approved'],
+    queryFn: getAllApprovedAffiliations,
+    refetchInterval: 60000,
+  });
+
+  // Map: sub-club id -> super-club affiliation (use first approved super-club)
+  const subToSuper = useMemo(() => {
+    const m = new Map<string, Affiliation>();
+    approvedAffiliations.forEach(a => { if (!m.has(a.subClubId)) m.set(a.subClubId, a); });
+    return m;
+  }, [approvedAffiliations]);
+
+  // Re-attribute: if a circle belongs to a sub-club, swap its identity to the super-club
+  const serverCircles = useMemo(() => {
+    if (subToSuper.size === 0) return rawServerCircles;
+    const clubById = new Map(clubs.map(c => [c.id, c]));
+    return rawServerCircles.map(circle => {
+      const aff = subToSuper.get(circle.clubId);
+      if (!aff) return circle;
+      const superClub = clubById.get(aff.superClubId);
+      return {
+        ...circle,
+        clubId: aff.superClubId,
+        clubName: aff.superClubName,
+        clubColor: superClub?.color || circle.clubColor,
+      };
+    });
+  }, [rawServerCircles, subToSuper, clubs]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
