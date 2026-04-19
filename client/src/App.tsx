@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Switch, Route, Router, useLocation, useParams } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -251,20 +251,21 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
   );
 }
 
-// Resolves /:clubSlug/... to the user's matching club, then renders the
-// appropriate (volunteer / admin) interface inside a wouter Router base so all
-// inner routes & links remain unprefixed and just-work.
-function ClubRouteResolver({
+// Renders the appropriate (volunteer / admin) interface for a resolved club.
+// Used inside a `<Route path="/:clubSlug" nest>` so wouter strips the slug
+// prefix from useLocation/Link inside, and all inner Switch routes can stay
+// as `/volunteer/...` and `/admin/...` unchanged.
+function ClubScope({
+  slug,
   user,
   onSignOutClick,
   onLeaveClub,
 }: {
+  slug: string;
   user: User;
   onSignOutClick: () => void;
   onLeaveClub: () => void;
 }) {
-  const params = useParams();
-  const slug = (params as any).clubSlug as string;
   const [, setLocation] = useLocation();
 
   const { data: memberships = [], isLoading } = useQuery({
@@ -277,11 +278,12 @@ function ClubRouteResolver({
 
   useEffect(() => {
     if (!isLoading && !match) {
-      setLocation('/clubs');
+      // No matching membership for this slug → bounce out to the picker.
+      // setLocation here is *relative to /:clubSlug*, so use the absolute path.
+      window.location.href = '/clubs';
     }
   }, [isLoading, match, setLocation]);
 
-  // Ensure club creator has admin role on first hit
   useEffect(() => {
     if (match && match.club.creatorEmail === user.email) {
       ensureClubCreatorIsAdmin(match.club.id, user.email).catch(() => {});
@@ -299,14 +301,12 @@ function ClubRouteResolver({
     );
   }
 
-  const path = window.location.pathname;
-  const isAdminPath = path.includes(`/${slug}/admin`);
-
   return (
-    <Router base={`/${slug}`}>
-      {isAdminPath ? (
+    <Switch>
+      <Route path="/admin/:rest*">
         <AdminInterface user={user} club={match.club} />
-      ) : (
+      </Route>
+      <Route>
         <VolunteerInterface
           user={user}
           club={match.club}
@@ -314,8 +314,8 @@ function ClubRouteResolver({
           onSignOut={onSignOutClick}
           onLeaveClub={onLeaveClub}
         />
-      )}
-    </Router>
+      </Route>
+    </Switch>
   );
 }
 
@@ -477,11 +477,14 @@ function App() {
             )}
           </Route>
 
-          {/* /:clubSlug/... -> resolve and render */}
-          <Route path="/:clubSlug/:rest*">
-            {() =>
+          {/* /:clubSlug/... -> resolve and render. `nest` strips the matched
+              prefix from useLocation/Link inside, so inner routes stay as
+              /volunteer/... and /admin/... unchanged. */}
+          <Route path="/:clubSlug" nest>
+            {(params: any) =>
               user ? (
-                <ClubRouteResolver
+                <ClubScope
+                  slug={params.clubSlug}
                   user={user}
                   onSignOutClick={handleSignOutClick}
                   onLeaveClub={handleLeaveClub}
