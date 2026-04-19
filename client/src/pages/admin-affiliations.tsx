@@ -107,6 +107,10 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
         </p>
       </div>
 
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <strong>Heads up:</strong> a club can only be a sub-club of <em>one</em> super-club at a time. To switch super-clubs, remove the existing affiliation first.
+      </div>
+
       {/* Incoming requests */}
       <Card>
         <CardHeader>

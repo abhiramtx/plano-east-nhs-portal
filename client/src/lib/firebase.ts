@@ -1826,6 +1826,13 @@ export const requestAffiliation = async (
   if (subClubId === superClubId) {
     throw new Error("A club cannot affiliate with itself.");
   }
+  // A sub-club may only be affiliated with one super-club at a time.
+  const existingApprovedSuper = await getApprovedSuperClubs(subClubId);
+  if (existingApprovedSuper.length > 0) {
+    throw new Error(
+      `This club is already affiliated with ${existingApprovedSuper[0].superClubName}. A club can only have one super-club at a time.`
+    );
+  }
   const now = new Date();
   const docRef = await addDoc(collection(db, "affiliations"), {
     subClubId,
@@ -1848,6 +1855,21 @@ export const respondToAffiliation = async (
   status: 'approved' | 'rejected',
   respondedBy: string,
 ): Promise<void> => {
+  // Enforce one-super-club-per-sub-club on approval as well, in case another
+  // affiliation was approved while this request was pending.
+  if (status === 'approved') {
+    const snap = await getDoc(doc(db, "affiliations", affiliationId));
+    if (snap.exists()) {
+      const a = snap.data() as any;
+      const existingApproved = await getApprovedSuperClubs(a.subClubId);
+      const otherApproved = existingApproved.filter(x => x.id !== affiliationId);
+      if (otherApproved.length > 0) {
+        throw new Error(
+          `${a.subClubName} is already affiliated with ${otherApproved[0].superClubName}. A club can only have one super-club at a time.`
+        );
+      }
+    }
+  }
   await updateDoc(doc(db, "affiliations", affiliationId), {
     status,
     respondedAt: Timestamp.fromDate(new Date()),
