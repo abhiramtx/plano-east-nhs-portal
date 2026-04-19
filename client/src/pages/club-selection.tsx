@@ -327,7 +327,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           <div className="mb-10">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Your Clubs ({userMemberships.length})</p>
-              <p className="text-xs text-gray-400">Active club is highlighted</p>
             </div>
             <div className="space-y-3">
               {userMemberships.map(({ club, membership }) => {
@@ -335,7 +334,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 return (
                   <div
                     key={club.id}
-                    className={`flex items-center space-x-4 p-5 border rounded-2xl ${isActive ? 'bg-gray-50 border-gray-300 ring-1 ring-gray-200' : 'bg-white border-gray-200'}`}
+                    className="flex items-center space-x-4 p-5 border rounded-2xl bg-white border-gray-200"
                   >
                     <div
                       className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
@@ -347,10 +346,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-semibold text-gray-900 truncate">{club.name}</h2>
-                        {isActive && <span className="text-[10px] uppercase font-semibold tracking-wider text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">Active</span>}
-                      </div>
+                      <h2 className="text-lg font-semibold text-gray-900 truncate">{club.name}</h2>
                       <p className="text-sm text-gray-500">{club.totalApprovedHours.toFixed(1)} total hours · {membership.role === 'admin' ? 'Admin' : 'Member'}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -360,7 +356,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         disabled={switchClubMutation.isPending}
                         className="bg-black text-white hover:bg-gray-800"
                       >
-                        {isActive ? 'Open' : 'Switch'}
+                        Open
                         <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
                       <Button
