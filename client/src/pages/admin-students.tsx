@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, getSuperClubFedSubmissions, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -195,10 +195,26 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     },
   });
 
-  const { data: submissions = [], isLoading: submissionsLoading } = useQuery({
+  const { data: directSubmissions = [], isLoading: submissionsLoading } = useQuery({
     queryKey: ['firebase-submissions', club.id],
     queryFn: () => getClubSubmissions(club.id),
   });
+
+  // Fed sub-club submissions of shared volunteers — count toward this
+  // super-club using the per-superclub approval status.
+  const { data: fedSubmissions = [] } = useQuery({
+    queryKey: ['super-club-fed-submissions', club.id],
+    queryFn: () => getSuperClubFedSubmissions(club.id),
+  });
+
+  const submissions = useMemo<HoursSubmission[]>(() => {
+    const fedNormalized: HoursSubmission[] = fedSubmissions.map((s: HoursSubmission) => ({
+      ...s,
+      // Use this super-club's approval state instead of the sub-club's status
+      status: (s.superClubStatus?.[club.id]?.status || 'pending') as HoursSubmission['status'],
+    }));
+    return [...directSubmissions, ...fedNormalized];
+  }, [directSubmissions, fedSubmissions, club.id]);
 
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ['firebase-user-profiles'],

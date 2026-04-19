@@ -108,6 +108,9 @@ export interface HoursSubmission {
   superClubStatus?: {
     [superClubId: string]: {
       status: 'pending' | 'approved' | 'rejected';
+      approvals?: string[];
+      rejections?: string[];
+      rejectionReasons?: { [adminEmail: string]: string };
       hours?: number;
       approvedBy?: string;
       approvedAt?: any;
@@ -1257,19 +1260,30 @@ export const getAdminAssignment = async (adminEmail: string, skipEmails: string[
 };
 
 export const getAdminAssignmentForClub = async (clubId: string, adminEmail: string, skipEmails: string[] = []): Promise<UserProfile | null> => {
+  // Direct pending submissions to this club
   const submissions = await getClubSubmissions(clubId);
-  const pendingSubmissions = submissions.filter(s => s.status === "pending");
-  
-  if (pendingSubmissions.length === 0) return null;
-  
-  const userEmails = Array.from(new Set(pendingSubmissions.map(s => s.userEmail)))
-    .filter(email => !skipEmails.includes(email));
-  
+  const directPending = submissions.filter(s => s.status === "pending");
+
+  // Fed pending submissions: sub-club submissions of shared volunteers
+  // whose super-club approval state is not yet finalized
+  const fedAll = await getSuperClubFedSubmissions(clubId);
+  const fedPending = fedAll.filter(s => {
+    const st = s.superClubStatus?.[clubId]?.status;
+    return st !== 'approved' && st !== 'rejected';
+  });
+
+  const userEmails = Array.from(new Set([
+    ...directPending.map(s => s.userEmail),
+    ...fedPending.map(s => s.userEmail),
+  ])).filter(email => !skipEmails.includes(email));
+
+  if (userEmails.length === 0) return null;
+
   for (const email of userEmails) {
     const profile = await getUserProfile(email);
     if (profile) return profile;
   }
-  
+
   return null;
 };
 
@@ -1289,6 +1303,7 @@ export const getPendingSubmissionsForUser = async (userEmail: string): Promise<H
 };
 
 export const getPendingSubmissionsForUserInClub = async (userEmail: string, clubId: string): Promise<HoursSubmission[]> => {
+  // Direct pending submissions to this club
   const q = query(
     collection(db, "submissions"),
     where("userEmail", "==", userEmail),
@@ -1296,12 +1311,23 @@ export const getPendingSubmissionsForUserInClub = async (userEmail: string, club
     where("status", "==", "pending")
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
+  const direct = querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
     submittedAt: toDate(doc.data().submittedAt),
     reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
   })) as HoursSubmission[];
+
+  // Plus fed submissions from sub-clubs (where this user is a member of both
+  // the sub-club and this super-club) whose super-club approval is not finalized
+  const fedAll = await getSuperClubFedSubmissions(clubId);
+  const fedForUser = fedAll.filter(s => {
+    if (s.userEmail !== userEmail) return false;
+    const st = s.superClubStatus?.[clubId]?.status;
+    return st !== 'approved' && st !== 'rejected';
+  });
+
+  return [...direct, ...fedForUser];
 };
 
 export const archiveYearData = async (schoolYear: string, clubId?: string, clubName?: string): Promise<void> => {
@@ -1903,6 +1929,7 @@ export const setSuperClubApprovalStatus = async (
   const data = docSnap.data();
   const existing = data.superClubStatus || {};
   existing[superClubId] = {
+    ...(existing[superClubId] || {}),
     status,
     hours,
     approvedBy: approverEmail,
@@ -1910,6 +1937,68 @@ export const setSuperClubApprovalStatus = async (
     ...(rejectReason ? { rejectReason } : {}),
   };
   await updateDoc(docRef, { superClubStatus: existing });
+};
+
+// Records a super-club admin's review of a fed sub-club submission with
+// threshold logic mirroring the regular approval flow. Returns whether the
+// review finalized the super-club status.
+export const recordSuperClubReview = async (
+  submissionId: string,
+  superClubId: string,
+  reviewerEmail: string,
+  decision: 'approved' | 'rejected',
+  threshold: number,
+  rejectReason?: string,
+): Promise<{ finalized: boolean; status: 'pending' | 'approved' | 'rejected' }> => {
+  const docRef = doc(db, "submissions", submissionId);
+  const snap = await getDoc(docRef);
+  if (!snap.exists()) return { finalized: false, status: 'pending' };
+  const data = snap.data();
+  const existing = (data.superClubStatus || {}) as Record<string, any>;
+  const cur = existing[superClubId] || {
+    status: 'pending',
+    approvals: [],
+    rejections: [],
+    rejectionReasons: {},
+  };
+  const approvals: string[] = Array.isArray(cur.approvals) ? [...cur.approvals] : [];
+  const rejections: string[] = Array.isArray(cur.rejections) ? [...cur.rejections] : [];
+  const rejectionReasons: Record<string, string> = { ...(cur.rejectionReasons || {}) };
+
+  if (decision === 'approved') {
+    if (!approvals.includes(reviewerEmail)) approvals.push(reviewerEmail);
+  } else {
+    if (!rejections.includes(reviewerEmail)) rejections.push(reviewerEmail);
+    if (rejectReason) rejectionReasons[reviewerEmail] = rejectReason;
+  }
+
+  let status: 'pending' | 'approved' | 'rejected' = cur.status || 'pending';
+  let finalized = false;
+  if (decision === 'approved' && approvals.length >= threshold) {
+    status = 'approved';
+    finalized = true;
+  } else if (decision === 'rejected' && rejections.length >= threshold) {
+    status = 'rejected';
+    finalized = true;
+  }
+
+  const next: Record<string, any> = {
+    status,
+    approvals,
+    rejections,
+    rejectionReasons,
+    hours: data.hours,
+  };
+  if (finalized && status === 'approved') {
+    next.approvedBy = reviewerEmail;
+    next.approvedAt = Timestamp.fromDate(new Date());
+  }
+  if (finalized && status === 'rejected') {
+    next.rejectReason = Object.values(rejectionReasons).join(' | ');
+  }
+  existing[superClubId] = next;
+  await updateDoc(docRef, { superClubStatus: existing });
+  return { finalized, status };
 };
 
 // ============ CLUB BOOKMARKS ============
