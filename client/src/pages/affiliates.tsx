@@ -67,24 +67,25 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
     },
   });
 
-  // Leaderboard: sum approved super-club hours per sub-club
+  // Leaderboard: sum approved hours per sub-club for shared volunteers.
+  // Sub-clubs and super-clubs approve hours independently/in parallel — we
+  // count any submission the sub-club itself approved.
   const leaderboard = useMemo(() => {
     const tally = new Map<string, { clubId: string; clubName: string; hours: number; people: Set<string> }>();
     subAffs.forEach(a => {
       tally.set(a.subClubId, { clubId: a.subClubId, clubName: a.subClubName, hours: 0, people: new Set() });
     });
     fedSubs.forEach(s => {
-      const st = s.superClubStatus?.[club.id];
-      if (st?.status !== 'approved') return;
+      if (s.status !== 'approved') return;
       const t = tally.get(s.clubId);
       if (!t) return;
-      t.hours += st.hours || s.hours;
+      t.hours += s.hours;
       t.people.add(s.userEmail);
     });
     return Array.from(tally.values())
       .map(t => ({ ...t, peopleCount: t.people.size }))
       .sort((a, b) => b.hours - a.hours);
-  }, [subAffs, fedSubs, club.id]);
+  }, [subAffs, fedSubs]);
 
   const filteredClubs = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();

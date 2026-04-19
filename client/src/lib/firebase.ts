@@ -1881,8 +1881,9 @@ export const getSuperClubFedSubmissions = async (superClubId: string): Promise<H
   for (const aff of subAffs) {
     const subs = await getClubSubmissions(aff.subClubId);
     for (const s of subs) {
-      // Only sub-club-approved submissions are eligible for super-club approval
-      if (s.status === 'approved' && memberEmails.has(s.userEmail)) all.push(s);
+      // Only requirement: the volunteer is a member of both clubs.
+      // Sub-club and super-club approve hours independently/in parallel.
+      if (memberEmails.has(s.userEmail)) all.push(s);
     }
   }
   return all;
