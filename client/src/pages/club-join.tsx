@@ -10,6 +10,7 @@ import {
   createMembership,
   signInWithGoogle,
   onAuthStateChanged,
+  clubSlug,
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -204,7 +205,7 @@ export default function ClubJoin() {
         </div>
         <Button
           className="w-full bg-black hover:bg-gray-900 text-white rounded-xl h-11 font-medium"
-          onClick={() => setLocation("/volunteer/dashboard")}
+          onClick={() => setLocation(`/${clubSlug(club.name)}/volunteer/dashboard`)}
         >
           Go to Dashboard <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
@@ -286,7 +287,7 @@ export default function ClubJoin() {
               </div>
               <Button
                 className="w-full bg-black hover:bg-gray-900 text-white rounded-xl h-11 font-medium"
-                onClick={() => setLocation("/volunteer/dashboard")}
+                onClick={() => setLocation(`/${clubSlug(club.name)}/volunteer/dashboard`)}
               >
                 Go to Dashboard <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -304,7 +305,7 @@ export default function ClubJoin() {
               <Button
                 variant="outline"
                 className="w-full rounded-xl h-11 border-gray-200 font-medium"
-                onClick={() => setLocation("/volunteer/club")}
+                onClick={() => setLocation(`/${clubSlug(club.name)}/volunteer/club`)}
               >
                 Go to My Club
               </Button>

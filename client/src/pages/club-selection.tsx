@@ -298,16 +298,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
               <span className="text-xl font-bold">VolunteerClub</span>
             </div>
             <div className="flex items-center space-x-4">
-              {currentClub && currentMembership && (
-                <Button
-                  size="sm"
-                  className="bg-black text-white hover:bg-gray-800"
-                  onClick={() => onClubSelected(currentClub, currentMembership)}
-                >
-                  Back to {currentClub.name}
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              )}
               <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
               <Button variant="outline" size="sm" onClick={onSignOut} className="border-gray-200 text-gray-600 hover:bg-gray-100">
                 <LogOut className="w-4 h-4 mr-2" />

@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route, Router, useLocation, useParams } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { 
-  User, 
-  onAuthStateChanged, 
-  initializeAuth, 
-  handleSignOut, 
+import {
+  User,
+  onAuthStateChanged,
+  initializeAuth,
+  handleSignOut,
   auth,
   getUserMembership,
+  getUserMemberships,
   ensureClubCreatorIsAdmin,
   leaveClubWithArchive,
+  clubSlug,
   Club,
-  Membership
+  Membership,
 } from "@/lib/firebase";
 import { VolunteerSidebar } from "@/components/volunteer-sidebar";
 import Landing from "@/pages/landing";
@@ -42,20 +45,20 @@ import { AdminQueryHistory } from "@/pages/admin-query-history";
 import ClubJoin from "@/pages/club-join";
 import EventCheckin from "@/pages/event-checkin";
 
-function VolunteerInterface({ 
-  user, 
-  club, 
-  membership, 
+function VolunteerInterface({
+  user,
+  club,
+  membership,
   onSignOut,
-  onLeaveClub 
-}: { 
-  user: User; 
-  club: Club; 
+  onLeaveClub,
+}: {
+  user: User;
+  club: Club;
   membership: Membership;
   onSignOut: () => void;
   onLeaveClub: () => void;
 }) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   const handleLeaveClubClick = async () => {
     try {
@@ -67,96 +70,71 @@ function VolunteerInterface({
   };
 
   useEffect(() => {
-    const path = window.location.pathname;
-    if (!path.startsWith('/volunteer') && !path.startsWith('/admin')) {
+    if (!location.startsWith('/volunteer') && !location.startsWith('/admin')) {
       setLocation('/volunteer/dashboard');
     }
-  }, [setLocation]);
+  }, [location, setLocation]);
 
   return (
     <div className="flex h-screen bg-gray-950">
-      <VolunteerSidebar 
-        user={user} 
-        club={club} 
+      <VolunteerSidebar
+        user={user}
+        club={club}
         membership={membership}
         onSignOut={onSignOut}
         onLeaveClub={handleLeaveClubClick}
       />
       <div className="flex-1 lg:ml-64 flex flex-col min-h-0 overflow-auto">
         <Switch>
-          <Route path="/volunteer/dashboard">
-            <Dashboard club={club} />
-          </Route>
-          <Route path="/volunteer/hours">
-            <Hours club={club} />
-          </Route>
-          <Route path="/volunteer/map">
-            <TerritoryMap currentClubId={club.id} />
-          </Route>
-          <Route path="/volunteer/service-requests">
-            <ServiceRequests />
-          </Route>
-          <Route path="/volunteer/my-requests">
-            <MyRequests />
-          </Route>
+          <Route path="/volunteer/dashboard"><Dashboard club={club} /></Route>
+          <Route path="/volunteer/hours"><Hours club={club} /></Route>
+          <Route path="/volunteer/map"><TerritoryMap currentClubId={club.id} /></Route>
+          <Route path="/volunteer/service-requests"><ServiceRequests /></Route>
+          <Route path="/volunteer/my-requests"><MyRequests /></Route>
           <Route path="/volunteer/club">
-            <ClubDashboard 
-              user={user} 
-              club={club} 
+            <ClubDashboard
+              user={user}
+              club={club}
               membership={membership}
               onLeaveClub={handleLeaveClubClick}
             />
           </Route>
-          <Route path="/volunteer/profile">
-            <Profile />
-          </Route>
-          <Route path="/volunteer/history">
-            <AdminHistory club={club} isVolunteerView={true} />
-          </Route>
-          <Route path="/volunteer/affiliates">
-            <Affiliates user={user} club={club} />
-          </Route>
-          <Route path="/volunteer">
-            <Dashboard club={club} />
-          </Route>
-          <Route>
-            <NotFound />
-          </Route>
+          <Route path="/volunteer/profile"><Profile /></Route>
+          <Route path="/volunteer/history"><AdminHistory club={club} isVolunteerView={true} /></Route>
+          <Route path="/volunteer/affiliates"><Affiliates user={user} club={club} /></Route>
+          <Route path="/volunteer"><Dashboard club={club} /></Route>
+          <Route><NotFound /></Route>
         </Switch>
       </div>
     </div>
   );
 }
 
-function AdminInterface({ user, club }: { user: User; club?: Club }) {
-  const [, setLocation] = useLocation();
-  const [currentPage, setCurrentPage] = useState(() => {
-    const path = window.location.pathname;
-    if (path.includes('/admin/dashboard')) return 'dashboard';
-    if (path.includes('/admin/students')) return 'students';
-    if (path.includes('/admin/management')) return 'admin-management';
-    if (path.includes('/admin/database')) return 'database';
-    if (path.includes('/admin/query-history')) return 'query-history';
-    if (path.includes('/admin/history')) return 'history';
-    if (path.includes('/admin/settings')) return 'settings';
-    if (path.includes('/admin/events')) return 'events';
+function AdminInterface({ user, club }: { user: User; club: Club }) {
+  const [location, setLocation] = useLocation();
+  const pageFromPath = (loc: string): string => {
+    if (loc.includes('/admin/dashboard')) return 'dashboard';
+    if (loc.includes('/admin/students')) return 'students';
+    if (loc.includes('/admin/management')) return 'admin-management';
+    if (loc.includes('/admin/database')) return 'database';
+    if (loc.includes('/admin/query-history')) return 'query-history';
+    if (loc.includes('/admin/history')) return 'history';
+    if (loc.includes('/admin/settings')) return 'settings';
+    if (loc.includes('/admin/events')) return 'events';
     return 'approval';
-  });
+  };
+  const [currentPage, setCurrentPage] = useState(() => pageFromPath(location));
 
   useEffect(() => {
-    const path = window.location.pathname;
-    if (path.includes('/admin/dashboard')) setCurrentPage('dashboard');
-    else if (path.includes('/admin/students')) setCurrentPage('students');
-    else if (path.includes('/admin/management')) setCurrentPage('admin-management');
-    else if (path.includes('/admin/database')) setCurrentPage('database');
-    else if (path.includes('/admin/query-history')) setCurrentPage('query-history');
-    else if (path.includes('/admin/history')) setCurrentPage('history');
-    else if (path.includes('/admin/settings')) setCurrentPage('settings');
-    else if (path.includes('/admin/approval')) setCurrentPage('approval');
-    else if (path.includes('/admin/events')) setCurrentPage('events');
-  }, []);
+    setCurrentPage(pageFromPath(location));
+  }, [location]);
 
-  const handleSignOut = async () => {
+  const navTo = (page: string, path: string) => {
+    setCurrentPage(page);
+    setLocation(path);
+  };
+
+  const handleSignOutLocal = async () => {
     try {
       await auth.signOut();
     } catch (error) {
@@ -164,24 +142,13 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
     }
   };
 
-  if (!club) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Panel</h2>
-          <p className="text-gray-600">No club selected. Please select a club to continue.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen bg-white">
       <div className="w-64 bg-white border-r border-gray-200 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col">
         <div className="flex flex-col flex-1 min-h-0 bg-white">
           <div className="flex items-center flex-shrink-0 px-4 py-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
-              <div 
+              <div
                 className="flex items-center justify-center w-8 h-8 rounded-lg"
                 style={{ backgroundColor: club.color }}
               >
@@ -195,95 +162,63 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
               </div>
             </div>
           </div>
-          
+
           <nav className="flex-1 px-3 py-3 overflow-y-auto">
-            {/* ── Overview ── */}
             <p className="px-2 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">Overview</p>
-            <button
-              onClick={() => { setCurrentPage('dashboard'); window.history.pushState({}, '', '/admin/dashboard'); }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'dashboard' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => navTo('dashboard', '/admin/dashboard')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'dashboard' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" /></svg>
               <span>Dashboard</span>
             </button>
-            <button
-              onClick={() => { setCurrentPage('approval'); window.history.pushState({}, '', '/admin/approval'); }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'approval' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => navTo('approval', '/admin/approval')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'approval' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
               <span>Hours Approval</span>
             </button>
-            <button
-              onClick={() => { setCurrentPage('students'); window.history.pushState({}, '', '/admin/students'); }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'students' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => navTo('students', '/admin/students')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'students' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
               <span>Volunteers</span>
             </button>
 
-            {/* ── Data ── */}
             <p className="px-2 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">Data</p>
-            <button
-              onClick={() => { setCurrentPage('database'); window.history.pushState({}, '', '/admin/database'); }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'database' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => navTo('database', '/admin/database')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'database' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
               <span>Database</span>
             </button>
-            <button
-              onClick={() => { setCurrentPage('history'); window.history.pushState({}, '', '/admin/history'); }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'history' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => navTo('history', '/admin/history')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'history' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               <span>History</span>
             </button>
-            <button
-              onClick={() => { setCurrentPage('query-history'); window.history.pushState({}, '', '/admin/query-history'); }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'query-history' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => navTo('query-history', '/admin/query-history')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'query-history' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <span>Query History</span>
             </button>
 
-            {/* ── Events ── */}
             <p className="px-2 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">Events</p>
-            <button
-              onClick={() => { setCurrentPage('events'); window.history.pushState({}, '', '/admin/events'); }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'events' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => navTo('events', '/admin/events')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'events' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               <span>Events</span>
             </button>
 
-            {/* ── Admin ── */}
             <p className="px-2 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">Admin</p>
-            <button
-              onClick={() => { setCurrentPage('admin-management'); window.history.pushState({}, '', '/admin/management'); }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'admin-management' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => navTo('admin-management', '/admin/management')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'admin-management' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               <span>Admin Management</span>
             </button>
-            <button
-              onClick={() => { setCurrentPage('settings'); window.history.pushState({}, '', '/admin/settings'); }}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'settings' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
-            >
+            <button onClick={() => navTo('settings', '/admin/settings')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'settings' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               <span>Settings</span>
             </button>
 
-            {/* ── Back ── */}
             <div className="pt-4">
-              <a
-                href="/volunteer/dashboard"
+              <button
+                onClick={() => setLocation('/volunteer/dashboard')}
                 className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-gray-500 hover:bg-gray-50 hover:text-gray-700 text-sm"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
                 <span>Back to Volunteer</span>
-              </a>
+              </button>
             </div>
           </nav>
-          
+
           <div className="flex-shrink-0 p-4 border-t border-gray-200">
             <div className="flex items-center space-x-3 mb-4">
               <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
@@ -294,7 +229,7 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
                 <p className="text-xs text-gray-500">{user.email}</p>
               </div>
             </div>
-            <button onClick={handleSignOut} className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm">
+            <button onClick={handleSignOutLocal} className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm">
               Sign Out
             </button>
           </div>
@@ -314,6 +249,112 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
       </div>
     </div>
   );
+}
+
+// Resolves /:clubSlug/... to the user's matching club, then renders the
+// appropriate (volunteer / admin) interface inside a wouter Router base so all
+// inner routes & links remain unprefixed and just-work.
+function ClubRouteResolver({
+  user,
+  onSignOutClick,
+  onLeaveClub,
+}: {
+  user: User;
+  onSignOutClick: () => void;
+  onLeaveClub: () => void;
+}) {
+  const params = useParams();
+  const slug = (params as any).clubSlug as string;
+  const [, setLocation] = useLocation();
+
+  const { data: memberships = [], isLoading } = useQuery({
+    queryKey: ['firebase-user-memberships', user.email],
+    queryFn: () => getUserMemberships(user.email || ''),
+    enabled: !!user.email,
+  });
+
+  const match = memberships.find(m => clubSlug(m.club.name) === slug);
+
+  useEffect(() => {
+    if (!isLoading && !match) {
+      setLocation('/clubs');
+    }
+  }, [isLoading, match, setLocation]);
+
+  // Ensure club creator has admin role on first hit
+  useEffect(() => {
+    if (match && match.club.creatorEmail === user.email) {
+      ensureClubCreatorIsAdmin(match.club.id, user.email).catch(() => {});
+    }
+  }, [match?.club.id, user.email]);
+
+  if (isLoading || !match) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading club…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const path = window.location.pathname;
+  const isAdminPath = path.includes(`/${slug}/admin`);
+
+  return (
+    <Router base={`/${slug}`}>
+      {isAdminPath ? (
+        <AdminInterface user={user} club={match.club} />
+      ) : (
+        <VolunteerInterface
+          user={user}
+          club={match.club}
+          membership={match.membership}
+          onSignOut={onSignOutClick}
+          onLeaveClub={onLeaveClub}
+        />
+      )}
+    </Router>
+  );
+}
+
+function RootRedirect({ user }: { user: User | null }) {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    setLocation(user ? '/clubs' : '/landing');
+  }, [user, setLocation]);
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+    </div>
+  );
+}
+
+// Backward-compat: handle old un-prefixed /volunteer/* and /admin/* URLs.
+function LegacyRedirect({
+  user,
+  selectedClub,
+  prefix,
+  rest,
+}: {
+  user: User | null;
+  selectedClub: Club | null;
+  prefix: 'volunteer' | 'admin';
+  rest: string;
+}) {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    if (!user) {
+      setLocation('/landing');
+    } else if (selectedClub) {
+      const tail = rest ? `/${rest}` : '';
+      setLocation(`/${clubSlug(selectedClub.name)}/${prefix}${tail}`);
+    } else {
+      setLocation('/clubs');
+    }
+  }, [user, selectedClub, prefix, rest, setLocation]);
+  return null;
 }
 
 function App() {
@@ -347,7 +388,6 @@ function App() {
           if (data && data.club && data.membership) {
             setSelectedClub(data.club);
             setMembership(data.membership);
-            // Ensure club creator has admin role
             if (data.club.creatorEmail === user.email) {
               await ensureClubCreatorIsAdmin(data.club.id, user.email);
             }
@@ -364,22 +404,21 @@ function App() {
     setSelectedClub(null);
     setMembership(null);
     setClubChecked(false);
-    setLocation('/');
+    setLocation('/landing');
   };
 
   const handleClubSelected = (club: Club, clubMembership: Membership) => {
     setSelectedClub(club);
     setMembership(clubMembership);
-    setLocation('/volunteer/dashboard');
+    setLocation(`/${clubSlug(club.name)}/volunteer/dashboard`);
   };
 
   const handleLeaveClub = () => {
     setSelectedClub(null);
     setMembership(null);
-    window.location.href = '/clubs';
+    setLocation('/clubs');
   };
 
-  // Let the event check-in page render immediately — it manages its own auth state
   if (window.location.pathname === '/event-checkin') {
     return (
       <QueryClientProvider client={queryClient}>
@@ -388,14 +427,11 @@ function App() {
     );
   }
 
-  // Let the join page render immediately — it manages its own auth state
   if (window.location.pathname.startsWith('/join/')) {
     return (
       <QueryClientProvider client={queryClient}>
         <Switch>
-          <Route path="/join/:code">
-            <ClubJoin />
-          </Route>
+          <Route path="/join/:code"><ClubJoin /></Route>
         </Switch>
       </QueryClientProvider>
     );
@@ -417,97 +453,46 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Switch>
-          <Route path="/">
-            {user ? (
-              selectedClub && membership ? (
-                <VolunteerInterface 
-                  user={user} 
-                  club={selectedClub} 
-                  membership={membership}
-                  onSignOut={handleSignOutClick}
-                  onLeaveClub={handleLeaveClub}
-                />
-              ) : (
-                <ClubSelection 
-                  user={user} 
-                  onClubSelected={handleClubSelected}
-                  onSignOut={handleSignOutClick}
-                />
-              )
-            ) : (
-              <Landing onSignIn={() => {}} />
-            )}
-          </Route>
-          <Route path="/event-checkin">
-            <EventCheckin />
-          </Route>
-          <Route path="/join/:code">
-            {(params) => <ClubJoin />}
-          </Route>
-          <Route path="/landing">
-            <Landing onSignIn={() => {}} />
-          </Route>
+          <Route path="/event-checkin"><EventCheckin /></Route>
+          <Route path="/join/:code">{() => <ClubJoin />}</Route>
+          <Route path="/landing"><Landing onSignIn={() => {}} /></Route>
           <Route path="/clubs">
             {user ? (
-              <ClubSelection 
-                user={user} 
-                onClubSelected={handleClubSelected}
-                onSignOut={handleSignOutClick}
-              />
+              <ClubSelection user={user} onClubSelected={handleClubSelected} onSignOut={handleSignOutClick} />
             ) : (
               <Landing onSignIn={() => {}} />
             )}
           </Route>
+          <Route path="/"><RootRedirect user={user} /></Route>
+
+          {/* Backward-compat for old un-prefixed paths */}
           <Route path="/volunteer/:rest*">
-            {user && selectedClub && membership ? (
-              <VolunteerInterface 
-                user={user} 
-                club={selectedClub} 
-                membership={membership}
-                onSignOut={handleSignOutClick}
-                onLeaveClub={handleLeaveClub}
-              />
-            ) : user ? (
-              <ClubSelection 
-                user={user} 
-                onClubSelected={handleClubSelected}
-                onSignOut={handleSignOutClick}
-              />
-            ) : (
-              <Landing onSignIn={() => {}} />
+            {(p: any) => (
+              <LegacyRedirect user={user} selectedClub={selectedClub} prefix="volunteer" rest={p.rest || ''} />
             )}
           </Route>
           <Route path="/admin/:rest*">
-            { (initializing || !clubChecked) ? (
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading your club...</p>
-                </div>
-              </div>
-            ) : user && selectedClub ? (
-              <AdminInterface user={user} club={selectedClub} />
-            ) : (
-              <Landing onSignIn={() => {}} />
+            {(p: any) => (
+              <LegacyRedirect user={user} selectedClub={selectedClub} prefix="admin" rest={p.rest || ''} />
             )}
           </Route>
-          <Route path="/admin">
-            {(initializing || !clubChecked) ? (
-              <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-                  <p className="text-gray-500">Loading your club...</p>
-                </div>
-              </div>
-            ) : user && selectedClub ? (
-              <AdminInterface user={user} club={selectedClub} />
-            ) : (
-              <Landing onSignIn={() => {}} />
-            )}
+
+          {/* /:clubSlug/... -> resolve and render */}
+          <Route path="/:clubSlug/:rest*">
+            {() =>
+              user ? (
+                <ClubRouteResolver
+                  user={user}
+                  onSignOutClick={handleSignOutClick}
+                  onLeaveClub={handleLeaveClub}
+                />
+              ) : (
+                <Landing onSignIn={() => {}} />
+              )
+            }
           </Route>
-          <Route>
-            <NotFound />
-          </Route>
+
+          <Route><NotFound /></Route>
         </Switch>
       </TooltipProvider>
     </QueryClientProvider>

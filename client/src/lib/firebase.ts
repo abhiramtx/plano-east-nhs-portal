@@ -1927,6 +1927,12 @@ export const removeAffiliation = async (affiliationId: string): Promise<void> =>
   await deleteDoc(doc(db, "affiliations", affiliationId));
 };
 
+// URL-safe slug derived from a club name. Used for /:clubSlug/... routing.
+// Multiple clubs *could* collide; resolution always goes through the user's
+// memberships so a slug only ever resolves to a club they belong to.
+export const clubSlug = (name: string): string =>
+  (name || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'club';
+
 export const setAffiliationIndependentApproval = async (
   affiliationId: string,
   independent: boolean,
