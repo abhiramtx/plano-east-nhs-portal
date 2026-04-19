@@ -6,7 +6,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   User, HoursSubmission, createSubmission, updateSubmission,
-  getClubEvents, getPartnershipEvents, getAllPartnerships, ClubEvent, Partnership,
+  getClubEvents, ClubEvent,
   checkInUser
 } from "@/lib/firebase";
 import { queryClient } from "@/lib/queryClient";
@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, X, MapPin, Loader2, Calendar, Building2, Search } from "lucide-react";
+import { Upload, X, MapPin, Loader2, Calendar, Search } from "lucide-react";
 
 const compressImage = (file: File): Promise<File> => {
   return new Promise((resolve) => {
@@ -83,11 +83,6 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
     }
   }, [locationResults.length]);
 
-  // New: source / event selection
-  const [source, setSource] = useState<'club' | 'partnership'>(
-    editingSubmission?.partnershipId ? 'partnership' : 'club'
-  );
-  const [selectedPartnershipId, setSelectedPartnershipId] = useState(editingSubmission?.partnershipId || '');
   const [selectedEventId, setSelectedEventId] = useState(editingSubmission?.eventId || '');
   const [eventPassword, setEventPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -108,24 +103,11 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
   const { data: clubEvents = [] } = useQuery<ClubEvent[]>({
     queryKey: ['firebase-club-events', clubId],
     queryFn: () => getClubEvents(clubId!),
-    enabled: !!clubId && source === 'club',
+    enabled: !!clubId,
   });
 
-  const { data: allPartnerships = [] } = useQuery<Partnership[]>({
-    queryKey: ['firebase-all-partnerships'],
-    queryFn: getAllPartnerships,
-    enabled: source === 'partnership',
-  });
-
-  const { data: partnershipEvents = [] } = useQuery<ClubEvent[]>({
-    queryKey: ['firebase-partnership-events', selectedPartnershipId],
-    queryFn: () => getPartnershipEvents(selectedPartnershipId),
-    enabled: !!selectedPartnershipId && source === 'partnership',
-  });
-
-  const availableEvents = (source === 'club' ? clubEvents : partnershipEvents).filter(e => e.isOpen !== false && e.type !== 'scan_qr' && e.type !== 'show_qr');
+  const availableEvents = clubEvents.filter(e => e.isOpen !== false && e.type !== 'scan_qr' && e.type !== 'show_qr');
   const selectedEvent = availableEvents.find(e => e.id === selectedEventId) || null;
-  const selectedPartnership = allPartnerships.find(p => p.id === selectedPartnershipId) || null;
 
   useEffect(() => {
     const searchLocation = async () => {
@@ -194,7 +176,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
         await updateSubmission(editingSubmission.id, updateData);
       } else {
         const submissionData: any = {
-          clubId: source === 'club' ? (clubId || '') : '',
+          clubId: clubId || '',
           userEmail: user?.email || '',
           userName: user?.name || '',
           hours: parseFloat(data.hours),
@@ -215,16 +197,6 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
           submissionData.eventId = selectedEventId;
           submissionData.eventName = selectedEvent?.name;
         }
-        if (source === 'partnership' && selectedPartnershipId) {
-          submissionData.partnershipId = selectedPartnershipId;
-          submissionData.partnershipName = selectedPartnership?.name;
-          submissionData.clubId = clubId || '';
-          // If partnership has requireApproval=false, mark as partnershipVerified
-          if (selectedPartnership && !selectedPartnership.requireApproval) {
-            submissionData.partnershipVerified = true;
-            submissionData.status = 'pending';
-          }
-        }
         await createSubmission(submissionData);
 
         // Record attendance so the person appears in the event's Grant Hours tab
@@ -235,8 +207,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
               selectedEvent.name,
               user?.email || '',
               user?.name || '',
-              source === 'club' ? (clubId || undefined) : undefined,
-              source === 'partnership' ? selectedPartnershipId || undefined : undefined,
+              clubId || undefined,
               parseFloat(data.hours),
             );
           } catch {}
@@ -282,58 +253,10 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
   return (
     <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.error("Validation errors:", errors))} className="space-y-4 lg:space-y-5">
 
-      {/* Source / Partnership selection */}
+      {/* Event selection */}
       {!editingSubmission && (
         <div className="p-3 bg-gray-50 rounded-lg space-y-3">
           <div className="space-y-1">
-            <Label className="text-gray-700 flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
-              Submitting hours to
-            </Label>
-            <Select value={source} onValueChange={(v) => { setSource(v as 'club' | 'partnership'); setSelectedPartnershipId(''); setSelectedEventId(''); }}>
-              <SelectTrigger className="bg-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="z-[200]">
-                <SelectItem value="club">My Club</SelectItem>
-                <SelectItem value="partnership">A Partnership (food bank, business, etc.)</SelectItem>
-              </SelectContent>
-            </Select>
-            {source === 'partnership' && (
-              <p className="text-xs text-blue-600">Partnerships are organizations like food banks and businesses. You don't need to join them to submit hours.</p>
-            )}
-          </div>
-
-          {source === 'partnership' && (
-            <div className="space-y-1">
-              <Label className="text-gray-700">Select Partnership</Label>
-              <Select value={selectedPartnershipId} onValueChange={(v) => { setSelectedPartnershipId(v); setSelectedEventId(''); }}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Choose a partnership..." />
-                </SelectTrigger>
-                <SelectContent className="z-[200]">
-                  {allPartnerships.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      <span className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: p.color }} />
-                        {p.name}
-                      </span>
-                    </SelectItem>
-                  ))}
-                  {allPartnerships.length === 0 && (
-                    <SelectItem value="none" disabled>No partnerships available</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {selectedPartnership && !selectedPartnership.requireApproval && (
-                <Badge className="bg-green-100 text-green-700 text-xs">✓ Partnership Verified — hours are auto-approved</Badge>
-              )}
-            </div>
-          )}
-
-          {/* Event selection */}
-          {(source === 'club' || (source === 'partnership' && selectedPartnershipId)) && (
-            <div className="space-y-1">
               <Label className="text-gray-700 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 Event <span className="text-gray-400 font-normal">(optional)</span>
@@ -374,7 +297,6 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                 </div>
               )}
             </div>
-          )}
         </div>
       )}
 

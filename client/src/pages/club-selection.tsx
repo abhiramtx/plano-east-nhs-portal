@@ -14,7 +14,6 @@ import {
   Membership as FirebaseMembership,
 } from "@/lib/firebase";
 
-import { AdminPartnerships } from "@/pages/admin-partnerships";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -24,7 +23,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, Trophy, Upload, Image, Handshake, ChevronRight, UserCircle, MapPin, X } from "lucide-react";
+import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, Trophy, Upload, Image, ChevronRight, UserCircle, MapPin, X } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
 import { LocationPicker } from "@/components/world-map";
 
@@ -49,7 +48,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const [selectedClub, setSelectedClub] = useState<FirebaseClub | null>(null);
   const [joinPassword, setJoinPassword] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSection, setActiveSection] = useState<'clubs' | 'partnerships'>('clubs');
   const logoFileRef = useRef<HTMLInputElement>(null);
 
   const [newClub, setNewClub] = useState({
@@ -338,31 +336,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           </div>
         )}
 
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex bg-gray-100 rounded-2xl p-1 border border-gray-200">
-            <button
-              onClick={() => setActiveSection('clubs')}
-              className={`px-5 py-2.5 rounded-xl font-medium transition-all text-sm ${
-                activeSection === 'clubs' ? 'bg-black text-white' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              <Users className="w-4 h-4 inline-block mr-1.5" />
-              Clubs
-            </button>
-            <button
-              onClick={() => setActiveSection('partnerships')}
-              className={`px-5 py-2.5 rounded-xl font-medium transition-all text-sm ${
-                activeSection === 'partnerships' ? 'bg-black text-white' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              <Handshake className="w-4 h-4 inline-block mr-1.5" />
-              Partnerships
-            </button>
-          </div>
-        </div>
-
-        {activeSection === 'clubs' && (
-          <div className="relative mb-8">
+        <div className="relative mb-8">
             <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <Input
               placeholder="Search clubs..."
@@ -371,10 +345,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
               className="pl-12 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 h-12 rounded-xl"
             />
           </div>
-        )}
 
-        {activeSection === 'clubs' && (
-          <div className="space-y-8">
+        <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card 
                 className={`bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200 transition-all ${!currentClub ? 'cursor-pointer hover:border-gray-300 hover:scale-[1.02]' : 'opacity-50 cursor-not-allowed'}`}
@@ -542,15 +514,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 </div>
               </div>
             )}
-          </div>
-        )}
-      </div>
-
-      {activeSection === 'partnerships' && (
-        <div className="w-full flex flex-col" style={{ minHeight: 'calc(100vh - 180px)' }}>
-          <AdminPartnerships user={user} club={currentClub} hideHeader />
         </div>
-      )}
+      </div>
 
       {/* Create Club Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

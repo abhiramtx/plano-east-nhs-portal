@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Globe, LayoutDashboard, Clock, Map, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, ClipboardList, Trophy, Handshake } from "lucide-react";
+import { Globe, LayoutDashboard, Clock, Map, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, ClipboardList, Trophy } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
 
 interface VolunteerSidebarProps {
@@ -56,12 +56,6 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
       items: [
         { path: "/volunteer/map", icon: Map, label: "Territory Map" },
         { path: "/volunteer/club", icon: Globe, label: "My Club" },
-      ],
-    },
-    {
-      label: "Partners",
-      items: [
-        { path: "/volunteer/partners", icon: Handshake, label: "Partners" },
       ],
     },
     {

@@ -16,7 +16,6 @@ import {
   User,
   Image,
   MapPin,
-  Handshake,
 } from 'lucide-react';
 import {
   LineChart,
@@ -87,11 +86,6 @@ function SubmissionCard({ s }: { s: ArchivedSub }) {
           {locationLabel && (
             <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
               <MapPin className="w-3 h-3" />{locationLabel}
-            </span>
-          )}
-          {s.partnershipName && (
-            <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-              <Handshake className="w-3 h-3" />{s.partnershipName}
             </span>
           )}
         </div>

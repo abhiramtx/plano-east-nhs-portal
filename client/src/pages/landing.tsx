@@ -5,7 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Users, Trophy, MapPin, ArrowRight, Zap, Shield, Target, ChevronDown, Sparkles,
-  Globe, Clock, QrCode, Handshake, BookOpen, Award, BarChart3, ScanLine,
+  Globe, Clock, QrCode, BookOpen, Award, BarChart3, ScanLine,
   Lock, CheckCircle, Calendar, Map, Star, Layers
 } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
@@ -131,7 +131,6 @@ export default function Landing({ onSignIn }: LandingProps) {
             <div className="hidden md:flex items-center space-x-8">
               <button onClick={() => scrollTo('features')} className="text-gray-400 hover:text-white transition-colors text-sm">Features</button>
               <button onClick={() => scrollTo('events')} className="text-gray-400 hover:text-white transition-colors text-sm">Events</button>
-              <button onClick={() => scrollTo('partnerships')} className="text-gray-400 hover:text-white transition-colors text-sm">Partnerships</button>
               <button onClick={() => scrollTo('how-it-works')} className="text-gray-400 hover:text-white transition-colors text-sm">How It Works</button>
             </div>
             {isSignedIn ? (
@@ -397,131 +396,6 @@ export default function Landing({ onSignIn }: LandingProps) {
         </div>
       </section>
 
-      {/* ── PARTNERSHIPS ────────────────────────────────────────────── */}
-      <section id="partnerships" className="py-28 px-4 relative">
-        <GlowOrb color="radial-gradient(circle, rgba(34,197,94,0.4) 0%, transparent 70%)" size="w-[400px] h-[400px]" position="top-[20%] right-[10%]" animation="" />
-
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <AnimatedSection>
-              <span className="text-sm font-medium text-gray-500 uppercase tracking-widest">External Organizations</span>
-              <h2 className="text-4xl md:text-5xl font-bold mt-4 mb-6 text-white">
-                Partnerships Connect <br className="hidden md:block" />
-                Beyond Your Club
-              </h2>
-              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
-                Food banks, nonprofits, and businesses can register as Partnerships and affiliate with any club. Your members volunteer with them without needing to join a separate organization.
-              </p>
-              <div className="space-y-4">
-                {[
-                  {
-                    icon: Handshake,
-                    title: 'Partnerships Request Affiliation',
-                    desc: 'External orgs search for clubs and send affiliation requests. Club admins approve or decline — they stay in control.',
-                  },
-                  {
-                    icon: Calendar,
-                    title: 'Their Events, Your Hours',
-                    desc: 'Partners create their own events (open, password, or QR). Members submit hours directly to the partnership — hours count toward your club.',
-                  },
-                  {
-                    icon: Award,
-                    title: 'Club Admin Backup Granting',
-                    desc: "If a partner isn't granting hours, your club admin can step in — view their event attendance and submit pending hours on behalf of your members.",
-                  },
-                ].map(({ icon: Icon, title, desc }) => (
-                  <div key={title} className="flex items-start gap-4 p-4 rounded-2xl bg-white/[0.04] border border-white/10">
-                    <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Icon className="w-5 h-5 text-green-400" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white mb-1">{title}</h4>
-                      <p className="text-sm text-gray-400">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </AnimatedSection>
-
-            <AnimatedSection delay={200}>
-              <div className="space-y-3">
-                {/* Simulated partnership card */}
-                <div className="p-5 rounded-2xl bg-white/[0.06] border border-white/10">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center">
-                      <Handshake className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-white">City Food Bank</div>
-                      <div className="text-xs text-green-400 font-medium">Nonprofit · Affiliated</div>
-                    </div>
-                    <div className="ml-auto px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium border border-green-500/30">✓ Active</div>
-                  </div>
-                  <div className="space-y-2">
-                    {[
-                      { name: 'Weekend Sort', type: 'Open', color: 'text-green-400 bg-green-500/15 border-green-500/20' },
-                      { name: 'Tuesday Pack', type: 'Scan QR', color: 'text-blue-400 bg-blue-500/15 border-blue-500/20' },
-                    ].map(ev => (
-                      <div key={ev.name} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5">
-                        <span className="text-sm text-white">{ev.name}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${ev.color}`}>{ev.type}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Simulated affiliation request */}
-                <div className="p-5 rounded-2xl bg-orange-500/10 border border-orange-500/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
-                    <span className="text-xs font-medium text-orange-400 uppercase tracking-wide">Incoming Affiliation Request</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-white text-sm">Habitat for Humanity</div>
-                      <div className="text-xs text-gray-400 mt-0.5">Requested by admin@habitat.org</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 text-xs font-medium border border-green-500/30 cursor-pointer">Approve</div>
-                      <div className="px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 text-xs border border-white/10 cursor-pointer">Decline</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Hours log visualization */}
-                <div className="p-5 rounded-2xl bg-white/[0.04] border border-white/10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <BookOpen className="w-4 h-4 text-purple-400" />
-                    <span className="text-xs font-medium text-purple-400 uppercase tracking-wide">Fall Semester Log</span>
-                    <span className="ml-auto text-xs text-gray-500">20 hrs required</span>
-                  </div>
-                  <div className="space-y-2">
-                    {[
-                      { name: 'Alex R.', hours: 22, pct: 100, met: true },
-                      { name: 'Jordan K.', hours: 15, pct: 75, met: false },
-                      { name: 'Sam T.', hours: 8, pct: 40, met: false },
-                    ].map(v => (
-                      <div key={v.name}>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-gray-300">{v.name}</span>
-                          <span className={v.met ? 'text-green-400' : 'text-gray-400'}>{v.hours} hrs {v.met ? '✓' : ''}</span>
-                        </div>
-                        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-1000 ${v.met ? 'bg-green-400' : 'bg-purple-400'}`}
-                            style={{ width: `${Math.min(v.pct, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </AnimatedSection>
-          </div>
-        </div>
-      </section>
-
       {/* ── TERRITORY ───────────────────────────────────────────────── */}
       <section className="py-28 px-4 relative">
         <GlowOrb color="radial-gradient(circle, rgba(251,191,36,0.3) 0%, transparent 70%)" size="w-[500px] h-[500px]" position="top-[10%] left-[5%]" animation="" />
@@ -674,7 +548,6 @@ export default function Landing({ onSignIn }: LandingProps) {
           <div className="flex items-center gap-6 text-sm text-gray-500">
             <button onClick={() => scrollTo('features')} className="hover:text-gray-300 transition-colors">Features</button>
             <button onClick={() => scrollTo('events')} className="hover:text-gray-300 transition-colors">Events</button>
-            <button onClick={() => scrollTo('partnerships')} className="hover:text-gray-300 transition-colors">Partnerships</button>
             <button onClick={() => scrollTo('how-it-works')} className="hover:text-gray-300 transition-colors">How It Works</button>
           </div>
           <p className="text-sm text-gray-600">Volunteer. Compete. Grow.</p>

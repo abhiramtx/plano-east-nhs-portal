@@ -37,7 +37,6 @@ import {
   Plus,
   QrCode,
   Award,
-  Handshake
 } from "lucide-react";
 
 interface AdminStudentsProps {
@@ -1405,19 +1404,9 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                       <Award className="w-3 h-3 mr-1" /> Granted by Admin
                                     </Badge>
                                   )}
-                                  {(submission as any).grantedByPartnershipClub && (
-                                    <Badge className="bg-orange-100 text-orange-700 text-xs">
-                                      <Handshake className="w-3 h-3 mr-1" /> Pending Partnership
-                                    </Badge>
-                                  )}
                                   {submission.eventName && (
                                     <Badge className="bg-purple-100 text-purple-700 text-xs">
                                       Event: {submission.eventName}
-                                    </Badge>
-                                  )}
-                                  {(submission as any).partnershipName && (
-                                    <Badge className="bg-green-100 text-green-700 text-xs">
-                                      Partnership: {(submission as any).partnershipName}
                                     </Badge>
                                   )}
                                 </div>

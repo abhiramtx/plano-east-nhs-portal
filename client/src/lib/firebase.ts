@@ -99,10 +99,7 @@ export interface HoursSubmission {
   logName?: string;
   eventId?: string;
   eventName?: string;
-  partnershipId?: string;
-  partnershipName?: string;
   grantedByAdmin?: boolean;
-  grantedByPartnershipClub?: boolean;
   approvals?: string[];
   rejections?: string[];
   rejectionReasons?: { [adminEmail: string]: string };
@@ -1378,7 +1375,6 @@ export interface EventConditional {
 export interface ClubEvent {
   id: string;
   clubId?: string;
-  partnershipId?: string;
   name: string;
   description?: string;
   type: 'password' | 'none' | 'scan_qr' | 'show_qr';
@@ -1399,7 +1395,6 @@ export interface EventAttendance {
   eventId: string;
   eventName?: string;
   clubId?: string;
-  partnershipId?: string;
   userEmail: string;
   userName: string;
   checkInTime?: Date;
@@ -1408,38 +1403,6 @@ export interface EventAttendance {
   hoursGranted?: number;
   grantStatus: 'pending' | 'granted';
   createdAt: Date;
-}
-
-// ============ PARTNERSHIPS ============
-
-export interface Partnership {
-  id: string;
-  name: string;
-  description?: string;
-  ownerEmail: string;
-  ownerName: string;
-  orgType: 'business' | 'nonprofit' | 'school' | 'government' | 'other';
-  requireApproval: boolean;
-  latitude?: number;
-  longitude?: number;
-  address?: string;
-  color: string;
-  logoUrl?: string;
-  affiliatedClubIds: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface PartnershipAffiliation {
-  id: string;
-  partnershipId: string;
-  partnershipName: string;
-  clubId: string;
-  clubName: string;
-  requestedBy: string;
-  status: 'pending' | 'approved' | 'rejected';
-  requestedAt: Date;
-  respondedAt?: Date;
 }
 
 export const getTerritoryCircles = async (clubId: string): Promise<TerritoryCircle[]> => {
@@ -1519,12 +1482,6 @@ export const getAllOpenEvents = async (): Promise<ClubEvent[]> => {
   return snap.docs.map(toEvent).filter(e => e.isOpen !== false);
 };
 
-export const getPartnershipEvents = async (partnershipId: string): Promise<ClubEvent[]> => {
-  const q = query(collection(db, "events"), where("partnershipId", "==", partnershipId));
-  const snap = await getDocs(q);
-  return snap.docs.map(toEvent);
-};
-
 export const createEvent = async (data: Omit<ClubEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClubEvent> => {
   const now = new Date();
   // Default isOpen to true so new events are always visible on the map
@@ -1576,7 +1533,7 @@ export const getEventAttendance = async (eventId: string): Promise<EventAttendan
   return snap.docs.map(toAttendance);
 };
 
-export const checkInUser = async (eventId: string, eventName: string, userEmail: string, userName: string, clubId?: string, partnershipId?: string, submittedHours?: number): Promise<EventAttendance> => {
+export const checkInUser = async (eventId: string, eventName: string, userEmail: string, userName: string, clubId?: string, submittedHours?: number): Promise<EventAttendance> => {
   const now = new Date();
   // Check if already checked in
   const existing = await getEventAttendance(eventId);
@@ -1597,14 +1554,13 @@ export const checkInUser = async (eventId: string, eventName: string, userEmail:
     userEmail,
     userName,
     clubId: clubId || null,
-    partnershipId: partnershipId || null,
     checkInTime: Timestamp.fromDate(now),
     grantStatus: 'pending',
     createdAt: Timestamp.fromDate(now),
   };
   if (minutesAttended != null) docData.minutesAttended = minutesAttended;
   const docRef = await addDoc(collection(db, "eventAttendance"), docData);
-  return { id: docRef.id, eventId, eventName, userEmail, userName, clubId, partnershipId, checkInTime: now, grantStatus: 'pending', createdAt: now, minutesAttended };
+  return { id: docRef.id, eventId, eventName, userEmail, userName, clubId, checkInTime: now, grantStatus: 'pending', createdAt: now, minutesAttended };
 };
 
 export const checkOutUser = async (attendanceId: string): Promise<void> => {
@@ -1637,7 +1593,6 @@ export const grantEventHours = async (
   clubId?: string,
   logId?: string,
   logName?: string,
-  partnershipId?: string,
 ): Promise<void> => {
   const batch = writeBatch(db);
   const now = new Date();
@@ -1662,7 +1617,6 @@ export const grantEventHours = async (
     const submissionRef = doc(collection(db, "submissions"));
     batch.set(submissionRef, {
       clubId: resolvedClubId,
-      partnershipId: partnershipId || null,
       userEmail: record.userEmail,
       userName: record.userName,
       hours,
@@ -1688,59 +1642,7 @@ export const grantEventHours = async (
   }
 };
 
-export const grantPartnershipHoursAsPending = async (
-  eventId: string,
-  eventName: string,
-  attendanceRecords: EventAttendance[],
-  defaultHours: number | null,
-  conditionals: EventConditional[],
-  clubId: string,
-  logId?: string,
-  logName?: string,
-  partnershipId?: string,
-  partnershipName?: string,
-): Promise<void> => {
-  const batch = writeBatch(db);
-  const now = new Date();
-
-  for (const record of attendanceRecords) {
-    let hours = defaultHours;
-    if (conditionals.length > 0 && record.minutesAttended != null) {
-      const hoursAttended = record.minutesAttended / 60;
-      for (const cond of conditionals) {
-        if (cond.type === 'less' && hoursAttended < cond.thresholdHours) { hours = cond.grantHours; break; }
-        if (cond.type === 'exact' && Math.abs(hoursAttended - cond.thresholdHours) < 0.1) { hours = cond.grantHours; break; }
-        if (cond.type === 'more' && hoursAttended >= cond.thresholdHours) { hours = cond.grantHours; break; }
-      }
-    }
-    if (hours == null || hours <= 0) continue;
-
-    const submissionRef = doc(collection(db, "submissions"));
-    batch.set(submissionRef, {
-      clubId,
-      partnershipId: partnershipId || null,
-      partnershipName: partnershipName || null,
-      userEmail: record.userEmail,
-      userName: record.userName,
-      hours,
-      description: `Partnership event: ${eventName}${record.minutesAttended != null ? ` (${Math.floor(record.minutesAttended / 60)}h ${record.minutesAttended % 60}m attended)` : ''}`,
-      activityName: eventName,
-      date: now.toISOString().split('T')[0],
-      status: 'pending',
-      logId: logId || null,
-      logName: logName || null,
-      eventId,
-      eventName,
-      grantedByPartnershipClub: true,
-      submittedAt: Timestamp.fromDate(now),
-      createdAt: now.toISOString(),
-    });
-  }
-
-  await batch.commit();
-};
-
-export const checkInByQR = async (eventId: string, eventName: string, userEmail: string, clubId?: string, partnershipId?: string): Promise<{ success: boolean; message: string; record?: EventAttendance }> => {
+export const checkInByQR = async (eventId: string, eventName: string, userEmail: string, clubId?: string): Promise<{ success: boolean; message: string; record?: EventAttendance }> => {
   const existing = await getEventAttendance(eventId);
   const rec = existing.find(a => a.userEmail === userEmail);
   if (rec && !rec.checkOutTime) {
@@ -1748,7 +1650,7 @@ export const checkInByQR = async (eventId: string, eventName: string, userEmail:
   }
   const profile = await getUserProfile(userEmail);
   const userName = profile ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ') || userEmail : userEmail;
-  const record = await checkInUser(eventId, eventName, userEmail, userName, clubId, partnershipId);
+  const record = await checkInUser(eventId, eventName, userEmail, userName, clubId);
   return { success: true, message: `Checked in: ${userName}`, record };
 };
 
@@ -1776,142 +1678,5 @@ export const getActiveScanQRCheckIn = async (userEmail: string): Promise<{ event
     }
   }
   return null;
-};
-
-// ============ PARTNERSHIPS FIRESTORE FUNCTIONS ============
-
-const toPartnership = (docSnap: any): Partnership => {
-  const d = docSnap.data();
-  return {
-    id: docSnap.id,
-    ...d,
-    affiliatedClubIds: d.affiliatedClubIds || [],
-    createdAt: toDate(d.createdAt),
-    updatedAt: toDate(d.updatedAt),
-  } as Partnership;
-};
-
-export const getAllPartnerships = async (): Promise<Partnership[]> => {
-  const snap = await getDocs(collection(db, "partnerships"));
-  return snap.docs.map(toPartnership);
-};
-
-export const getPartnershipsByOwner = async (ownerEmail: string): Promise<Partnership[]> => {
-  const q = query(collection(db, "partnerships"), where("ownerEmail", "==", ownerEmail));
-  const snap = await getDocs(q);
-  return snap.docs.map(toPartnership);
-};
-
-export const getPartnership = async (partnershipId: string): Promise<Partnership | null> => {
-  const docSnap = await getDoc(doc(db, "partnerships", partnershipId));
-  if (!docSnap.exists()) return null;
-  return toPartnership(docSnap);
-};
-
-export const createPartnership = async (data: Omit<Partnership, 'id' | 'createdAt' | 'updatedAt' | 'affiliatedClubIds'>): Promise<Partnership> => {
-  const now = new Date();
-  const docRef = await addDoc(collection(db, "partnerships"), {
-    ...data,
-    affiliatedClubIds: [],
-    createdAt: Timestamp.fromDate(now),
-    updatedAt: Timestamp.fromDate(now),
-  });
-  return { id: docRef.id, ...data, affiliatedClubIds: [], createdAt: now, updatedAt: now };
-};
-
-export const updatePartnership = async (partnershipId: string, updates: Partial<Partnership>): Promise<void> => {
-  const clean: Record<string, any> = {};
-  for (const [k, v] of Object.entries(updates)) {
-    if (v !== undefined) clean[k] = v;
-  }
-  await updateDoc(doc(db, "partnerships", partnershipId), {
-    ...clean,
-    updatedAt: Timestamp.fromDate(new Date()),
-  });
-};
-
-export const deletePartnership = async (partnershipId: string): Promise<void> => {
-  await deleteDoc(doc(db, "partnerships", partnershipId));
-};
-
-export const getPartnershipSubmissions = async (partnershipId: string): Promise<HoursSubmission[]> => {
-  const q = query(collection(db, "submissions"), where("partnershipId", "==", partnershipId));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({
-    id: d.id,
-    ...d.data(),
-    submittedAt: toDate(d.data().submittedAt),
-    reviewedAt: d.data().reviewedAt ? toDate(d.data().reviewedAt) : undefined,
-  })) as HoursSubmission[];
-};
-
-// ============ PARTNERSHIP AFFILIATIONS ============
-
-const toAffiliation = (docSnap: any): PartnershipAffiliation => {
-  const d = docSnap.data();
-  return {
-    id: docSnap.id,
-    ...d,
-    requestedAt: toDate(d.requestedAt),
-    respondedAt: d.respondedAt ? toDate(d.respondedAt) : undefined,
-  } as PartnershipAffiliation;
-};
-
-export const getPartnershipAffiliations = async (partnershipId: string): Promise<PartnershipAffiliation[]> => {
-  const q = query(collection(db, "partnershipAffiliations"), where("partnershipId", "==", partnershipId));
-  const snap = await getDocs(q);
-  return snap.docs.map(toAffiliation);
-};
-
-export const getClubAffiliations = async (clubId: string): Promise<PartnershipAffiliation[]> => {
-  const q = query(collection(db, "partnershipAffiliations"), where("clubId", "==", clubId));
-  const snap = await getDocs(q);
-  return snap.docs.map(toAffiliation);
-};
-
-export const requestAffiliation = async (partnershipId: string, partnershipName: string, clubId: string, clubName: string, requestedBy: string): Promise<PartnershipAffiliation> => {
-  const now = new Date();
-  // Check if already exists
-  const existing = await getPartnershipAffiliations(partnershipId);
-  const already = existing.find(a => a.clubId === clubId);
-  if (already) return already;
-  const docRef = await addDoc(collection(db, "partnershipAffiliations"), {
-    partnershipId, partnershipName, clubId, clubName, requestedBy,
-    status: 'pending',
-    requestedAt: Timestamp.fromDate(now),
-  });
-  return { id: docRef.id, partnershipId, partnershipName, clubId, clubName, requestedBy, status: 'pending', requestedAt: now };
-};
-
-export const respondToAffiliation = async (affiliationId: string, partnershipId: string, clubId: string, status: 'approved' | 'rejected'): Promise<void> => {
-  const now = new Date();
-  await updateDoc(doc(db, "partnershipAffiliations", affiliationId), {
-    status,
-    respondedAt: Timestamp.fromDate(now),
-  });
-  if (status === 'approved') {
-    const partnershipDoc = await getDoc(doc(db, "partnerships", partnershipId));
-    if (partnershipDoc.exists()) {
-      const current: string[] = partnershipDoc.data().affiliatedClubIds || [];
-      if (!current.includes(clubId)) {
-        await updateDoc(doc(db, "partnerships", partnershipId), {
-          affiliatedClubIds: [...current, clubId],
-          updatedAt: Timestamp.fromDate(now),
-        });
-      }
-    }
-  }
-};
-
-export const removeAffiliation = async (affiliationId: string, partnershipId: string, clubId: string): Promise<void> => {
-  await deleteDoc(doc(db, "partnershipAffiliations", affiliationId));
-  const partnershipDoc = await getDoc(doc(db, "partnerships", partnershipId));
-  if (partnershipDoc.exists()) {
-    const current: string[] = partnershipDoc.data().affiliatedClubIds || [];
-    await updateDoc(doc(db, "partnerships", partnershipId), {
-      affiliatedClubIds: current.filter(id => id !== clubId),
-      updatedAt: Timestamp.fromDate(new Date()),
-    });
-  }
 };
 

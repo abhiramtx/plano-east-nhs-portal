@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Trophy, Clock, TrendingUp, Users, Search, X, Building2, Flag } from "lucide-react";
+import { Trophy, Clock, TrendingUp, Users, Search, X } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,6 @@ import {
   TerritoryCircle,
   getAllOpenEvents,
   ClubEvent,
-  getAllPartnerships,
-  Partnership,
 } from "@/lib/firebase";
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
@@ -48,8 +46,6 @@ function createCirclePolygon(lng: number, lat: number, radiusKm: number, segment
 export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [hoveredClubId, setHoveredClubId] = useState<string | null>(null);
-  const [hoveredPartnerId, setHoveredPartnerId] = useState<string | null>(null);
-  const [hoveredCheckpointId, setHoveredCheckpointId] = useState<string | null>(null);
   const [territoryTooltip, setTerritoryTooltip] = useState<{ x: number; y: number; name: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -79,12 +75,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   const { data: allOpenEvents = [] } = useQuery<ClubEvent[]>({
     queryKey: ['firebase-all-open-events'],
     queryFn: getAllOpenEvents,
-    refetchInterval: 60000,
-  });
-
-  const { data: allPartnerships = [] } = useQuery<Partnership[]>({
-    queryKey: ['firebase-all-partnerships'],
-    queryFn: getAllPartnerships,
     refetchInterval: 60000,
   });
 
@@ -142,30 +132,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
       duration: 1500
     });
   }, []);
-
-  // Partnerships that have a fixed location → show as HQ pins
-  const partnershipsWithHQ = useMemo(() =>
-    allPartnerships.filter(p => p.latitude != null && p.longitude != null),
-  [allPartnerships]);
-
-  // Partnership events with their own lat/lng → show as checkpoint flags
-  // Exception: skip the flag if the event is at the exact same spot as the partnership's HQ
-  // (avoids stacking a flag on top of the HQ building pin)
-  const checkpointEvents = useMemo(() =>
-    allOpenEvents.filter(e => {
-      if (!e.partnershipId || e.latitude == null || e.longitude == null) return false;
-      if (isNaN(parseFloat(String(e.latitude))) || isNaN(parseFloat(String(e.longitude)))) return false;
-      const partner = allPartnerships.find(p => p.id === e.partnershipId);
-      if (!partner) return false;
-      // Suppress flag only when event coords exactly equal the HQ coords
-      if (
-        partner.latitude != null && partner.longitude != null &&
-        parseFloat(String(e.latitude)) === parseFloat(String(partner.latitude)) &&
-        parseFloat(String(e.longitude)) === parseFloat(String(partner.longitude))
-      ) return false;
-      return true;
-    }),
-  [allOpenEvents, allPartnerships]);
 
   const calculateTotalHours = (club: Club) => {
     return club.totalApprovedHours + club.bonusHours - club.decayedHours;
@@ -337,10 +303,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             const isHovered = hoveredClubId === club.id;
             const isCurrentClub = club.id === currentClubId;
             const clubEvents = allOpenEvents.filter(e => e.clubId === club.id);
-            // Only show partner events that are explicitly targeted at this specific club
-            const affiliatedPartnerEvents = allOpenEvents.filter(
-              e => e.partnershipId && e.targetClubId === club.id
-            );
             
             return (
               <Marker 
@@ -392,23 +354,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                           ))}
                         </div>
                       )}
-                      {affiliatedPartnerEvents.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100 space-y-1.5">
-                          <p className="text-xs font-medium text-gray-500">Partner Events</p>
-                          {affiliatedPartnerEvents.map(ev => {
-                            const partner = allPartnerships.find(p => p.id === ev.partnershipId);
-                            return (
-                              <div key={ev.id}>
-                                <p className="text-xs font-medium text-gray-800 truncate">• {ev.name}</p>
-                                {partner && <p className="text-xs text-gray-400 pl-3 truncate">{partner.name}</p>}
-                                {ev.description && (
-                                  <p className="text-xs text-gray-500 pl-3 line-clamp-1">{ev.description}</p>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
                       <div 
                         className="w-full h-1 rounded-full mt-2"
                         style={{ backgroundColor: club.color }}
@@ -420,107 +365,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             );
           })}
 
-          {/* Partnership HQ markers (partnerships that have a location) */}
-          {partnershipsWithHQ.map(partner => {
-            const lat = parseFloat(String(partner.latitude));
-            const lng = parseFloat(String(partner.longitude));
-            if (isNaN(lat) || isNaN(lng)) return null;
-            const isHovered = hoveredPartnerId === partner.id;
-            const partnerEvents = allOpenEvents.filter(e => e.partnershipId === partner.id);
-
-            return (
-              <Marker key={`partner-${partner.id}`} longitude={lng} latitude={lat} anchor="center">
-                <div
-                  className="relative flex items-center justify-center cursor-pointer"
-                  onMouseEnter={() => setHoveredPartnerId(partner.id)}
-                  onMouseLeave={() => setHoveredPartnerId(null)}
-                >
-                  <div
-                    className="relative flex items-center justify-center rounded-lg transition-all hover:scale-110"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      backgroundColor: partner.color || '#6366f1',
-                      border: '3px solid white',
-                      boxShadow: `0 0 16px ${partner.color || '#6366f1'}80, 0 2px 8px rgba(0,0,0,0.4)`,
-                    }}
-                  >
-                    <Building2 className="w-4 h-4 text-white" />
-                  </div>
-
-                  {isHovered && (
-                    <div
-                      className="absolute left-12 top-1/2 -translate-y-1/2 bg-white rounded-lg px-4 py-3 z-50 border border-gray-200 shadow-xl"
-                      style={{ minWidth: 160, maxWidth: 220 }}
-                    >
-                      <p className="text-gray-900 text-sm font-semibold truncate">{partner.name}</p>
-                      <p className="text-gray-400 text-xs mt-0.5 capitalize">{partner.orgType}</p>
-                      {partnerEvents.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100 space-y-1.5">
-                          <p className="text-xs font-medium text-gray-500">Active Events</p>
-                          {partnerEvents.map(ev => (
-                            <div key={ev.id}>
-                              <p className="text-xs font-medium text-gray-800 truncate">• {ev.name}</p>
-                              {ev.description && (
-                                <p className="text-xs text-gray-500 pl-3 line-clamp-2">{ev.description}</p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div
-                        className="w-full h-1 rounded-full mt-2"
-                        style={{ backgroundColor: partner.color || '#6366f1' }}
-                      />
-                    </div>
-                  )}
-                </div>
-              </Marker>
-            );
-          })}
-
-          {/* Checkpoint markers: partnership events with a location but no partnership HQ */}
-          {checkpointEvents.map(event => {
-            const lat = parseFloat(String(event.latitude));
-            const lng = parseFloat(String(event.longitude));
-            if (isNaN(lat) || isNaN(lng)) return null;
-            const isHovered = hoveredCheckpointId === event.id;
-            const partner = allPartnerships.find(p => p.id === event.partnershipId);
-
-            return (
-              <Marker key={`checkpoint-${event.id}`} longitude={lng} latitude={lat} anchor="bottom">
-                <div
-                  className="relative flex flex-col items-center cursor-pointer"
-                  onMouseEnter={() => setHoveredCheckpointId(event.id)}
-                  onMouseLeave={() => setHoveredCheckpointId(null)}
-                >
-                  <div
-                    className="flex items-center justify-center rounded-full transition-all hover:scale-110"
-                    style={{
-                      width: 28,
-                      height: 28,
-                      backgroundColor: '#f59e0b',
-                      border: '3px solid white',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                    }}
-                  >
-                    <Flag className="w-3.5 h-3.5 text-white" />
-                  </div>
-
-                  {isHovered && (
-                    <div
-                      className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-white rounded-lg px-3 py-2 z-50 border border-gray-200 shadow-xl whitespace-nowrap"
-                    >
-                      {partner && (
-                        <p className="text-gray-500 text-xs font-medium">{partner.name}</p>
-                      )}
-                      <p className="text-gray-900 text-sm font-semibold">{event.name}</p>
-                    </div>
-                  )}
-                </div>
-              </Marker>
-            );
-          })}
         </MapGlComponent>
 
         {/* Territory hover tooltip */}
@@ -576,14 +420,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
           <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
             <Users className="w-3 h-3 text-gray-700" />
             <span className="text-xs text-gray-700">Club HQ</span>
-          </div>
-          <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
-            <Building2 className="w-3 h-3 text-gray-700" />
-            <span className="text-xs text-gray-700">Partnership HQ</span>
-          </div>
-          <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
-            <Flag className="w-3 h-3 text-gray-700" />
-            <span className="text-xs text-gray-700">Partnership Event</span>
           </div>
         </div>
       </div>
@@ -702,10 +538,6 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Active Clubs</span>
             <span className="text-gray-900 font-medium">{clubs.length}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500">Partnerships</span>
-            <span className="text-gray-900 font-medium">{allPartnerships.length}</span>
           </div>
           {currentClub && (
             <div className="flex justify-between text-sm">

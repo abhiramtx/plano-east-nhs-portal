@@ -21,7 +21,6 @@ import {
   Users,
   Search,
   MapPin,
-  Handshake,
   Image,
 } from 'lucide-react';
 import {
@@ -76,11 +75,6 @@ function SubmissionRow({ s }: { s: ArchivedSub }) {
         {logName && (
           <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
             <Calendar className="w-3 h-3" />{logName}
-          </span>
-        )}
-        {s.partnershipName && (
-          <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
-            <Handshake className="w-3 h-3" />{s.partnershipName}
           </span>
         )}
         {locationLabel && (
@@ -175,12 +169,6 @@ function SubmissionDetailCard({ s }: { s: ArchivedSub }) {
               <div className="col-span-2 flex items-center gap-1.5 text-gray-600">
                 <MapPin className="w-3 h-3 flex-shrink-0" />
                 <span>{locationLabel}</span>
-              </div>
-            )}
-            {s.partnershipName && (
-              <div className="col-span-2 flex items-center gap-1.5 text-blue-600">
-                <Handshake className="w-3 h-3 flex-shrink-0" />
-                <span className="font-medium">{s.partnershipName}</span>
               </div>
             )}
           </div>

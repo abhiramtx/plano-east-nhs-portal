@@ -76,10 +76,9 @@ export default function EventCheckin() {
 
     const email = user.email;
     const clubId = event.clubId;
-    const partnershipId = event.partnershipId;
 
     const proceed = async () => {
-      // Membership check — must belong to the event's club (or targetClubId for partnership events)
+      // Membership check — must belong to the event's club
       const requiredClubId = clubId || event.targetClubId;
       if (requiredClubId) {
         const mem = await getUserMembership(email);
@@ -98,7 +97,7 @@ export default function EventCheckin() {
         if (myRecord && !myRecord.checkOutTime) {
           return setStage({ type: 'already-checked-in', event, record: myRecord });
         }
-        const result = await checkInByQR(event.id, event.name, email, clubId, partnershipId);
+        const result = await checkInByQR(event.id, event.name, email, clubId);
         if (!result.success || !result.record) {
           return setStage({ type: 'error', event, message: result.message });
         }

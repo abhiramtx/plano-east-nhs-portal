@@ -36,7 +36,6 @@ import {
   BookOpen,
   ChevronDown,
   Filter,
-  Handshake
 } from 'lucide-react';
 
 interface AdminApprovalProps {
@@ -439,12 +438,6 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                         {formatDate(submission.date)}
                       </div>
                       <div className="flex items-center gap-1">
-                        {submission.partnershipId && (
-                          <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-200 text-[10px] px-1.5 py-0">
-                            <Handshake className="w-2.5 h-2.5 mr-0.5" />
-                            Partnership
-                          </Badge>
-                        )}
                         {submission.logName && (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                             {submission.logName}
@@ -467,12 +460,6 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                   <h2 className="text-xl font-semibold text-gray-900">
                     {selectedSubmission.activityName || 'Unnamed Activity'}
                   </h2>
-                  {selectedSubmission.partnershipId && (
-                    <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-200">
-                      <Handshake className="w-3 h-3 mr-1" />
-                      Partnership
-                    </Badge>
-                  )}
                 </div>
                 <div className="flex items-center space-x-3">
                   {(approvalsRequired > 1 || rejectionsRequired > 1) && (

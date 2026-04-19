@@ -37,9 +37,7 @@ import { AdminHistory } from "@/pages/admin-history";
 import { AdminCustomFields } from "@/pages/admin-custom-fields";
 import { AdminSettings } from "@/pages/admin-settings";
 import { AdminEvents } from "@/pages/admin-events";
-import { AdminPartnerships } from "@/pages/admin-partnerships";
 import { AdminQueryHistory } from "@/pages/admin-query-history";
-import { PartnershipsPage } from "@/pages/partnerships";
 import ClubJoin from "@/pages/club-join";
 import EventCheckin from "@/pages/event-checkin";
 
@@ -114,9 +112,6 @@ function VolunteerInterface({
           <Route path="/volunteer/history">
             <AdminHistory club={club} isVolunteerView={true} />
           </Route>
-          <Route path="/volunteer/partners">
-            <PartnershipsPage club={club} />
-          </Route>
           <Route path="/volunteer">
             <Dashboard club={club} />
           </Route>
@@ -141,7 +136,6 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
     if (path.includes('/admin/history')) return 'history';
     if (path.includes('/admin/settings')) return 'settings';
     if (path.includes('/admin/events')) return 'events';
-    if (path.includes('/admin/partnerships')) return 'partnerships';
     return 'approval';
   });
 
@@ -156,7 +150,6 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
     else if (path.includes('/admin/settings')) setCurrentPage('settings');
     else if (path.includes('/admin/approval')) setCurrentPage('approval');
     else if (path.includes('/admin/events')) setCurrentPage('events');
-    else if (path.includes('/admin/partnerships')) setCurrentPage('partnerships');
   }, []);
 
   const handleSignOut = async () => {
@@ -314,7 +307,6 @@ function AdminInterface({ user, club }: { user: User; club?: Club }) {
         {currentPage === 'query-history' && <AdminQueryHistory user={user} club={club} />}
         {currentPage === 'settings' && <AdminSettings user={user} club={club} />}
         {currentPage === 'events' && <AdminEvents user={user} club={club} />}
-        {currentPage === 'partnerships' && <AdminPartnerships user={user} club={club} />}
       </div>
     </div>
   );
