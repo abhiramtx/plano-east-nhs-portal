@@ -88,10 +88,12 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
   }, [subAffs, fedSubs]);
 
   const filteredClubs = useMemo(() => {
+    const subClubIds = new Set(subAffs.map(a => a.subClubId));
+    const subClubs = allClubs.filter(c => subClubIds.has(c.id) && c.id !== club.id);
     const q = searchQuery.toLowerCase().trim();
-    if (!q) return allClubs.filter(c => c.id !== club.id);
-    return allClubs.filter(c => c.id !== club.id && c.name.toLowerCase().includes(q));
-  }, [allClubs, searchQuery, club.id]);
+    if (!q) return subClubs;
+    return subClubs.filter(c => c.name.toLowerCase().includes(q));
+  }, [allClubs, searchQuery, club.id, subAffs]);
 
   // Bookmarked clubs' open events
   const bookmarkedClubIds = bookmarks.map(b => b.clubId);
@@ -135,7 +137,7 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
           </CardHeader>
           <CardContent>
             {leaderboard.length === 0 ? (
-              <p className="text-sm text-gray-500">No approved sub-clubs yet. Set them up in Admin → Settings → Affiliations.</p>
+              <p className="text-sm text-gray-500">No approved sub-clubs yet.</p>
             ) : (
               <div className="space-y-2">
                 {leaderboard.map((row, i) => (
