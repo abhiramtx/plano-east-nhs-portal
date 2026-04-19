@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, getCurrentUser, getUserSubmissions, deleteSubmission, HoursSubmission, Club, getAdminSettings, AdminSettings as AdminSettingsType } from "@/lib/firebase";
+import { User, getCurrentUser, getUserSubmissions, getUserSuperClubFedSubmissions, deleteSubmission, HoursSubmission, Club, getAdminSettings, AdminSettings as AdminSettingsType } from "@/lib/firebase";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -48,11 +48,22 @@ export default function Hours({ club }: HoursProps) {
   const openLogs = hoursLogs.filter(log => log.isOpen);
   const selectedLog = openLogs.find(log => String(log.id) === selectedLogId) || null;
 
-  const { data: submissions = [], isLoading } = useQuery<HoursSubmission[]>({
+  const { data: directSubmissions = [], isLoading } = useQuery<HoursSubmission[]>({
     queryKey: ['firebase-user-submissions', userEmail, club.id],
     queryFn: () => getUserSubmissions(userEmail, club.id),
     enabled: !!userEmail && !!club.id,
   });
+
+  // Fed submissions: this volunteer opted to also send these sub-club hours
+  // to THIS club (when this club is the super-club). Read-only here; editing
+  // and deletion must happen from the originating sub-club.
+  const { data: fedSubmissions = [] } = useQuery<HoursSubmission[]>({
+    queryKey: ['firebase-user-fed-submissions', userEmail, club.id],
+    queryFn: () => getUserSuperClubFedSubmissions(userEmail, club.id),
+    enabled: !!userEmail && !!club.id,
+  });
+
+  const submissions = [...directSubmissions, ...fedSubmissions];
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -227,8 +238,11 @@ export default function Hours({ club }: HoursProps) {
               </Card>
             ) : (
               <div className="space-y-4 lg:space-y-6">
-                {filteredSubmissions.map((submission: HoursSubmission) => (
-                  <Card key={submission.id} className="bg-white border-gray-200">
+                {filteredSubmissions.map((submission: HoursSubmission) => {
+                  const isFed = (submission as any).__fedToSuperClubId === club.id;
+                  const fedFromName = (submission as any).__fedFromSubClubName || (submission as any).subClubName || 'sub-club';
+                  return (
+                  <Card key={`${isFed ? 'fed-' : ''}${submission.id}`} className="bg-white border-gray-200">
                     <CardContent className="p-4 lg:p-6">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
                         <div className="flex-1">
@@ -240,6 +254,11 @@ export default function Hours({ club }: HoursProps) {
                               {getStatusIcon(submission.status)}
                               <span className="ml-1 capitalize">{submission.status}</span>
                             </Badge>
+                            {isFed && (
+                              <Badge className="bg-amber-100 text-amber-800 border border-amber-200 text-xs">
+                                Submitted from sub-club: {fedFromName}
+                              </Badge>
+                            )}
                             {submission.eventId && (
                               <Badge className="bg-purple-100 text-purple-700 border border-purple-200">
                                 <Zap className="w-3 h-3 mr-1" />
@@ -292,7 +311,7 @@ export default function Hours({ club }: HoursProps) {
                               <Eye className="w-4 h-4" />
                             </Button>
                           )}
-                          {submission.status === 'rejected' && (
+                          {!isFed && submission.status === 'rejected' && (
                             <Button 
                               variant="outline" 
                               size="sm"
@@ -302,20 +321,28 @@ export default function Hours({ club }: HoursProps) {
                               <Edit className="w-4 h-4" />
                             </Button>
                           )}
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="border-gray-200 text-gray-600 hover:bg-gray-100"
-                            onClick={() => deleteMutation.mutate(submission.id)}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {!isFed && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="border-gray-200 text-gray-600 hover:bg-gray-100"
+                              onClick={() => deleteMutation.mutate(submission.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {isFed && (
+                            <span className="text-xs text-gray-500 italic max-w-[160px] text-right">
+                              Edit or delete from {fedFromName}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>

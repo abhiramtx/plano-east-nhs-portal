@@ -1465,10 +1465,6 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                           onClick={e => { e.stopPropagation(); setEditingSubmissionHours(null); }}
                                         ><X className="w-3 h-3" /></button>
                                       </span>
-                                    ) : (submission as any).__fedToSuperClubId === club.id ? (
-                                      <span className="flex items-center gap-1 text-gray-700">
-                                        {submission.hours} hours
-                                      </span>
                                     ) : (
                                       <span className="flex items-center gap-1 cursor-pointer hover:text-gray-900" onClick={e => { e.stopPropagation(); setEditingSubmissionHours({ id: submission.id, hours: String(submission.hours) }); }}>
                                         {submission.hours} hours <span className="text-gray-400 text-xs">(click to edit)</span>

@@ -1968,6 +1968,34 @@ export const getSuperClubFedSubmissions = async (superClubId: string): Promise<H
   });
 };
 
+// A volunteer's own opted-in fed submissions to a specific super-club, with
+// log/status remapped for super-club display. Read-only on volunteer side.
+export const getUserSuperClubFedSubmissions = async (userEmail: string, superClubId: string): Promise<HoursSubmission[]> => {
+  const q = query(
+    collection(db, "submissions"),
+    where("userEmail", "==", userEmail),
+    where("superClubId", "==", superClubId),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => {
+    const data = d.data() as any;
+    const sStatus = data.superClubStatus?.[superClubId]?.status || 'pending';
+    return {
+      id: d.id,
+      ...data,
+      logId: data.superClubLogId || data.logId,
+      logName: data.superClubLogName || data.logName,
+      status: sStatus,
+      submittedAt: toDate(data.submittedAt),
+      reviewedAt: data.reviewedAt ? toDate(data.reviewedAt) : undefined,
+      __fedFromSubClubId: data.clubId,
+      __fedFromSubClubName: data.subClubName,
+      __fedToSuperClubId: superClubId,
+      __originalLogName: data.logName,
+    } as any;
+  });
+};
+
 export const setSuperClubApprovalStatus = async (
   submissionId: string,
   superClubId: string,
