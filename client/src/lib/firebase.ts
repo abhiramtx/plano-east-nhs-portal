@@ -136,6 +136,10 @@ export interface Affiliation {
   requestedAt: Date;
   respondedAt?: Date;
   respondedBy?: string;
+  // When true (default), the super-club approves opted-in fed submissions
+  // independently (separate per-superclub status). When false, the super-club
+  // SHARES the sub-club's status — approve/reject in either place affects both.
+  independentApproval?: boolean;
 }
 
 export interface ClubBookmark {
@@ -1923,6 +1927,13 @@ export const removeAffiliation = async (affiliationId: string): Promise<void> =>
   await deleteDoc(doc(db, "affiliations", affiliationId));
 };
 
+export const setAffiliationIndependentApproval = async (
+  affiliationId: string,
+  independent: boolean,
+): Promise<void> => {
+  await updateDoc(doc(db, "affiliations", affiliationId), { independentApproval: independent });
+};
+
 // All approved super-clubs that this sub-club feeds into.
 export const getApprovedSuperClubs = async (subClubId: string): Promise<Affiliation[]> => {
   const all = await getOutgoingAffiliations(subClubId);
@@ -1942,6 +1953,10 @@ export const getApprovedSubClubs = async (superClubId: string): Promise<Affiliat
 // Each result is tagged with `__fedFromSubClubName` and `__fedToSuperClubId`
 // so consumers can render read-only UI and route approvals correctly.
 export const getSuperClubFedSubmissions = async (superClubId: string): Promise<HoursSubmission[]> => {
+  const incoming = await getApprovedSubClubs(superClubId);
+  const subToShared = new Map<string, boolean>();
+  incoming.forEach(a => subToShared.set(a.subClubId, a.independentApproval === false));
+
   const q = query(
     collection(db, "submissions"),
     where("superClubId", "==", superClubId),
@@ -1949,7 +1964,13 @@ export const getSuperClubFedSubmissions = async (superClubId: string): Promise<H
   const snap = await getDocs(q);
   return snap.docs.map(d => {
     const data = d.data() as any;
-    const sStatus = data.superClubStatus?.[superClubId]?.status || 'pending';
+    const shared = subToShared.get(data.clubId) === true;
+    const sStatus = shared
+      ? (data.status || 'pending')
+      : (data.superClubStatus?.[superClubId]?.status || 'pending');
+    const sReject = shared
+      ? data.rejectReason
+      : data.superClubStatus?.[superClubId]?.rejectReason;
     return {
       id: d.id,
       ...data,
@@ -1957,13 +1978,15 @@ export const getSuperClubFedSubmissions = async (superClubId: string): Promise<H
       logId: data.superClubLogId || data.logId,
       logName: data.superClubLogName || data.logName,
       status: sStatus,
+      rejectReason: sReject,
       submittedAt: toDate(data.submittedAt),
       reviewedAt: data.reviewedAt ? toDate(data.reviewedAt) : undefined,
       // Tags for UI / routing.
       __fedFromSubClubId: data.clubId,
-      __fedFromSubClubName: data.subClubName, // may be undefined; filled below
+      __fedFromSubClubName: data.subClubName,
       __fedToSuperClubId: superClubId,
       __originalLogName: data.logName,
+      __sharedApproval: shared,
     } as any;
   });
 };
@@ -1971,6 +1994,10 @@ export const getSuperClubFedSubmissions = async (superClubId: string): Promise<H
 // A volunteer's own opted-in fed submissions to a specific super-club, with
 // log/status remapped for super-club display. Read-only on volunteer side.
 export const getUserSuperClubFedSubmissions = async (userEmail: string, superClubId: string): Promise<HoursSubmission[]> => {
+  const incoming = await getApprovedSubClubs(superClubId);
+  const subToShared = new Map<string, boolean>();
+  incoming.forEach(a => subToShared.set(a.subClubId, a.independentApproval === false));
+
   const q = query(
     collection(db, "submissions"),
     where("userEmail", "==", userEmail),
@@ -1979,19 +2006,27 @@ export const getUserSuperClubFedSubmissions = async (userEmail: string, superClu
   const snap = await getDocs(q);
   return snap.docs.map(d => {
     const data = d.data() as any;
-    const sStatus = data.superClubStatus?.[superClubId]?.status || 'pending';
+    const shared = subToShared.get(data.clubId) === true;
+    const sStatus = shared
+      ? (data.status || 'pending')
+      : (data.superClubStatus?.[superClubId]?.status || 'pending');
+    const sReject = shared
+      ? data.rejectReason
+      : data.superClubStatus?.[superClubId]?.rejectReason;
     return {
       id: d.id,
       ...data,
       logId: data.superClubLogId || data.logId,
       logName: data.superClubLogName || data.logName,
       status: sStatus,
+      rejectReason: sReject,
       submittedAt: toDate(data.submittedAt),
       reviewedAt: data.reviewedAt ? toDate(data.reviewedAt) : undefined,
       __fedFromSubClubId: data.clubId,
       __fedFromSubClubName: data.subClubName,
       __fedToSuperClubId: superClubId,
       __originalLogName: data.logName,
+      __sharedApproval: shared,
     } as any;
   });
 };

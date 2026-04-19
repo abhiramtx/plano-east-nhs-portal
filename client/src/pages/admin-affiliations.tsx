@@ -11,7 +11,9 @@ import {
   requestAffiliation,
   respondToAffiliation,
   removeAffiliation,
+  setAffiliationIndependentApproval,
 } from "@/lib/firebase";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -69,6 +71,15 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
     onSuccess: (_d, { status }) => {
       invalidateAllAffiliationViews();
       toast({ title: status === 'approved' ? 'Affiliation approved' : 'Request rejected' });
+    },
+  });
+
+  const independentMutation = useMutation({
+    mutationFn: ({ id, value }: { id: string; value: boolean }) =>
+      setAffiliationIndependentApproval(id, value),
+    onSuccess: () => {
+      invalidateAllAffiliationViews();
+      toast({ title: 'Approval mode updated' });
     },
   });
 
@@ -162,17 +173,36 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
               <p className="text-sm text-gray-500">No approved sub-clubs yet.</p>
             ) : (
               <div className="space-y-2">
-                {incomingApproved.map(a => (
-                  <div key={a.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{a.subClubName}</p>
-                      <p className="text-xs text-gray-500">Approved {a.respondedAt?.toLocaleDateString()}</p>
+                {incomingApproved.map(a => {
+                  const independent = a.independentApproval !== false; // default true
+                  return (
+                  <div key={a.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">{a.subClubName}</p>
+                        <p className="text-xs text-gray-500">Approved {a.respondedAt?.toLocaleDateString()}</p>
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => removeMutation.mutate(a.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => removeMutation.mutate(a.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-start justify-between gap-3 pt-2 border-t border-gray-200">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">Independent approval</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {independent
+                            ? `On — opted-in hours from ${a.subClubName} land here as Pending and you approve them separately. The sub-club's status is untouched.`
+                            : `Off — this club shares the sub-club's approval status. Approve or reject in either place and both sides update together.`}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={independent}
+                        onCheckedChange={(v) => independentMutation.mutate({ id: a.id, value: v })}
+                      />
+                    </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

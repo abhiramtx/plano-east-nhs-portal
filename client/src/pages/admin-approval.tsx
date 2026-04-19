@@ -133,18 +133,30 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     mutationFn: async ({ id, status, rejectReason }: { id: string; status: string; rejectReason?: string }) => {
       const submission = studentSubmissions.find((s: HoursSubmission) => s.id === id);
 
-      // Fed submission opted-in to this super-club: route through superClubStatus.
+      // Fed submission opted-in to this super-club: route through superClubStatus,
+      // unless the affiliation is in SHARED mode — then write directly to the
+      // source submission so the sub-club sees the same status.
       const fedTo = (submission as any)?.__fedToSuperClubId as string | undefined;
+      const sharedApproval = (submission as any)?.__sharedApproval === true;
       if (fedTo && fedTo === club.id) {
         if (status === 'approved' || status === 'rejected' || status === 'pending') {
-          await setSuperClubApprovalStatus(
-            id,
-            club.id,
-            status,
-            submission?.hours || 0,
-            user.email,
-            status === 'rejected' ? rejectReason : undefined,
-          );
+          if (sharedApproval) {
+            await updateSubmission(id, {
+              status,
+              rejectReason: status === 'rejected' ? rejectReason : undefined,
+              reviewedAt: new Date(),
+              reviewedBy: user.email,
+            } as any);
+          } else {
+            await setSuperClubApprovalStatus(
+              id,
+              club.id,
+              status,
+              submission?.hours || 0,
+              user.email,
+              status === 'rejected' ? rejectReason : undefined,
+            );
+          }
         }
         return;
       }
