@@ -11,6 +11,7 @@ import {
   getAdminAssignmentForClub, 
   getPendingSubmissionsForUserInClub, 
   updateSubmission,
+  setSuperClubApprovalStatus,
   recalculateClubHours,
   getUserProfile,
   getAdminSettings,
@@ -131,6 +132,23 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, rejectReason }: { id: string; status: string; rejectReason?: string }) => {
       const submission = studentSubmissions.find((s: HoursSubmission) => s.id === id);
+
+      // Fed submission opted-in to this super-club: route through superClubStatus.
+      const fedTo = (submission as any)?.__fedToSuperClubId as string | undefined;
+      if (fedTo && fedTo === club.id) {
+        if (status === 'approved' || status === 'rejected' || status === 'pending') {
+          await setSuperClubApprovalStatus(
+            id,
+            club.id,
+            status,
+            submission?.hours || 0,
+            user.email,
+            status === 'rejected' ? rejectReason : undefined,
+          );
+        }
+        return;
+      }
+
       const currentApprovals = submission?.approvals || [];
       const currentRejections = submission?.rejections || [];
       const currentRejectionReasons = submission?.rejectionReasons || {};

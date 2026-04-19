@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, getSuperClubFedSubmissions, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, getSuperClubFedSubmissions, setSuperClubApprovalStatus, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -115,6 +115,12 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, rejectReason }: { id: string; status: string; rejectReason?: string }) => {
+      // Fed (opted-in) submission: route through per-superclub status.
+      const sub = submissions.find((s: HoursSubmission) => s.id === id) as any;
+      if (sub?.__fedToSuperClubId === club.id) {
+        await setSuperClubApprovalStatus(id, club.id, status as any, sub.hours || 0, user?.email || '', rejectReason);
+        return;
+      }
       await updateSubmission(id, { 
         status, 
         rejectReason: rejectReason || undefined,
@@ -125,6 +131,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['firebase-submissions'] });
       queryClient.invalidateQueries({ queryKey: ['firebase-student-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['super-club-fed-submissions'] });
       setRejectingSubmission(null);
       setRejectReason("");
       toast({
@@ -1426,6 +1433,11 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                       Event: {submission.eventName}
                                     </Badge>
                                   )}
+                                  {(submission as any).__fedToSuperClubId === club.id && (
+                                    <Badge className="bg-amber-100 text-amber-800 text-xs border border-amber-200">
+                                      Submitted from sub-club: {(submission as any).__fedFromSubClubName || (submission as any).subClubName || 'sub-club'}
+                                    </Badge>
+                                  )}
                                 </div>
                                 {submission.description && (
                                   <p className="text-sm text-gray-500">{submission.description}</p>
@@ -1452,6 +1464,10 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                           className="text-red-400 hover:text-red-600"
                                           onClick={e => { e.stopPropagation(); setEditingSubmissionHours(null); }}
                                         ><X className="w-3 h-3" /></button>
+                                      </span>
+                                    ) : (submission as any).__fedToSuperClubId === club.id ? (
+                                      <span className="flex items-center gap-1 text-gray-700">
+                                        {submission.hours} hours
                                       </span>
                                     ) : (
                                       <span className="flex items-center gap-1 cursor-pointer hover:text-gray-900" onClick={e => { e.stopPropagation(); setEditingSubmissionHours({ id: submission.id, hours: String(submission.hours) }); }}>

@@ -166,6 +166,7 @@ export default function Hours({ club }: HoursProps) {
                     onCancel={() => setIsFormOpen(false)}
                     editingSubmission={editingSubmission}
                     clubId={club.id}
+                    clubName={club.name}
                     logId={editingSubmission ? (editingSubmission as any).logId : (selectedLogId || undefined)}
                     logName={editingSubmission ? (editingSubmission as any).logName : (selectedLog?.name || undefined)}
                     requireProofImage={requireProofImage}

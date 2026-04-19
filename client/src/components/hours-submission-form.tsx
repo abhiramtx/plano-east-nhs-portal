@@ -7,8 +7,10 @@ import { z } from "zod";
 import {
   User, HoursSubmission, createSubmission, updateSubmission,
   getClubEvents, ClubEvent,
-  checkInUser
+  checkInUser,
+  getApprovedSuperClubs, Affiliation,
 } from "@/lib/firebase";
+import type { HoursLog } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -55,12 +57,13 @@ interface HoursSubmissionFormProps {
   onCancel?: () => void;
   editingSubmission?: HoursSubmission | null;
   clubId?: string;
+  clubName?: string;
   logId?: string;
   logName?: string;
   requireProofImage?: boolean;
 }
 
-export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmission, clubId, logId, logName, requireProofImage = false }: HoursSubmissionFormProps) {
+export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmission, clubId, clubName, logId, logName, requireProofImage = false }: HoursSubmissionFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(editingSubmission?.proofImageUrl || null);
   const [locationSearch, setLocationSearch] = useState(editingSubmission?.location || "");
@@ -87,6 +90,11 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
   const [eventPassword, setEventPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
+  // Super-club opt-in (sub-club submissions can also be sent to the super-club)
+  const [alsoSubmitToSuper, setAlsoSubmitToSuper] = useState<boolean>(!!editingSubmission?.superClubId);
+  const [superLogId, setSuperLogId] = useState<string>(editingSubmission?.superClubLogId || '');
+  const [superLogError, setSuperLogError] = useState<string>('');
+
   const { toast } = useToast();
 
   const form = useForm<FormData>({
@@ -105,6 +113,26 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
     queryFn: () => getClubEvents(clubId!),
     enabled: !!clubId,
   });
+
+  // If this club has an approved super-club, allow opting in.
+  const { data: approvedSupers = [] } = useQuery<Affiliation[]>({
+    queryKey: ['affiliations-super-approved', clubId],
+    queryFn: () => getApprovedSuperClubs(clubId!),
+    enabled: !!clubId,
+  });
+  const superClub = approvedSupers[0]; // restricted to one
+
+  const { data: superHoursLogs = [] } = useQuery<HoursLog[]>({
+    queryKey: ['/api/hours-logs', superClub?.superClubId],
+    queryFn: async () => {
+      if (!superClub) return [];
+      const res = await fetch(`/api/hours-logs/${superClub.superClubId}`, { credentials: 'include' });
+      if (!res.ok) return [];
+      return res.json() as Promise<HoursLog[]>;
+    },
+    enabled: !!superClub,
+  });
+  const openSuperLogs = superHoursLogs.filter(l => l.isOpen !== false);
 
   const availableEvents = clubEvents.filter(e => e.isOpen !== false && e.type !== 'scan_qr' && e.type !== 'show_qr');
   const selectedEvent = availableEvents.find(e => e.id === selectedEventId) || null;
@@ -148,6 +176,14 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
         }
       }
 
+      // Validate super-club opt-in selection
+      if (alsoSubmitToSuper && superClub) {
+        if (openSuperLogs.length > 0 && !superLogId) {
+          setSuperLogError(`Please choose which ${superClub.superClubName} log to file under.`);
+          throw new Error('Missing super-club log selection');
+        }
+      }
+
       let proofImageUrl = editingSubmission?.proofImageUrl;
       if (selectedFile) {
         const compressed = await compressImage(selectedFile);
@@ -158,6 +194,8 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
       }
 
       const now = new Date().toISOString();
+
+      const chosenSuperLog = openSuperLogs.find(l => String(l.id) === superLogId);
 
       if (editingSubmission) {
         const updateData: any = {
@@ -172,6 +210,30 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
           updateData.latitude = selectedLocation.lat;
           updateData.longitude = selectedLocation.lng;
           updateData.location = selectedLocation.name;
+        }
+        // Sync super-club opt-in fields on edit
+        if (alsoSubmitToSuper && superClub) {
+          updateData.superClubId = superClub.superClubId;
+          updateData.superClubName = superClub.superClubName;
+          if (chosenSuperLog) {
+            updateData.superClubLogId = String(chosenSuperLog.id);
+            updateData.superClubLogName = chosenSuperLog.name;
+          }
+          // Reset super-club approval to pending so it re-enters the queue
+          const existingSuper = (editingSubmission as any).superClubStatus || {};
+          updateData.superClubStatus = {
+            ...existingSuper,
+            [superClub.superClubId]: {
+              ...(existingSuper[superClub.superClubId] || {}),
+              status: 'pending',
+              hours: parseFloat(data.hours),
+            },
+          };
+        } else if (!alsoSubmitToSuper && (editingSubmission as any).superClubId) {
+          updateData.superClubId = null;
+          updateData.superClubName = null;
+          updateData.superClubLogId = null;
+          updateData.superClubLogName = null;
         }
         await updateSubmission(editingSubmission.id, updateData);
       } else {
@@ -193,9 +255,24 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
         }
         if (logId) submissionData.logId = logId;
         if (logName) submissionData.logName = logName;
+        if (clubName) submissionData.subClubName = clubName;
         if (selectedEventId) {
           submissionData.eventId = selectedEventId;
           submissionData.eventName = selectedEvent?.name;
+        }
+        if (alsoSubmitToSuper && superClub) {
+          submissionData.superClubId = superClub.superClubId;
+          submissionData.superClubName = superClub.superClubName;
+          if (chosenSuperLog) {
+            submissionData.superClubLogId = String(chosenSuperLog.id);
+            submissionData.superClubLogName = chosenSuperLog.name;
+          }
+          submissionData.superClubStatus = {
+            [superClub.superClubId]: {
+              status: 'pending',
+              hours: parseFloat(data.hours),
+            },
+          };
         }
         await createSubmission(submissionData);
 
@@ -220,12 +297,15 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
       setSelectedFile(null); setImagePreview(null);
       setSelectedLocation(null); setLocationSearch("");
       setSelectedEventId(''); setEventPassword(''); setPasswordError('');
+      setAlsoSubmitToSuper(false); setSuperLogId(''); setSuperLogError('');
       queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', user?.email, clubId] });
       queryClient.invalidateQueries({ queryKey: ['firebase-club-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['super-club-fed-submissions'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-pending-submissions'] });
       onSuccess();
     },
     onError: (error: any) => {
-      if (error.message !== 'Incorrect event password') {
+      if (error.message !== 'Incorrect event password' && error.message !== 'Missing super-club log selection') {
         toast({ title: "Error", description: error?.message || 'Failed to submit hours', variant: "destructive" });
       }
     }
@@ -297,6 +377,46 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                 </div>
               )}
             </div>
+        </div>
+      )}
+
+      {/* Super-club opt-in */}
+      {superClub && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={alsoSubmitToSuper}
+              onChange={e => { setAlsoSubmitToSuper(e.target.checked); setSuperLogError(''); }}
+              className="mt-1"
+            />
+            <span className="text-sm text-blue-900">
+              <strong>ALSO SUBMIT TO {superClub.superClubName.toUpperCase()}</strong>
+              <span className="block text-xs text-blue-800 mt-0.5 font-normal">
+                Send a copy of these hours to the super-club for separate approval. The super-club admin can approve/reject independently — they cannot edit or delete; only this club ({clubName || 'sub-club'}) can.
+              </span>
+            </span>
+          </label>
+          {alsoSubmitToSuper && (
+            <div className="pl-6 space-y-1">
+              <Label className="text-blue-900 text-sm">{superClub.superClubName} log</Label>
+              {openSuperLogs.length === 0 ? (
+                <p className="text-xs text-blue-800">{superClub.superClubName} has no open logs right now. Ask their admin to open one.</p>
+              ) : (
+                <Select value={superLogId} onValueChange={(v) => { setSuperLogId(v); setSuperLogError(''); }}>
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Choose which log to file under..." />
+                  </SelectTrigger>
+                  <SelectContent className="z-[200]">
+                    {openSuperLogs.map(l => (
+                      <SelectItem key={String(l.id)} value={String(l.id)}>{l.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              {superLogError && <p className="text-xs text-red-600">{superLogError}</p>}
+            </div>
+          )}
         </div>
       )}
 

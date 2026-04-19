@@ -103,6 +103,12 @@ export interface HoursSubmission {
   approvals?: string[];
   rejections?: string[];
   rejectionReasons?: { [adminEmail: string]: string };
+  // Volunteer opt-in: when submitting from a sub-club, the volunteer can choose
+  // to also submit these hours to their super-club under a specific log.
+  superClubId?: string;
+  superClubName?: string;
+  superClubLogId?: string;
+  superClubLogName?: string;
   // Per-superclub approval state for affiliated submissions.
   // Key = superClubId. Independent of original sub-club approval.
   superClubStatus?: {
@@ -1263,9 +1269,17 @@ export const getAdminAssignmentForClub = async (clubId: string, adminEmail: stri
   const submissions = await getClubSubmissions(clubId);
   const pendingSubmissions = submissions.filter(s => s.status === "pending");
 
-  if (pendingSubmissions.length === 0) return null;
+  // Also count volunteers with opted-in fed submissions awaiting this super-club's approval.
+  const fed = await getSuperClubFedSubmissions(clubId);
+  const fedPending = fed.filter(s => s.status === 'pending');
 
-  const userEmails = Array.from(new Set(pendingSubmissions.map(s => s.userEmail)))
+  const allEmails = [
+    ...pendingSubmissions.map(s => s.userEmail),
+    ...fedPending.map(s => s.userEmail),
+  ];
+  if (allEmails.length === 0) return null;
+
+  const userEmails = Array.from(new Set(allEmails))
     .filter(email => !skipEmails.includes(email));
 
   for (const email of userEmails) {
@@ -1299,12 +1313,40 @@ export const getPendingSubmissionsForUserInClub = async (userEmail: string, club
     where("status", "==", "pending")
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
+  const direct = querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
     submittedAt: toDate(doc.data().submittedAt),
     reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
   })) as HoursSubmission[];
+
+  // Also include fed submissions opted-in to this super-club that are still
+  // pending the super-club's approval.
+  const fedQ = query(
+    collection(db, "submissions"),
+    where("userEmail", "==", userEmail),
+    where("superClubId", "==", clubId),
+  );
+  const fedSnap = await getDocs(fedQ);
+  const fed = fedSnap.docs.map(doc => {
+    const data = doc.data() as any;
+    const sStatus = data.superClubStatus?.[clubId]?.status || 'pending';
+    return {
+      id: doc.id,
+      ...data,
+      logId: data.superClubLogId || data.logId,
+      logName: data.superClubLogName || data.logName,
+      status: sStatus,
+      submittedAt: toDate(data.submittedAt),
+      reviewedAt: data.reviewedAt ? toDate(data.reviewedAt) : undefined,
+      __fedFromSubClubId: data.clubId,
+      __fedFromSubClubName: data.subClubName,
+      __fedToSuperClubId: clubId,
+      __originalLogName: data.logName,
+    } as any;
+  }).filter(s => s.status === 'pending');
+
+  return [...direct, ...fed];
 };
 
 export const archiveYearData = async (schoolYear: string, clubId?: string, clubName?: string): Promise<void> => {
@@ -1893,25 +1935,37 @@ export const getApprovedSubClubs = async (superClubId: string): Promise<Affiliat
   return all.filter(a => a.status === 'approved');
 };
 
-// Returns submissions made in any approved sub-club of `superClubId`,
-// filtered to ONLY include those whose user is also a member of the super-club
-// (avoids cross-affiliation clashes).
+// Returns submissions that volunteers explicitly opted in to send to this
+// super-club. Each returned submission is remapped so its `logId/logName` and
+// `status` reflect the super-club's chosen log + the per-superclub approval
+// state (default 'pending'). The original sub-club submission is NOT mutated.
+// Each result is tagged with `__fedFromSubClubName` and `__fedToSuperClubId`
+// so consumers can render read-only UI and route approvals correctly.
 export const getSuperClubFedSubmissions = async (superClubId: string): Promise<HoursSubmission[]> => {
-  const subAffs = await getApprovedSubClubs(superClubId);
-  if (subAffs.length === 0) return [];
-  const superMembers = await getMemberships(superClubId);
-  const memberEmails = new Set(superMembers.map(m => m.userEmail));
-
-  const all: HoursSubmission[] = [];
-  for (const aff of subAffs) {
-    const subs = await getClubSubmissions(aff.subClubId);
-    for (const s of subs) {
-      // Only requirement: the volunteer is a member of both clubs.
-      // Sub-club and super-club approve hours independently/in parallel.
-      if (memberEmails.has(s.userEmail)) all.push(s);
-    }
-  }
-  return all;
+  const q = query(
+    collection(db, "submissions"),
+    where("superClubId", "==", superClubId),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => {
+    const data = d.data() as any;
+    const sStatus = data.superClubStatus?.[superClubId]?.status || 'pending';
+    return {
+      id: d.id,
+      ...data,
+      // Remap to super-club's log + status for display in super-club views.
+      logId: data.superClubLogId || data.logId,
+      logName: data.superClubLogName || data.logName,
+      status: sStatus,
+      submittedAt: toDate(data.submittedAt),
+      reviewedAt: data.reviewedAt ? toDate(data.reviewedAt) : undefined,
+      // Tags for UI / routing.
+      __fedFromSubClubId: data.clubId,
+      __fedFromSubClubName: data.subClubName, // may be undefined; filled below
+      __fedToSuperClubId: superClubId,
+      __originalLogName: data.logName,
+    } as any;
+  });
 };
 
 export const setSuperClubApprovalStatus = async (
