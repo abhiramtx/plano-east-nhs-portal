@@ -16,7 +16,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Search, Bookmark, BookmarkCheck, Calendar, Network, MapPin } from "lucide-react";
+import { Trophy, Search, Bookmark, BookmarkCheck, Calendar, Network, MapPin, Award } from "lucide-react";
 
 interface AffiliatesProps {
   user: User;
@@ -114,17 +114,26 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
   const bookmarkedEvents = eventsQueries.data || [];
 
   return (
-    <div className="flex-1 overflow-auto bg-white">
-      <div className="max-w-6xl mx-auto p-6 lg:p-8 space-y-8">
-        <div className="border-b border-gray-200 pb-4">
-          <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-            <Network className="w-6 h-6" />
-            Affiliates
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Sub-clubs feeding hours into <strong>{club.name}</strong>, plus clubs you've bookmarked.
-          </p>
+    <div className="flex-1 flex flex-col bg-white min-h-0">
+      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+        <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Affiliates</h1>
+              <p className="text-gray-600 mt-1">
+                Sub-clubs feeding hours into <strong>{club.name}</strong>, plus clubs you've bookmarked.
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
+                <Award className="w-5 h-5 text-white" />
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="flex-1 overflow-auto p-4 lg:p-6 space-y-8">
 
         {/* Leaderboard */}
         <Card>
