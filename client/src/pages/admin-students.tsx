@@ -207,14 +207,15 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
     queryFn: () => getSuperClubFedSubmissions(club.id),
   });
 
+  // Sub-club submissions of shared volunteers are pooled into this super-club
+  // using their shared approval status. The super-club admin can still flip
+  // an approved submission to rejected from the volunteer page (uses the
+  // existing updateSubmission flow).
   const submissions = useMemo<HoursSubmission[]>(() => {
-    const fedNormalized: HoursSubmission[] = fedSubmissions.map((s: HoursSubmission) => ({
-      ...s,
-      // Use this super-club's approval state instead of the sub-club's status
-      status: (s.superClubStatus?.[club.id]?.status || 'pending') as HoursSubmission['status'],
-    }));
-    return [...directSubmissions, ...fedNormalized];
-  }, [directSubmissions, fedSubmissions, club.id]);
+    const directIds = new Set(directSubmissions.map((s: HoursSubmission) => s.id));
+    const fedDeduped = fedSubmissions.filter((s: HoursSubmission) => !directIds.has(s.id));
+    return [...directSubmissions, ...fedDeduped];
+  }, [directSubmissions, fedSubmissions]);
 
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ['firebase-user-profiles'],

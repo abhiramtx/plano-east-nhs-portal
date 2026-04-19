@@ -1260,24 +1260,13 @@ export const getAdminAssignment = async (adminEmail: string, skipEmails: string[
 };
 
 export const getAdminAssignmentForClub = async (clubId: string, adminEmail: string, skipEmails: string[] = []): Promise<UserProfile | null> => {
-  // Direct pending submissions to this club
   const submissions = await getClubSubmissions(clubId);
-  const directPending = submissions.filter(s => s.status === "pending");
+  const pendingSubmissions = submissions.filter(s => s.status === "pending");
 
-  // Fed pending submissions: sub-club submissions of shared volunteers
-  // whose super-club approval state is not yet finalized
-  const fedAll = await getSuperClubFedSubmissions(clubId);
-  const fedPending = fedAll.filter(s => {
-    const st = s.superClubStatus?.[clubId]?.status;
-    return st !== 'approved' && st !== 'rejected';
-  });
+  if (pendingSubmissions.length === 0) return null;
 
-  const userEmails = Array.from(new Set([
-    ...directPending.map(s => s.userEmail),
-    ...fedPending.map(s => s.userEmail),
-  ])).filter(email => !skipEmails.includes(email));
-
-  if (userEmails.length === 0) return null;
+  const userEmails = Array.from(new Set(pendingSubmissions.map(s => s.userEmail)))
+    .filter(email => !skipEmails.includes(email));
 
   for (const email of userEmails) {
     const profile = await getUserProfile(email);
@@ -1303,7 +1292,6 @@ export const getPendingSubmissionsForUser = async (userEmail: string): Promise<H
 };
 
 export const getPendingSubmissionsForUserInClub = async (userEmail: string, clubId: string): Promise<HoursSubmission[]> => {
-  // Direct pending submissions to this club
   const q = query(
     collection(db, "submissions"),
     where("userEmail", "==", userEmail),
@@ -1311,23 +1299,12 @@ export const getPendingSubmissionsForUserInClub = async (userEmail: string, club
     where("status", "==", "pending")
   );
   const querySnapshot = await getDocs(q);
-  const direct = querySnapshot.docs.map(doc => ({
+  return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
     submittedAt: toDate(doc.data().submittedAt),
     reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
   })) as HoursSubmission[];
-
-  // Plus fed submissions from sub-clubs (where this user is a member of both
-  // the sub-club and this super-club) whose super-club approval is not finalized
-  const fedAll = await getSuperClubFedSubmissions(clubId);
-  const fedForUser = fedAll.filter(s => {
-    if (s.userEmail !== userEmail) return false;
-    const st = s.superClubStatus?.[clubId]?.status;
-    return st !== 'approved' && st !== 'rejected';
-  });
-
-  return [...direct, ...fedForUser];
 };
 
 export const archiveYearData = async (schoolYear: string, clubId?: string, clubName?: string): Promise<void> => {

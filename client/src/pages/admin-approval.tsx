@@ -131,24 +131,6 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status, rejectReason }: { id: string; status: string; rejectReason?: string }) => {
       const submission = studentSubmissions.find((s: HoursSubmission) => s.id === id);
-
-      // Fed sub-club submission: super-club approves via separate per-superclub
-      // status; never modifies the sub-club's own status field.
-      const isFed = !!submission && submission.clubId !== club.id;
-      if (isFed && (status === 'approved' || status === 'rejected')) {
-        const { recordSuperClubReview } = await import('@/lib/firebase');
-        const threshold = status === 'approved' ? approvalsRequired : rejectionsRequired;
-        await recordSuperClubReview(
-          id,
-          club.id,
-          user.email,
-          status,
-          threshold,
-          rejectReason,
-        );
-        return;
-      }
-
       const currentApprovals = submission?.approvals || [];
       const currentRejections = submission?.rejections || [];
       const currentRejectionReasons = submission?.rejectionReasons || {};
@@ -247,22 +229,10 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     });
   };
 
-  const alreadyApproved = (submission: HoursSubmission | null) => {
-    if (!submission) return false;
-    const isFed = submission.clubId !== club.id;
-    const arr = isFed
-      ? (submission.superClubStatus?.[club.id]?.approvals || [])
-      : (submission.approvals || []);
-    return arr.includes(user.email);
-  };
-  const alreadyRejected = (submission: HoursSubmission | null) => {
-    if (!submission) return false;
-    const isFed = submission.clubId !== club.id;
-    const arr = isFed
-      ? (submission.superClubStatus?.[club.id]?.rejections || [])
-      : (submission.rejections || []);
-    return arr.includes(user.email);
-  };
+  const alreadyApproved = (submission: HoursSubmission | null) =>
+    (submission?.approvals || []).includes(user.email);
+  const alreadyRejected = (submission: HoursSubmission | null) =>
+    (submission?.rejections || []).includes(user.email);
 
   const handleApprove = () => {
     if (selectedSubmission) {
