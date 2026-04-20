@@ -3,7 +3,6 @@ import { CheckCircle, XCircle, Clock, LogIn, Loader2, CalendarDays, AlertCircle,
 import { Button } from "@/components/ui/button";
 import {
   auth,
-  signInWithGoogle,
   getEventById,
   getUserMembership,
   getEventAttendance,
@@ -12,6 +11,7 @@ import {
   ClubEvent,
   EventAttendance,
 } from "@/lib/firebase";
+import { AuthPanel } from "@/components/auth-panel";
 import { onAuthStateChanged } from "firebase/auth";
 
 type Stage =
@@ -42,7 +42,6 @@ export default function EventCheckin() {
 
   // Start in signin stage (no event loaded yet) — load event only after auth
   const [stage, setStage] = useState<Stage>(eventId ? { type: 'signin' } : { type: 'event-not-found' });
-  const [signingIn, setSigningIn] = useState(false);
 
   // Auth listener: when user signs in, move to 'loading' so we can fetch the event with auth
   useEffect(() => {
@@ -123,16 +122,7 @@ export default function EventCheckin() {
     proceed().catch(err => setStage({ type: 'error', event, message: err.message || 'An error occurred' }));
   }, [stage.type]);
 
-  const handleSignIn = async () => {
-    if (stage.type !== 'signin') return;
-    setSigningIn(true);
-    try {
-      await signInWithGoogle();
-      // Auth listener will fire and transition to 'loading', then 'checking'
-    } catch (err: any) {
-      setSigningIn(false);
-    }
-  };
+  // Auth is now handled by AuthPanel inline
 
   const isCheckin = action === 'checkin';
   const accentColor = isCheckin ? 'green' : 'red';
@@ -173,18 +163,12 @@ export default function EventCheckin() {
 
     if (stage.type === 'signin') {
       return (
-        <div className="flex flex-col items-center gap-4 py-8 text-center">
-          <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
-            <LogIn className="w-6 h-6 text-gray-500" />
-          </div>
-          <div>
-            <p className="font-semibold text-gray-900 text-lg">Sign in to {isCheckin ? 'check in' : 'check out'}</p>
-            <p className="text-sm text-gray-500 mt-1">Use your Google account to record your attendance.</p>
-          </div>
-          <Button onClick={handleSignIn} disabled={signingIn} className="w-full max-w-xs bg-gray-900 hover:bg-gray-700 text-white">
-            {signingIn ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <LogIn className="w-4 h-4 mr-2" />}
-            Sign in with Google
-          </Button>
+        <div className="py-4">
+          <AuthPanel
+            heading={`Sign in to ${isCheckin ? 'check in' : 'check out'}`}
+            subheading="Sign in to record your attendance."
+            allowSignUp={true}
+          />
         </div>
       );
     }
