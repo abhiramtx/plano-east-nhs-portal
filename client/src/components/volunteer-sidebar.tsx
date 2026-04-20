@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { User, Club, Membership, getUserProfile, logClubLeave, getApprovedSubClubs } from "@/lib/firebase";
+import { User, Club, Membership, getUserProfile, logClubLeave } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -38,13 +38,6 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
     staleTime: 60000,
   });
 
-  const { data: approvedSubClubs = [] } = useQuery({
-    queryKey: ['affiliations-sub-approved', club.id],
-    queryFn: () => getApprovedSubClubs(club.id),
-    staleTime: 120000,
-  });
-  const hasSubClubs = approvedSubClubs.length > 0;
-
 
   const profileName = profile
     ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ')
@@ -64,7 +57,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
       items: [
         { path: "/volunteer/map", icon: Map, label: "Territory Map" },
         { path: "/volunteer/club", icon: Globe, label: "My Club" },
-        ...(hasSubClubs ? [{ path: "/volunteer/affiliates", icon: Network, label: "Affiliates" }] : []),
+        { path: "/volunteer/affiliates", icon: Network, label: "Affiliates" },
       ],
     },
     {

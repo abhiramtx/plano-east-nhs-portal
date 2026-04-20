@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   getAdminAssignmentForClub, 
   getPendingSubmissionsForUserInClub, 
-  getSuperClubFedSubmissions,
   updateSubmission,
   setSuperClubApprovalStatus,
   recalculateClubHours,
@@ -37,9 +36,7 @@ import {
   UserX,
   BookOpen,
   ChevronDown,
-  ChevronUp,
   Filter,
-  Network,
 } from 'lucide-react';
 
 interface AdminApprovalProps {
@@ -57,11 +54,6 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
   const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
   const [logDropdownOpen, setLogDropdownOpen] = useState(false);
   const logDropdownRef = useRef<HTMLDivElement>(null);
-  // Fed-submission (super-club) review state
-  const [fedPanelOpen, setFedPanelOpen] = useState(true);
-  const [selectedFedSub, setSelectedFedSub] = useState<HoursSubmission | null>(null);
-  const [fedRejectingId, setFedRejectingId] = useState<string | null>(null);
-  const [fedRejectReason, setFedRejectReason] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -73,14 +65,6 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
   const { data: hoursLogs = [] } = useQuery<HoursLog[]>({
     queryKey: ['/api/hours-logs', club.id],
   });
-
-  const { data: allFedSubs = [], isLoading: fedSubsLoading } = useQuery<HoursSubmission[]>({
-    queryKey: ['super-club-fed-submissions', club.id],
-    queryFn: () => getSuperClubFedSubmissions(club.id),
-    refetchInterval: 15000,
-    staleTime: 0,
-  });
-  const pendingFedSubs = allFedSubs.filter((s: any) => s.status === 'pending');
 
   const approvalsRequired = adminSettings?.approvalsRequired ?? 1;
   const rejectionsRequired = adminSettings?.rejectionsRequired ?? 1;
@@ -263,43 +247,6 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     },
   });
 
-  const fedReviewMutation = useMutation({
-    mutationFn: async ({ sub, status, rejectReason }: { sub: HoursSubmission; status: string; rejectReason?: string }) => {
-      const fedTo = (sub as any).__fedToSuperClubId as string | undefined;
-      const sharedApproval = (sub as any).__sharedApproval === true;
-      if (!fedTo || fedTo !== club.id) return;
-      if (sharedApproval) {
-        await updateSubmission(sub.id, {
-          status,
-          rejectReason: status === 'rejected' ? rejectReason : undefined,
-          reviewedAt: new Date(),
-          reviewedBy: user.email,
-        } as any);
-      } else {
-        await setSuperClubApprovalStatus(
-          sub.id, club.id,
-          status as 'pending' | 'approved' | 'rejected',
-          sub.hours, user.email,
-          status === 'rejected' ? rejectReason : undefined,
-        );
-      }
-      if (status === 'approved' || status === 'rejected') {
-        await recalculateClubHours((sub as any).__fedFromSubClubId || sub.clubId).catch(() => {});
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['super-club-fed-submissions', club.id] });
-      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
-      setFedRejectingId(null);
-      setFedRejectReason('');
-      setSelectedFedSub(null);
-      toast({ title: 'Review recorded' });
-    },
-    onError: () => {
-      toast({ title: 'Failed to update', description: 'Could not record your review.', variant: 'destructive' });
-    },
-  });
-
   const handleReleaseAssignment = () => {
     if (assignedStudent?.email) {
       setSkippedEmails(prev => [...prev, assignedStudent.email]);
@@ -356,8 +303,31 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     });
   };
 
+  if (assignmentLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Getting your assignment...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!assignment) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Assignment Available</h3>
+          <p className="text-gray-500">All submissions have been reviewed or assigned to other administrators</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0 overflow-auto">
+    <div className="flex-1 flex flex-col bg-white min-h-0">
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex items-center justify-between">
@@ -418,116 +388,6 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
         </div>
       </div>
 
-      {/* ── Sub-club fed submissions panel ────────────────────────────── */}
-      {(pendingFedSubs.length > 0 || fedSubsLoading) && (
-        <div className="border-b border-amber-200 bg-amber-50 flex-shrink-0">
-          <button
-            className="w-full flex items-center justify-between px-4 lg:px-6 py-3 text-left hover:bg-amber-100 transition-colors"
-            onClick={() => setFedPanelOpen(p => !p)}
-          >
-            <div className="flex items-center gap-2">
-              <Network className="w-4 h-4 text-amber-700" />
-              <span className="text-sm font-semibold text-amber-900">
-                Sub-Club Submissions
-              </span>
-              {!fedSubsLoading && (
-                <Badge className="bg-amber-600 text-white text-[10px] px-1.5 py-0 hover:bg-amber-600">
-                  {pendingFedSubs.length} pending
-                </Badge>
-              )}
-            </div>
-            {fedPanelOpen ? <ChevronUp className="w-4 h-4 text-amber-700" /> : <ChevronDown className="w-4 h-4 text-amber-700" />}
-          </button>
-
-          {fedPanelOpen && (
-            <div className="px-4 lg:px-6 pb-4 space-y-2">
-              {fedSubsLoading ? (
-                <p className="text-sm text-amber-700">Loading…</p>
-              ) : pendingFedSubs.length === 0 ? (
-                <p className="text-sm text-amber-700">No pending sub-club submissions.</p>
-              ) : (
-                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                  {pendingFedSubs.map((sub: any) => {
-                    const isSelected = selectedFedSub?.id === sub.id;
-                    return (
-                      <div
-                        key={sub.id}
-                        className={`rounded-lg border p-3 cursor-pointer transition-colors ${isSelected ? 'border-amber-400 bg-white' : 'border-amber-200 bg-white hover:border-amber-300'}`}
-                        onClick={() => setSelectedFedSub(isSelected ? null : sub)}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-sm text-gray-900 truncate">{sub.activityName || 'Unnamed Activity'}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {sub.userName || sub.userEmail} · {sub.__fedFromSubClubName || 'Sub-Club'}
-                              {sub.logName && ` · ${sub.logName}`}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              <Calendar className="w-3 h-3 inline mr-0.5" />
-                              {formatDate(sub.date)} · {sub.hours}h
-                            </p>
-                          </div>
-                          <div className="flex gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                            <Button
-                              size="sm"
-                              className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700 text-white"
-                              disabled={fedReviewMutation.isPending}
-                              onClick={() => fedReviewMutation.mutate({ sub, status: 'approved' })}
-                            >
-                              <CheckCircle className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 px-2 text-xs border-red-200 text-red-600 hover:bg-red-50"
-                              disabled={fedReviewMutation.isPending}
-                              onClick={() => { setFedRejectingId(sub.id); setSelectedFedSub(sub); }}
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {isSelected && (
-                          <div className="mt-3 pt-3 border-t border-amber-100 space-y-1.5 text-sm text-gray-700">
-                            {sub.description && <p><span className="font-medium">Description:</span> {sub.description}</p>}
-                            {sub.proofImageUrl && (
-                              <a href={sub.proofImageUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:underline text-xs">
-                                <Eye className="w-3.5 h-3.5" /> View proof image
-                              </a>
-                            )}
-                            {sub.__sharedApproval && (
-                              <p className="text-xs text-amber-700">Shared approval — reviewing here also updates the sub-club's status.</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Regular club member assignment section ─────────────────────── */}
-      {assignmentLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Getting your assignment...</p>
-          </div>
-        </div>
-      ) : !assignment ? (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Assignment Available</h3>
-            <p className="text-gray-500">All member submissions have been reviewed or are assigned to other administrators.</p>
-          </div>
-        </div>
-      ) : (
       <div className="flex-1 flex min-h-0">
         <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col">
           <div className="p-4 border-b border-gray-200 bg-white">
@@ -761,7 +621,6 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
           )}
         </div>
       </div>
-      )} {/* end assignment ternary */}
 
       {imageModalOpen && selectedSubmission?.proofImageUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
@@ -807,40 +666,6 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
                   {updateStatusMutation.isPending ? "Rejecting..." : "Reject Submission"}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Fed submission reject dialog */}
-      {fedRejectingId && selectedFedSub && (
-        <Dialog open={!!fedRejectingId} onOpenChange={() => { setFedRejectingId(null); setFedRejectReason(''); }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reject Sub-Club Submission</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Provide a reason for rejecting <strong>{selectedFedSub.activityName || 'this submission'}</strong> from {(selectedFedSub as any).__fedFromSubClubName || 'sub-club'}.
-              </p>
-              <Textarea
-                placeholder="Enter rejection reason..."
-                value={fedRejectReason}
-                onChange={(e) => setFedRejectReason(e.target.value)}
-                rows={3}
-              />
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => { setFedRejectingId(null); setFedRejectReason(''); }}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => fedReviewMutation.mutate({ sub: selectedFedSub, status: 'rejected', rejectReason: fedRejectReason.trim() || undefined })}
-                  disabled={fedReviewMutation.isPending}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  {fedReviewMutation.isPending ? "Rejecting..." : "Reject"}
                 </Button>
               </div>
             </div>
