@@ -244,12 +244,17 @@ const firebaseUserToUser = (fbUser: FirebaseUser | null): User | null => {
   };
 };
 
+// Flag set once initializeAuth's Firebase callback has fired at least once.
+let authInitialized = false;
+
 export const onAuthStateChanged = (callback: (user: User | null) => void) => {
   authListeners.push(callback);
-  if (currentUser !== null) {
+  // Always call immediately with whatever we know so far — avoids callers
+  // hanging in a "loading" state when they register after initializeAuth has
+  // already resolved (or when the user is definitely not signed in).
+  if (authInitialized) {
     callback(currentUser);
   }
-  
   return () => {
     authListeners = authListeners.filter(listener => listener !== callback);
   };
@@ -303,6 +308,7 @@ export const getCurrentUser = (): User | null => {
 export const initializeAuth = () => {
   firebaseOnAuthStateChanged(auth, (fbUser) => {
     const user = firebaseUserToUser(fbUser);
+    authInitialized = true;
     notifyAuthListeners(user);
   });
 };

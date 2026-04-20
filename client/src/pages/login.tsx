@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { signInWithGoogle, signInWithEmail, createAccountWithEmail } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,19 @@ type Mode = "sign-in" | "sign-up";
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  // Redirect as soon as Firebase auth resolves to a signed-in user
+  useEffect(() => {
+    // If already signed in on mount, leave immediately
+    if (auth.currentUser) {
+      setLocation('/clubs');
+      return;
+    }
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) setLocation('/clubs');
+    });
+    return () => unsub();
+  }, [setLocation]);
 
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");

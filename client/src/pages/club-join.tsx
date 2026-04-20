@@ -4,13 +4,14 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   User,
   Club,
+  auth,
   getClubByInviteCode,
   getClubStats,
   getUserMembership,
   createMembership,
-  onAuthStateChanged,
   clubSlug,
 } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { AuthPanel } from "@/components/auth-panel";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -78,11 +79,22 @@ export default function ClubJoin() {
   const [joined, setJoined] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged((u) => {
-      setAuthUser(u);
+    // Use native Firebase auth so we get the resolved state even when the
+    // app-level initializeAuth hasn't been called (early-return /join path).
+    const unsub = onAuthStateChanged(auth, (fbUser) => {
+      if (!fbUser || !fbUser.email) {
+        setAuthUser(null);
+      } else {
+        setAuthUser({
+          email: fbUser.email,
+          name: fbUser.displayName || fbUser.email.split('@')[0],
+          photoURL: fbUser.photoURL || undefined,
+          uid: fbUser.uid,
+        });
+      }
       setAuthLoading(false);
     });
-    return unsub;
+    return () => unsub();
   }, []);
 
   const { data: club, isLoading: clubLoading, error: clubError } = useQuery<Club | null>({
