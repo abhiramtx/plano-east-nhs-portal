@@ -5,6 +5,9 @@ import {
   GoogleAuthProvider, 
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
+  signInWithEmailAndPassword as firebaseSignInWithEmail,
+  createUserWithEmailAndPassword as firebaseCreateUserWithEmail,
+  updateProfile as firebaseUpdateProfile,
   type User as FirebaseUser
 } from "firebase/auth";
 import {
@@ -264,6 +267,23 @@ export const signInWithGoogle = async () => {
     console.error('Failed to sign in with Google:', error);
     throw error;
   }
+};
+
+export const signInWithEmail = async (email: string, password: string) => {
+  const result = await firebaseSignInWithEmail(auth, email, password);
+  const user = firebaseUserToUser(result.user);
+  if (user) notifyAuthListeners(user);
+  return user;
+};
+
+export const createAccountWithEmail = async (email: string, password: string, displayName: string) => {
+  const result = await firebaseCreateUserWithEmail(auth, email, password);
+  if (displayName) {
+    await firebaseUpdateProfile(result.user, { displayName });
+  }
+  const user = firebaseUserToUser(result.user);
+  if (user) notifyAuthListeners(user);
+  return user;
 };
 
 export const handleSignOut = async () => {

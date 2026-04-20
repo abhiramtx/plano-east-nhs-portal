@@ -45,6 +45,7 @@ import { AdminEvents } from "@/pages/admin-events";
 import { AdminQueryHistory } from "@/pages/admin-query-history";
 import ClubJoin from "@/pages/club-join";
 import EventCheckin from "@/pages/event-checkin";
+import LoginPage from "@/pages/login";
 
 function VolunteerInterface({
   user,
@@ -470,6 +471,7 @@ function App() {
           <Route path="/event-checkin"><EventCheckin /></Route>
           <Route path="/join/:code">{() => <ClubJoin />}</Route>
           <Route path="/landing"><Landing onSignIn={() => {}} /></Route>
+          <Route path="/login"><LoginPage /></Route>
           <Route path="/clubs">
             {user ? (
               <ClubSelection user={user} onClubSelected={handleClubSelected} onSignOut={handleSignOutClick} />
