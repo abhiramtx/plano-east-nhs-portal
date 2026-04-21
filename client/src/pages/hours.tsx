@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit, Zap } from "lucide-react";
+import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit, Zap, ArrowUpCircle } from "lucide-react";
 import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -45,8 +45,9 @@ export default function Hours({ club }: HoursProps) {
 
   const requireProofImage = adminSettings?.requireProofImage ?? false;
 
-  const openLogs = hoursLogs.filter(log => log.isOpen && !log.isSystem);
+  const openLogs = hoursLogs.filter(log => log.isOpen);
   const selectedLog = openLogs.find(log => String(log.id) === selectedLogId) || null;
+  const selectedLogIsSystem = selectedLog?.isSystem === true;
 
   const { data: directSubmissions = [], isLoading } = useQuery<HoursSubmission[]>({
     queryKey: ['firebase-user-submissions', userEmail, club.id],
@@ -144,16 +145,18 @@ export default function Hours({ club }: HoursProps) {
               <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
                 <Plus className="w-5 h-5 text-white" />
               </div>
-              <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="bg-black hover:bg-gray-800 text-white"
-                    disabled={openLogs.length > 0 && !selectedLogId}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Submit Hours
-                  </Button>
-                </DialogTrigger>
+              <Dialog open={isFormOpen} onOpenChange={selectedLogIsSystem ? undefined : setIsFormOpen}>
+                {!selectedLogIsSystem && (
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="bg-black hover:bg-gray-800 text-white"
+                      disabled={openLogs.length > 0 && !selectedLogId}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Submit Hours
+                    </Button>
+                  </DialogTrigger>
+                )}
               <DialogContent
                 className="max-w-2xl bg-white border-gray-200 flex flex-col max-h-[90vh] overflow-hidden p-0"
                 onPointerDownOutside={e => {
@@ -218,21 +221,29 @@ export default function Hours({ club }: HoursProps) {
           </div>
         ) : (
           <>
+            {selectedLogIsSystem && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-sm text-blue-900">
+                <ArrowUpCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                <span>Hours in this log are added automatically from sub-club submissions — you cannot submit directly here.</span>
+              </div>
+            )}
             {filteredSubmissions.length === 0 ? (
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-12">
                   <div className="text-center">
                     <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
-                    <p className="text-gray-500 mb-6">Start by submitting your first service hours</p>
-                    <Button 
-                      onClick={() => setIsFormOpen(true)} 
-                      className="bg-black hover:bg-gray-800 text-white"
-                      disabled={openLogs.length > 0 && !selectedLogId}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Submit Your First Hours
-                    </Button>
+                    <p className="text-gray-500 mb-6">{selectedLogIsSystem ? 'Hours forwarded from sub-clubs will appear here once approved.' : 'Start by submitting your first service hours'}</p>
+                    {!selectedLogIsSystem && (
+                      <Button 
+                        onClick={() => setIsFormOpen(true)} 
+                        className="bg-black hover:bg-gray-800 text-white"
+                        disabled={openLogs.length > 0 && !selectedLogId}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Submit Your First Hours
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
