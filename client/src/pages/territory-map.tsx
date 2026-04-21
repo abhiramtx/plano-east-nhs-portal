@@ -108,6 +108,16 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
     return m;
   }, [approvedAffiliations]);
 
+  // Map: super-club id -> list of sub-club affiliations (for tooltip display)
+  const superToSubs = useMemo(() => {
+    const m = new Map<string, Affiliation[]>();
+    approvedAffiliations.forEach(a => {
+      if (!m.has(a.superClubId)) m.set(a.superClubId, []);
+      m.get(a.superClubId)!.push(a);
+    });
+    return m;
+  }, [approvedAffiliations]);
+
   // Re-attribute: if a circle belongs to a sub-club, swap its identity to the super-club
   const serverCircles = useMemo(() => {
     if (subToSuper.size === 0) return rawServerCircles;
@@ -336,6 +346,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             const isHovered = hoveredClubId === club.id;
             const isCurrentClub = club.id === currentClubId;
             const clubEvents = allOpenEvents.filter(e => e.clubId === club.id);
+            const subClubs = superToSubs.get(club.id) || [];
             
             return (
               <Marker 
@@ -365,21 +376,50 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                   
                   {isHovered && (
                     <div 
-                      className="absolute left-12 top-1/2 -translate-y-1/2 bg-white rounded-lg px-4 py-3 z-50 border border-gray-200 shadow-xl"
-                      style={{ minWidth: 160, maxWidth: 220 }}
+                      className="absolute left-12 top-1/2 -translate-y-1/2 bg-white rounded-xl px-5 py-4 z-50 border border-gray-200 shadow-2xl"
+                      style={{ minWidth: 320, maxWidth: 400 }}
                     >
-                      <p className="text-gray-900 text-sm font-semibold truncate">
-                        {club.name}
-                      </p>
-                      <p className="text-gray-500 text-xs mt-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: club.color }} />
+                        <p className="text-gray-900 text-base font-bold truncate">
+                          {club.name}
+                        </p>
+                      </div>
+                      <p className="text-gray-500 text-sm">
                         {totalHours.toFixed(1)} volunteer hours
                       </p>
+
+                      {subClubs.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Sub-Clubs</p>
+                          <div className="space-y-1.5">
+                            {subClubs.map(sc => {
+                              const scClub = clubs.find(c => c.id === sc.subClubId);
+                              return (
+                                <div key={sc.subClubId} className="flex items-center gap-2">
+                                  <div 
+                                    className="w-2 h-2 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: scClub?.color || '#6b7280' }}
+                                  />
+                                  <span className="text-sm text-gray-700 truncate">{sc.subClubName}</span>
+                                  {scClub && (
+                                    <span className="ml-auto text-xs text-gray-400 flex-shrink-0">
+                                      {calculateTotalHours(scClub).toFixed(1)}h
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                       {clubEvents.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-gray-100 space-y-1.5">
-                          <p className="text-xs font-medium text-gray-500">Active Events</p>
+                        <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Active Events</p>
                           {clubEvents.map(ev => (
                             <div key={ev.id}>
-                              <p className="text-xs font-medium text-gray-800 truncate">• {ev.name}</p>
+                              <p className="text-sm font-medium text-gray-800 truncate">• {ev.name}</p>
                               {ev.description && (
                                 <p className="text-xs text-gray-500 pl-3 line-clamp-2">{ev.description}</p>
                               )}
@@ -387,8 +427,9 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                           ))}
                         </div>
                       )}
+
                       <div 
-                        className="w-full h-1 rounded-full mt-2"
+                        className="w-full h-1 rounded-full mt-3"
                         style={{ backgroundColor: club.color }}
                       />
                     </div>
