@@ -196,6 +196,9 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
   });
   const subClubHoursLog = superHoursLogs.find((l: any) => l.isSystem || l.name === 'Sub-Club Hours');
 
+  // Exclude system logs from event log assignment — they receive hours only via federation
+  const selectableLogs = hoursLogs.filter(l => !(l as any).isSystem);
+
   const { data: attendance = [], refetch: refetchAttendance } = useQuery<EventAttendance[]>({
     queryKey: ['firebase-event-attendance', selectedEvent?.id],
     queryFn: () => getEventAttendance(selectedEvent!.id),
@@ -873,7 +876,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="_none">No log</SelectItem>
-                            {hoursLogs.map(l => (
+                            {selectableLogs.map(l => (
                               <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
                             ))}
                           </SelectContent>
@@ -911,9 +914,9 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                             <SelectValue placeholder="Select a log (required)" />
                           </SelectTrigger>
                           <SelectContent>
-                            {hoursLogs.length === 0
+                            {selectableLogs.length === 0
                               ? <SelectItem value="_none" disabled>No logs created yet</SelectItem>
-                              : hoursLogs.map(l => (
+                              : selectableLogs.map(l => (
                                   <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
                                 ))
                             }

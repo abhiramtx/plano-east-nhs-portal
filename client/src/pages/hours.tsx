@@ -45,7 +45,7 @@ export default function Hours({ club }: HoursProps) {
 
   const requireProofImage = adminSettings?.requireProofImage ?? false;
 
-  const openLogs = hoursLogs.filter(log => log.isOpen);
+  const openLogs = hoursLogs.filter(log => log.isOpen && !log.isSystem);
   const selectedLog = openLogs.find(log => String(log.id) === selectedLogId) || null;
 
   const { data: directSubmissions = [], isLoading } = useQuery<HoursSubmission[]>({
