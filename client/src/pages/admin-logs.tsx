@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
@@ -14,7 +15,8 @@ import {
   Trash2, 
   Edit2,
   Save,
-  BookOpen
+  BookOpen,
+  ArrowUpCircle
 } from "lucide-react";
 import type { HoursLog } from "@shared/schema";
 
@@ -86,8 +88,9 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
       queryClient.invalidateQueries({ queryKey: ['/api/hours-logs', club.id] });
       toast({ title: "Success", description: "Log deleted successfully" });
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to delete log", variant: "destructive" });
+    onError: (err: any) => {
+      const msg = err?.message || "Failed to delete log";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     }
   });
 
@@ -131,6 +134,9 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
     );
   }
 
+  const systemLogs = logs.filter(l => l.isSystem);
+  const regularLogs = logs.filter(l => !l.isSystem);
+
   return (
     <div className="flex-1 flex flex-col bg-white min-h-0">
       <div className="bg-white border-b border-gray-200 flex-shrink-0">
@@ -140,154 +146,190 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
               <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Hours Logs</h1>
               <p className="text-gray-600 mt-1">Create and manage hour-tracking logs (e.g., "Fall Semester")</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
+            <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
+              <BookOpen className="w-5 h-5 text-white" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 lg:p-6">
-        <div className="mb-6">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-black hover:bg-gray-800 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Log
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Create New Hours Log</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="logName" className="text-gray-900">Log Name</Label>
-                  <Input
-                    id="logName"
-                    placeholder="e.g., Fall Semester"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="hoursRequired" className="text-gray-900">Hours Required</Label>
-                  <Input
-                    id="hoursRequired"
-                    type="number"
-                    min="0"
-                    step="0.5"
-                    value={formData.hoursRequired}
-                    onChange={(e) => setFormData({ ...formData, hoursRequired: parseFloat(e.target.value) || 0 })}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Minimum hours volunteers must complete for this log</p>
-                </div>
-                <Button
-                  onClick={handleAdd}
-                  disabled={createLogMutation.isPending}
-                  className="w-full bg-black hover:bg-gray-800 text-white"
-                >
-                  {createLogMutation.isPending ? "Creating..." : "Create Log"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {logs.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No hours logs yet</h3>
-              <p className="text-gray-500">Create your first log to start tracking hours by period</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {logs.map((log: HoursLog) => (
-              <Card key={log.id}>
+      <div className="flex-1 overflow-auto p-4 lg:p-6 space-y-6">
+        {/* System logs (e.g. Sub-Club Hours) */}
+        {systemLogs.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">System Logs</p>
+            {systemLogs.map((log: HoursLog) => (
+              <Card key={log.id} className="border-blue-200 bg-blue-50">
                 <CardContent className="p-4">
-                  {isEditingId === log.id ? (
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor={`edit-name-${log.id}`} className="text-gray-900">Log Name</Label>
-                        <Input
-                          id={`edit-name-${log.id}`}
-                          placeholder="e.g., Fall Semester"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <ArrowUpCircle className="w-4 h-4 text-blue-600" />
+                        <h3 className="text-base font-medium text-blue-900">{log.name}</h3>
+                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-xs">System</Badge>
+                      </div>
+                      <p className="text-xs text-blue-700 mt-1">
+                        Receives hours federated from sub-clubs. Sub-clubs submit here automatically — you cannot submit directly from this club.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 ml-4">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm text-blue-700">{log.isOpen ? 'Open' : 'Closed'}</Label>
+                        <Switch
+                          checked={log.isOpen}
+                          onCheckedChange={() => handleToggleOpen(log)}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor={`edit-hours-${log.id}`} className="text-gray-900">Hours Required</Label>
-                        <Input
-                          id={`edit-hours-${log.id}`}
-                          type="number"
-                          min="0"
-                          step="0.5"
-                          value={formData.hoursRequired}
-                          onChange={(e) => setFormData({ ...formData, hoursRequired: parseFloat(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleUpdate(log)}
-                          disabled={updateLogMutation.isPending}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <Save className="w-4 h-4 mr-2" />
-                          {updateLogMutation.isPending ? "Saving..." : "Save"}
-                        </Button>
-                        <Button onClick={cancelEdit} variant="outline" className="flex-1">
-                          Cancel
-                        </Button>
-                      </div>
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-medium text-gray-900">{log.name}</h3>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="inline-block px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
-                            {log.hoursRequired} hours required
-                          </span>
-                          <span className={`inline-block px-2 py-1 text-sm rounded-full ${
-                            log.isOpen ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {log.isOpen ? 'Open' : 'Closed'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 ml-4">
-                        <div className="flex items-center gap-2">
-                          <Label className="text-sm text-gray-500">{log.isOpen ? 'Open' : 'Closed'}</Label>
-                          <Switch
-                            checked={log.isOpen}
-                            onCheckedChange={() => handleToggleOpen(log)}
-                          />
-                        </div>
-                        <Button variant="outline" size="sm" onClick={() => startEdit(log)}>
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:bg-red-50"
-                          onClick={() => deleteLogMutation.mutate(log.id)}
-                          disabled={deleteLogMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
+
+        {/* Regular logs */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Your Logs</p>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-black hover:bg-gray-800 text-white">
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Log
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Create New Hours Log</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="logName" className="text-gray-900">Log Name</Label>
+                    <Input
+                      id="logName"
+                      placeholder="e.g., Fall Semester"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="hoursRequired" className="text-gray-900">Hours Required</Label>
+                    <Input
+                      id="hoursRequired"
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={formData.hoursRequired}
+                      onChange={(e) => setFormData({ ...formData, hoursRequired: parseFloat(e.target.value) || 0 })}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Minimum hours volunteers must complete for this log</p>
+                  </div>
+                  <Button
+                    onClick={handleAdd}
+                    disabled={createLogMutation.isPending}
+                    className="w-full bg-black hover:bg-gray-800 text-white"
+                  >
+                    {createLogMutation.isPending ? "Creating..." : "Create Log"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {regularLogs.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No custom logs yet</h3>
+                <p className="text-gray-500">Create your first log to start tracking hours by period</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {regularLogs.map((log: HoursLog) => (
+                <Card key={log.id}>
+                  <CardContent className="p-4">
+                    {isEditingId === log.id ? (
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor={`edit-name-${log.id}`} className="text-gray-900">Log Name</Label>
+                          <Input
+                            id={`edit-name-${log.id}`}
+                            placeholder="e.g., Fall Semester"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`edit-hours-${log.id}`} className="text-gray-900">Hours Required</Label>
+                          <Input
+                            id={`edit-hours-${log.id}`}
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={formData.hoursRequired}
+                            onChange={(e) => setFormData({ ...formData, hoursRequired: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => handleUpdate(log)}
+                            disabled={updateLogMutation.isPending}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <Save className="w-4 h-4 mr-2" />
+                            {updateLogMutation.isPending ? "Saving..." : "Save"}
+                          </Button>
+                          <Button onClick={cancelEdit} variant="outline" className="flex-1">
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-medium text-gray-900">{log.name}</h3>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <span className="inline-block px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
+                              {log.hoursRequired} hours required
+                            </span>
+                            <span className={`inline-block px-2 py-1 text-sm rounded-full ${
+                              log.isOpen ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {log.isOpen ? 'Open' : 'Closed'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 ml-4">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm text-gray-500">{log.isOpen ? 'Open' : 'Closed'}</Label>
+                            <Switch
+                              checked={log.isOpen}
+                              onCheckedChange={() => handleToggleOpen(log)}
+                            />
+                          </div>
+                          <Button variant="outline" size="sm" onClick={() => startEdit(log)}>
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:bg-red-50"
+                            onClick={() => deleteLogMutation.mutate(log.id)}
+                            disabled={deleteLogMutation.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

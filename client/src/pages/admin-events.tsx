@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  User, Club, ClubEvent, EventAttendance, EventConditional,
+  User, Club, ClubEvent, EventAttendance, EventConditional, Affiliation,
   getClubEvents, createEvent, updateEvent, deleteEvent,
-  getEventAttendance, checkInUser, checkOutUser, grantEventHours
+  getEventAttendance, checkInUser, checkOutUser, grantEventHours,
+  getApprovedSuperClubs
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -166,6 +167,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
   const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
   const [defaultHours, setDefaultHours] = useState('');
   const [overrideHours, setOverrideHours] = useState<Record<string, string>>({});
+  const [alsoGrantToSuper, setAlsoGrantToSuper] = useState(false);
 
   const { data: events = [], isLoading } = useQuery<ClubEvent[]>({
     queryKey: ['firebase-club-events', club.id],
@@ -179,6 +181,20 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
     queryKey: ['/api/hours-logs', club.id],
     enabled: !!club.id,
   });
+
+  // Super-club affiliation for forwarding event hours
+  const { data: approvedSupers = [] } = useQuery<Affiliation[]>({
+    queryKey: ['affiliations-super-approved', club.id],
+    queryFn: () => getApprovedSuperClubs(club.id),
+    enabled: !!club.id,
+  });
+  const superClub = approvedSupers[0];
+
+  const { data: superHoursLogs = [] } = useQuery<HoursLog[]>({
+    queryKey: ['/api/hours-logs', superClub?.superClubId],
+    enabled: !!superClub,
+  });
+  const subClubHoursLog = superHoursLogs.find((l: any) => l.isSystem || l.name === 'Sub-Club Hours');
 
   const { data: attendance = [], refetch: refetchAttendance } = useQuery<EventAttendance[]>({
     queryKey: ['firebase-event-attendance', selectedEvent?.id],
@@ -281,6 +297,15 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
       const logIdParam = (editLogId && editLogId !== '_none') ? editLogId : undefined;
       const logNameParam = hoursLogs.find(l => String(l.id) === editLogId)?.name;
 
+      // Superclub forwarding params (only if enabled and a superclub exists with an open Sub-Club Hours log)
+      const forwardToSuper = alsoGrantToSuper && !!superClub && !!subClubHoursLog && subClubHoursLog.isOpen !== false;
+      const superClubIdParam = forwardToSuper ? superClub!.superClubId : undefined;
+      const superClubNameParam = forwardToSuper ? superClub!.superClubName : undefined;
+      const superClubLogIdParam = forwardToSuper ? String(subClubHoursLog!.id) : undefined;
+      const superClubLogNameParam = forwardToSuper ? subClubHoursLog!.name : undefined;
+      const independentApprovalParam = forwardToSuper ? superClub!.independentApproval : undefined;
+      const subClubNameParam = forwardToSuper ? club.name : undefined;
+
       // Grant hours for attendees with individual overrides (creates submission + updates attendance)
       for (const record of targetRecords) {
         if (overrideHours[record.id]) {
@@ -293,6 +318,12 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
             club.id,
             logIdParam,
             logNameParam,
+            superClubIdParam,
+            superClubNameParam,
+            superClubLogIdParam,
+            superClubLogNameParam,
+            independentApprovalParam,
+            subClubNameParam,
           );
         }
       }
@@ -307,6 +338,12 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
         club.id,
         logIdParam,
         logNameParam,
+        superClubIdParam,
+        superClubNameParam,
+        superClubLogIdParam,
+        superClubLogNameParam,
+        independentApprovalParam,
+        subClubNameParam,
       );
     },
     onSuccess: () => {
@@ -314,6 +351,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
       setSelectedAttendees([]);
       setDefaultHours('');
       setOverrideHours({});
+      setAlsoGrantToSuper(false);
       toast({ title: "Hours granted successfully!" });
     },
     onError: (e: any) => toast({ title: "Failed to grant hours", description: e.message, variant: "destructive" }),
@@ -978,6 +1016,31 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                               className="w-28 h-8"
                             />
                             <p className="text-xs text-gray-500">Applied to everyone without a custom amount</p>
+                          </div>
+                        )}
+
+                        {/* Also forward to superclub */}
+                        {superClub && (
+                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <label className="flex items-start gap-2 cursor-pointer">
+                              <Checkbox
+                                checked={alsoGrantToSuper}
+                                onCheckedChange={(v) => setAlsoGrantToSuper(!!v)}
+                                disabled={!subClubHoursLog || subClubHoursLog.isOpen === false}
+                              />
+                              <span className="text-sm text-blue-900">
+                                <strong>ALSO ADD TO {superClub.superClubName.toUpperCase()}</strong>
+                                <span className="block text-xs text-blue-800 mt-0.5 font-normal">
+                                  {!subClubHoursLog
+                                    ? `${superClub.superClubName}'s Sub-Club Hours log isn't set up yet.`
+                                    : subClubHoursLog.isOpen === false
+                                    ? `${superClub.superClubName}'s Sub-Club Hours log is closed — ask their admin to open it.`
+                                    : superClub.independentApproval === false
+                                    ? `Forward these hours to ${superClub.superClubName}'s Sub-Club Hours log. Pre-approved (shared mode).`
+                                    : `Forward these hours to ${superClub.superClubName}'s Sub-Club Hours log for independent approval.`}
+                                </span>
+                              </span>
+                            </label>
                           </div>
                         )}
 

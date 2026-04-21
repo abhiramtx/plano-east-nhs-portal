@@ -1065,6 +1065,9 @@ export class FirestoreStorage implements IStorage {
   async deleteHoursLog(logId: string): Promise<boolean> {
     const doc = await db.collection("hoursLogs").doc(logId).get();
     if (!doc.exists) return false;
+    if ((doc.data() as any)?.isSystem) {
+      throw new Error("System logs cannot be deleted.");
+    }
     await db.collection("hoursLogs").doc(logId).delete();
     return true;
   }

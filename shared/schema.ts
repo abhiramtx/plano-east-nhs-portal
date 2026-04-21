@@ -307,12 +307,14 @@ export const insertHoursLogSchema = z.object({
   name: z.string().min(1),
   hoursRequired: z.number().min(0).default(15),
   isOpen: z.boolean().default(true),
+  isSystem: z.boolean().default(false),
 });
 
 export type InsertHoursLog = z.infer<typeof insertHoursLogSchema>;
 
 export interface HoursLog extends InsertHoursLog {
   id: string;
+  isSystem?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

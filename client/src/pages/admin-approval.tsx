@@ -157,6 +157,10 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
               status === 'rejected' ? rejectReason : undefined,
             );
           }
+          // Recalculate this superclub's total whenever a fed submission is finalized
+          if (status === 'approved' || status === 'rejected') {
+            await recalculateClubHours(club.id);
+          }
         }
         return;
       }
@@ -470,6 +474,11 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                         {formatDate(submission.date)}
                       </div>
                       <div className="flex items-center gap-1">
+                        {(submission as any).__fedFromSubClubName && (
+                          <Badge className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 hover:bg-blue-100">
+                            ↑ {(submission as any).__fedFromSubClubName}
+                          </Badge>
+                        )}
                         {submission.logName && (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                             {submission.logName}
@@ -487,6 +496,15 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
         <div className="flex-1 overflow-y-auto">
           {selectedSubmission ? (
             <div className="p-6">
+              {(selectedSubmission as any).__fedFromSubClubName && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-sm text-blue-900">
+                  <BookOpen className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  Submitted by sub-club: <strong>{(selectedSubmission as any).__fedFromSubClubName}</strong>
+                  <span className="ml-auto text-xs text-blue-700 font-normal">
+                    {(selectedSubmission as any).__sharedApproval ? 'Shared approval — approving here also approves in sub-club.' : 'Independent approval — only counts for this club.'}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-semibold text-gray-900">

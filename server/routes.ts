@@ -792,7 +792,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { clubId } = req.params;
       let logs = await storage.getHoursLogs(clubId);
-      if (logs.length === 0) {
+
+      // Always ensure the non-deleteable Sub-Club Hours system log exists
+      const hasSystemLog = logs.some(l => (l as any).isSystem);
+      if (!hasSystemLog) {
+        await storage.createHoursLog({
+          clubId,
+          name: "Sub-Club Hours",
+          hoursRequired: 0,
+          isOpen: true,
+          isSystem: true,
+        });
+        logs = await storage.getHoursLogs(clubId);
+      }
+
+      // Ensure at least one regular (non-system) log exists for new clubs
+      const hasRegularLog = logs.some(l => !(l as any).isSystem);
+      if (!hasRegularLog) {
         await storage.createHoursLog({
           clubId,
           name: "Log 1",
@@ -801,6 +817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         logs = await storage.getHoursLogs(clubId);
       }
+
       res.json(logs);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch hours logs" });
@@ -826,6 +843,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!deleted) return res.status(404).json({ error: "Hours log not found" });
       res.json({ success: true });
     } catch (error) {
+      if (error instanceof Error && error.message.includes("System logs")) {
+        return res.status(403).json({ error: error.message });
+      }
       res.status(500).json({ error: "Failed to delete hours log" });
     }
   });

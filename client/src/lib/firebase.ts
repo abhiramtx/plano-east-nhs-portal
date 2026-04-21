@@ -460,19 +460,42 @@ export const recalculateClubHours = async (clubId: string): Promise<void> => {
   const approvedDocs = allDocs.filter(d => d.data().status === "approved");
 
   const total = approvedDocs.reduce((sum, d) => sum + (d.data().hours || 0), 0);
-
   const yearly = approvedDocs
     .filter(d => {
       const dateStr = d.data().date;
       if (!dateStr) return false;
-      const year = new Date(dateStr).getFullYear();
-      return year === currentYear;
+      return new Date(dateStr).getFullYear() === currentYear;
     })
     .reduce((sum, d) => sum + (d.data().hours || 0), 0);
 
+  // Also count hours federated INTO this club as a super-club.
+  // Shared-mode affiliations: the main submission `status` drives approval.
+  // Independent-mode affiliations: superClubStatus[clubId].status drives approval.
+  const incoming = await getApprovedSubClubs(clubId);
+  const subToShared = new Map<string, boolean>();
+  incoming.forEach(a => subToShared.set(a.subClubId, a.independentApproval === false));
+
+  const fedQ = query(collection(db, "submissions"), where("superClubId", "==", clubId));
+  const fedSnap = await getDocs(fedQ);
+
+  let fedTotal = 0;
+  let fedYearly = 0;
+  for (const d of fedSnap.docs) {
+    if (seen.has(d.id)) continue; // already counted as a direct submission
+    const data = d.data();
+    const shared = subToShared.get(data.clubId) === true;
+    const fedStatus = shared ? data.status : (data.superClubStatus?.[clubId]?.status);
+    if (fedStatus !== 'approved') continue;
+    const hours = (data.superClubStatus?.[clubId]?.hours) ?? data.hours ?? 0;
+    fedTotal += hours;
+    if (data.date && new Date(data.date).getFullYear() === currentYear) {
+      fedYearly += hours;
+    }
+  }
+
   await updateDoc(doc(db, "clubs", clubId), {
-    totalApprovedHours: total,
-    yearlyApprovedHours: yearly,
+    totalApprovedHours: total + fedTotal,
+    yearlyApprovedHours: yearly + fedYearly,
     updatedAt: Timestamp.fromDate(new Date()),
   });
 };
@@ -1761,6 +1784,13 @@ export const grantEventHours = async (
   clubId?: string,
   logId?: string,
   logName?: string,
+  // Optional: forward these hours to an affiliated superclub
+  superClubId?: string,
+  superClubName?: string,
+  superClubLogId?: string,
+  superClubLogName?: string,
+  independentApproval?: boolean,
+  subClubName?: string,
 ): Promise<void> => {
   const batch = writeBatch(db);
   const now = new Date();
@@ -1782,8 +1812,7 @@ export const grantEventHours = async (
     const attendRef = doc(db, "eventAttendance", record.id);
     batch.update(attendRef, { hoursGranted: hours, grantStatus: 'granted' });
 
-    const submissionRef = doc(collection(db, "submissions"));
-    batch.set(submissionRef, {
+    const submissionData: Record<string, any> = {
       clubId: resolvedClubId,
       userEmail: record.userEmail,
       userName: record.userName,
@@ -1800,13 +1829,32 @@ export const grantEventHours = async (
       submittedAt: Timestamp.fromDate(now),
       reviewedAt: Timestamp.fromDate(now),
       createdAt: now.toISOString(),
-    });
+    };
+
+    // If forwarding to a superclub, embed the federation fields.
+    // Shared-mode (independentApproval===false): superclub inherits the 'approved' status.
+    // Independent-mode (default): superclub status starts as 'pending' for separate review.
+    if (superClubId) {
+      submissionData.superClubId = superClubId;
+      submissionData.superClubName = superClubName || null;
+      submissionData.superClubLogId = superClubLogId || null;
+      submissionData.superClubLogName = superClubLogName || null;
+      submissionData.subClubName = subClubName || null;
+      const superStatus = independentApproval === false ? 'approved' : 'pending';
+      submissionData.superClubStatus = { [superClubId]: { status: superStatus, hours } };
+    }
+
+    const submissionRef = doc(collection(db, "submissions"));
+    batch.set(submissionRef, submissionData);
   }
 
   await batch.commit();
 
   if (clubId) {
     await recalculateClubHours(clubId);
+  }
+  if (superClubId) {
+    await recalculateClubHours(superClubId);
   }
 };
 
@@ -1864,6 +1912,7 @@ const toAffiliation = (docSnap: any): Affiliation => {
     requestedAt: toDate(d.requestedAt),
     respondedAt: d.respondedAt ? toDate(d.respondedAt) : undefined,
     respondedBy: d.respondedBy,
+    independentApproval: d.independentApproval,
   };
 };
 
