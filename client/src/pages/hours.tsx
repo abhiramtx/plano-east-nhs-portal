@@ -246,7 +246,7 @@ export default function Hours({ club }: HoursProps) {
           </div>
         )}
 
-        {selectedLog && (() => {
+        {selectedLog && !selectedLogIsSystem && (() => {
           const approvedHours = submissions
             .filter(s => s.logId === selectedLogId && s.status === 'approved')
             .reduce((sum, s) => sum + s.hours, 0);
