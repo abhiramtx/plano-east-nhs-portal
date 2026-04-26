@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, deleteMembership, getSuperClubFedSubmissions, setSuperClubApprovalStatus, getSubClubHoursRules, SubClubHoursRule, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, deleteMembership, getSuperClubFedSubmissions, setSuperClubApprovalStatus, getSubClubHoursRules, SubClubHoursRule, getClubs, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -257,6 +257,11 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ['firebase-user-profiles'],
     queryFn: getAllUserProfiles,
+  });
+
+  const { data: allClubs = [] } = useQuery<Club[]>({
+    queryKey: ['firebase-clubs'],
+    queryFn: getClubs,
   });
 
   const { data: clubMembers = [], isLoading: membersLoading } = useQuery({
@@ -1501,25 +1506,34 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
             ) : (
               <div className="space-y-6">
                 {(() => {
-                  const grouped: { [key: string]: { logName: string; submissions: HoursSubmission[] } } = {};
+                  const grouped: { [key: string]: { logName: string; clubLabel: string | null; submissions: HoursSubmission[] } } = {};
                   const ungrouped: HoursSubmission[] = [];
                   studentSubmissions.forEach((s: HoursSubmission) => {
                     if (s.logId && s.logName) {
-                      if (!grouped[s.logId]) grouped[s.logId] = { logName: s.logName, submissions: [] };
-                      grouped[s.logId].submissions.push(s);
+                      const key = `${s.clubId ?? ''}-${s.logId}`;
+                      if (!grouped[key]) {
+                        const fromOtherClub = s.clubId && s.clubId !== club.id;
+                        const sourceClub = fromOtherClub ? allClubs.find(c => c.id === s.clubId) : null;
+                        const clubLabel = fromOtherClub ? (sourceClub?.name ?? 'Sub-Club') : null;
+                        grouped[key] = { logName: s.logName, clubLabel, submissions: [] };
+                      }
+                      grouped[key].submissions.push(s);
                     } else {
                       ungrouped.push(s);
                     }
                   });
                   const sections = [
-                    ...Object.entries(grouped).map(([logId, data]) => ({ logId, logName: data.logName, items: data.submissions })),
-                    ...(ungrouped.length > 0 ? [{ logId: '_none', logName: 'Uncategorized', items: ungrouped }] : [])
+                    ...Object.entries(grouped).map(([key, data]) => ({ key, logName: data.logName, clubLabel: data.clubLabel, items: data.submissions })),
+                    ...(ungrouped.length > 0 ? [{ key: '_none', logName: 'Uncategorized', clubLabel: null, items: ungrouped }] : [])
                   ];
                   return sections.map(section => (
-                    <div key={section.logId}>
+                    <div key={section.key}>
                       <div className="flex items-center gap-2 mb-3">
                         <BookOpen className="w-4 h-4 text-gray-500" />
                         <h4 className="font-semibold text-gray-700">{section.logName}</h4>
+                        {section.clubLabel && (
+                          <Badge className="text-xs bg-blue-50 text-blue-700 border border-blue-200">{section.clubLabel}</Badge>
+                        )}
                         <Badge variant="outline" className="text-xs">{section.items.length}</Badge>
                       </div>
                       <div className="space-y-3 ml-6">
