@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, getCurrentUser, getUserSubmissions, getUserSuperClubFedSubmissions, deleteSubmission, HoursSubmission, Club, getAdminSettings, AdminSettings as AdminSettingsType } from "@/lib/firebase";
+import { User, getCurrentUser, getUserSubmissions, getUserSuperClubFedSubmissions, deleteSubmission, HoursSubmission, Club, getAdminSettings, AdminSettings as AdminSettingsType, getSubClubHoursRules, SubClubHoursRule } from "@/lib/firebase";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit, Zap, ArrowUpCircle } from "lucide-react";
+import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit, Zap, ArrowUpCircle, GitMerge } from "lucide-react";
 import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -43,11 +43,33 @@ export default function Hours({ club }: HoursProps) {
     queryFn: getAdminSettings,
   });
 
+  const { data: subClubRules = [] } = useQuery<SubClubHoursRule[]>({
+    queryKey: ['sub-club-hours-rules', club.id],
+    queryFn: () => getSubClubHoursRules(club.id),
+    enabled: !!club.id,
+  });
+
   const requireProofImage = adminSettings?.requireProofImage ?? false;
 
   const openLogs = hoursLogs.filter(log => log.isOpen);
   const selectedLog = openLogs.find(log => String(log.id) === selectedLogId) || null;
   const selectedLogIsSystem = selectedLog?.isSystem === true;
+
+  const getSubClubContributionForLog = (targetLogId: string): { hours: number; rules: SubClubHoursRule[] } => {
+    const matchingRules = subClubRules.filter(r => r.targetLogId === targetLogId);
+    if (matchingRules.length === 0) return { hours: 0, rules: [] };
+    const approvedFed = fedSubmissions.filter(s => s.status === 'approved');
+    let total = 0;
+    for (const rule of matchingRules) {
+      for (const sub of approvedFed) {
+        const subDate = sub.date;
+        if (subDate >= rule.fromDate && subDate <= rule.toDate) {
+          total += sub.hours;
+        }
+      }
+    }
+    return { hours: total, rules: matchingRules };
+  };
 
   const { data: directSubmissions = [], isLoading } = useQuery<HoursSubmission[]>({
     queryKey: ['firebase-user-submissions', userEmail, club.id],
@@ -227,6 +249,35 @@ export default function Hours({ club }: HoursProps) {
                 <span>Hours in this log are added automatically from sub-club submissions — you cannot submit directly here.</span>
               </div>
             )}
+            {selectedLogId && !selectedLogIsSystem && (() => {
+              const contrib = getSubClubContributionForLog(selectedLogId);
+              if (contrib.rules.length === 0) return null;
+              const fmtDate = (d: string) => {
+                if (!d) return '';
+                const [y, m, day] = d.split('-');
+                return `${m}/${day}/${y}`;
+              };
+              return (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
+                  <div className="flex items-start gap-2">
+                    <GitMerge className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium mb-1">Sub-Club Hours contribution</p>
+                      {contrib.rules.map(rule => (
+                        <p key={rule.id} className="text-amber-800">
+                          {fmtDate(rule.fromDate)} – {fmtDate(rule.toDate)}
+                          {rule.label ? ` (${rule.label})` : ''}
+                          {' '}→ this log's total
+                        </p>
+                      ))}
+                      {contrib.hours > 0 && (
+                        <p className="mt-1 font-semibold">{contrib.hours.toFixed(1)} hours from Sub-Club contributions count toward this log.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             {filteredSubmissions.length === 0 ? (
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-12">

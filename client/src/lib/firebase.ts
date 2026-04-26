@@ -2269,3 +2269,43 @@ export const getAllApprovedAffiliations = async (): Promise<Affiliation[]> => {
   const snap = await getDocs(query(collection(db, "affiliations"), where("status", "==", "approved")));
   return snap.docs.map(toAffiliation);
 };
+
+// ============ SUB-CLUB HOURS CONDITIONAL RULES ============
+
+export interface SubClubHoursRule {
+  id: string;
+  clubId: string;
+  targetLogId: string;
+  targetLogName: string;
+  fromDate: string;
+  toDate: string;
+  label?: string;
+}
+
+export const getSubClubHoursRules = async (clubId: string): Promise<SubClubHoursRule[]> => {
+  const snap = await getDocs(query(collection(db, "subClubHoursRules"), where("clubId", "==", clubId)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as SubClubHoursRule));
+};
+
+export const createSubClubHoursRule = async (
+  clubId: string,
+  rule: Omit<SubClubHoursRule, 'id' | 'clubId'>
+): Promise<SubClubHoursRule> => {
+  const docRef = await addDoc(collection(db, "subClubHoursRules"), {
+    clubId,
+    ...rule,
+    createdAt: Timestamp.fromDate(new Date()),
+  });
+  return { id: docRef.id, clubId, ...rule };
+};
+
+export const updateSubClubHoursRule = async (
+  ruleId: string,
+  updates: Partial<Omit<SubClubHoursRule, 'id' | 'clubId'>>
+): Promise<void> => {
+  await updateDoc(doc(db, "subClubHoursRules", ruleId), { ...updates });
+};
+
+export const deleteSubClubHoursRule = async (ruleId: string): Promise<void> => {
+  await deleteDoc(doc(db, "subClubHoursRules", ruleId));
+};

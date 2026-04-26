@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, deleteMembership, getSuperClubFedSubmissions, setSuperClubApprovalStatus, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, deleteMembership, getSuperClubFedSubmissions, setSuperClubApprovalStatus, getSubClubHoursRules, SubClubHoursRule, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +37,7 @@ import {
   Plus,
   QrCode,
   Award,
+  GitMerge,
 } from "lucide-react";
 
 interface AdminStudentsProps {
@@ -288,6 +289,30 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       }
     }
   });
+
+  const { data: subClubRules = [] } = useQuery<SubClubHoursRule[]>({
+    queryKey: ['sub-club-hours-rules', club.id],
+    queryFn: () => getSubClubHoursRules(club.id),
+    enabled: !!club.id,
+  });
+
+  const getSubClubContributionForStudentLog = (studentEmail: string, targetLogId: string): number => {
+    const matchingRules = subClubRules.filter(r => r.targetLogId === targetLogId);
+    if (matchingRules.length === 0) return 0;
+    const normalizedEmail = studentEmail.replace(/,/g, '.');
+    const approvedFed = (fedSubmissions as HoursSubmission[]).filter(
+      s => s.status === 'approved' && s.userEmail?.replace(/,/g, '.') === normalizedEmail
+    );
+    let total = 0;
+    for (const rule of matchingRules) {
+      for (const sub of approvedFed) {
+        if (sub.date >= rule.fromDate && sub.date <= rule.toDate) {
+          total += sub.hours;
+        }
+      }
+    }
+    return total;
+  };
 
   const filterableCustomFields = customFields.filter(f => f.filterable);
 
@@ -1422,6 +1447,20 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                         <div className="text-xs text-gray-500 mt-1">
                           {met ? 'Requirement met' : `${(log.hoursRequired - logHours).toFixed(1)} hours remaining`}
                         </div>
+                        {(() => {
+                          const studentEmail = selectedStudent?.email;
+                          if (!studentEmail) return null;
+                          const contrib = getSubClubContributionForStudentLog(studentEmail, String(log.id));
+                          if (contrib <= 0) return null;
+                          return (
+                            <div className="flex items-start gap-1.5 mt-2 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                              <GitMerge className="w-3 h-3 text-amber-600 flex-shrink-0 mt-0.5" />
+                              <span className="text-xs text-amber-800">
+                                {contrib.toFixed(1)}h from Sub-Club contributions count toward this log
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}
