@@ -24,7 +24,8 @@ import {
   orderBy,
   Timestamp,
   writeBatch,
-  setDoc
+  setDoc,
+  onSnapshot
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -1412,6 +1413,108 @@ export const getPendingSubmissionsForUserInClub = async (userEmail: string, club
   }).filter(s => s.status === 'pending');
 
   return [...direct, ...fed];
+};
+
+// Real-time listener: user's own submissions for one club
+export const subscribeToUserSubmissions = (
+  userEmail: string,
+  clubId: string,
+  callback: (submissions: HoursSubmission[]) => void
+): (() => void) => {
+  const q = query(
+    collection(db, "submissions"),
+    where("userEmail", "==", userEmail),
+    where("clubId", "==", clubId)
+  );
+  return onSnapshot(q, (snapshot) => {
+    const submissions = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      submittedAt: toDate(d.data().submittedAt),
+      reviewedAt: d.data().reviewedAt ? toDate(d.data().reviewedAt) : undefined,
+    })) as HoursSubmission[];
+    callback(submissions);
+  });
+};
+
+// Real-time listener: pending submissions for a specific student in a club (for admin approval).
+// Merges direct + federated submissions and re-emits whenever either set changes.
+export const subscribeToPendingSubmissionsForUserInClub = (
+  userEmail: string,
+  clubId: string,
+  callback: (submissions: HoursSubmission[]) => void
+): (() => void) => {
+  const directQ = query(
+    collection(db, "submissions"),
+    where("userEmail", "==", userEmail),
+    where("clubId", "==", clubId),
+    where("status", "==", "pending")
+  );
+  const fedQ = query(
+    collection(db, "submissions"),
+    where("userEmail", "==", userEmail),
+    where("superClubId", "==", clubId)
+  );
+
+  let latestDirect: HoursSubmission[] = [];
+  let latestFedRaw: any[] = [];
+  let approvedAffs: any[] = [];
+  let affsLoaded = false;
+
+  const merge = () => {
+    if (!affsLoaded) return;
+    const subToShared = new Map<string, boolean>();
+    approvedAffs.forEach((a: any) => subToShared.set(a.subClubId, a.independentApproval === false));
+
+    const fedMapped = latestFedRaw.map((data: any) => {
+      const shared = subToShared.get(data.clubId) === true;
+      const sStatus = shared
+        ? (data.status || 'pending')
+        : (data.superClubStatus?.[clubId]?.status || 'pending');
+      return {
+        ...data,
+        logId: data.superClubLogId || data.logId,
+        logName: data.superClubLogName || data.logName,
+        status: sStatus,
+        submittedAt: toDate(data.submittedAt),
+        reviewedAt: data.reviewedAt ? toDate(data.reviewedAt) : undefined,
+        __fedFromSubClubId: data.clubId,
+        __fedFromSubClubName: data.subClubName,
+        __fedToSuperClubId: clubId,
+        __originalLogName: data.logName,
+        __sharedApproval: shared,
+      } as any;
+    }).filter((s: any) => s.status === 'pending');
+
+    callback([...latestDirect, ...fedMapped]);
+  };
+
+  // Load affiliations once; they rarely change and re-loading on every snapshot is unnecessary
+  getApprovedSubClubs(clubId).then(affs => {
+    approvedAffs = affs;
+    affsLoaded = true;
+    merge();
+  });
+
+  const unsubDirect = onSnapshot(directQ, (snapshot) => {
+    latestDirect = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      submittedAt: toDate(d.data().submittedAt),
+      reviewedAt: d.data().reviewedAt ? toDate(d.data().reviewedAt) : undefined,
+    })) as HoursSubmission[];
+    merge();
+  });
+
+  const unsubFed = onSnapshot(fedQ, (snapshot) => {
+    latestFedRaw = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    merge();
+  });
+
+  return () => {
+    unsubDirect();
+    unsubFed();
+  };
 };
 
 export const archiveYearData = async (schoolYear: string, clubId?: string, clubName?: string): Promise<void> => {

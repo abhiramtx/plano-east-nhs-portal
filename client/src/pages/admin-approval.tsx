@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useToast } from '@/hooks/use-toast';
 import { 
   getAdminAssignmentForClub, 
-  getPendingSubmissionsForUserInClub, 
+  subscribeToPendingSubmissionsForUserInClub,
   updateSubmission,
   setSuperClubApprovalStatus,
   recalculateClubHours,
@@ -102,16 +102,21 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     gcTime: 0,
   });
 
-  const { data: studentSubmissions = [], isLoading: submissionsLoading } = useQuery({
-    queryKey: ['firebase-pending-submissions', assignment?.email, club.id],
-    queryFn: async () => {
-      if (!assignment?.email) return [];
-      return getPendingSubmissionsForUserInClub(assignment.email, club.id);
-    },
-    enabled: !!assignment?.email,
-    staleTime: 0,
-    gcTime: 0,
-  });
+  const [studentSubmissions, setStudentSubmissions] = useState<HoursSubmission[]>([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!assignment?.email) {
+      setStudentSubmissions([]);
+      return;
+    }
+    setSubmissionsLoading(true);
+    const unsub = subscribeToPendingSubmissionsForUserInClub(assignment.email, club.id, (subs) => {
+      setStudentSubmissions(subs);
+      setSubmissionsLoading(false);
+    });
+    return unsub;
+  }, [assignment?.email, club.id]);
 
   const filteredSubmissions = selectedLogIds.length > 0
     ? studentSubmissions.filter((s: HoursSubmission) => s.logId && selectedLogIds.includes(s.logId))

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, getCurrentUser, getUserSubmissions, getUserSuperClubFedSubmissions, deleteSubmission, HoursSubmission, Club, getAdminSettings, AdminSettings as AdminSettingsType, getSubClubHoursRules, SubClubHoursRule } from "@/lib/firebase";
-import { queryClient } from "@/lib/queryClient";
+import { User, getCurrentUser, subscribeToUserSubmissions, getUserSuperClubFedSubmissions, deleteSubmission, HoursSubmission, Club, getAdminSettings, AdminSettings as AdminSettingsType, getSubClubHoursRules, SubClubHoursRule } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,11 +70,18 @@ export default function Hours({ club }: HoursProps) {
     return { hours: total, rules: matchingRules };
   };
 
-  const { data: directSubmissions = [], isLoading } = useQuery<HoursSubmission[]>({
-    queryKey: ['firebase-user-submissions', userEmail, club.id],
-    queryFn: () => getUserSubmissions(userEmail, club.id),
-    enabled: !!userEmail && !!club.id,
-  });
+  const [directSubmissions, setDirectSubmissions] = useState<HoursSubmission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userEmail || !club.id) return;
+    setIsLoading(true);
+    const unsub = subscribeToUserSubmissions(userEmail, club.id, (subs) => {
+      setDirectSubmissions(subs);
+      setIsLoading(false);
+    });
+    return unsub;
+  }, [userEmail, club.id]);
 
   // Fed submissions: this volunteer opted to also send these sub-club hours
   // to THIS club (when this club is the super-club). Read-only here; editing
@@ -93,7 +99,6 @@ export default function Hours({ club }: HoursProps) {
       await deleteSubmission(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', userEmail, club.id] });
       toast({
         title: "Success",
         description: "Hours submission deleted successfully",
@@ -138,7 +143,6 @@ export default function Hours({ club }: HoursProps) {
   const handleFormSuccess = () => {
     setIsFormOpen(false);
     setEditingSubmission(null);
-    queryClient.invalidateQueries({ queryKey: ['firebase-user-submissions', userEmail, club.id] });
   };
 
   const filteredSubmissions = selectedLogId
