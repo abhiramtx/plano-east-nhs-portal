@@ -1415,6 +1415,26 @@ export const getPendingSubmissionsForUserInClub = async (userEmail: string, club
   return [...direct, ...fed];
 };
 
+// Real-time listener: all submissions for a club (admin dashboard)
+export const subscribeToClubSubmissions = (
+  clubId: string,
+  callback: (submissions: HoursSubmission[]) => void
+): (() => void) => {
+  const q = query(
+    collection(db, "submissions"),
+    where("clubId", "==", clubId)
+  );
+  return onSnapshot(q, (snapshot) => {
+    const submissions = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      submittedAt: toDate(d.data().submittedAt),
+      reviewedAt: d.data().reviewedAt ? toDate(d.data().reviewedAt) : undefined,
+    })) as HoursSubmission[];
+    callback(submissions);
+  });
+};
+
 // Real-time listener: user's own submissions for one club
 export const subscribeToUserSubmissions = (
   userEmail: string,

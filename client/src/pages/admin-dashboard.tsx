@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getClubSubmissions, getAllUserProfiles, updateSubmission, HoursSubmission, UserProfile, Club } from "@/lib/firebase";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { User, subscribeToClubSubmissions, getAllUserProfiles, updateSubmission, HoursSubmission, UserProfile, Club } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,12 +27,19 @@ interface AdminDashboardProps {
 export function AdminDashboard({ user, club }: AdminDashboardProps) {
   const [selectedSubmission, setSelectedSubmission] = useState<HoursSubmission | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data: submissions = [], isLoading } = useQuery({
-    queryKey: ['firebase-club-submissions', club.id],
-    queryFn: () => getClubSubmissions(club.id),
-  });
+  const [submissions, setSubmissions] = useState<HoursSubmission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!club.id) return;
+    setIsLoading(true);
+    const unsub = subscribeToClubSubmissions(club.id, (subs) => {
+      setSubmissions(subs);
+      setIsLoading(false);
+    });
+    return unsub;
+  }, [club.id]);
 
   const { data: profiles = [] } = useQuery({
     queryKey: ['firebase-user-profiles'],
@@ -48,7 +55,6 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-submissions'] });
       toast({
         title: "Success",
         description: "Submission status updated",
