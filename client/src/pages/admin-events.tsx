@@ -4,6 +4,7 @@ import {
   User, Club, ClubEvent, EventAttendance, EventConditional, Affiliation,
   getClubEvents, createEvent, updateEvent, deleteEvent,
   getEventAttendance, checkInUser, checkOutUser, grantEventHours,
+  approveEventSubmissionsForAttendees,
   getApprovedSuperClubs
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -295,7 +296,22 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
         ? attendance.filter(a => selectedAttendees.includes(a.id))
         : attendance;
 
-      const useConditionals = editConditionals.length > 0 && ['scan_qr', 'show_qr', 'password'].includes(editType);
+      const isQR = selectedEvent && ['scan_qr', 'show_qr'].includes(selectedEvent.type);
+
+      if (!isQR) {
+        // For password/none events: approve each attendee's own pending submission
+        // in whichever log they originally submitted to — no log selection needed.
+        await approveEventSubmissionsForAttendees(
+          selectedEvent!.id,
+          targetRecords,
+          user.email,
+          club.id,
+        );
+        return;
+      }
+
+      // QR events: create new approved submissions with the admin-selected log.
+      const useConditionals = editConditionals.length > 0 && ['scan_qr', 'show_qr'].includes(editType);
       const defHours = defaultHours ? parseFloat(defaultHours) : null;
       const logIdParam = (editLogId && editLogId !== '_none') ? editLogId : undefined;
       const logNameParam = hoursLogs.find(l => String(l.id) === editLogId)?.name;
@@ -901,34 +917,45 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
             {/* ============ GRANT HOURS TAB ============ */}
             {activeTab === 'grant' && (
               <div className="space-y-5">
-                {/* Required log selector */}
-                <Card className={!editLogId || editLogId === '_none' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}>
-                  <CardContent className="pt-4 pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 space-y-1">
-                        <Label className="text-sm font-semibold">
-                          Append hours to Log <span className="text-red-500">*</span>
-                        </Label>
-                        <Select value={editLogId} onValueChange={setEditLogId}>
-                          <SelectTrigger className="bg-white">
-                            <SelectValue placeholder="Select a log (required)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectableLogs.length === 0
-                              ? <SelectItem value="_none" disabled>No logs created yet</SelectItem>
-                              : selectableLogs.map(l => (
-                                  <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
-                                ))
-                            }
-                          </SelectContent>
-                        </Select>
+                {/* Required log selector — QR events only */}
+                {isQRType && (
+                  <Card className={!editLogId || editLogId === '_none' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}>
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 space-y-1">
+                          <Label className="text-sm font-semibold">
+                            Append hours to Log <span className="text-red-500">*</span>
+                          </Label>
+                          <Select value={editLogId} onValueChange={setEditLogId}>
+                            <SelectTrigger className="bg-white">
+                              <SelectValue placeholder="Select a log (required)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {selectableLogs.length === 0
+                                ? <SelectItem value="_none" disabled>No logs created yet</SelectItem>
+                                : selectableLogs.map(l => (
+                                    <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
+                                  ))
+                              }
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                    </div>
-                    {(!editLogId || editLogId === '_none') && (
-                      <p className="text-xs text-amber-700 mt-2">You must select a log before granting hours. Create logs in Settings → Logs.</p>
-                    )}
-                  </CardContent>
-                </Card>
+                      {(!editLogId || editLogId === '_none') && (
+                        <p className="text-xs text-amber-700 mt-2">You must select a log before granting hours. Create logs in Settings → Logs.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+                {!isQRType && (
+                  <Card className="border-blue-200 bg-blue-50">
+                    <CardContent className="pt-4 pb-4">
+                      <p className="text-sm text-blue-800">
+                        Hours will be approved into each volunteer's original submission log.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Conditionals card — password events only (in Grant Hours tab) */}
                 {selectedEvent.type === 'password' && (
@@ -1098,7 +1125,9 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
                         <Button
                           onClick={() => grantMutation.mutate()}
-                          disabled={grantMutation.isPending || !editLogId || editLogId === '_none' || (selectedAttendees.length === 0 && !defaultHours && editConditionals.length === 0 && !Object.values(overrideHours).some(Boolean))}
+                          disabled={grantMutation.isPending || (isQRType
+                            ? (!editLogId || editLogId === '_none') || (selectedAttendees.length === 0 && !defaultHours && editConditionals.length === 0 && !Object.values(overrideHours).some(Boolean))
+                            : attendance.length === 0)}
                           className="w-full bg-black hover:bg-gray-800 text-white"
                         >
                           <Award className="w-4 h-4 mr-2" />

@@ -1993,6 +1993,47 @@ export const grantEventHours = async (
   }
 };
 
+// For non-QR events (password/none): approve the student's existing pending
+// submission(s) for this event rather than creating a new one.
+export const approveEventSubmissionsForAttendees = async (
+  eventId: string,
+  attendanceRecords: EventAttendance[],
+  reviewedBy: string,
+  clubId?: string,
+): Promise<void> => {
+  const batch = writeBatch(db);
+  const now = new Date();
+
+  for (const record of attendanceRecords) {
+    const q = query(
+      collection(db, "submissions"),
+      where("userEmail", "==", record.userEmail),
+      where("eventId", "==", eventId)
+    );
+    const snap = await getDocs(q);
+    let approvedHours = 0;
+    for (const docSnap of snap.docs) {
+      const data = docSnap.data();
+      if (data.status === 'pending') {
+        batch.update(doc(db, "submissions", docSnap.id), {
+          status: 'approved',
+          reviewedAt: Timestamp.fromDate(now),
+          reviewedBy,
+        });
+        approvedHours += data.hours || 0;
+      }
+    }
+    if (snap.empty) continue;
+    batch.update(doc(db, "eventAttendance", record.id), {
+      grantStatus: 'granted',
+      hoursGranted: approvedHours || (record.minutesAttended ? record.minutesAttended / 60 : 0),
+    });
+  }
+
+  await batch.commit();
+  if (clubId) await recalculateClubHours(clubId);
+};
+
 export const checkInByQR = async (eventId: string, eventName: string, userEmail: string, clubId?: string): Promise<{ success: boolean; message: string; record?: EventAttendance }> => {
   const existing = await getEventAttendance(eventId);
   const rec = existing.find(a => a.userEmail === userEmail);
