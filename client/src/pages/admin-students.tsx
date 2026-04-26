@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, getSuperClubFedSubmissions, setSuperClubApprovalStatus, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, deleteMembership, getSuperClubFedSubmissions, setSuperClubApprovalStatus, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -101,6 +101,8 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
   const [grantDate, setGrantDate] = useState(new Date().toISOString().split('T')[0]);
   const [showStudentQR, setShowStudentQR] = useState<string | null>(null);
   const [editingSubmissionHours, setEditingSubmissionHours] = useState<{ id: string; hours: string } | null>(null);
+  const [kickDialogOpen, setKickDialogOpen] = useState(false);
+  const [memberToKick, setMemberToKick] = useState<{ email: string; name: string; membershipId: string } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -210,6 +212,22 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       queryClient.invalidateQueries({ queryKey: ['firebase-submissions', club.id] });
       setEditingSubmissionHours(null);
       toast({ title: "Hours updated" });
+    },
+  });
+
+  const kickMemberMutation = useMutation({
+    mutationFn: async (membershipId: string) => {
+      await deleteMembership(membershipId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-memberships', club.id] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-submissions', club.id] });
+      setKickDialogOpen(false);
+      setMemberToKick(null);
+      toast({ title: "Member removed", description: `${memberToKick?.name || memberToKick?.email} has been removed from the club.` });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to remove member", variant: "destructive" });
     },
   });
 
@@ -988,6 +1006,33 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={kickDialogOpen} onOpenChange={setKickDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remove Member</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to remove <strong>{memberToKick?.name || memberToKick?.email}</strong> from the club? Their hours history will remain, but they will lose access.
+          </p>
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => { setKickDialogOpen(false); setMemberToKick(null); }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              disabled={kickMemberMutation.isPending}
+              onClick={() => memberToKick && kickMemberMutation.mutate(memberToKick.membershipId)}
+            >
+              {kickMemberMutation.isPending ? "Removing..." : "Remove Member"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex-1 flex flex-col min-h-0">
         <div className="bg-white border-b border-gray-200 flex-shrink-0">
           <div className="px-4 lg:px-6 py-4 lg:py-6">
@@ -1170,10 +1215,28 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                             </div>
                           </div>
                           
-                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          <div className="flex flex-col items-end gap-2 flex-shrink-0">
                             {lastActivity && (
                               <span className="text-xs text-gray-400">{lastActivity}</span>
                             )}
+                            {(() => {
+                              const membership = (clubMembers as Membership[]).find(m => m.userEmail === student.email);
+                              if (!membership) return null;
+                              return (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-400 text-xs h-7 px-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMemberToKick({ email: student.email, name: student.studentName, membershipId: membership.id });
+                                    setKickDialogOpen(true);
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              );
+                            })()}
                           </div>
                         </div>
 

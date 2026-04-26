@@ -2046,9 +2046,14 @@ export const getApprovedSubClubs = async (superClubId: string): Promise<Affiliat
 // Each result is tagged with `__fedFromSubClubName` and `__fedToSuperClubId`
 // so consumers can render read-only UI and route approvals correctly.
 export const getSuperClubFedSubmissions = async (superClubId: string): Promise<HoursSubmission[]> => {
-  const incoming = await getApprovedSubClubs(superClubId);
+  const [incoming, superLogsRes] = await Promise.all([
+    getApprovedSubClubs(superClubId),
+    fetch(`/api/hours-logs/${superClubId}`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+  ]);
   const subToShared = new Map<string, boolean>();
   incoming.forEach(a => subToShared.set(a.subClubId, a.independentApproval === false));
+  // Find the system "Sub-Club Hours" log for this super-club
+  const systemLog = (superLogsRes as any[]).find((l: any) => l.isSystem || l.name === 'Sub-Club Hours');
 
   const q = query(
     collection(db, "submissions"),
@@ -2064,12 +2069,16 @@ export const getSuperClubFedSubmissions = async (superClubId: string): Promise<H
     const sReject = shared
       ? data.rejectReason
       : data.superClubStatus?.[superClubId]?.rejectReason;
+    // Use stored superClubLogId when present; fall back to the system log
+    // (not the sub-club's original logId) so federated hours always land
+    // under "Sub-Club Hours" in the super-club view.
+    const resolvedLogId = data.superClubLogId || (systemLog ? String(systemLog.id) : undefined);
+    const resolvedLogName = data.superClubLogName || (systemLog ? systemLog.name : undefined);
     return {
       id: d.id,
       ...data,
-      // Remap to super-club's log + status for display in super-club views.
-      logId: data.superClubLogId || data.logId,
-      logName: data.superClubLogName || data.logName,
+      logId: resolvedLogId,
+      logName: resolvedLogName,
       status: sStatus,
       rejectReason: sReject,
       submittedAt: toDate(data.submittedAt),
@@ -2087,9 +2096,13 @@ export const getSuperClubFedSubmissions = async (superClubId: string): Promise<H
 // A volunteer's own opted-in fed submissions to a specific super-club, with
 // log/status remapped for super-club display. Read-only on volunteer side.
 export const getUserSuperClubFedSubmissions = async (userEmail: string, superClubId: string): Promise<HoursSubmission[]> => {
-  const incoming = await getApprovedSubClubs(superClubId);
+  const [incoming, superLogsRes] = await Promise.all([
+    getApprovedSubClubs(superClubId),
+    fetch(`/api/hours-logs/${superClubId}`, { credentials: 'include' }).then(r => r.ok ? r.json() : []).catch(() => []),
+  ]);
   const subToShared = new Map<string, boolean>();
   incoming.forEach(a => subToShared.set(a.subClubId, a.independentApproval === false));
+  const systemLog = (superLogsRes as any[]).find((l: any) => l.isSystem || l.name === 'Sub-Club Hours');
 
   const q = query(
     collection(db, "submissions"),
@@ -2106,11 +2119,13 @@ export const getUserSuperClubFedSubmissions = async (userEmail: string, superClu
     const sReject = shared
       ? data.rejectReason
       : data.superClubStatus?.[superClubId]?.rejectReason;
+    const resolvedLogId = data.superClubLogId || (systemLog ? String(systemLog.id) : undefined);
+    const resolvedLogName = data.superClubLogName || (systemLog ? systemLog.name : undefined);
     return {
       id: d.id,
       ...data,
-      logId: data.superClubLogId || data.logId,
-      logName: data.superClubLogName || data.logName,
+      logId: resolvedLogId,
+      logName: resolvedLogName,
       status: sStatus,
       rejectReason: sReject,
       submittedAt: toDate(data.submittedAt),
