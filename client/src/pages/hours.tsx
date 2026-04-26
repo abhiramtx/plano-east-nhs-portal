@@ -148,7 +148,7 @@ export default function Hours({ club }: HoursProps) {
 
   const filteredSubmissions = selectedLogId
     ? submissions.filter(s => s.logId === selectedLogId)
-    : submissions;
+    : [];
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -340,17 +340,25 @@ export default function Hours({ club }: HoursProps) {
                 <CardContent className="p-12">
                   <div className="text-center">
                     <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
-                    <p className="text-gray-500 mb-6">{selectedLogIsSystem ? 'Hours forwarded from sub-clubs will appear here once approved.' : 'Start by submitting your first service hours'}</p>
-                    {!selectedLogIsSystem && selectedLogIsOpen && (
-                      <Button 
-                        onClick={() => setIsFormOpen(true)} 
-                        className="bg-black hover:bg-gray-800 text-white"
-                        disabled={hoursLogs.length > 0 && !selectedLogId}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Submit Your First Hours
-                      </Button>
+                    {!selectedLogId && hoursLogs.length > 0 ? (
+                      <>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Log</h3>
+                        <p className="text-gray-500">Choose a log above to view your hours</p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
+                        <p className="text-gray-500 mb-6">{selectedLogIsSystem ? 'Hours forwarded from sub-clubs will appear here once approved.' : 'Start by submitting your first service hours'}</p>
+                        {!selectedLogIsSystem && selectedLogIsOpen && (
+                          <Button 
+                            onClick={() => setIsFormOpen(true)} 
+                            className="bg-black hover:bg-gray-800 text-white"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Submit Your First Hours
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 </CardContent>
