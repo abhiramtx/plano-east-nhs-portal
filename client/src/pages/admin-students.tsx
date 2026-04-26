@@ -1510,7 +1510,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   );
                   relevantSubmissions.forEach((s: HoursSubmission) => {
                     if (s.logId && s.logName) {
-                      const key = `${s.clubId ?? ''}-${s.logId}`;
+                      const key = s.logId;
                       if (!grouped[key]) grouped[key] = { logName: s.logName, submissions: [] };
                       grouped[key].submissions.push(s);
                     } else {
