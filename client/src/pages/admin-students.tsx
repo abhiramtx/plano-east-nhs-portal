@@ -121,7 +121,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       // Fed (opted-in) submission: route through per-superclub status,
       // unless the affiliation is in SHARED-approval mode — then write
       // straight to the source submission so both views reflect it.
-      const sub = submissions.find((s: HoursSubmission) => s.id === id) as any;
+      const sub = (submissions.find((s: HoursSubmission) => s.id === id) ?? studentSubmissions.find((s: HoursSubmission) => s.id === id)) as any;
       if (sub?.__fedToSuperClubId === club.id) {
         if (sub.__sharedApproval) {
           await updateSubmission(id, {
