@@ -51,7 +51,8 @@ export default function Hours({ club }: HoursProps) {
   const requireProofImage = adminSettings?.requireProofImage ?? false;
 
   const openLogs = hoursLogs.filter(log => log.isOpen);
-  const selectedLog = openLogs.find(log => String(log.id) === selectedLogId) || null;
+  const selectedLog = hoursLogs.find(log => String(log.id) === selectedLogId) || null;
+  const selectedLogIsOpen = selectedLog ? openLogs.some(l => String(l.id) === selectedLogId) : false;
   const selectedLogIsSystem = selectedLog?.isSystem === true;
 
   const getSubClubContributionForLog = (targetLogId: string): { hours: number; rules: SubClubHoursRule[] } => {
@@ -171,12 +172,12 @@ export default function Hours({ club }: HoursProps) {
               <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
                 <Plus className="w-5 h-5 text-white" />
               </div>
-              <Dialog open={isFormOpen} onOpenChange={selectedLogIsSystem ? undefined : setIsFormOpen}>
-                {!selectedLogIsSystem && (
+              <Dialog open={isFormOpen} onOpenChange={(selectedLogIsSystem || !selectedLogIsOpen) ? undefined : setIsFormOpen}>
+                {(!selectedLogIsSystem && (selectedLogIsOpen || !selectedLogId)) && (
                   <DialogTrigger asChild>
                     <Button 
                       className="bg-black hover:bg-gray-800 text-white"
-                      disabled={openLogs.length > 0 && !selectedLogId}
+                      disabled={hoursLogs.length > 0 && !selectedLogId}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Submit Hours
@@ -218,23 +219,29 @@ export default function Hours({ club }: HoursProps) {
           </div>
         </div>
 
-        {openLogs.length > 0 && (
+        {hoursLogs.length > 0 && (
           <div className="px-4 lg:px-6 pb-2">
             <div className="flex items-center gap-2 overflow-x-auto">
-              {openLogs.map(log => (
-                <button
-                  key={log.id}
-                  onClick={() => setSelectedLogId(String(log.id))}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
-                    selectedLogId === String(log.id)
-                      ? 'bg-black text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {log.name}
-                  <span className="ml-1.5 text-xs opacity-75">({log.hoursRequired}h req)</span>
-                </button>
-              ))}
+              {hoursLogs.map(log => {
+                const isOpen = openLogs.some(l => String(l.id) === String(log.id));
+                return (
+                  <button
+                    key={log.id}
+                    onClick={() => setSelectedLogId(String(log.id))}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
+                      selectedLogId === String(log.id)
+                        ? 'bg-black text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {log.name}
+                    <span className="ml-1.5 text-xs opacity-75">({log.hoursRequired}h req)</span>
+                    {!isOpen && (
+                      <span className="ml-1.5 text-xs opacity-60">· Closed</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -293,6 +300,12 @@ export default function Hours({ club }: HoursProps) {
                 <span>Hours in this log are added automatically from sub-club submissions — you cannot submit directly here.</span>
               </div>
             )}
+            {selectedLog && !selectedLogIsOpen && !selectedLogIsSystem && (
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-2 text-sm text-gray-700">
+                <AlertCircle className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                <span>This log is closed — submissions are no longer accepted, but your recorded hours are shown below.</span>
+              </div>
+            )}
             {selectedLogId && !selectedLogIsSystem && (() => {
               const contrib = getSubClubContributionForLog(selectedLogId);
               if (contrib.rules.length === 0) return null;
@@ -329,11 +342,11 @@ export default function Hours({ club }: HoursProps) {
                     <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
                     <p className="text-gray-500 mb-6">{selectedLogIsSystem ? 'Hours forwarded from sub-clubs will appear here once approved.' : 'Start by submitting your first service hours'}</p>
-                    {!selectedLogIsSystem && (
+                    {!selectedLogIsSystem && selectedLogIsOpen && (
                       <Button 
                         onClick={() => setIsFormOpen(true)} 
                         className="bg-black hover:bg-gray-800 text-white"
-                        disabled={openLogs.length > 0 && !selectedLogId}
+                        disabled={hoursLogs.length > 0 && !selectedLogId}
                       >
                         <Plus className="w-4 h-4 mr-2" />
                         Submit Your First Hours
