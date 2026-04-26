@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User, getCurrentUser, getUserSubmissions, HoursSubmission, getClubsForUser, Club } from "@/lib/firebase";
+import { User, getCurrentUser, getUserSubmissions, getUserSuperClubFedSubmissions, HoursSubmission, getClubsForUser, Club } from "@/lib/firebase";
 import { Clock, TrendingUp, Calendar, Award, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,11 +29,22 @@ export default function Dashboard({ club }: DashboardProps) {
     enabled: !!userEmail && !!club.id,
   });
 
+  // Fed submissions forwarded from sub-clubs into this club (when this club is a super-club).
+  // These have a different clubId so getUserSubmissions misses them entirely.
+  const { data: fedSubmissions = [] } = useQuery<HoursSubmission[]>({
+    queryKey: ['firebase-user-fed-submissions', userEmail, club.id],
+    queryFn: () => getUserSuperClubFedSubmissions(userEmail, club.id),
+    enabled: !!userEmail && !!club.id,
+  });
+
+  // Merge direct + fed, avoiding duplicates (safe: clubId vs superClubId queries never overlap)
+  const allSubmissions = [...submissions, ...fedSubmissions];
+
   const stats = {
-    totalHours: submissions.reduce((sum, sub) => sum + sub.hours, 0),
-    approvedHours: submissions.filter(sub => sub.status === 'approved').reduce((sum, sub) => sum + sub.hours, 0),
-    pendingHours: submissions.filter(sub => sub.status === 'pending').reduce((sum, sub) => sum + sub.hours, 0),
-    submissionCount: submissions.length,
+    totalHours: allSubmissions.reduce((sum, sub) => sum + sub.hours, 0),
+    approvedHours: allSubmissions.filter(sub => sub.status === 'approved').reduce((sum, sub) => sum + sub.hours, 0),
+    pendingHours: allSubmissions.filter(sub => sub.status === 'pending').reduce((sum, sub) => sum + sub.hours, 0),
+    submissionCount: allSubmissions.length,
   };
 
   const monthlyData = [
@@ -51,7 +62,7 @@ export default function Dashboard({ club }: DashboardProps) {
     { month: "May", hours: 0 },
   ];
 
-  submissions.forEach(sub => {
+  allSubmissions.forEach(sub => {
     const month = new Date(sub.date).toLocaleString('default', { month: 'short' });
     const monthData = monthlyData.find(m => m.month === month);
     if (monthData && sub.status === 'approved') {
@@ -203,7 +214,7 @@ export default function Dashboard({ club }: DashboardProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-80 overflow-y-auto">
-                {submissions.slice(0, 5).map((submission, index) => (
+                {allSubmissions.slice(0, 5).map((submission, index) => (
                   <div key={index} className="py-2">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex-1 min-w-0">

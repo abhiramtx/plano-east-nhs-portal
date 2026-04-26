@@ -1373,17 +1373,28 @@ export const getPendingSubmissionsForUserInClub = async (userEmail: string, club
     reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
   })) as HoursSubmission[];
 
-  // Also include fed submissions opted-in to this super-club that are still
-  // pending the super-club's approval.
-  const fedQ = query(
-    collection(db, "submissions"),
-    where("userEmail", "==", userEmail),
-    where("superClubId", "==", clubId),
-  );
-  const fedSnap = await getDocs(fedQ);
+  // Fetch fed submissions and approved affiliations in parallel.
+  const [fedSnap, approvedAffs] = await Promise.all([
+    getDocs(query(
+      collection(db, "submissions"),
+      where("userEmail", "==", userEmail),
+      where("superClubId", "==", clubId),
+    )),
+    getApprovedSubClubs(clubId),
+  ]);
+
+  // Build shared-mode map so we can derive the correct status per affiliation type.
+  const subToShared = new Map<string, boolean>();
+  approvedAffs.forEach(a => subToShared.set(a.subClubId, a.independentApproval === false));
+
   const fed = fedSnap.docs.map(doc => {
     const data = doc.data() as any;
-    const sStatus = data.superClubStatus?.[clubId]?.status || 'pending';
+    const shared = subToShared.get(data.clubId) === true;
+    // Shared mode: superclub inherits the sub-club's own approval status.
+    // Independent mode: superclub has its own separate approval tracked in superClubStatus.
+    const sStatus = shared
+      ? (data.status || 'pending')
+      : (data.superClubStatus?.[clubId]?.status || 'pending');
     return {
       id: doc.id,
       ...data,
@@ -1396,6 +1407,7 @@ export const getPendingSubmissionsForUserInClub = async (userEmail: string, club
       __fedFromSubClubName: data.subClubName,
       __fedToSuperClubId: clubId,
       __originalLogName: data.logName,
+      __sharedApproval: shared,
     } as any;
   }).filter(s => s.status === 'pending');
 
