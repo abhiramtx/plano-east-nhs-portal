@@ -1509,10 +1509,15 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                     s.clubId === club.id || (s as any).superClubId === club.id
                   );
                   relevantSubmissions.forEach((s: HoursSubmission) => {
-                    if (s.logId && s.logName) {
-                      const key = s.logId;
-                      if (!grouped[key]) grouped[key] = { logName: s.logName, submissions: [] };
-                      grouped[key].submissions.push(s);
+                    // For federated submissions shown in the super-club view,
+                    // group under the super-club's log (superClubLogId/Name),
+                    // not the originating sub-club's log.
+                    const isFederated = (s as any).superClubId === club.id;
+                    const effectiveLogId = isFederated ? (s.superClubLogId || s.logId) : s.logId;
+                    const effectiveLogName = isFederated ? (s.superClubLogName || s.logName) : s.logName;
+                    if (effectiveLogId && effectiveLogName) {
+                      if (!grouped[effectiveLogId]) grouped[effectiveLogId] = { logName: effectiveLogName, submissions: [] };
+                      grouped[effectiveLogId].submissions.push(s);
                     } else {
                       ungrouped.push(s);
                     }
