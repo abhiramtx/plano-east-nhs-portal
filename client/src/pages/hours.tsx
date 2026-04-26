@@ -234,6 +234,46 @@ export default function Hours({ club }: HoursProps) {
             </div>
           </div>
         )}
+
+        {selectedLog && (() => {
+          const approvedHours = submissions
+            .filter(s => s.logId === selectedLogId && s.status === 'approved')
+            .reduce((sum, s) => sum + s.hours, 0);
+          const subContrib = getSubClubContributionForLog(selectedLogId!);
+          const totalHours = approvedHours + subContrib.hours;
+          const pct = Math.min(100, (totalHours / selectedLog.hoursRequired) * 100);
+          const met = totalHours >= selectedLog.hoursRequired;
+          return (
+            <div className="px-4 lg:px-6 pb-4">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-900">{selectedLog.name} Progress</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${met ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
+                    {met ? 'Requirement Met' : 'In Progress'}
+                  </span>
+                </div>
+                <div className="flex items-end gap-3 mb-2">
+                  <span className="text-2xl font-bold text-gray-900 leading-none">{totalHours.toFixed(1)}</span>
+                  <span className="text-sm text-gray-500 mb-0.5">/ {selectedLog.hoursRequired}h required</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-500 ${met ? 'bg-green-600' : 'bg-gray-900'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {subContrib.hours > 0 && (
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <GitMerge className="w-3 h-3 text-amber-600 flex-shrink-0" />
+                    <span className="text-xs text-amber-800">
+                      Includes {subContrib.hours.toFixed(1)}h from Sub-Club contributions
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 lg:p-6">
