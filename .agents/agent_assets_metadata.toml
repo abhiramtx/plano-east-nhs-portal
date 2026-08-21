@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "19vlemOhSelp9X-NiATdL"
+uri = "file://volunteerclub-deck.html"
+type = "text"
+title = "VolunteerClub — Slide Deck"
+description = "8-slide presentation: title, problem, solution, how it works, features, territory map, tech stack, and CTA. Arrow keys, swipe, or buttons to navigate."

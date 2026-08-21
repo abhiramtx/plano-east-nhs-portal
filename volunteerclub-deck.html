@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VolunteerClub — Slide Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --paper:      #f7f2e9;
+    --paper-deep: #eee5d7;
+    --ink:        #17324d;
+    --ink-soft:   #506477;
+    --coral:      #d85c45;
+    --marigold:   #e5a72c;
+    --teal:       #2d827d;
+    --line:       #d9cdbd;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: #1a1a1a;
+    font-family: 'DM Sans', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── Deck shell ── */
+  #deck {
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── Slide frame (16:9) ── */
+  #frame {
+    position: relative;
+    width: min(100vw, calc(100vh * 16/9));
+    height: min(100vh, calc(100vw * 9/16));
+    overflow: hidden;
+    background: var(--paper);
+  }
+
+  /* ── Grid texture ── */
+  #frame::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(23,50,77,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(23,50,77,.04) 1px, transparent 1px);
+    background-size: 2.1% 3.7%;
+  }
+
+  /* ── Slides container ── */
+  #slides {
+    position: absolute; inset: 0; z-index: 1;
+    display: flex;
+    transition: transform .55s cubic-bezier(.77,0,.18,1);
+  }
+
+  .slide {
+    flex: none;
+    width: 100%; height: 100%;
+    padding: 6% 7%;
+    display: flex; flex-direction: column; justify-content: center;
+    position: relative;
+  }
+
+  /* ── Nav ── */
+  #nav {
+    position: absolute; bottom: 3%; right: 4%;
+    z-index: 10;
+    display: flex; align-items: center; gap: .8em;
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(9px, 1.1vw, 13px);
+    color: var(--ink-soft);
+  }
+  #nav button {
+    background: var(--paper-deep); border: 1px solid var(--line);
+    color: var(--ink); border-radius: 999px;
+    padding: .35em .9em; cursor: pointer; font-weight: 600;
+    font-size: inherit; transition: background .15s;
+  }
+  #nav button:hover { background: var(--line); }
+
+  /* ── Progress bar ── */
+  #progress {
+    position: absolute; bottom: 0; left: 0; height: 3px;
+    background: var(--coral); z-index: 10;
+    transition: width .55s cubic-bezier(.77,0,.18,1);
+  }
+
+  /* ── Slide number badge ── */
+  .slide-num {
+    position: absolute; top: 6%; right: 7%;
+    font-size: clamp(9px,1vw,12px); font-weight: 700;
+    color: var(--line); letter-spacing: .12em; text-transform: uppercase;
+  }
+
+  /* ── Typography ── */
+  .kicker {
+    font-size: clamp(8px,.9vw,11px);
+    font-weight: 700; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--teal); margin-bottom: .6em;
+  }
+  h1.hero {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(36px,7.5vw,88px);
+    font-weight: 700; line-height: .95;
+    letter-spacing: -.03em; color: var(--ink);
+  }
+  h2.heading {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(22px,4vw,52px);
+    font-weight: 700; line-height: 1.05;
+    letter-spacing: -.025em; color: var(--ink);
+  }
+  .body {
+    font-size: clamp(11px,1.4vw,18px); line-height: 1.65;
+    color: var(--ink-soft); max-width: 52ch;
+  }
+  .body-sm {
+    font-size: clamp(9px,1.1vw,14px); line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  /* ── Decorative pill ── */
+  .pill {
+    display: inline-flex; align-items: center; gap: .5em;
+    background: var(--ink); color: var(--paper);
+    border-radius: 999px; padding: .4em 1.1em;
+    font-size: clamp(9px,1vw,13px); font-weight: 700;
+  }
+  .pill.coral  { background: var(--coral); }
+  .pill.teal   { background: var(--teal); }
+  .pill.gold   { background: var(--marigold); color: var(--ink); }
+
+  /* ── Divider ── */
+  .rule { width: 40px; height: 3px; border-radius: 2px; background: var(--coral); margin: 1.2em 0; }
+
+  /* ══════════════════════════════════════
+     SLIDE 1 — TITLE
+  ══════════════════════════════════════ */
+  #s1 { justify-content: flex-end; padding-bottom: 9%; }
+  #s1 .brand {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: clamp(11px,1.3vw,16px); font-weight: 600;
+    letter-spacing: -.01em; color: var(--ink-soft);
+    margin-bottom: 1.6em;
+    display: flex; align-items: center; gap: .6em;
+  }
+  #s1 .logo-mark {
+    width: clamp(28px,3.5vw,44px); height: clamp(28px,3.5vw,44px);
+    border-radius: 30%; background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--paper); font-family: 'Fraunces', serif;
+    font-size: clamp(12px,1.8vw,22px); font-weight: 700;
+  }
+  #s1 .tagline {
+    font-size: clamp(11px,1.4vw,18px); color: var(--ink-soft);
+    margin-top: 1.4em; max-width: 42ch;
+  }
+  #s1 .coral-accent {
+    position: absolute; top: 12%; right: 8%;
+    width: clamp(80px,12vw,160px); height: clamp(80px,12vw,160px);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(216,92,69,.18) 0%, transparent 70%);
+  }
+  #s1 .marigold-accent {
+    position: absolute; top: 25%; right: 18%;
+    width: clamp(50px,8vw,110px); height: clamp(50px,8vw,110px);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(229,167,44,.13) 0%, transparent 70%);
+  }
+
+  /* ══════════════════════════════════════
+     SLIDE 2 — PROBLEM
+  ══════════════════════════════════════ */
+  #s2 .pain-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: clamp(8px,1.2vw,16px); margin-top: 1.8em;
+  }
+  .pain-card {
+    background: var(--paper-deep); border: 1px solid var(--line);
+    border-radius: clamp(8px,1vw,14px); padding: clamp(10px,1.4vw,20px);
+  }
+  .pain-card .icon { font-size: clamp(16px,2vw,26px); margin-bottom: .4em; }
+  .pain-card .label {
+    font-weight: 700; color: var(--ink); font-size: clamp(10px,1.2vw,15px);
+    margin-bottom: .3em;
+  }
+  .pain-card .desc {
+    font-size: clamp(9px,1vw,13px); color: var(--ink-soft); line-height: 1.5;
+  }
+
+  /* ══════════════════════════════════════
+     SLIDE 3 — SOLUTION
+  ══════════════════════════════════════ */
+  #s3 .layout { display: flex; gap: 5%; align-items: center; }
+  #s3 .left { flex: 1.1; }
+  #s3 .right { flex: 1; display: flex; flex-direction: column; gap: clamp(8px,1vw,14px); }
+  .feature-row {
+    display: flex; align-items: flex-start; gap: clamp(8px,1vw,14px);
+    background: var(--paper-deep); border: 1px solid var(--line);
+    border-radius: clamp(8px,1vw,12px); padding: clamp(8px,1.1vw,16px);
+  }
+  .feature-row .dot {
+    width: clamp(28px,3vw,40px); height: clamp(28px,3vw,40px); border-radius: 50%;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(12px,1.5vw,18px);
+  }
+  .feature-row .ft { font-weight: 700; color: var(--ink); font-size: clamp(9px,1.1vw,14px); }
+  .feature-row .fd { font-size: clamp(8px,.95vw,12px); color: var(--ink-soft); line-height: 1.4; margin-top: .15em; }
+
+  /* ══════════════════════════════════════
+     SLIDE 4 — HOW IT WORKS
+  ══════════════════════════════════════ */
+  #s4 .steps { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: clamp(12px,2vw,28px); margin-top: 1.8em; }
+  .step-card {
+    border-top: 3px solid var(--ink); padding-top: clamp(10px,1.2vw,16px);
+  }
+  .step-card .n {
+    font-size: clamp(9px,1vw,13px); font-weight: 700; color: var(--coral); margin-bottom: .4em;
+  }
+  .step-card .st {
+    font-family: 'Fraunces', serif; font-size: clamp(14px,1.8vw,24px);
+    color: var(--ink); line-height: 1.15; margin-bottom: .6em;
+  }
+  .step-card .sd { font-size: clamp(9px,1.05vw,13px); color: var(--ink-soft); line-height: 1.55; }
+
+  /* ══════════════════════════════════════
+     SLIDE 5 — FEATURES GRID
+  ══════════════════════════════════════ */
+  #s5 .feat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: clamp(8px,1vw,14px); margin-top: 1.6em; }
+  .feat-card {
+    background: var(--paper-deep); border: 1px solid var(--line);
+    border-radius: clamp(8px,1vw,12px); padding: clamp(10px,1.3vw,18px);
+  }
+  .feat-card .fi { font-size: clamp(16px,2vw,26px); margin-bottom: .5em; }
+  .feat-card .fn { font-weight: 700; color: var(--ink); font-size: clamp(10px,1.15vw,15px); margin-bottom: .3em; }
+  .feat-card .fd2 { font-size: clamp(8px,.95vw,12px); color: var(--ink-soft); line-height: 1.5; }
+
+  /* ══════════════════════════════════════
+     SLIDE 6 — TERRITORY MAP
+  ══════════════════════════════════════ */
+  #s6 .layout { display: flex; gap: 5%; align-items: center; }
+  #s6 .left { flex: 1.1; }
+  #s6 .right { flex: 1; }
+  #s6 .map-mock {
+    background: #1a2d3d; border-radius: clamp(10px,1.2vw,16px);
+    aspect-ratio: 4/3; position: relative; overflow: hidden;
+    border: 2px solid var(--ink);
+  }
+  #s6 .map-mock .glow {
+    position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,.15);
+  }
+  #s6 .stat-row { display: flex; gap: clamp(8px,1.2vw,16px); margin-top: 1.4em; }
+  .stat-box {
+    flex: 1; background: var(--paper-deep); border: 1px solid var(--line);
+    border-radius: clamp(8px,1vw,12px); padding: clamp(8px,1.1vw,14px);
+    text-align: center;
+  }
+  .stat-box .sv { font-family: 'Fraunces', serif; font-size: clamp(18px,2.5vw,34px); color: var(--ink); font-weight: 700; }
+  .stat-box .sl { font-size: clamp(8px,.9vw,11px); color: var(--ink-soft); margin-top: .2em; }
+
+  /* ══════════════════════════════════════
+     SLIDE 7 — TECH STACK
+  ══════════════════════════════════════ */
+  #s7 .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(8px,1vw,14px); margin-top: 1.6em; }
+  .tech-card {
+    background: var(--paper-deep); border: 1px solid var(--line);
+    border-radius: clamp(8px,1vw,12px); padding: clamp(10px,1.3vw,18px);
+    display: flex; gap: clamp(8px,1vw,14px); align-items: flex-start;
+  }
+  .tech-card .ticon {
+    font-size: clamp(18px,2.2vw,28px); flex-shrink: 0;
+  }
+  .tech-card .tn { font-weight: 700; color: var(--ink); font-size: clamp(10px,1.15vw,15px); margin-bottom: .25em; }
+  .tech-card .td { font-size: clamp(8px,.95vw,12px); color: var(--ink-soft); line-height: 1.5; }
+
+  /* ══════════════════════════════════════
+     SLIDE 8 — CTA
+  ══════════════════════════════════════ */
+  #s8 { background: var(--ink); justify-content: center; align-items: flex-start; }
+  #s8::before { background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); }
+  #s8 .kicker { color: rgba(255,255,255,.45); }
+  #s8 h2.heading { color: var(--paper); }
+  #s8 .body { color: rgba(255,255,255,.6); }
+  #s8 .rule { background: var(--coral); }
+  #s8 .cta-pills { display: flex; gap: clamp(8px,1vw,14px); margin-top: 2em; flex-wrap: wrap; }
+  #s8 .cta-pill {
+    background: var(--coral); color: #fff; border-radius: 999px;
+    padding: clamp(8px,1vw,14px) clamp(16px,2vw,28px);
+    font-weight: 700; font-size: clamp(11px,1.3vw,16px);
+    display: inline-flex; align-items: center; gap: .5em;
+    border: none; cursor: default;
+  }
+  #s8 .cta-pill.ghost {
+    background: transparent; border: 2px solid rgba(255,255,255,.25); color: rgba(255,255,255,.75);
+  }
+  #s8 .slide-num { color: rgba(255,255,255,.2); }
+  #s8 .url {
+    position: absolute; bottom: 8%; right: 7%;
+    font-size: clamp(9px,1vw,13px); color: rgba(255,255,255,.3);
+    font-weight: 600; letter-spacing: .05em;
+  }
+  #s8 .coral-blob {
+    position: absolute; top: -10%; right: -5%;
+    width: 40%; aspect-ratio: 1;
+    background: radial-gradient(circle, rgba(216,92,69,.25) 0%, transparent 65%);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="deck">
+  <div id="frame">
+    <div id="progress"></div>
+
+    <div id="slides">
+
+      <!-- ── SLIDE 1: TITLE ── -->
+      <div class="slide" id="s1">
+        <div class="coral-accent"></div>
+        <div class="marigold-accent"></div>
+        <div class="slide-num">01 / 08</div>
+        <div class="brand">
+          <div class="logo-mark">V.</div>
+          VolunteerClub
+        </div>
+        <h1 class="hero">For clubs that<br>believe showing<br><em style="color:var(--coral);font-style:normal">up</em> matters.</h1>
+        <p class="tagline">One calm place for student service clubs to plan events, approve hours, and see the shape of their impact in the world.</p>
+      </div>
+
+      <!-- ── SLIDE 2: PROBLEM ── -->
+      <div class="slide" id="s2">
+        <div class="slide-num">02 / 08</div>
+        <div class="kicker">The Problem</div>
+        <h2 class="heading">Service clubs run<br>on scattered tools.</h2>
+        <div class="pain-grid">
+          <div class="pain-card">
+            <div class="icon">📋</div>
+            <div class="label">Manual hour tracking</div>
+            <div class="desc">Spreadsheets, paper logs, and DM chains — no single source of truth for volunteer hours.</div>
+          </div>
+          <div class="pain-card">
+            <div class="icon">📅</div>
+            <div class="label">Event chaos</div>
+            <div class="desc">Sign-ups spread across forms, email threads, and group chats that nobody can find later.</div>
+          </div>
+          <div class="pain-card">
+            <div class="icon">🌍</div>
+            <div class="label">Invisible impact</div>
+            <div class="desc">Hours are approved (or lost) with no record of where in the community the work happened.</div>
+          </div>
+          <div class="pain-card">
+            <div class="icon">✅</div>
+            <div class="label">Approval bottlenecks</div>
+            <div class="desc">Advisors scramble to verify submissions with no audit trail and no easy bulk tools.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 3: SOLUTION ── -->
+      <div class="slide" id="s3">
+        <div class="slide-num">03 / 08</div>
+        <div class="layout">
+          <div class="left">
+            <div class="kicker">The Solution</div>
+            <h2 class="heading">Everything a club<br>needs in one<br><span style="color:var(--teal)">calm place.</span></h2>
+            <div class="rule"></div>
+            <p class="body">VolunteerClub gives student service clubs a single platform to run their entire operation — from member onboarding to impact visualization.</p>
+          </div>
+          <div class="right">
+            <div class="feature-row">
+              <div class="dot" style="background:rgba(216,92,69,.15)">📅</div>
+              <div>
+                <div class="ft">Event management</div>
+                <div class="fd">Create events, manage attendance, QR check-in, and hour auto-grant</div>
+              </div>
+            </div>
+            <div class="feature-row">
+              <div class="dot" style="background:rgba(45,130,125,.15)">⏱</div>
+              <div>
+                <div class="ft">Hour tracking & approval</div>
+                <div class="fd">Submit, review, approve, reject, and export hours with full audit trail</div>
+              </div>
+            </div>
+            <div class="feature-row">
+              <div class="dot" style="background:rgba(229,167,44,.15)">🗺️</div>
+              <div>
+                <div class="ft">Territory map</div>
+                <div class="fd">Interactive world map shows per-location impact and expanding club territories</div>
+              </div>
+            </div>
+            <div class="feature-row">
+              <div class="dot" style="background:rgba(23,50,77,.08)">🤝</div>
+              <div>
+                <div class="ft">Partner affiliations</div>
+                <div class="fd">Connect with nonprofits, food banks, and local businesses for service requests</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 4: HOW IT WORKS ── -->
+      <div class="slide" id="s4">
+        <div class="slide-num">04 / 08</div>
+        <div class="kicker">A small rhythm that works</div>
+        <h2 class="heading">Start with the next<br>good thing.</h2>
+        <div class="steps">
+          <div class="step-card">
+            <div class="n">01</div>
+            <div class="st">Bring your people together</div>
+            <div class="sd">Create a club, invite members, and give the right people a say in approvals. Private or public — your choice.</div>
+          </div>
+          <div class="step-card">
+            <div class="n">02</div>
+            <div class="st">Show up and log it</div>
+            <div class="sd">Run an event or add hours after the fact. Location, proof images, and notes keep the story intact.</div>
+          </div>
+          <div class="step-card">
+            <div class="n">03</div>
+            <div class="st">Make the impact visible</div>
+            <div class="sd">Approved hours build a real record — by person, event, and place — and expand your club's territory on the map.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 5: FEATURES ── -->
+      <div class="slide" id="s5">
+        <div class="slide-num">05 / 08</div>
+        <div class="kicker">Feature depth</div>
+        <h2 class="heading">Built for how clubs<br>actually operate.</h2>
+        <div class="feat-grid">
+          <div class="feat-card">
+            <div class="fi">📊</div>
+            <div class="fn">Admin dashboard</div>
+            <div class="fd2">Approve/reject submissions, grant hours directly, manage members, archive school years.</div>
+          </div>
+          <div class="feat-card">
+            <div class="fi">📷</div>
+            <div class="fn">Proof uploads</div>
+            <div class="fd2">Volunteers attach image proof; admins review it inline before approving hours.</div>
+          </div>
+          <div class="feat-card">
+            <div class="fi">📱</div>
+            <div class="fn">QR check-in / out</div>
+            <div class="fd2">Generate event QR codes; volunteers scan in and out, hours calculated automatically.</div>
+          </div>
+          <div class="feat-card">
+            <div class="fi">🏆</div>
+            <div class="fn">Leaderboards</div>
+            <div class="fd2">Per-club member boards plus global club rankings by approved hours contributed.</div>
+          </div>
+          <div class="feat-card">
+            <div class="fi">📁</div>
+            <div class="fn">Logs & history</div>
+            <div class="fd2">Named tracking periods (e.g. "Fall Semester") with archive, export, and per-student history.</div>
+          </div>
+          <div class="feat-card">
+            <div class="fi">🌐</div>
+            <div class="fn">Super-club federation</div>
+            <div class="fd2">Sub-clubs roll up hours to a parent super-club with affiliation approval and cross-club leaderboards.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 6: MAP ── -->
+      <div class="slide" id="s6">
+        <div class="slide-num">06 / 08</div>
+        <div class="layout">
+          <div class="left">
+            <div class="kicker">Impact visualization</div>
+            <h2 class="heading">Your service leaves<br>a mark on the map.</h2>
+            <div class="rule"></div>
+            <p class="body">Every approved hour expands your club's territory. Territories grow logarithmically with hours and decay slowly with inactivity — keeping the map honest.</p>
+            <div class="stat-row">
+              <div class="stat-box">
+                <div class="sv">4–25<span style="font-size:.55em">mi</span></div>
+                <div class="sl">territory radius per location</div>
+              </div>
+              <div class="stat-box">
+                <div class="sv">0.25<span style="font-size:.55em">mi/wk</span></div>
+                <div class="sl">decay if inactive</div>
+              </div>
+              <div class="stat-box">
+                <div class="sv">9</div>
+                <div class="sl">Firestore collections</div>
+              </div>
+            </div>
+          </div>
+          <div class="right">
+            <div class="map-mock">
+              <!-- decorative circles mimicking the territory map -->
+              <div class="glow" style="width:52%;aspect-ratio:1;top:18%;left:22%;background:radial-gradient(circle,rgba(45,130,125,.35) 0%,transparent 70%);border-color:rgba(45,130,125,.4)"></div>
+              <div class="glow" style="width:30%;aspect-ratio:1;top:38%;left:55%;background:radial-gradient(circle,rgba(216,92,69,.3) 0%,transparent 70%);border-color:rgba(216,92,69,.35)"></div>
+              <div class="glow" style="width:22%;aspect-ratio:1;top:12%;left:62%;background:radial-gradient(circle,rgba(229,167,44,.25) 0%,transparent 70%);border-color:rgba(229,167,44,.3)"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;background:var(--teal);border-radius:50%;box-shadow:0 0 0 3px rgba(45,130,125,.3)"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:3px;background:white;border-radius:50%;"></div>
+              <!-- grid lines -->
+              <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:.12" xmlns="http://www.w3.org/2000/svg">
+                <line x1="0" y1="33%" x2="100%" y2="33%" stroke="white" stroke-width=".5"/>
+                <line x1="0" y1="66%" x2="100%" y2="66%" stroke="white" stroke-width=".5"/>
+                <line x1="33%" y1="0" x2="33%" y2="100%" stroke="white" stroke-width=".5"/>
+                <line x1="66%" y1="0" x2="66%" y2="100%" stroke="white" stroke-width=".5"/>
+              </svg>
+              <div style="position:absolute;top:6%;left:5%;font-size:clamp(7px,.8vw,10px);color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'DM Sans',sans-serif;">Territory Map</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 7: TECH ── -->
+      <div class="slide" id="s7">
+        <div class="slide-num">07 / 08</div>
+        <div class="kicker">Under the hood</div>
+        <h2 class="heading">Modern stack,<br>zero friction.</h2>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="ticon">⚛️</div>
+            <div>
+              <div class="tn">React 18 + TypeScript</div>
+              <div class="td">Vite-powered frontend with TanStack Query for server state, Zod for validation, and shadcn/ui components.</div>
+            </div>
+          </div>
+          <div class="tech-card">
+            <div class="ticon">🔥</div>
+            <div>
+              <div class="tn">Firebase</div>
+              <div class="td">Firestore for real-time data across 9 collections. Firebase Auth with Google OAuth for seamless sign-in.</div>
+            </div>
+          </div>
+          <div class="tech-card">
+            <div class="ticon">🚀</div>
+            <div>
+              <div class="tn">Express.js API</div>
+              <div class="td">Node.js backend with Firebase Admin SDK, session management, and RESTful endpoints for all club operations.</div>
+            </div>
+          </div>
+          <div class="tech-card">
+            <div class="ticon">🗺️</div>
+            <div>
+              <div class="tn">MapLibre GL</div>
+              <div class="td">Interactive map rendering with react-map-gl. Nominatim for geocoding. Custom territory circle rendering.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SLIDE 8: CTA ── -->
+      <div class="slide" id="s8">
+        <div class="coral-blob"></div>
+        <div class="slide-num">08 / 08</div>
+        <div class="kicker">Your club has work to do</div>
+        <h2 class="heading">Give it a home<br>that keeps up.</h2>
+        <div class="rule"></div>
+        <p class="body">A little less admin. A lot more room for the people and places you're here to serve.</p>
+        <div class="cta-pills">
+          <div class="cta-pill">🏁 Start a club</div>
+          <div class="cta-pill ghost">📖 Join as a member</div>
+        </div>
+        <div class="url">volunteerclub.io</div>
+      </div>
+
+    </div><!-- /slides -->
+
+    <!-- Navigation -->
+    <div id="nav">
+      <span id="counter">1 / 8</span>
+      <button id="prev">←</button>
+      <button id="next">→</button>
+    </div>
+
+  </div><!-- /frame -->
+</div><!-- /deck -->
+
+<script>
+  const total = 8;
+  let cur = 0;
+
+  const slidesEl = document.getElementById('slides');
+  const progressEl = document.getElementById('progress');
+  const counterEl = document.getElementById('counter');
+
+  function go(n) {
+    cur = Math.max(0, Math.min(total - 1, n));
+    slidesEl.style.transform = `translateX(-${cur * 100}%)`;
+    progressEl.style.width = `${((cur + 1) / total) * 100}%`;
+    counterEl.textContent = `${cur + 1} / ${total}`;
+  }
+
+  document.getElementById('prev').onclick = () => go(cur - 1);
+  document.getElementById('next').onclick = () => go(cur + 1);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') go(cur + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     go(cur - 1);
+    if (e.key === 'Home') go(0);
+    if (e.key === 'End')  go(total - 1);
+  });
+
+  // Touch swipe
+  let tx = 0;
+  document.getElementById('frame').addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+  document.getElementById('frame').addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 40) dx < 0 ? go(cur + 1) : go(cur - 1);
+  }, { passive: true });
+
+  go(0);
+</script>
+</body>
+</html>
