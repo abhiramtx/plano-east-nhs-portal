@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>VolunteerClub — How-To Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --paper:#f7f2e9;--paper-deep:#eee5d7;--ink:#17324d;--ink-soft:#506477;
+  --coral:#d85c45;--marigold:#e5a72c;--teal:#2d827d;--line:#d9cdbd;
+  --teal-pale:rgba(45,130,125,.12);--coral-pale:rgba(216,92,69,.12);
+}
+html,body{width:100%;height:100%;background:#111;font-family:'DM Sans',sans-serif;overflow:hidden}
+#deck{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+#frame{
+  position:relative;
+  width:min(100vw,calc(100vh*16/9));
+  height:min(100vh,calc(100vw*9/16));
+  overflow:hidden;background:var(--paper);
+}
+/* grid texture */
+#frame::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(23,50,77,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(23,50,77,.035) 1px,transparent 1px);
+  background-size:2.1% 3.7%;
+}
+#slides{position:absolute;inset:0;z-index:1;display:flex;transition:transform .5s cubic-bezier(.77,0,.18,1)}
+.slide{flex:none;width:100%;height:100%;padding:5.5% 6.5%;display:flex;flex-direction:column;justify-content:center;position:relative}
+
+/* ── progress + nav ── */
+#progress{position:absolute;bottom:0;left:0;height:3px;background:var(--teal);z-index:20;transition:width .5s cubic-bezier(.77,0,.18,1)}
+#nav{position:absolute;bottom:3%;right:4%;z-index:20;display:flex;align-items:center;gap:.7em;font-size:clamp(9px,1.05vw,13px);color:var(--ink-soft)}
+#nav button{background:var(--paper-deep);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:.32em .85em;cursor:pointer;font-weight:700;font-size:inherit;transition:background .15s}
+#nav button:hover{background:var(--line)}
+.slide-num{position:absolute;top:5.5%;right:6.5%;font-size:clamp(8px,.95vw,11px);font-weight:700;color:var(--line);letter-spacing:.14em;text-transform:uppercase}
+
+/* ── type ── */
+.kicker{font-size:clamp(8px,.88vw,11px);font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--teal);margin-bottom:.55em}
+.kicker.admin{color:var(--coral)}
+h1.hero{font-family:'Fraunces',serif;font-size:clamp(34px,7vw,84px);font-weight:700;line-height:.95;letter-spacing:-.03em;color:var(--ink)}
+h2.heading{font-family:'Fraunces',serif;font-size:clamp(20px,3.6vw,46px);font-weight:700;line-height:1.05;letter-spacing:-.024em;color:var(--ink)}
+.body{font-size:clamp(10px,1.25vw,16px);line-height:1.65;color:var(--ink-soft);max-width:54ch}
+.body-sm{font-size:clamp(9px,1.05vw,13px);line-height:1.6;color:var(--ink-soft)}
+.rule{width:36px;height:3px;border-radius:2px;background:var(--teal);margin:.9em 0}
+.rule.admin{background:var(--coral)}
+
+/* ── breadcrumb ── */
+.breadcrumb{display:flex;align-items:center;gap:.4em;font-size:clamp(8px,.88vw,11px);color:var(--line);font-weight:600;letter-spacing:.04em;margin-bottom:1em}
+.breadcrumb span{color:var(--ink-soft)}
+.breadcrumb .sep{color:var(--line)}
+
+/* ── two-col layout ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2.5vw,36px);align-items:start}
+.two-col.wide{grid-template-columns:1.15fr 1fr}
+
+/* ── app mock frame ── */
+.mock{background:var(--paper-deep);border:1.5px solid var(--line);border-radius:clamp(8px,1vw,14px);overflow:hidden;box-shadow:0 4px 20px rgba(23,50,77,.06)}
+.mock-bar{background:var(--ink);padding:clamp(5px,.7vw,10px) clamp(8px,1.1vw,14px);display:flex;align-items:center;gap:.5em}
+.mock-dot{width:clamp(5px,.65vw,8px);height:clamp(5px,.65vw,8px);border-radius:50%}
+.mock-title{font-size:clamp(8px,.9vw,11px);color:rgba(255,255,255,.5);font-weight:600;margin-left:.4em;letter-spacing:.04em}
+.mock-body{padding:clamp(8px,1.1vw,16px)}
+
+/* ── step list ── */
+.steps{display:flex;flex-direction:column;gap:clamp(6px,.8vw,10px);margin-top:1em}
+.step-row{display:flex;gap:clamp(8px,1vw,14px);align-items:flex-start}
+.step-n{flex-shrink:0;width:clamp(20px,2.2vw,30px);height:clamp(20px,2.2vw,30px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(8px,.9vw,11px);background:var(--teal);color:#fff}
+.step-n.admin{background:var(--coral)}
+.step-content .st{font-weight:700;font-size:clamp(10px,1.15vw,14px);color:var(--ink);line-height:1.2}
+.step-content .sd{font-size:clamp(8px,.92vw,11px);color:var(--ink-soft);line-height:1.5;margin-top:.2em}
+
+/* ── field row ── */
+.field-row{background:var(--paper);border:1px solid var(--line);border-radius:clamp(5px,.6vw,8px);padding:clamp(5px,.7vw,10px) clamp(8px,1vw,14px);margin-bottom:clamp(4px,.5vw,7px)}
+.field-label{font-size:clamp(7px,.8vw,10px);font-weight:700;color:var(--ink-soft);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.2em}
+.field-value{font-size:clamp(9px,1.05vw,13px);color:var(--ink);font-weight:500}
+.field-value.placeholder{color:var(--line);font-style:italic}
+
+/* ── tip box ── */
+.tip{background:var(--teal-pale);border-left:3px solid var(--teal);border-radius:0 clamp(6px,.7vw,10px) clamp(6px,.7vw,10px) 0;padding:clamp(7px,.9vw,12px) clamp(10px,1.3vw,18px);margin-top:1em}
+.tip.admin{background:var(--coral-pale);border-color:var(--coral)}
+.tip .tip-label{font-size:clamp(7px,.8vw,10px);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:.25em}
+.tip.admin .tip-label{color:var(--coral)}
+.tip .tip-body{font-size:clamp(8px,.95vw,12px);color:var(--ink);line-height:1.5}
+
+/* ── status badge ── */
+.badge{display:inline-flex;align-items:center;gap:.3em;border-radius:999px;padding:.2em .65em;font-size:clamp(7px,.82vw,10px);font-weight:700;letter-spacing:.05em}
+.badge.pending{background:rgba(229,167,44,.15);color:#b5821a}
+.badge.approved{background:rgba(45,130,125,.15);color:var(--teal)}
+.badge.rejected{background:var(--coral-pale);color:var(--coral)}
+.badge.open{background:var(--teal-pale);color:var(--teal)}
+
+/* ── button mock ── */
+.btn{display:inline-flex;align-items:center;gap:.4em;border-radius:999px;padding:clamp(4px,.55vw,8px) clamp(10px,1.3vw,18px);font-weight:700;font-size:clamp(8px,.95vw,12px);cursor:default;white-space:nowrap}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.teal{background:var(--teal);color:#fff}
+.btn.coral{background:var(--coral);color:#fff}
+.btn.ghost{background:var(--paper-deep);color:var(--ink);border:1px solid var(--line)}
+.btn.google{background:#fff;color:#3c4043;border:1px solid #dadce0;font-weight:600}
+
+/* ── nav sidebar mock ── */
+.sidebar{background:var(--ink);border-radius:clamp(6px,.8vw,10px);padding:clamp(8px,1vw,14px);min-width:0}
+.sidebar-item{display:flex;align-items:center;gap:.5em;padding:clamp(4px,.5vw,7px) clamp(6px,.8vw,10px);border-radius:6px;font-size:clamp(8px,.92vw,11px);color:rgba(255,255,255,.55);font-weight:500;margin-bottom:2px}
+.sidebar-item.active{background:rgba(255,255,255,.12);color:#fff;font-weight:700}
+.sidebar-group{font-size:clamp(7px,.78vw,9px);font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:clamp(6px,.8vw,10px) clamp(6px,.8vw,10px) clamp(2px,.3vw,4px)}
+
+/* ── list rows ── */
+.list-row{display:flex;align-items:center;justify-content:space-between;padding:clamp(5px,.7vw,10px) clamp(8px,1vw,14px);border-bottom:1px solid var(--line);background:var(--paper)}
+.list-row:last-child{border-bottom:none}
+.list-row .lr-name{font-size:clamp(9px,1.05vw,13px);font-weight:600;color:var(--ink)}
+.list-row .lr-sub{font-size:clamp(7px,.82vw,10px);color:var(--ink-soft)}
+.list-row .lr-right{display:flex;align-items:center;gap:.5em}
+
+/* ── section divider slides ── */
+.slide.divider{background:var(--ink)}
+.slide.divider::before{background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px)}
+.slide.divider .kicker{color:rgba(255,255,255,.35)}
+.slide.divider h2.heading{color:var(--paper)}
+.slide.divider .body{color:rgba(255,255,255,.55)}
+.slide.divider .slide-num{color:rgba(255,255,255,.18)}
+.slide.divider .rule{background:var(--teal)}
+.slide.divider.admin-div .rule{background:var(--coral)}
+.slide.divider.admin-div .kicker{color:rgba(255,255,255,.35)}
+.blob{position:absolute;border-radius:50%;pointer-events:none}
+
+/* ── title slide ── */
+#s1{justify-content:flex-end;padding-bottom:8.5%}
+#s1 .brand{font-family:'Fraunces',serif;font-size:clamp(10px,1.2vw,15px);font-weight:600;color:var(--ink-soft);margin-bottom:1.4em;display:flex;align-items:center;gap:.55em}
+#s1 .logo-mark{width:clamp(26px,3.2vw,40px);height:clamp(26px,3.2vw,40px);border-radius:30%;background:var(--ink);display:flex;align-items:center;justify-content:center;color:var(--paper);font-family:'Fraunces',serif;font-size:clamp(11px,1.6vw,20px);font-weight:700}
+#s1 .tagline{font-size:clamp(10px,1.3vw,17px);color:var(--ink-soft);margin-top:1.3em;max-width:40ch}
+#s1 .sub-label{margin-top:1.8em;display:flex;gap:.6em;align-items:center;flex-wrap:wrap}
+
+/* override progress for admin section */
+.in-admin #progress{background:var(--coral)}
+</style>
+</head>
+<body>
+<div id="deck"><div id="frame">
+<div id="progress"></div>
+
+<div id="slides">
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 1 · TITLE
+═══════════════════════════════════════════ -->
+<div class="slide" id="s1">
+  <div class="blob" style="top:8%;right:6%;width:20%;aspect-ratio:1;background:radial-gradient(circle,rgba(216,92,69,.2) 0%,transparent 70%)"></div>
+  <div class="blob" style="top:22%;right:18%;width:13%;aspect-ratio:1;background:radial-gradient(circle,rgba(229,167,44,.15) 0%,transparent 70%)"></div>
+  <div class="slide-num">01</div>
+  <div class="brand"><div class="logo-mark">V.</div>VolunteerClub</div>
+  <h1 class="hero">For clubs that<br>believe showing<br><em style="color:var(--coral);font-style:normal">up</em> matters.</h1>
+  <p class="tagline">One calm place for student service clubs to plan events, approve hours, and see the shape of their impact in the world.</p>
+  <div class="sub-label">
+    <span class="btn teal">Volunteer Guide →</span>
+    <span class="btn coral">Admin Guide →</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 2 · VOLUNTEER SECTION DIVIDER
+═══════════════════════════════════════════ -->
+<div class="slide divider">
+  <div class="blob" style="top:-10%;right:-5%;width:45%;aspect-ratio:1;background:radial-gradient(circle,rgba(45,130,125,.22) 0%,transparent 65%)"></div>
+  <div class="slide-num">02</div>
+  <div class="kicker">Part 1 of 2</div>
+  <h2 class="heading" style="font-size:clamp(28px,5.5vw,70px)">Volunteer<br>Guide</h2>
+  <div class="rule"></div>
+  <p class="body">Everything a member needs — from signing in for the first time to submitting hours, joining service requests, and following affiliated clubs.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 3 · SIGN IN
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">03</div>
+  <div class="breadcrumb">volunteerclub.io → <span>Login</span></div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker">Step 1</div>
+      <h2 class="heading">Sign in or<br>create an account</h2>
+      <div class="rule"></div>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n">1</div>
+          <div class="step-content"><div class="st">Continue with Google</div><div class="sd">Fastest option — one click with your Google account, no password needed.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">2</div>
+          <div class="step-content"><div class="st">Or use email &amp; password</div><div class="sd">Enter your email and password to sign in, or click "Sign up" to create a new account with your full name.</div></div>
+        </div>
+      </div>
+      <div class="tip">
+        <div class="tip-label">💡 New account</div>
+        <div class="tip-body">Sign up requires Full Name, Email, and a password of at least 6 characters. You'll be taken directly to Club Selection after.</div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">volunteerclub.io/login</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(6px,.8vw,10px);padding:clamp(10px,1.4vw,20px)">
+          <div style="font-family:'Fraunces',serif;font-size:clamp(13px,1.7vw,22px);font-weight:700;color:var(--ink);margin-bottom:.3em">Welcome back.</div>
+          <div class="btn google" style="justify-content:center;width:100%">🔵 Continue with Google</div>
+          <div style="display:flex;align-items:center;gap:.5em;font-size:clamp(8px,.9vw,11px);color:var(--line)"><div style="flex:1;height:1px;background:var(--line)"></div>OR<div style="flex:1;height:1px;background:var(--line)"></div></div>
+          <div class="field-row"><div class="field-label">Email</div><div class="field-value placeholder">you@example.com</div></div>
+          <div class="field-row"><div class="field-label">Password</div><div class="field-value placeholder">••••••••</div></div>
+          <div class="btn primary" style="justify-content:center;width:100%;border-radius:8px">Sign In</div>
+          <div style="text-align:center;font-size:clamp(8px,.9vw,11px);color:var(--ink-soft)">Don't have an account? <strong>Sign up</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 4 · COMPLETE YOUR PROFILE
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">04</div>
+  <div class="breadcrumb">Sidebar → <span>Profile</span></div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker">Step 2</div>
+      <h2 class="heading">Complete your<br>profile first</h2>
+      <div class="rule"></div>
+      <p class="body-sm" style="margin-bottom:.8em">Before you can log hours or access your dashboard, VolunteerClub asks you to fill in your personal information. Head to <strong>Profile</strong> in the sidebar.</p>
+      <div class="tip">
+        <div class="tip-label">⚠️ Required before submitting hours</div>
+        <div class="tip-body">If your profile isn't complete, you'll be redirected to finish it when you try to access the Hours or Dashboard pages.</div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Profile — Personal Information</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(4px,.55vw,7px)">
+          <div class="field-row"><div class="field-label">Go-By First Name *</div><div class="field-value placeholder">e.g., John</div></div>
+          <div class="field-row"><div class="field-label">Last Name *</div><div class="field-value placeholder">e.g., Smith</div></div>
+          <div class="field-row"><div class="field-label">Student ID *</div><div class="field-value placeholder">Enter your student ID</div></div>
+          <div class="field-row"><div class="field-label">Personal Email Address *</div><div class="field-value placeholder">your.email@example.com</div></div>
+          <div class="field-row"><div class="field-label">Cell Phone Number *</div><div class="field-value placeholder">(555) 123-4567</div></div>
+          <div class="field-row"><div class="field-label">Grade Level *</div><div class="field-value placeholder">Select your grade level</div></div>
+          <div class="btn teal" style="width:100%;justify-content:center;border-radius:8px;margin-top:4px">Save Profile</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 5 · JOIN A CLUB
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">05</div>
+  <div class="breadcrumb">volunteerclub.io → <span>Club Selection</span></div>
+  <div class="two-col">
+    <div>
+      <div class="kicker">Step 3</div>
+      <h2 class="heading">Join or<br>find a club</h2>
+      <div class="rule"></div>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n">1</div>
+          <div class="step-content"><div class="st">Search all clubs</div><div class="sd">Type a club name in the search bar to filter the list. Each card shows the club name, description, and total hours.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">2</div>
+          <div class="step-content"><div class="st">Click "Join"</div><div class="sd">Hit the Join button on any club card. Public clubs let you in immediately; private clubs may require an invite.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">3</div>
+          <div class="step-content"><div class="st">Or use an invite link</div><div class="sd">If a club admin shared an invite link or QR code, visiting it takes you directly to the join page for that club.</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:clamp(6px,.8vw,10px)">
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Club Selection</span></div>
+        <div class="mock-body" style="padding:clamp(6px,.9vw,12px)">
+          <div class="field-row" style="margin-bottom:clamp(6px,.8vw,10px)"><div class="field-value placeholder">🔍  Search clubs...</div></div>
+          <div class="list-row" style="border-radius:8px 8px 0 0;border:1px solid var(--line);border-bottom:none">
+            <div><div class="lr-name">NHS Volunteers</div><div class="lr-sub">126 approved hours · Public</div></div>
+            <div class="btn teal">Join</div>
+          </div>
+          <div class="list-row" style="border-radius:0 0 8px 8px;border:1px solid var(--line)">
+            <div><div class="lr-name">Green Club</div><div class="lr-sub">84 approved hours · Public</div></div>
+            <div class="btn ghost">Join</div>
+          </div>
+        </div>
+      </div>
+      <div class="tip">
+        <div class="tip-label">📱 Have a QR code?</div>
+        <div class="tip-body">Scan the club's QR invite link — it routes you directly to the join flow for that specific club.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 6 · YOUR DASHBOARD
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">06</div>
+  <div class="breadcrumb">Sidebar → <span>Dashboard</span></div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker">Once you've joined</div>
+      <h2 class="heading">Your volunteer<br>dashboard</h2>
+      <div class="rule"></div>
+      <p class="body-sm" style="margin-bottom:.8em">The Dashboard is your home base. It shows your overall hours, pending submissions, recent activity, and quick links to everything you need.</p>
+      <div class="steps" style="margin-top:.6em">
+        <div class="step-row">
+          <div class="step-n">→</div>
+          <div class="step-content"><div class="st">Log Hours</div><div class="sd">Submit new volunteer hours for a log period</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">→</div>
+          <div class="step-content"><div class="st">My Club</div><div class="sd">See members, leaderboard, and territory map</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">→</div>
+          <div class="step-content"><div class="st">History</div><div class="sd">View archived submissions from past periods</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">→</div>
+          <div class="step-content"><div class="st">Affiliates</div><div class="sd">Follow other clubs and browse their events</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Dashboard</span></div>
+        <div class="mock-body" style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,.65vw,8px)">
+          <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:clamp(7px,.9vw,12px)">
+            <div style="font-size:clamp(7px,.82vw,10px);color:var(--ink-soft);font-weight:600;margin-bottom:.3em">APPROVED HOURS</div>
+            <div style="font-family:'Fraunces',serif;font-size:clamp(18px,2.4vw,32px);color:var(--teal);font-weight:700">41.5</div>
+          </div>
+          <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:clamp(7px,.9vw,12px)">
+            <div style="font-size:clamp(7px,.82vw,10px);color:var(--ink-soft);font-weight:600;margin-bottom:.3em">PENDING</div>
+            <div style="font-family:'Fraunces',serif;font-size:clamp(18px,2.4vw,32px);color:var(--marigold);font-weight:700">3</div>
+          </div>
+          <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:clamp(7px,.9vw,12px)">
+            <div style="font-size:clamp(7px,.82vw,10px);color:var(--ink-soft);font-weight:600;margin-bottom:.3em">TOTAL SUBMITTED</div>
+            <div style="font-family:'Fraunces',serif;font-size:clamp(18px,2.4vw,32px);color:var(--ink);font-weight:700">18</div>
+          </div>
+          <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:clamp(7px,.9vw,12px)">
+            <div style="font-size:clamp(7px,.82vw,10px);color:var(--ink-soft);font-weight:600;margin-bottom:.3em">CLUB RANK</div>
+            <div style="font-family:'Fraunces',serif;font-size:clamp(18px,2.4vw,32px);color:var(--coral);font-weight:700">#2</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 7 · SELECT A LOG & SUBMIT HOURS
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">07</div>
+  <div class="breadcrumb">Sidebar → <span>Log Hours</span></div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker">Step 4</div>
+      <h2 class="heading">Select a log &amp;<br>submit your hours</h2>
+      <div class="rule"></div>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n">1</div>
+          <div class="step-content"><div class="st">Choose a Log Period</div><div class="sd">Pick the active log (e.g., "Fall Semester") from the dropdown. Closed logs are read-only.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">2</div>
+          <div class="step-content"><div class="st">Fill out the form</div><div class="sd">Enter activity name, date, hours (min 0.5), description, and optionally a location and proof image.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">3</div>
+          <div class="step-content"><div class="st">Submit &amp; wait for approval</div><div class="sd">Your submission shows as <span class="badge pending">Pending</span> until an admin reviews it.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Log Hours</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(4px,.55vw,7px)">
+          <div class="field-row"><div class="field-label">Log Period *</div><div class="field-value">Fall Semester <span class="badge open" style="margin-left:.4em">Open</span></div></div>
+          <div class="field-row"><div class="field-label">Activity Name *</div><div class="field-value placeholder">e.g., Food Bank Volunteering</div></div>
+          <div class="field-row"><div class="field-label">Date *</div><div class="field-value placeholder">mm/dd/yyyy</div></div>
+          <div class="field-row"><div class="field-label">Hours *</div><div class="field-value placeholder">0.5 minimum</div></div>
+          <div class="field-row"><div class="field-label">Description</div><div class="field-value placeholder">What did you do?</div></div>
+          <div class="field-row"><div class="field-label">Location (optional)</div><div class="field-value placeholder">City, State</div></div>
+          <div class="field-row"><div class="field-label">Proof Image (optional)</div><div class="field-value placeholder">Upload a photo</div></div>
+          <div class="btn teal" style="width:100%;justify-content:center;border-radius:8px">Submit Hours</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 8 · TRACK YOUR SUBMISSIONS
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">08</div>
+  <div class="breadcrumb">Sidebar → <span>Log Hours</span> → Submissions list</div>
+  <div class="two-col">
+    <div>
+      <div class="kicker">After you submit</div>
+      <h2 class="heading">Track your<br>submission status</h2>
+      <div class="rule"></div>
+      <p class="body-sm" style="margin-bottom:1em">Every submission you've made appears in the list below the form. Each entry shows the activity, date, hours, and a live status badge.</p>
+      <div style="display:flex;flex-direction:column;gap:.5em">
+        <div style="display:flex;align-items:center;gap:.7em;background:var(--paper-deep);border:1px solid var(--line);border-radius:8px;padding:clamp(6px,.8vw,10px) clamp(8px,1vw,14px)">
+          <span class="badge pending">⏳ Pending</span>
+          <span class="body-sm">Waiting for an admin to review</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.7em;background:var(--paper-deep);border:1px solid var(--line);border-radius:8px;padding:clamp(6px,.8vw,10px) clamp(8px,1vw,14px)">
+          <span class="badge approved">✓ Approved</span>
+          <span class="body-sm">Hours counted toward your log total</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.7em;background:var(--paper-deep);border:1px solid var(--line);border-radius:8px;padding:clamp(6px,.8vw,10px) clamp(8px,1vw,14px)">
+          <span class="badge rejected">✗ Rejected</span>
+          <span class="body-sm">Not approved — check with your admin</span>
+        </div>
+      </div>
+      <div class="tip" style="margin-top:.8em">
+        <div class="tip-label">📸 Proof images help</div>
+        <div class="tip-body">Admins can view your proof photo inline before deciding. Including one makes approval faster.</div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">My Submissions</span></div>
+        <div style="border:1px solid var(--line);border-radius:0 0 10px 10px;overflow:hidden">
+          <div class="list-row">
+            <div><div class="lr-name">Food Bank</div><div class="lr-sub">Aug 18 · 3.0 hrs</div></div>
+            <div class="lr-right"><span class="badge pending">Pending</span></div>
+          </div>
+          <div class="list-row">
+            <div><div class="lr-name">Park Cleanup</div><div class="lr-sub">Aug 12 · 2.5 hrs</div></div>
+            <div class="lr-right"><span class="badge approved">Approved</span></div>
+          </div>
+          <div class="list-row">
+            <div><div class="lr-name">Library Help</div><div class="lr-sub">Aug 5 · 1.5 hrs</div></div>
+            <div class="lr-right"><span class="badge rejected">Rejected</span></div>
+          </div>
+          <div class="list-row">
+            <div><div class="lr-name">Tutoring</div><div class="lr-sub">Jul 28 · 2.0 hrs</div></div>
+            <div class="lr-right"><span class="badge approved">Approved</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 9 · SERVICE REQUESTS — BROWSE & JOIN
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">09</div>
+  <div class="breadcrumb">Sidebar → <span>Service Requests</span></div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker">Community opportunities</div>
+      <h2 class="heading">Browse &amp; join<br>service requests</h2>
+      <div class="rule"></div>
+      <p class="body-sm" style="margin-bottom:.8em">Service Requests are volunteer opportunities posted by clubs or organizations. You can browse, view details, and join ones that interest you.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n">1</div>
+          <div class="step-content"><div class="st">Open the Available tab</div><div class="sd">See all open opportunities with title, organization, hours offered, location, and participant count.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">2</div>
+          <div class="step-content"><div class="st">Click "View" for details</div><div class="sd">See the full description, contact info, requirements, and map pin before deciding.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">3</div>
+          <div class="step-content"><div class="st">Click "Join"</div><div class="sd">Your name is added to the participant list. Track it under the <strong>Joined</strong> tab.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Service Requests</span></div>
+        <div class="mock-body" style="padding-top:clamp(5px,.7vw,8px)">
+          <div style="display:flex;gap:clamp(4px,.5vw,7px);margin-bottom:clamp(7px,.9vw,12px)">
+            <div class="badge open" style="padding:.28em .75em">Available (4)</div>
+            <div class="badge" style="background:var(--paper-deep);color:var(--ink-soft);padding:.28em .75em">My Requests</div>
+            <div class="badge" style="background:var(--paper-deep);color:var(--ink-soft);padding:.28em .75em">Joined (1)</div>
+          </div>
+          <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div class="list-row">
+              <div><div class="lr-name">Beach Cleanup Day</div><div class="lr-sub">City Parks Dept · 3.0 hrs · 5/20 spots</div></div>
+              <div class="lr-right"><div class="btn ghost">View</div><div class="btn teal">Join</div></div>
+            </div>
+            <div class="list-row">
+              <div><div class="lr-name">Shelter Meal Prep</div><div class="lr-sub">Hope House · 2.5 hrs · 8/15 spots</div></div>
+              <div class="lr-right"><div class="btn ghost">View</div><div class="btn teal">Join</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 10 · CREATE A SERVICE REQUEST
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">10</div>
+  <div class="breadcrumb">Service Requests → <span>My Requests</span> → Create Request</div>
+  <div class="two-col">
+    <div>
+      <div class="kicker">Posting an opportunity</div>
+      <h2 class="heading">Create your own<br>service request</h2>
+      <div class="rule"></div>
+      <p class="body-sm" style="margin-bottom:.8em">Anyone can post a service request — not just admins. Use this to organize a volunteer event and find participants from within VolunteerClub.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n">1</div>
+          <div class="step-content"><div class="st">Go to My Requests → "Create Request"</div><div class="sd">Fill in the title, description, hours offered, max participants, organization, location, and optionally pin a map location.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">2</div>
+          <div class="step-content"><div class="st">Monitor participants</div><div class="sd">Once published, others can join. Click "Manage" on your card to see who's signed up.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">3</div>
+          <div class="step-content"><div class="st">Award hours when done</div><div class="sd">In the Manage dialog, approve participants and use "Award Hours" to credit each person's volunteer hours.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Create Service Request</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(4px,.55vw,7px)">
+          <div class="field-row"><div class="field-label">Title *</div><div class="field-value placeholder">e.g., Beach Cleanup Event</div></div>
+          <div class="field-row"><div class="field-label">Description</div><div class="field-value placeholder">Describe the volunteer opportunity...</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(4px,.5vw,7px)">
+            <div class="field-row"><div class="field-label">Hours Offered *</div><div class="field-value placeholder">min 0.5</div></div>
+            <div class="field-row"><div class="field-label">Max Participants</div><div class="field-value placeholder">—</div></div>
+          </div>
+          <div class="field-row"><div class="field-label">Organization Name</div><div class="field-value placeholder">Your organization</div></div>
+          <div class="field-row"><div class="field-label">Location</div><div class="field-value placeholder">City, State</div></div>
+          <div class="field-row"><div class="field-label">Date &amp; Time</div><div class="field-value placeholder">mm/dd/yyyy --:-- --</div></div>
+          <div class="btn teal" style="width:100%;justify-content:center;border-radius:8px">Create Request</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 11 · AFFILIATES — FOLLOW CLUBS
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">11</div>
+  <div class="breadcrumb">Sidebar → <span>Affiliates</span></div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker">Staying connected</div>
+      <h2 class="heading">Follow clubs &amp;<br>track affiliations</h2>
+      <div class="rule"></div>
+      <p class="body-sm" style="margin-bottom:.8em">The Affiliates page has three sections — an affiliation leaderboard, a club discovery tool, and a live feed of bookmarked clubs' open events.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n">1</div>
+          <div class="step-content"><div class="st">View the affiliation leaderboard</div><div class="sd">See how many approved hours each sub-club has contributed to your super-club (if your club is part of a federation).</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">2</div>
+          <div class="step-content"><div class="st">Search &amp; bookmark clubs</div><div class="sd">Under "Find Clubs to Follow," search all clubs by name. Click "Save" to bookmark — it toggles to "Saved" instantly.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">3</div>
+          <div class="step-content"><div class="st">See bookmarked clubs' events</div><div class="sd">The bottom section shows all open events from clubs you've bookmarked, grouped by club name.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Affiliates</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(6px,.8vw,10px)">
+          <div style="font-size:clamp(8px,.92vw,11px);font-weight:700;color:var(--ink);margin-bottom:-.2em">🏆 Affiliate Leaderboard</div>
+          <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div class="list-row"><div><div class="lr-name">North Chapter</div><div class="lr-sub">1 member</div></div><div class="lr-right"><strong style="color:var(--teal);font-size:clamp(9px,1.05vw,13px)">24 hrs</strong></div></div>
+            <div class="list-row"><div><div class="lr-name">East Chapter</div><div class="lr-sub">3 members</div></div><div class="lr-right"><strong style="color:var(--teal);font-size:clamp(9px,1.05vw,13px)">18 hrs</strong></div></div>
+          </div>
+          <div style="font-size:clamp(8px,.92vw,11px);font-weight:700;color:var(--ink)">🔍 Find Clubs to Follow</div>
+          <div class="field-row" style="margin:0"><div class="field-value placeholder">Search all clubs...</div></div>
+          <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div class="list-row"><div><div class="lr-name">Green Club</div><div class="lr-sub">84 approved hrs</div></div><div class="lr-right"><div class="btn teal" style="font-size:clamp(7px,.82vw,10px);padding:.25em .7em">Save</div></div></div>
+            <div class="list-row"><div><div class="lr-name">Art Volunteers</div><div class="lr-sub">56 approved hrs</div></div><div class="lr-right"><div class="btn ghost" style="font-size:clamp(7px,.82vw,10px);padding:.25em .7em">Saved ✓</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 12 · AFFILIATION — REQUEST TO JOIN AS SUB-CLUB
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">12</div>
+  <div class="breadcrumb">My Club → <span>Club Settings</span> / Admin</div>
+  <div class="two-col">
+    <div>
+      <div class="kicker">Club-level affiliation</div>
+      <h2 class="heading">Become an<br>affiliated sub-club</h2>
+      <div class="rule"></div>
+      <p class="body-sm" style="margin-bottom:.8em">A club admin can request to affiliate their club under a parent super-club. Once approved, your club's hours feed into the parent's affiliation leaderboard.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n">1</div>
+          <div class="step-content"><div class="st">Admin opens Club Settings</div><div class="sd">Go to My Club → Settings tab (visible only to admins). Find the Affiliation section.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">2</div>
+          <div class="step-content"><div class="st">Search for the parent club</div><div class="sd">Type the super-club name, select it, and send the affiliation request.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">3</div>
+          <div class="step-content"><div class="st">Wait for approval</div><div class="sd">The parent club's admin must approve the request. Once approved, your hours automatically federate upward via the System Log.</div></div>
+        </div>
+      </div>
+      <div class="tip">
+        <div class="tip-label">🔗 System Log</div>
+        <div class="tip-body">When affiliated, a System Log appears in your Hours Logs. Sub-clubs submit hours here; they flow to the parent club automatically.</div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">My Club → Settings</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(6px,.8vw,10px)">
+          <div style="font-size:clamp(8px,.92vw,11px);font-weight:700;color:var(--ink)">Affiliation</div>
+          <p class="body-sm">Request to affiliate this club under a parent super-club.</p>
+          <div class="field-row"><div class="field-label">Search Super-Clubs</div><div class="field-value placeholder">Type club name...</div></div>
+          <div class="btn teal" style="border-radius:8px;justify-content:center">Send Affiliation Request</div>
+          <div style="margin-top:.4em;padding-top:.8em;border-top:1px solid var(--line)">
+            <div style="font-size:clamp(8px,.92vw,11px);font-weight:700;color:var(--ink);margin-bottom:.4em">Pending Requests</div>
+            <div class="list-row" style="border:1px solid var(--line);border-radius:8px"><div><div class="lr-name">NHS Super-Club</div><div class="lr-sub">Sent Aug 20</div></div><div class="lr-right"><span class="badge pending">Pending</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 13 · AFFILIATION HOURS — SYSTEM LOG
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">13</div>
+  <div class="breadcrumb">Sidebar → <span>Log Hours</span> → System Log</div>
+  <div class="two-col">
+    <div>
+      <div class="kicker">After affiliation is approved</div>
+      <h2 class="heading">Managing<br>affiliation hours</h2>
+      <div class="rule"></div>
+      <p class="body-sm" style="margin-bottom:.8em">Once your club is an approved sub-club, a <strong>System Log</strong> appears in Log Hours. This is where you submit hours that count toward the parent super-club's totals.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n">1</div>
+          <div class="step-content"><div class="st">Select the System Log</div><div class="sd">It appears in your log period dropdown with a special "System" badge. You submit hours to it just like any other log.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">2</div>
+          <div class="step-content"><div class="st">Submit hours as usual</div><div class="sd">Same form — activity, date, hours, description. These go to your club's admin for approval.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">3</div>
+          <div class="step-content"><div class="st">Approved hours federate up</div><div class="sd">Once approved, they appear in the parent club's Affiliates leaderboard under your club's name automatically.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Log Hours — System Log</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(5px,.7vw,8px)">
+          <div class="field-row"><div class="field-label">Log Period *</div><div class="field-value">System Log <span class="badge" style="background:rgba(23,50,77,.1);color:var(--ink);margin-left:.4em">System</span></div></div>
+          <div style="background:var(--teal-pale);border:1px solid rgba(45,130,125,.25);border-radius:8px;padding:clamp(7px,.9vw,12px)">
+            <div style="font-size:clamp(7px,.82vw,10px);font-weight:700;color:var(--teal);margin-bottom:.25em;letter-spacing:.08em">FEDERATION NOTE</div>
+            <div style="font-size:clamp(8px,.92vw,11px);color:var(--ink);line-height:1.5">Approved hours submitted here automatically count toward <strong>NHS Super-Club</strong>'s affiliation totals. You cannot submit directly from the parent club.</div>
+          </div>
+          <div class="field-row"><div class="field-label">Activity Name *</div><div class="field-value placeholder">e.g., Community Garden</div></div>
+          <div class="field-row"><div class="field-label">Hours *</div><div class="field-value placeholder">0.5 minimum</div></div>
+          <div class="btn teal" style="width:100%;justify-content:center;border-radius:8px">Submit to System Log</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 14 · ADMIN SECTION DIVIDER
+═══════════════════════════════════════════ -->
+<div class="slide divider admin-div">
+  <div class="blob" style="top:-12%;right:-6%;width:48%;aspect-ratio:1;background:radial-gradient(circle,rgba(216,92,69,.22) 0%,transparent 65%)"></div>
+  <div class="slide-num">14</div>
+  <div class="kicker admin">Part 2 of 2</div>
+  <h2 class="heading" style="font-size:clamp(28px,5.5vw,70px)">Admin<br>Guide</h2>
+  <div class="rule admin"></div>
+  <p class="body">Everything a club admin needs — from approving hours and managing members to creating logs, running events, and archiving school years.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 15 · ACCESS THE ADMIN PANEL
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">15</div>
+  <div class="breadcrumb">Volunteer Sidebar → <span>Admin Panel</span></div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker admin">Getting started</div>
+      <h2 class="heading">Switching to<br>the Admin Panel</h2>
+      <div class="rule admin"></div>
+      <p class="body-sm" style="margin-bottom:.8em">If you have admin rights on your club, a special <strong>Admin Panel</strong> link appears at the bottom of the volunteer sidebar. Click it to enter the admin interface.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n admin">1</div>
+          <div class="step-content"><div class="st">Look for "Admin Panel" in the sidebar</div><div class="sd">It only appears for members with the Admin role. Non-admins don't see this link.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">2</div>
+          <div class="step-content"><div class="st">Admin navigation opens</div><div class="sd">A separate sidebar with: Dashboard, Hours Approval, Volunteers, Database, History, Events, Admin Management, Settings.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">3</div>
+          <div class="step-content"><div class="st">Return anytime via "Back to Volunteer"</div><div class="sd">The link at the bottom of the admin sidebar returns you to the volunteer view without losing your place.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Admin Panel sidebar</span></div>
+        <div class="mock-body" style="padding:0">
+          <div class="sidebar">
+            <div class="sidebar-group">Overview</div>
+            <div class="sidebar-item active">📊 Dashboard</div>
+            <div class="sidebar-item">✅ Hours Approval</div>
+            <div class="sidebar-item">👥 Volunteers</div>
+            <div class="sidebar-group">Data</div>
+            <div class="sidebar-item">🗄 Database</div>
+            <div class="sidebar-item">📁 History</div>
+            <div class="sidebar-group">Events</div>
+            <div class="sidebar-item">📅 Events</div>
+            <div class="sidebar-group">Admin</div>
+            <div class="sidebar-item">⚙️ Settings</div>
+            <div class="sidebar-item" style="color:rgba(255,255,255,.4);margin-top:.5em;font-size:clamp(7px,.82vw,10px)">← Back to Volunteer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 16 · ADMIN DASHBOARD + OVERVIEW
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">16</div>
+  <div class="breadcrumb">Admin Panel → <span>Dashboard</span></div>
+  <div class="two-col">
+    <div>
+      <div class="kicker admin">Admin Dashboard</div>
+      <h2 class="heading">Program-wide<br>at a glance</h2>
+      <div class="rule admin"></div>
+      <p class="body-sm" style="margin-bottom:.8em">The Admin Dashboard shows four summary cards and a full list of every student's submissions — across all members — with live status badges.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(5px,.65vw,8px);margin-top:.6em">
+        <div style="background:var(--paper-deep);border:1px solid var(--line);border-radius:8px;padding:clamp(7px,.9vw,12px)">
+          <div style="font-size:clamp(7px,.8vw,10px);color:var(--ink-soft);font-weight:600">TOTAL SUBMISSIONS</div>
+          <div style="font-family:'Fraunces',serif;font-size:clamp(16px,2.2vw,28px);color:var(--ink);font-weight:700">142</div>
+        </div>
+        <div style="background:var(--paper-deep);border:1px solid var(--line);border-radius:8px;padding:clamp(7px,.9vw,12px)">
+          <div style="font-size:clamp(7px,.8vw,10px);color:var(--ink-soft);font-weight:600">PENDING REVIEW</div>
+          <div style="font-family:'Fraunces',serif;font-size:clamp(16px,2.2vw,28px);color:var(--marigold);font-weight:700">8</div>
+        </div>
+        <div style="background:var(--paper-deep);border:1px solid var(--line);border-radius:8px;padding:clamp(7px,.9vw,12px)">
+          <div style="font-size:clamp(7px,.8vw,10px);color:var(--ink-soft);font-weight:600">APPROVED HOURS</div>
+          <div style="font-family:'Fraunces',serif;font-size:clamp(16px,2.2vw,28px);color:var(--teal);font-weight:700">318.5</div>
+        </div>
+        <div style="background:var(--paper-deep);border:1px solid var(--line);border-radius:8px;padding:clamp(7px,.9vw,12px)">
+          <div style="font-size:clamp(7px,.8vw,10px);color:var(--ink-soft);font-weight:600">TOTAL HOURS</div>
+          <div style="font-family:'Fraunces',serif;font-size:clamp(16px,2.2vw,28px);color:var(--ink);font-weight:700">401.0</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Student Submissions</span></div>
+        <div style="border:1px solid var(--line);border-radius:0 0 10px 10px;overflow:hidden">
+          <div class="list-row">
+            <div><div class="lr-name">Jane Smith — Food Bank</div><div class="lr-sub">Aug 18 · 3.0 hrs · 10th Grade</div></div>
+            <div class="lr-right"><span class="badge pending">Pending</span><div class="btn teal" style="font-size:clamp(7px,.82vw,10px);padding:.2em .6em">✓</div><div class="btn ghost" style="font-size:clamp(7px,.82vw,10px);padding:.2em .6em">✗</div></div>
+          </div>
+          <div class="list-row">
+            <div><div class="lr-name">Alex Lee — Park Cleanup</div><div class="lr-sub">Aug 15 · 2.5 hrs · 11th Grade</div></div>
+            <div class="lr-right"><span class="badge approved">Approved</span></div>
+          </div>
+          <div class="list-row">
+            <div><div class="lr-name">Sam Jones — Library</div><div class="lr-sub">Aug 10 · 1.5 hrs · 9th Grade</div></div>
+            <div class="lr-right"><span class="badge pending">Pending</span><div class="btn teal" style="font-size:clamp(7px,.82vw,10px);padding:.2em .6em">✓</div><div class="btn ghost" style="font-size:clamp(7px,.82vw,10px);padding:.2em .6em">✗</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 17 · APPROVE / REJECT HOURS
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">17</div>
+  <div class="breadcrumb">Admin Panel → <span>Hours Approval</span></div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker admin">Core admin task</div>
+      <h2 class="heading">Approve or reject<br>hour submissions</h2>
+      <div class="rule admin"></div>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n admin">1</div>
+          <div class="step-content"><div class="st">Find a Pending submission</div><div class="sd">Submissions list shows student name, email, grade, activity, date, hours, and description.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">2</div>
+          <div class="step-content"><div class="st">View Proof (if attached)</div><div class="sd">Click "View Proof" to open the image modal showing student, activity, hours, and the uploaded photo.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">3</div>
+          <div class="step-content"><div class="st">Approve or Reject</div><div class="sd">Click the green Approve or red Reject button. Status updates instantly with a toast confirmation. Buttons disable while saving.</div></div>
+        </div>
+      </div>
+      <div class="tip admin" style="margin-top:.8em">
+        <div class="tip-label">✏️ Direct hour grants</div>
+        <div class="tip-body">Admins can also grant hours directly to a student from the Volunteers page — no submission required from the student.</div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Proof of Service</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(5px,.7vw,8px)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(4px,.55vw,7px)">
+            <div class="field-row" style="margin:0"><div class="field-label">Student</div><div class="field-value">Jane Smith</div></div>
+            <div class="field-row" style="margin:0"><div class="field-label">Activity</div><div class="field-value">Food Bank</div></div>
+            <div class="field-row" style="margin:0"><div class="field-label">Hours</div><div class="field-value">3.0</div></div>
+            <div class="field-row" style="margin:0"><div class="field-label">Date</div><div class="field-value">Aug 18</div></div>
+          </div>
+          <div style="background:var(--paper-deep);border:1.5px dashed var(--line);border-radius:8px;aspect-ratio:16/6;display:flex;align-items:center;justify-content:center;color:var(--line);font-size:clamp(8px,.92vw,11px);font-weight:600">📷 Proof photo preview</div>
+          <div style="display:flex;gap:clamp(5px,.7vw,8px)">
+            <div class="btn teal" style="flex:1;justify-content:center;border-radius:8px">✓ Approve</div>
+            <div class="btn coral" style="flex:1;justify-content:center;border-radius:8px">✗ Reject</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 18 · HOURS LOGS
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">18</div>
+  <div class="breadcrumb">Admin Panel → <span>Hours Logs</span></div>
+  <div class="two-col">
+    <div>
+      <div class="kicker admin">Organizing submissions</div>
+      <h2 class="heading">Create &amp; manage<br>log periods</h2>
+      <div class="rule admin"></div>
+      <p class="body-sm" style="margin-bottom:.8em">Logs are named tracking periods (e.g., "Fall Semester") that group hour submissions. Volunteers pick a log when submitting. Admins open or close logs to control access.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n admin">1</div>
+          <div class="step-content"><div class="st">Click "Add Log"</div><div class="sd">Enter a Log Name and optional Hours Required (minimum hours for the period). Click "Create Log."</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">2</div>
+          <div class="step-content"><div class="st">Toggle Open / Closed</div><div class="sd">Use the switch on each log card to open or close it. Closed logs are read-only for volunteers.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">3</div>
+          <div class="step-content"><div class="st">Edit or delete</div><div class="sd">Use the pencil icon to rename or change the hours requirement; the trash icon to delete (after confirmation).</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Hours Logs</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(6px,.8vw,10px)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:clamp(8px,.92vw,11px);font-weight:700;color:var(--ink)">Your Logs</div>
+            <div class="btn coral" style="font-size:clamp(7px,.82vw,10px);padding:.25em .7em">+ Add Log</div>
+          </div>
+          <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div class="list-row">
+              <div><div class="lr-name">Fall Semester</div><div class="lr-sub">25 hrs required</div></div>
+              <div class="lr-right"><span class="badge open">Open</span><div style="width:clamp(22px,2.5vw,32px);height:clamp(12px,1.4vw,18px);background:var(--teal);border-radius:999px;position:relative"><div style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:clamp(8px,.95vw,13px);height:clamp(8px,.95vw,13px);background:#fff;border-radius:50%"></div></div></div>
+            </div>
+            <div class="list-row">
+              <div><div class="lr-name">Spring Semester</div><div class="lr-sub">20 hrs required</div></div>
+              <div class="lr-right"><span class="badge" style="background:var(--paper-deep);color:var(--ink-soft)">Closed</span><div style="width:clamp(22px,2.5vw,32px);height:clamp(12px,1.4vw,18px);background:var(--line);border-radius:999px;position:relative"><div style="position:absolute;left:2px;top:50%;transform:translateY(-50%);width:clamp(8px,.95vw,13px);height:clamp(8px,.95vw,13px);background:#fff;border-radius:50%"></div></div></div>
+            </div>
+          </div>
+          <div style="font-size:clamp(8px,.92vw,11px);font-weight:700;color:var(--ink)">System Logs (Federated)</div>
+          <div style="border:1px solid rgba(45,130,125,.3);background:var(--teal-pale);border-radius:8px;padding:clamp(6px,.8vw,10px) clamp(8px,1vw,14px)">
+            <div class="lr-name" style="font-size:clamp(8px,.92vw,11px)">System Log — NHS Super-Club</div>
+            <div class="lr-sub">Sub-clubs submit here. Hours federate automatically.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 19 · MANAGE MEMBERS
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">19</div>
+  <div class="breadcrumb">Admin Panel → <span>Volunteers</span> / My Club → Members tab</div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker admin">Roster management</div>
+      <h2 class="heading">Manage club<br>members</h2>
+      <div class="rule admin"></div>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n admin">1</div>
+          <div class="step-content"><div class="st">View all members</div><div class="sd">The Members tab in My Club shows everyone's name, email, role badge (Admin / You), and approved hours.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">2</div>
+          <div class="step-content"><div class="st">Remove a member</div><div class="sd">Click the remove icon next to any member (not yourself). A confirmation dialog asks "Are you sure you want to remove [email]?" before acting.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">3</div>
+          <div class="step-content"><div class="st">Grant hours directly</div><div class="sd">From the Volunteers page in Admin, select a student and grant hours without them submitting — useful for events without individual logs.</div></div>
+        </div>
+      </div>
+      <div class="tip admin">
+        <div class="tip-label">📋 Leaderboard tab</div>
+        <div class="tip-body">The Leaderboard tab (My Club) shows members ranked by approved hours — a quick view of your top contributors.</div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">My Club — Members</span></div>
+        <div style="border:1px solid var(--line);border-radius:0 0 10px 10px;overflow:hidden">
+          <div class="list-row">
+            <div><div class="lr-name">Alex Lee <span class="badge" style="background:rgba(216,92,69,.12);color:var(--coral);margin-left:.3em">Admin</span></div><div class="lr-sub">alex@email.com · 42.0 hrs</div></div>
+            <div class="lr-right"><span style="font-size:clamp(9px,1.05vw,13px);color:var(--line)">—</span></div>
+          </div>
+          <div class="list-row">
+            <div><div class="lr-name">Jane Smith <span class="badge" style="background:var(--teal-pale);color:var(--teal);margin-left:.3em">You</span></div><div class="lr-sub">jane@email.com · 38.5 hrs</div></div>
+            <div class="lr-right"><span style="font-size:clamp(9px,1.05vw,13px);color:var(--line)">—</span></div>
+          </div>
+          <div class="list-row">
+            <div><div class="lr-name">Sam Jones</div><div class="lr-sub">sam@email.com · 21.0 hrs</div></div>
+            <div class="lr-right"><div class="btn coral" style="font-size:clamp(7px,.82vw,10px);padding:.2em .6em">Remove</div></div>
+          </div>
+          <div class="list-row">
+            <div><div class="lr-name">Taylor Cruz</div><div class="lr-sub">taylor@email.com · 14.5 hrs</div></div>
+            <div class="lr-right"><div class="btn coral" style="font-size:clamp(7px,.82vw,10px);padding:.2em .6em">Remove</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 20 · EVENTS & QR CHECK-IN
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">20</div>
+  <div class="breadcrumb">Admin Panel → <span>Events</span></div>
+  <div class="two-col">
+    <div>
+      <div class="kicker admin">Running events</div>
+      <h2 class="heading">Create events &amp;<br>QR check-in</h2>
+      <div class="rule admin"></div>
+      <p class="body-sm" style="margin-bottom:.8em">Admins create events that volunteers can check in and out of using a QR code. Hours are calculated automatically from check-in/out timestamps.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n admin">1</div>
+          <div class="step-content"><div class="st">Create an event</div><div class="sd">Set the event name, log period, location, date, description, and max attendance. Choose open, password-protected, or QR-only access.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">2</div>
+          <div class="step-content"><div class="st">Share the QR code</div><div class="sd">The event generates a QR code. Display it at the venue — volunteers scan in when they arrive and scan out when they leave.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">3</div>
+          <div class="step-content"><div class="st">Hours are auto-calculated</div><div class="sd">Check-in/out times calculate hours per volunteer. Optionally set a conditional hour grant if they exceed a threshold.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Events — Create Event</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(4px,.55vw,7px)">
+          <div class="field-row"><div class="field-label">Event Name *</div><div class="field-value placeholder">e.g., Fall Food Drive</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(4px,.5vw,7px)">
+            <div class="field-row"><div class="field-label">Log Period</div><div class="field-value">Fall Semester</div></div>
+            <div class="field-row"><div class="field-label">Max Attendance</div><div class="field-value placeholder">24</div></div>
+          </div>
+          <div class="field-row"><div class="field-label">Location</div><div class="field-value placeholder">City Hall, Austin TX</div></div>
+          <div class="field-row"><div class="field-label">Access Type</div><div class="field-value">🔳 QR Code only</div></div>
+          <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;aspect-ratio:1;max-width:25%;margin:0 auto">
+            <div style="font-size:clamp(16px,2.5vw,36px)">⬛⬛⬛<br>⬛⬜⬛<br>⬛⬛⬛</div>
+          </div>
+          <div class="btn coral" style="width:100%;justify-content:center;border-radius:8px">Create Event</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 21 · HISTORY & ARCHIVE
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">21</div>
+  <div class="breadcrumb">Admin Panel → <span>History</span></div>
+  <div class="two-col wide">
+    <div>
+      <div class="kicker admin">Year-end admin task</div>
+      <h2 class="heading">Archive &amp; view<br>submission history</h2>
+      <div class="rule admin"></div>
+      <p class="body-sm" style="margin-bottom:.8em">At the end of a school year, admins archive all submissions into a historical snapshot. Volunteers can then view their own history under the History tab in the volunteer interface.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n admin">1</div>
+          <div class="step-content"><div class="st">Admin view: "Archived Submissions"</div><div class="sd">Browse historical snapshots for any past period. Tabs for each archived school year; data shows student names, hours, activities.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">2</div>
+          <div class="step-content"><div class="st">Volunteer view: "My History"</div><div class="sd">Volunteers see their own archived submissions, organized by school year and log period. Empty until the first archive.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">3</div>
+          <div class="step-content"><div class="st">Export records</div><div class="sd">Archived data can be exported for reporting, college applications, or record-keeping outside the app.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Archived Submissions — NHS Volunteers</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(5px,.7vw,8px)">
+          <div style="display:flex;gap:clamp(4px,.5vw,7px)">
+            <div class="badge" style="background:var(--coral-pale);color:var(--coral);padding:.28em .75em">2025–26 ▼</div>
+            <div class="badge" style="background:var(--paper-deep);color:var(--ink-soft);padding:.28em .75em">Fall Semester</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:clamp(4px,.5vw,7px)">
+            <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:clamp(6px,.8vw,10px);text-align:center">
+              <div style="font-size:clamp(7px,.8vw,10px);color:var(--ink-soft);font-weight:600">TOTAL HRS</div>
+              <div style="font-family:'Fraunces',serif;font-size:clamp(14px,1.9vw,24px);color:var(--teal);font-weight:700">318.5</div>
+            </div>
+            <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:clamp(6px,.8vw,10px);text-align:center">
+              <div style="font-size:clamp(7px,.8vw,10px);color:var(--ink-soft);font-weight:600">MEMBERS</div>
+              <div style="font-family:'Fraunces',serif;font-size:clamp(14px,1.9vw,24px);color:var(--ink);font-weight:700">24</div>
+            </div>
+            <div style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:clamp(6px,.8vw,10px);text-align:center">
+              <div style="font-size:clamp(7px,.8vw,10px);color:var(--ink-soft);font-weight:600">SUBMISSIONS</div>
+              <div style="font-family:'Fraunces',serif;font-size:clamp(14px,1.9vw,24px);color:var(--ink);font-weight:700">142</div>
+            </div>
+          </div>
+          <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div class="list-row"><div><div class="lr-name">Jane Smith</div><div class="lr-sub">41.5 approved hrs · 12 submissions</div></div><div class="lr-right"><div class="btn ghost" style="font-size:clamp(7px,.82vw,10px);padding:.2em .6em">Export</div></div></div>
+            <div class="list-row"><div><div class="lr-name">Alex Lee</div><div class="lr-sub">38.0 approved hrs · 10 submissions</div></div><div class="lr-right"><div class="btn ghost" style="font-size:clamp(7px,.82vw,10px);padding:.2em .6em">Export</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 22 · APPROVE AFFILIATION REQUESTS
+═══════════════════════════════════════════ -->
+<div class="slide">
+  <div class="slide-num">22</div>
+  <div class="breadcrumb">Admin Panel → <span>Settings</span> → Affiliations</div>
+  <div class="two-col">
+    <div>
+      <div class="kicker admin">Super-club admin task</div>
+      <h2 class="heading">Approving<br>affiliation requests</h2>
+      <div class="rule admin"></div>
+      <p class="body-sm" style="margin-bottom:.8em">When another club sends an affiliation request to join your club as a sub-club, you'll see it in your Admin Settings under Affiliations. You decide whether to approve or deny.</p>
+      <div class="steps">
+        <div class="step-row">
+          <div class="step-n admin">1</div>
+          <div class="step-content"><div class="st">Open Admin → Settings → Affiliations</div><div class="sd">Incoming requests appear here with the requesting club's name, description, and current hours.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">2</div>
+          <div class="step-content"><div class="st">Approve or Deny</div><div class="sd">Approve to make them a sub-club — their hours will start federating into your affiliation leaderboard. Deny to decline.</div></div>
+        </div>
+        <div class="step-row">
+          <div class="step-n admin">3</div>
+          <div class="step-content"><div class="st">Monitor on the Affiliates leaderboard</div><div class="sd">Once active, their approved System Log hours appear on the Affiliates page grouped by club name.</div></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="mock">
+        <div class="mock-bar"><div class="mock-dot" style="background:#ff5f57"></div><div class="mock-dot" style="background:#febc2e"></div><div class="mock-dot" style="background:#28c840"></div><span class="mock-title">Settings — Affiliation Requests</span></div>
+        <div class="mock-body" style="display:flex;flex-direction:column;gap:clamp(6px,.8vw,10px)">
+          <div style="font-size:clamp(8px,.92vw,11px);font-weight:700;color:var(--ink)">Incoming Requests</div>
+          <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div class="list-row">
+              <div><div class="lr-name">East Chapter</div><div class="lr-sub">18 members · Sent Aug 19</div></div>
+              <div class="lr-right">
+                <div class="btn teal" style="font-size:clamp(7px,.82vw,10px);padding:.2em .65em">Approve</div>
+                <div class="btn coral" style="font-size:clamp(7px,.82vw,10px);padding:.2em .65em">Deny</div>
+              </div>
+            </div>
+            <div class="list-row">
+              <div><div class="lr-name">South Branch</div><div class="lr-sub">9 members · Sent Aug 20</div></div>
+              <div class="lr-right">
+                <div class="btn teal" style="font-size:clamp(7px,.82vw,10px);padding:.2em .65em">Approve</div>
+                <div class="btn coral" style="font-size:clamp(7px,.82vw,10px);padding:.2em .65em">Deny</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-size:clamp(8px,.92vw,11px);font-weight:700;color:var(--ink);margin-top:.3em">Active Sub-Clubs</div>
+          <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden">
+            <div class="list-row"><div><div class="lr-name">North Chapter</div><div class="lr-sub">Affiliated since Aug 1 · 24 hrs</div></div><div class="lr-right"><span class="badge approved">Active</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SLIDE 23 · CLOSING
+═══════════════════════════════════════════ -->
+<div class="slide divider" style="align-items:flex-start">
+  <div class="blob" style="bottom:-10%;right:-5%;width:50%;aspect-ratio:1;background:radial-gradient(circle,rgba(45,130,125,.2) 0%,transparent 65%)"></div>
+  <div class="blob" style="top:5%;right:10%;width:22%;aspect-ratio:1;background:radial-gradient(circle,rgba(216,92,69,.15) 0%,transparent 65%)"></div>
+  <div class="slide-num" style="color:rgba(255,255,255,.18)">23</div>
+  <div style="margin-top:auto;margin-bottom:auto">
+    <div class="kicker" style="color:rgba(255,255,255,.35)">You're all set</div>
+    <h2 class="heading" style="color:var(--paper);font-size:clamp(24px,4.5vw,58px)">Showing up is the<br>whole point.</h2>
+    <div class="rule"></div>
+    <p class="body" style="color:rgba(255,255,255,.55);max-width:44ch">VolunteerClub handles the paperwork so your club can focus on the work that actually matters.</p>
+    <div style="display:flex;gap:clamp(8px,1vw,14px);margin-top:1.8em;flex-wrap:wrap">
+      <div class="btn teal">🟢 Volunteer Guide: slides 03–13</div>
+      <div class="btn coral">🔴 Admin Guide: slides 15–22</div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:8%;right:7%;font-size:clamp(9px,1vw,13px);color:rgba(255,255,255,.25);font-weight:600;letter-spacing:.05em">volunteerclub.io</div>
+</div>
+
+</div><!-- /slides -->
+
+<!-- Nav -->
+<div id="nav">
+  <span id="counter" style="min-width:3.5em;text-align:right">1 / 23</span>
+  <button id="prev">←</button>
+  <button id="next">→</button>
+</div>
+
+</div></div><!-- /frame /deck -->
+
+<script>
+const TOTAL = 23;
+let cur = 0;
+
+const slidesEl = document.getElementById('slides');
+const progEl   = document.getElementById('progress');
+const counterEl = document.getElementById('counter');
+
+// Admin slides 14–22 (0-indexed 13–21)
+const ADMIN_START = 13;
+
+function go(n) {
+  cur = Math.max(0, Math.min(TOTAL - 1, n));
+  slidesEl.style.transform = `translateX(-${cur * 100}%)`;
+  progEl.style.width = `${((cur + 1) / TOTAL) * 100}%`;
+  counterEl.textContent = `${cur + 1} / ${TOTAL}`;
+  // Swap progress color for admin section
+  progEl.style.background = cur >= ADMIN_START ? 'var(--coral)' : 'var(--teal)';
+}
+
+document.getElementById('prev').onclick = () => go(cur - 1);
+document.getElementById('next').onclick = () => go(cur + 1);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); go(cur + 1); }
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     { e.preventDefault(); go(cur - 1); }
+  if (e.key === 'Home') go(0);
+  if (e.key === 'End')  go(TOTAL - 1);
+});
+
+// Touch swipe
+let tx = 0;
+document.getElementById('frame').addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+document.getElementById('frame').addEventListener('touchend',   e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 40) dx < 0 ? go(cur + 1) : go(cur - 1);
+}, { passive: true });
+
+go(0);
+</script>
+</body>
+</html>

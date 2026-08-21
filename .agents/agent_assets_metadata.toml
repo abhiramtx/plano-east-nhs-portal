@@ -7,3 +7,10 @@ uri = "file://volunteerclub-deck.html"
 type = "text"
 title = "VolunteerClub — Slide Deck"
 description = "8-slide presentation: title, problem, solution, how it works, features, territory map, tech stack, and CTA. Arrow keys, swipe, or buttons to navigate."
+
+[[outputs]]
+id = "dUtIcFwGoJnzOp_It_WK8"
+uri = "file://volunteerclub-guide.html"
+type = "text"
+title = "VolunteerClub — How-To Guide (23 slides)"
+description = "Complete user guide: Volunteer section (sign in → profile → join club → log hours → submissions → service requests → affiliations) + Admin section (panel access → approvals → logs → members → events → history → affiliation approvals). Arrow keys, swipe, or buttons to navigate. Progress bar turns coral in the admin section."
