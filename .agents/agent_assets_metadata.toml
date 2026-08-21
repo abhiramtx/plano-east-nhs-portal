@@ -12,5 +12,5 @@ description = "8-slide presentation: title, problem, solution, how it works, fea
 id = "dUtIcFwGoJnzOp_It_WK8"
 uri = "file://volunteerclub-guide.html"
 type = "text"
-title = "VolunteerClub — How-To Guide (23 slides)"
-description = "Complete user guide: Volunteer section (sign in → profile → join club → log hours → submissions → service requests → affiliations) + Admin section (panel access → approvals → logs → members → events → history → affiliation approvals). Arrow keys, swipe, or buttons to navigate. Progress bar turns coral in the admin section."
+title = "VolunteerClub — Volunteer Guide (25 slides)"
+description = "Volunteer-only how-to guide. Bigger text, explanation slides before every feature. Affiliations get a full 7-slide deep dive (what they are, the leaderboard, bookmarking, System Log, submitting, becoming a sub-club). Arrow keys or swipe to navigate."
