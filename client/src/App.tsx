@@ -86,7 +86,7 @@ function VolunteerInterface({
         onSignOut={onSignOut}
         onLeaveClub={handleLeaveClubClick}
       />
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-0 overflow-auto">
+      <div className="flex-1 lg:ml-64 flex flex-col min-h-0 overflow-auto paper-grid bg-[#f7f2e9]">
         <Switch>
           <Route path="/volunteer/dashboard"><Dashboard club={club} /></Route>
           <Route path="/volunteer/hours"><Hours club={club} /></Route>
@@ -145,13 +145,13 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
   };
 
   return (
-    <div className="flex h-screen bg-white">
-      <div className="w-64 bg-white border-r border-gray-200 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col">
-        <div className="flex flex-col flex-1 min-h-0 bg-white">
-          <div className="flex items-center flex-shrink-0 px-4 py-4 border-b border-gray-200">
+    <div className="flex h-screen bg-[#f7f2e9]">
+      <div className="w-64 bg-[#f7f2e9] border-r border-[#d9cdbd] lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col">
+        <div className="flex flex-col flex-1 min-h-0 bg-[#f7f2e9]">
+          <div className="flex items-center flex-shrink-0 px-4 py-4 border-b border-[#d9cdbd]">
             <div className="flex items-center space-x-3">
               <div
-                className="flex items-center justify-center w-8 h-8 rounded-lg"
+                className="flex items-center justify-center w-10 h-10 rounded-xl"
                 style={{ backgroundColor: club.color }}
               >
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -159,53 +159,53 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
-                <p className="text-sm text-gray-600">{club.name}</p>
+                <h2 className="text-base font-semibold text-[#17324d]">Admin Panel</h2>
+                <p className="text-xs text-[#506477]">{club.name}</p>
               </div>
             </div>
           </div>
 
           <nav className="flex-1 px-3 py-3 overflow-y-auto">
-            <p className="px-2 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">Overview</p>
-            <button onClick={() => navTo('dashboard', '/admin/dashboard')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'dashboard' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <p className="px-2 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[#8fa5b4] select-none">Overview</p>
+            <button onClick={() => navTo('dashboard', '/admin/dashboard')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'dashboard' ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" /></svg>
               <span>Dashboard</span>
             </button>
-            <button onClick={() => navTo('approval', '/admin/approval')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'approval' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <button onClick={() => navTo('approval', '/admin/approval')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'approval' ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
               <span>Hours Approval</span>
             </button>
-            <button onClick={() => navTo('students', '/admin/students')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'students' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <button onClick={() => navTo('students', '/admin/students')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'students' ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
               <span>Volunteers</span>
             </button>
 
-            <p className="px-2 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">Data</p>
-            <button onClick={() => navTo('database', '/admin/database')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'database' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <p className="px-2 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[#8fa5b4] select-none">Data</p>
+            <button onClick={() => navTo('database', '/admin/database')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'database' ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
               <span>Database</span>
             </button>
-            <button onClick={() => navTo('history', '/admin/history')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'history' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <button onClick={() => navTo('history', '/admin/history')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'history' ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               <span>History</span>
             </button>
-            <button onClick={() => navTo('query-history', '/admin/query-history')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'query-history' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <button onClick={() => navTo('query-history', '/admin/query-history')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'query-history' ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <span>Query History</span>
             </button>
 
-            <p className="px-2 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">Events</p>
-            <button onClick={() => navTo('events', '/admin/events')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'events' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <p className="px-2 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[#8fa5b4] select-none">Events</p>
+            <button onClick={() => navTo('events', '/admin/events')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'events' ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               <span>Events</span>
             </button>
 
-            <p className="px-2 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400 select-none">Admin</p>
-            <button onClick={() => navTo('admin-management', '/admin/management')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'admin-management' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <p className="px-2 pt-4 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-[#8fa5b4] select-none">Admin</p>
+            <button onClick={() => navTo('admin-management', '/admin/management')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'admin-management' ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               <span>Admin Management</span>
             </button>
-            <button onClick={() => navTo('settings', '/admin/settings')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'settings' ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}>
+            <button onClick={() => navTo('settings', '/admin/settings')} className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${currentPage === 'settings' ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]'}`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               <span>Settings</span>
             </button>
@@ -213,7 +213,7 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
             <div className="pt-4">
               <button
                 onClick={() => setLocation('/volunteer/dashboard')}
-                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-gray-500 hover:bg-gray-50 hover:text-gray-700 text-sm"
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-[#8fa5b4] hover:bg-[#eee5d7] hover:text-[#506477] text-sm"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>
                 <span>Back to Volunteer</span>
@@ -221,14 +221,14 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
             </div>
           </nav>
 
-          <div className="flex-shrink-0 p-4 border-t border-gray-200">
+          <div className="flex-shrink-0 p-4 border-t border-[#d9cdbd]">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full">
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              <div className="flex items-center justify-center w-8 h-8 bg-[#eee5d7] rounded-full">
+                <svg className="w-4 h-4 text-[#506477]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                <p className="text-xs text-gray-500">{user.email}</p>
+                <p className="text-sm font-medium text-[#17324d]">{user.name}</p>
+                <p className="text-xs text-[#506477]">{user.email}</p>
               </div>
             </div>
             <button onClick={handleSignOutLocal} className="w-full bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm">

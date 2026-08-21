@@ -5,9 +5,9 @@ import logoImg from "@assets/image_1772414281666.png";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-white">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#faf8f4]">
       <div className="w-full max-w-lg mx-4 text-center">
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-12">
+        <div className="bg-[#faf8f4] border border-[#d9cdbd] rounded-2xl shadow-sm p-12">
           <div className="mb-8">
             <img src={logoImg} alt="VolunteerClub" className="w-16 h-16 mx-auto rounded-xl" />
           </div>
@@ -35,7 +35,7 @@ export default function NotFound() {
             <Button
               variant="outline"
               onClick={() => window.history.back()}
-              className="border-gray-300 hover:border-gray-400 text-gray-700 hover:bg-gray-50 px-6 py-3 rounded-lg font-medium"
+              className="border-[#c9bfae] hover:border-gray-400 text-gray-700 hover:bg-[#faf8f4] px-6 py-3 rounded-lg font-medium"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Go Back

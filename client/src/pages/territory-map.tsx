@@ -298,7 +298,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   }, [mapLoaded, applyTerritoryLayers]);
 
   return (
-    <div className="h-screen w-full flex bg-white overflow-hidden">
+    <div className="h-full w-full flex bg-[#faf8f4] overflow-hidden">
       <div className="flex-1 relative">
         <MapGlComponent
           ref={mapRef}
@@ -376,7 +376,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                   
                   {isHovered && (
                     <div 
-                      className="absolute left-12 top-1/2 -translate-y-1/2 bg-white rounded-xl px-5 py-4 z-50 border border-gray-200 shadow-2xl"
+                      className="absolute left-12 top-1/2 -translate-y-1/2 bg-[#faf8f4] rounded-xl px-5 py-4 z-50 border border-[#d9cdbd] shadow-2xl"
                       style={{ minWidth: 320, maxWidth: 400 }}
                     >
                       <div className="flex items-center gap-2 mb-1">
@@ -390,7 +390,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                       </p>
 
                       {subClubs.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="mt-3 pt-3 border-t border-[#d9cdbd]">
                           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Sub-Clubs</p>
                           <div className="space-y-1.5">
                             {subClubs.map(sc => {
@@ -415,7 +415,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                       )}
 
                       {clubEvents.length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
+                        <div className="mt-3 pt-3 border-t border-[#d9cdbd] space-y-1.5">
                           <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Active Events</p>
                           {clubEvents.map(ev => (
                             <div key={ev.id}>
@@ -445,7 +445,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
         {territoryTooltip && (
           <div
             style={{ left: territoryTooltip.x + 12, top: territoryTooltip.y - 36, pointerEvents: 'none' }}
-            className="absolute z-20 bg-white rounded-lg px-3 py-1.5 shadow-lg border border-gray-200 text-sm font-semibold text-gray-900 whitespace-nowrap"
+            className="absolute z-20 bg-[#faf8f4] rounded-lg px-3 py-1.5 shadow-lg border border-[#d9cdbd] text-sm font-semibold text-gray-900 whitespace-nowrap"
           >
             {territoryTooltip.name}
           </div>
@@ -459,7 +459,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-10 pr-10 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 shadow-lg"
+              className="pl-10 pr-10 bg-[#faf8f4] border-[#d9cdbd] text-gray-900 placeholder:text-gray-400 shadow-lg"
             />
             {searchQuery && (
               <button 
@@ -471,12 +471,12 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             )}
             
             {searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#faf8f4] border border-[#d9cdbd] rounded-lg overflow-hidden shadow-lg">
                 {searchResults.map((result, index) => (
                   <button
                     key={index}
                     onClick={() => handleSearchSelect(result)}
-                    className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                    className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-[#faf8f4] border-b border-[#d9cdbd] last:border-0"
                   >
                     {result.display_name}
                   </button>
@@ -487,19 +487,19 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
         </div>
 
         <div className="absolute bottom-4 left-4 flex flex-col space-y-2">
-          <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
+          <div className="flex items-center space-x-2 bg-[#faf8f4]/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-[#d9cdbd] shadow">
             <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
             <span className="text-xs text-gray-700">Volunteer Territory ({serverCircles.length} locations)</span>
           </div>
-          <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-gray-200 shadow">
+          <div className="flex items-center space-x-2 bg-[#faf8f4]/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-[#d9cdbd] shadow">
             <Users className="w-3 h-3 text-gray-700" />
             <span className="text-xs text-gray-700">Club HQ</span>
           </div>
         </div>
       </div>
 
-      <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200 space-y-3">
+      <div className="w-80 bg-[#faf8f4] border-l border-[#d9cdbd] flex flex-col">
+        <div className="p-4 border-b border-[#d9cdbd] space-y-3">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500" />
             Leaderboard
@@ -509,7 +509,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
           <select
             value={leaderboardYear ?? ''}
             onChange={e => setLeaderboardYear(e.target.value ? Number(e.target.value) : null)}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-300"
+            className="w-full text-sm border border-[#d9cdbd] rounded-lg px-3 py-1.5 bg-[#faf8f4] text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-300"
           >
             <option value="">All Time</option>
             {availableYears.map(y => (
@@ -544,7 +544,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                     <Tooltip
                       content={({ active, payload, label }) =>
                         active && payload?.length ? (
-                          <div className="bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow text-xs">
+                          <div className="bg-[#faf8f4] border border-[#d9cdbd] rounded-lg px-2.5 py-1.5 shadow text-xs">
                             <p className="font-semibold text-gray-900">{label}</p>
                             <p className="text-gray-600">{payload[0].value} hrs total</p>
                           </div>
@@ -560,7 +560,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
           )}
 
           {currentClub && currentClubRank > 0 && (
-            <div className="bg-gray-50 rounded-lg px-3 py-2">
+            <div className="bg-[#faf8f4] rounded-lg px-3 py-2">
               <p className="text-xs text-gray-500">Your Club Rank</p>
               <p className="text-2xl font-bold text-gray-900">#{currentClubRank}</p>
             </div>
@@ -581,7 +581,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                   <button 
                     key={club.id}
                     onClick={() => flyToClub(club)}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl transition-all hover:bg-gray-50 ${
+                    className={`w-full flex items-center justify-between p-3 rounded-xl transition-all hover:bg-[#faf8f4] ${
                       isCurrentClub ? 'bg-gray-100 ring-1 ring-gray-200' : ''
                     }`}
                   >
@@ -608,7 +608,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-200 space-y-3">
+        <div className="p-4 border-t border-[#d9cdbd] space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Active Clubs</span>
             <span className="text-gray-900 font-medium">{clubs.length}</span>

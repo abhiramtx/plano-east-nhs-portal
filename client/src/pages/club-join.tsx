@@ -152,7 +152,7 @@ export default function ClubJoin() {
 
   if (isLoading) {
     return pageShell(
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-10 flex items-center justify-center">
+      <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm p-10 flex items-center justify-center">
         <Loader2 className="w-7 h-7 text-gray-300 animate-spin" />
       </div>
     );
@@ -160,7 +160,7 @@ export default function ClubJoin() {
 
   if (!authUser) {
     return pageShell(
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
+      <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm p-8">
         <AuthPanel
           heading="Sign in to join"
           subheading="Sign in to view and join this club."
@@ -171,8 +171,8 @@ export default function ClubJoin() {
 
   if (clubError || club === null) {
     return pageShell(
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-10 flex flex-col items-center gap-4 text-center">
-        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100">
+      <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm p-10 flex flex-col items-center gap-4 text-center">
+        <div className="w-14 h-14 bg-[#faf8f4] rounded-2xl flex items-center justify-center border border-[#d9cdbd]">
           <AlertCircle className="w-7 h-7 text-red-400" />
         </div>
         <div>
@@ -187,9 +187,9 @@ export default function ClubJoin() {
 
   if (joined) {
     return pageShell(
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-10 flex flex-col items-center gap-5 text-center">
+      <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm p-10 flex flex-col items-center gap-5 text-center">
         <div
-          className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden border border-gray-100"
+          className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden border border-[#d9cdbd]"
           style={{ backgroundColor: club.color || "#111827" }}
         >
           {club.logoUrl
@@ -217,12 +217,12 @@ export default function ClubJoin() {
   const alreadyInAnotherClub = !!userClubData && userClubData.membership.clubId !== club.id;
 
   return pageShell(
-    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+    <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
       <div className="p-7 flex flex-col items-center text-center gap-4">
 
         {/* Logo */}
         <div
-          className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden shadow-sm border border-gray-100"
+          className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden shadow-sm border border-[#d9cdbd]"
           style={{ backgroundColor: club.color || "#111827" }}
         >
           {club.logoUrl
@@ -255,15 +255,15 @@ export default function ClubJoin() {
         {/* Privacy badge */}
         <div>
           {club.isPrivate
-            ? <span className="inline-flex items-center gap-1.5 text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2.5 py-1 rounded-full font-medium">
+            ? <span className="inline-flex items-center gap-1.5 text-xs bg-[#faf8f4] text-gray-500 border border-[#d9cdbd] px-2.5 py-1 rounded-full font-medium">
                 <Lock className="w-3 h-3" /> Password required
               </span>
-            : <span className="inline-flex items-center gap-1.5 text-xs bg-gray-50 text-gray-500 border border-gray-200 px-2.5 py-1 rounded-full font-medium">
+            : <span className="inline-flex items-center gap-1.5 text-xs bg-[#faf8f4] text-gray-500 border border-[#d9cdbd] px-2.5 py-1 rounded-full font-medium">
                 <Globe className="w-3 h-3" /> Open to join
               </span>}
         </div>
 
-        <div className="w-full border-t border-gray-100" />
+        <div className="w-full border-t border-[#d9cdbd]" />
 
         {/* Action */}
         <div className="w-full space-y-3">
@@ -275,7 +275,7 @@ export default function ClubJoin() {
 
           ) : alreadyInThisClub ? (
             <>
-              <div className="flex items-center gap-2.5 p-3 bg-gray-50 border border-gray-100 rounded-xl text-left">
+              <div className="flex items-center gap-2.5 p-3 bg-[#faf8f4] border border-[#d9cdbd] rounded-xl text-left">
                 <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                 <p className="text-sm text-gray-700 font-medium">You're already a member</p>
               </div>
@@ -289,7 +289,7 @@ export default function ClubJoin() {
 
           ) : alreadyInAnotherClub ? (
             <>
-              <div className="flex items-start gap-2.5 p-3 bg-gray-50 border border-gray-100 rounded-xl text-left">
+              <div className="flex items-start gap-2.5 p-3 bg-[#faf8f4] border border-[#d9cdbd] rounded-xl text-left">
                 <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-gray-800">Already in another club</p>
@@ -298,7 +298,7 @@ export default function ClubJoin() {
               </div>
               <Button
                 variant="outline"
-                className="w-full rounded-xl h-11 border-gray-200 font-medium"
+                className="w-full rounded-xl h-11 border-[#d9cdbd] font-medium"
                 onClick={() => setLocation(`/${clubSlug(club.name)}/volunteer/club`)}
               >
                 Go to My Club
@@ -318,7 +318,7 @@ export default function ClubJoin() {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Enter password"
-                    className="h-11 rounded-xl border-gray-200"
+                    className="h-11 rounded-xl border-[#d9cdbd]"
                     onKeyDown={e => e.key === "Enter" && joinMutation.mutate()}
                   />
                 </div>

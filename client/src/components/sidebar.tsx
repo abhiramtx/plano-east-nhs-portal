@@ -43,7 +43,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
   const SidebarContent = () => (
     <>
       {/* Header */}
-      <div className="flex items-center h-16 px-6 border-b border-gray-200">
+      <div className="flex items-center h-16 px-6 border-b border-[#d9cdbd]">
         <div className="flex items-center space-x-3">
           <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
             <Palette className="w-5 h-5 text-white" />
@@ -62,7 +62,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
                 className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
                   isActive(item.href)
                     ? "bg-blue-50 text-blue-700"
-                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                    : "text-gray-700 hover:bg-[#faf8f4] hover:text-gray-900"
                 }`}
                 onClick={closeMobileMenu}
               >
@@ -78,7 +78,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
       </nav>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-[#d9cdbd]">
         <div className="flex items-center space-x-3 mb-3">
           <Avatar className="w-10 h-10">
             <AvatarImage src={user.picture} alt={user.name} />
@@ -107,7 +107,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
         </Button>
         
         {/* Made by credit */}
-        <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="mt-3 pt-3 border-t border-[#d9cdbd]">
           <p className="text-xs text-gray-500 text-center">
             Made by{" "}
             <a 
@@ -130,14 +130,14 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
           variant="outline"
           size="sm"
           onClick={() => setIsMobileMenuOpen(true)}
-          className="bg-white border border-gray-200"
+          className="bg-[#faf8f4] border border-[#d9cdbd]"
         >
           <Menu className="w-4 h-4" />
         </Button>
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:bg-white lg:border-r lg:border-gray-200">
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:bg-[#faf8f4] lg:border-r lg:border-[#d9cdbd]">
         <SidebarContent />
       </div>
 
@@ -151,7 +151,7 @@ export function Sidebar({ user, onSignOut }: SidebarProps) {
           />
           
           {/* Sidebar */}
-          <div className="relative flex flex-col w-64 bg-white border-r border-gray-200">
+          <div className="relative flex flex-col w-64 bg-[#faf8f4] border-r border-[#d9cdbd]">
             {/* Close Button */}
             <div className="absolute top-4 right-4">
               <Button

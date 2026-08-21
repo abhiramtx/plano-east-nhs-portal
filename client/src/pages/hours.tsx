@@ -147,8 +147,15 @@ export default function Hours({ club }: HoursProps) {
   };
 
   const filteredSubmissions = selectedLogId
-    ? submissions.filter(s => s.logId === selectedLogId)
-    : [];
+    ? submissions.filter(s =>
+        s.logId === selectedLogId ||
+        // Event-granted submissions with no log assignment are always visible
+        // in every log tab so students can see them regardless of which log is active.
+        ((s as any).eventId && !s.logId)
+      )
+    : hoursLogs.length > 0
+      ? submissions.filter(s => !(s as any).logId) // unassigned (event-granted) when no log selected
+      : submissions;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -160,18 +167,20 @@ export default function Hours({ club }: HoursProps) {
 
   return (
     <ProfileCompletionGuard user={user}>
-      <div className="flex-1 flex flex-col h-full bg-white">
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+      <div className="flex-1 flex flex-col h-full">
+      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Hours Management</h1>
-              <p className="text-gray-600 mt-1">Track and manage your service hours</p>
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#2d827d' }}>
+                <Clock className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Hours Management</h1>
+                <p className="text-[#506477] mt-0.5">Track and manage your service hours</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
-                <Plus className="w-5 h-5 text-white" />
-              </div>
               <Dialog open={isFormOpen} onOpenChange={(selectedLogIsSystem || !selectedLogIsOpen) ? undefined : setIsFormOpen}>
                 {(!selectedLogIsSystem && (selectedLogIsOpen || !selectedLogId)) && (
                   <DialogTrigger asChild>
@@ -185,7 +194,7 @@ export default function Hours({ club }: HoursProps) {
                   </DialogTrigger>
                 )}
               <DialogContent
-                className="max-w-2xl bg-white border-gray-200 flex flex-col max-h-[90vh] overflow-hidden p-0"
+                className="max-w-2xl bg-[#faf8f4] border-[#d9cdbd] flex flex-col max-h-[90vh] overflow-hidden p-0"
                 onPointerDownOutside={e => {
                   const target = ((e as any).detail?.originalEvent?.target ?? e.target) as HTMLElement | null;
                   if (target?.closest?.('[data-location-suggestions]')) e.preventDefault();
@@ -256,7 +265,7 @@ export default function Hours({ club }: HoursProps) {
           const met = totalHours >= selectedLog.hoursRequired;
           return (
             <div className="px-4 lg:px-6 pb-4">
-              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+              <div className="bg-[#faf8f4] border border-[#d9cdbd] rounded-xl px-4 py-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-900">{selectedLog.name} Progress</span>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${met ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
@@ -301,7 +310,7 @@ export default function Hours({ club }: HoursProps) {
               </div>
             )}
             {selectedLog && !selectedLogIsOpen && !selectedLogIsSystem && (
-              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-2 text-sm text-gray-700">
+              <div className="mb-4 p-3 bg-[#faf8f4] border border-[#d9cdbd] rounded-lg flex items-center gap-2 text-sm text-gray-700">
                 <AlertCircle className="w-4 h-4 text-gray-500 flex-shrink-0" />
                 <span>This log is closed — submissions are no longer accepted, but your recorded hours are shown below.</span>
               </div>
@@ -336,7 +345,7 @@ export default function Hours({ club }: HoursProps) {
               );
             })()}
             {filteredSubmissions.length === 0 ? (
-              <Card className="bg-white border-gray-200">
+              <Card className="bg-[#faf8f4] border-[#d9cdbd]">
                 <CardContent className="p-12">
                   <div className="text-center">
                     <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
@@ -369,7 +378,7 @@ export default function Hours({ club }: HoursProps) {
                   const isFed = (submission as any).__fedToSuperClubId === club.id;
                   const fedFromName = (submission as any).__fedFromSubClubName || (submission as any).subClubName || 'sub-club';
                   return (
-                  <Card key={`${isFed ? 'fed-' : ''}${submission.id}`} className="bg-white border-gray-200">
+                  <Card key={`${isFed ? 'fed-' : ''}${submission.id}`} className="bg-[#faf8f4] border-[#d9cdbd]">
                     <CardContent className="p-4 lg:p-6">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
                         <div className="flex-1">
@@ -417,7 +426,7 @@ export default function Hours({ club }: HoursProps) {
                               <img 
                                 src={submission.proofImageUrl} 
                                 alt="Proof of service" 
-                                className="w-24 h-24 lg:w-32 lg:h-32 object-cover rounded-lg border border-gray-200"
+                                className="w-24 h-24 lg:w-32 lg:h-32 object-cover rounded-lg border border-[#d9cdbd]"
                               />
                             </div>
                           )}
@@ -432,7 +441,7 @@ export default function Hours({ club }: HoursProps) {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              className="border-gray-200 text-gray-600 hover:bg-gray-100"
+                              className="border-[#d9cdbd] text-gray-600 hover:bg-gray-100"
                               onClick={() => setSelectedSubmission(submission)}
                             >
                               <Eye className="w-4 h-4" />
@@ -442,7 +451,7 @@ export default function Hours({ club }: HoursProps) {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              className="border-gray-200 text-gray-600 hover:bg-gray-100"
+                              className="border-[#d9cdbd] text-gray-600 hover:bg-gray-100"
                               onClick={() => handleEdit(submission)}
                             >
                               <Edit className="w-4 h-4" />
@@ -452,7 +461,7 @@ export default function Hours({ club }: HoursProps) {
                             <Button 
                               variant="outline" 
                               size="sm"
-                              className="border-gray-200 text-gray-600 hover:bg-gray-100"
+                              className="border-[#d9cdbd] text-gray-600 hover:bg-gray-100"
                               onClick={() => deleteMutation.mutate(submission.id)}
                               disabled={deleteMutation.isPending}
                             >
@@ -481,7 +490,7 @@ export default function Hours({ club }: HoursProps) {
           <div className="relative max-w-4xl max-h-[90vh] overflow-auto">
             <button
               onClick={() => setSelectedSubmission(null)}
-              className="absolute top-4 right-4 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-2 transition-colors"
+              className="absolute top-4 right-4 bg-[#faf8f4] bg-opacity-20 hover:bg-opacity-30 rounded-full p-2 transition-colors"
             >
               <Eye className="w-6 h-6 text-white" />
             </button>

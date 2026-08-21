@@ -111,7 +111,7 @@ export function AuthPanel({
             placeholder="Your name"
             value={name}
             onChange={e => setName(e.target.value)}
-            className="rounded-xl h-11 border-gray-200 text-sm"
+            className="rounded-xl h-11 border-[#d9cdbd] text-sm"
             autoComplete="name"
           />
         )}
@@ -120,7 +120,7 @@ export function AuthPanel({
           placeholder="Email"
           value={email}
           onChange={e => setEmail(e.target.value)}
-          className="rounded-xl h-11 border-gray-200 text-sm"
+          className="rounded-xl h-11 border-[#d9cdbd] text-sm"
           autoComplete="email"
           required
         />
@@ -130,7 +130,7 @@ export function AuthPanel({
             placeholder={mode === "sign-up" ? "Password (min. 6 chars)" : "Password"}
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="rounded-xl h-11 border-gray-200 text-sm pr-10"
+            className="rounded-xl h-11 border-[#d9cdbd] text-sm pr-10"
             autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
             required
           />

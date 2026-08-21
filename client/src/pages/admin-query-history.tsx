@@ -42,16 +42,16 @@ function SubmissionCard({ s }: { s: ArchivedSub }) {
   const logName = s.logName || null;
 
   return (
-    <Card className="bg-white border-gray-200">
+    <Card className="bg-[#faf8f4] border-[#d9cdbd]">
       <CardContent className="p-4 space-y-3">
         {/* Activity + hours + status */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900">{activityName}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{new Date(s.date).toLocaleDateString()}</p>
+            <p className="text-sm font-semibold text-[#17324d]">{activityName}</p>
+            <p className="text-xs text-[#8fa5b4] mt-0.5">{new Date(s.date).toLocaleDateString()}</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-sm font-bold text-gray-900">{s.hours}h</span>
+            <span className="text-sm font-bold text-[#17324d]">{s.hours}h</span>
             <Badge className={`text-xs ${s.status === 'approved' ? 'bg-green-100 text-green-700 border-green-200' : s.status === 'pending' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
               {s.status}
             </Badge>
@@ -61,37 +61,37 @@ function SubmissionCard({ s }: { s: ArchivedSub }) {
         {/* Description */}
         {description && (
           <div>
-            <p className="text-xs text-gray-400 uppercase font-medium mb-0.5">Description</p>
-            <p className="text-xs text-gray-600 leading-relaxed">{description}</p>
+            <p className="text-xs text-[#8fa5b4] uppercase font-medium mb-0.5">Description</p>
+            <p className="text-xs text-[#506477] leading-relaxed">{description}</p>
           </div>
         )}
 
         {/* Meta */}
         <div className="flex flex-wrap gap-1.5 text-xs">
           {s.archivePeriod && (
-            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 bg-[#eee5d7] text-[#506477] px-2 py-0.5 rounded-full">
               <Archive className="w-3 h-3" />{s.archivePeriod}
             </span>
           )}
           {s.clubName && (
-            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 bg-[#eee5d7] text-[#506477] px-2 py-0.5 rounded-full">
               <User className="w-3 h-3" />{s.clubName}
             </span>
           )}
           {logName && (
-            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 bg-[#eee5d7] text-[#506477] px-2 py-0.5 rounded-full">
               <Calendar className="w-3 h-3" />{logName}
             </span>
           )}
           {locationLabel && (
-            <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            <span className="inline-flex items-center gap-1 bg-[#eee5d7] text-[#506477] px-2 py-0.5 rounded-full">
               <MapPin className="w-3 h-3" />{locationLabel}
             </span>
           )}
         </div>
 
         {(s as any).reviewedBy && (
-          <p className="text-xs text-gray-400">Reviewed by {(s as any).reviewedBy}</p>
+          <p className="text-xs text-[#8fa5b4]">Reviewed by {(s as any).reviewedBy}</p>
         )}
 
         {s.status === 'rejected' && (s as any).rejectReason && (
@@ -107,7 +107,7 @@ function SubmissionCard({ s }: { s: ArchivedSub }) {
               {imgOpen ? 'Hide proof image' : 'View proof image'}
             </button>
             {imgOpen && (
-              <img src={s.proofImageUrl} alt="Proof" className="mt-2 max-w-full max-h-64 rounded-lg border border-gray-200 object-contain" />
+              <img src={s.proofImageUrl} alt="Proof" className="mt-2 max-w-full max-h-64 rounded-lg border border-[#d9cdbd] object-contain" />
             )}
           </div>
         )}
@@ -155,25 +155,25 @@ function UserHistoryDashboard({ subs }: { subs: ArchivedSub[] }) {
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500 uppercase font-medium">Total Hours</p>
-          <p className="text-2xl font-bold text-gray-900">{total.toFixed(1)}</p>
+          <p className="text-xs text-[#506477] uppercase font-medium">Total Hours</p>
+          <p className="text-2xl font-bold text-[#17324d]">{total.toFixed(1)}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500 uppercase font-medium">Approved</p>
+          <p className="text-xs text-[#506477] uppercase font-medium">Approved</p>
           <p className="text-2xl font-bold text-green-600">{approved.toFixed(1)}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500 uppercase font-medium">Pending</p>
+          <p className="text-xs text-[#506477] uppercase font-medium">Pending</p>
           <p className="text-2xl font-bold text-yellow-600">{pending}</p>
         </CardContent></Card>
         <Card><CardContent className="p-4">
-          <p className="text-xs text-gray-500 uppercase font-medium">Rejected</p>
+          <p className="text-xs text-[#506477] uppercase font-medium">Rejected</p>
           <p className="text-2xl font-bold text-red-500">{rejected}</p>
         </CardContent></Card>
       </div>
 
       <Card><CardContent className="p-4">
-        <p className="text-xs font-medium text-gray-500 uppercase mb-2">Monthly Approved Hours (all time)</p>
+        <p className="text-xs font-medium text-[#506477] uppercase mb-2">Monthly Approved Hours (all time)</p>
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={monthlyData}>
@@ -182,9 +182,9 @@ function UserHistoryDashboard({ subs }: { subs: ArchivedSub[] }) {
               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#6B7280' }} domain={[0, 'dataMax + 1']} />
               <Tooltip content={({ active, payload, label }) =>
                 active && payload?.length ? (
-                  <div className="bg-white p-2 border border-gray-200 rounded shadow text-sm">
+                  <div className="bg-[#faf8f4] p-2 border border-[#d9cdbd] rounded shadow text-sm">
                     <p className="font-medium">{label}</p>
-                    <p className="text-gray-600">{payload[0].value}h approved</p>
+                    <p className="text-[#506477]">{payload[0].value}h approved</p>
                   </div>
                 ) : null} />
               <Line type="monotone" dataKey="hours" stroke="#111827" strokeWidth={2}
@@ -196,22 +196,22 @@ function UserHistoryDashboard({ subs }: { subs: ArchivedSub[] }) {
 
       <div className="flex flex-wrap gap-2">
         <div>
-          <p className="text-xs text-gray-500 mb-1 font-medium">Period</p>
+          <p className="text-xs text-[#506477] mb-1 font-medium">Period</p>
           <div className="flex gap-1 flex-wrap">
             {activePeriods.map(p => (
               <button key={p} onClick={() => setSelectedPeriod(p === activePeriod ? null : p)}
-                className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${p === activePeriod ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${p === activePeriod ? 'bg-gray-900 text-white border-[#17324d]' : 'bg-[#faf8f4] text-[#506477] border-[#d9cdbd] hover:bg-[#faf8f4]'}`}
               >{p}</button>
             ))}
           </div>
         </div>
         {clubKeys.length > 1 && (
           <div>
-            <p className="text-xs text-gray-500 mb-1 font-medium">Club</p>
+            <p className="text-xs text-[#506477] mb-1 font-medium">Club</p>
             <div className="flex gap-1 flex-wrap">
               {clubKeys.map(k => (
                 <button key={k} onClick={() => setSelectedClub(k === activeClub ? null : k)}
-                  className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${k === activeClub ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                  className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${k === activeClub ? 'bg-gray-900 text-white border-[#17324d]' : 'bg-[#faf8f4] text-[#506477] border-[#d9cdbd] hover:bg-[#faf8f4]'}`}
                 >{clubNames[k]}</button>
               ))}
             </div>
@@ -220,9 +220,9 @@ function UserHistoryDashboard({ subs }: { subs: ArchivedSub[] }) {
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-700">Submissions ({filteredSubs.length})</p>
+        <p className="text-sm font-medium text-[#17324d]">Submissions ({filteredSubs.length})</p>
         {filteredSubs.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6">No submissions for this filter</p>
+          <p className="text-sm text-[#8fa5b4] text-center py-6">No submissions for this filter</p>
         ) : (
           filteredSubs.map(s => <SubmissionCard key={s.id} s={s} />)
         )}
@@ -259,24 +259,31 @@ export function AdminQueryHistory({ user, club }: Props) {
   });
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0">
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-        <h1 className="text-2xl font-semibold text-gray-900">Query History</h1>
-        <p className="text-gray-500 mt-0.5 text-sm">Look up any volunteer's full archived history</p>
+    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
+      <div className="bg-white border-b border-[#d9cdbd] px-6 py-4 flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3b82f6' }}>
+            <Search className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Query History</h1>
+            <p className="text-[#506477] mt-0.5">Look up any volunteer's full archived history</p>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto p-6">
         <div className="max-w-3xl mx-auto space-y-6">
-          <Card className="border-gray-200">
+          <Card className="border-[#d9cdbd]">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <CardTitle className="text-sm font-medium text-[#17324d] flex items-center gap-2">
                 <Search className="w-4 h-4" />
                 Search volunteer
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8fa5b4]" />
                 <Input
                   placeholder="Name or email…"
                   value={searchTerm}
@@ -286,19 +293,19 @@ export function AdminQueryHistory({ user, club }: Props) {
               </div>
 
               {searchTerm && filtered.length > 0 && (
-                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-56 overflow-y-auto">
+                <div className="border border-[#d9cdbd] rounded-lg divide-y divide-gray-100 max-h-56 overflow-y-auto">
                   {filtered.map((m: any) => (
                     <button
                       key={m.userEmail}
                       onClick={() => { setSelectedEmail(m.userEmail); setSearchTerm(m.userName || m.userEmail); }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors ${selectedEmail === m.userEmail ? 'bg-gray-50' : ''}`}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-[#faf8f4] transition-colors ${selectedEmail === m.userEmail ? 'bg-[#faf8f4]' : ''}`}
                     >
-                      <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <User className="w-3.5 h-3.5 text-gray-500" />
+                      <div className="w-7 h-7 rounded-full bg-[#eee5d7] flex items-center justify-center flex-shrink-0">
+                        <User className="w-3.5 h-3.5 text-[#506477]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{m.userName || m.userEmail}</p>
-                        <p className="text-xs text-gray-400 truncate">{m.userEmail}</p>
+                        <p className="text-sm font-medium text-[#17324d] truncate">{m.userName || m.userEmail}</p>
+                        <p className="text-xs text-[#8fa5b4] truncate">{m.userEmail}</p>
                       </div>
                     </button>
                   ))}
@@ -306,7 +313,7 @@ export function AdminQueryHistory({ user, club }: Props) {
               )}
 
               {searchTerm && filtered.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-2">No matching volunteers</p>
+                <p className="text-sm text-[#8fa5b4] text-center py-2">No matching volunteers</p>
               )}
             </CardContent>
           </Card>
@@ -314,14 +321,14 @@ export function AdminQueryHistory({ user, club }: Props) {
           {selectedEmail && (
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                  <User className="w-4 h-4 text-gray-500" />
+                <div className="w-8 h-8 rounded-full bg-[#eee5d7] flex items-center justify-center">
+                  <User className="w-4 h-4 text-[#506477]" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">
+                  <p className="text-sm font-semibold text-[#17324d]">
                     {members.find((m: any) => m.userEmail === selectedEmail)?.userName || selectedEmail}
                   </p>
-                  <p className="text-xs text-gray-400">{selectedEmail}</p>
+                  <p className="text-xs text-[#8fa5b4]">{selectedEmail}</p>
                 </div>
               </div>
 
@@ -331,9 +338,9 @@ export function AdminQueryHistory({ user, club }: Props) {
                 </div>
               ) : userSubs.length === 0 ? (
                 <div className="text-center py-12">
-                  <Archive className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-gray-600">No archived history</p>
-                  <p className="text-xs text-gray-400 mt-1">This volunteer has no archived submissions yet</p>
+                  <Archive className="w-10 h-10 text-[#b0c0cc] mx-auto mb-3" />
+                  <p className="text-sm font-medium text-[#506477]">No archived history</p>
+                  <p className="text-xs text-[#8fa5b4] mt-1">This volunteer has no archived submissions yet</p>
                 </div>
               ) : (
                 <UserHistoryDashboard subs={userSubs as ArchivedSub[]} />

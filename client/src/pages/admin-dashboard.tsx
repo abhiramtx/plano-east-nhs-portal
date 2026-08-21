@@ -113,7 +113,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-white min-h-0">
+      <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -122,18 +122,16 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0">
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
+      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Manage student submissions and track program progress</p>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#17324d' }}>
+              <Award className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
-                <Award className="w-5 h-5 text-white" />
-              </div>
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Admin Dashboard</h1>
+              <p className="text-[#506477] mt-0.5">Manage student submissions and track program progress</p>
             </div>
           </div>
         </div>
@@ -145,11 +143,11 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Submissions</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalSubmissions}</p>
+                  <p className="text-sm font-medium text-[#506477]">Total Submissions</p>
+                  <p className="text-2xl font-bold text-[#17324d]">{stats.totalSubmissions}</p>
                 </div>
-                <div className="p-3 bg-gray-100 rounded-full">
-                  <Users className="w-5 h-5 text-gray-900" />
+                <div className="p-3 bg-[#eee5d7] rounded-full">
+                  <Users className="w-5 h-5 text-[#17324d]" />
                 </div>
               </div>
             </CardContent>
@@ -159,7 +157,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Pending Review</p>
+                  <p className="text-sm font-medium text-[#506477]">Pending Review</p>
                   <p className="text-2xl font-bold text-yellow-600">{stats.pendingSubmissions}</p>
                 </div>
                 <div className="p-3 bg-yellow-50 rounded-full">
@@ -173,7 +171,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Approved Hours</p>
+                  <p className="text-sm font-medium text-[#506477]">Approved Hours</p>
                   <p className="text-2xl font-bold text-green-600">{stats.approvedHours.toFixed(1)}</p>
                 </div>
                 <div className="p-3 bg-green-50 rounded-full">
@@ -187,7 +185,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Hours</p>
+                  <p className="text-sm font-medium text-[#506477]">Total Hours</p>
                   <p className="text-2xl font-bold text-purple-600">{stats.totalHours.toFixed(1)}</p>
                 </div>
                 <div className="p-3 bg-purple-50 rounded-full">
@@ -208,16 +206,16 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
           <CardContent>
             {submissions.length === 0 ? (
               <div className="text-center py-12">
-                <Clock className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
-                <p className="text-gray-500">Students will see their submissions here once they start submitting hours</p>
+                <Clock className="w-16 h-16 mx-auto mb-4 text-[#8fa5b4]" />
+                <h3 className="text-lg font-medium text-[#17324d] mb-2">No submissions yet</h3>
+                <p className="text-[#506477]">Students will see their submissions here once they start submitting hours</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {submissions.map((submission: HoursSubmission) => {
                   const profile = profiles.find((p: UserProfile) => p.email === submission.userEmail);
                   return (
-                    <div key={submission.id} className="p-4 lg:p-6 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={submission.id} className="p-4 lg:p-6 border rounded-lg hover:bg-[#faf8f4] transition-colors">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
@@ -225,23 +223,23 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                               {getStatusIcon(submission.status)}
                               <span className="ml-1 capitalize">{submission.status}</span>
                             </Badge>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-[#506477]">
                               {submission.userName}
                             </span>
                           </div>
                           
-                          <div className="text-sm text-gray-500 mb-3 space-y-1">
+                          <div className="text-sm text-[#506477] mb-3 space-y-1">
                             <div>Email: {submission.userEmail}</div>
                             {profile?.gradeLevel && (
                               <div>Grade: {profile.gradeLevel}</div>
                             )}
                           </div>
                           
-                          <h3 className="font-medium text-gray-900 mb-2">
+                          <h3 className="font-medium text-[#17324d] mb-2">
                             {submission.activityName || "Activity Name Not Provided"}
                           </h3>
                           
-                          <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
+                          <div className="flex items-center gap-4 text-sm text-[#506477] mb-2">
                             <div className="flex items-center">
                               <Calendar className="w-4 h-4 mr-1" />
                               {formatDate(submission.date)}
@@ -252,7 +250,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                             </div>
                           </div>
                           
-                          <p className="text-gray-600 text-sm mb-4">{submission.description}</p>
+                          <p className="text-[#506477] text-sm mb-4">{submission.description}</p>
                         </div>
                         
                         <div className="flex items-center space-x-2">
@@ -303,8 +301,8 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
       </div>
 
       {selectedSubmission && selectedSubmission.proofImageUrl && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
+        <div className="fixed inset-0 bg-[#17324d] bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-[#faf8f4] rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Proof of Service</h3>
@@ -313,13 +311,13 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                 </Button>
               </div>
               <div className="mb-4">
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-[#506477] mb-2">
                   <strong>Student:</strong> {selectedSubmission.userName}
                 </p>
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-[#506477] mb-2">
                   <strong>Activity:</strong> {selectedSubmission.activityName || "Not provided"}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-[#506477]">
                   <strong>Hours:</strong> {selectedSubmission.hours}
                 </p>
               </div>

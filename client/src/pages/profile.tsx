@@ -242,10 +242,10 @@ export default function Profile() {
                   updateCustomFieldValueMutation.mutate({ fieldId: field.id, value: newValue });
                 }}
               >
-                <SelectTrigger id={field.id} className="bg-white border-gray-200 text-gray-900" disabled={isLoading}>
+                <SelectTrigger id={field.id} className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900" disabled={isLoading}>
                   <SelectValue placeholder={`Select ${field.fieldName.toLowerCase()}`} />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200">
+                <SelectContent className="bg-[#faf8f4] border-[#d9cdbd]">
                   {options.map((option: string) => (
                     <SelectItem key={option} value={option} className="text-gray-900 hover:bg-gray-100">
                       {option}
@@ -270,7 +270,7 @@ export default function Profile() {
                 updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
               }}
               placeholder={`Enter ${field.fieldName.toLowerCase()}`}
-              className="flex-1 bg-white border-gray-200 text-gray-900"
+              className="flex-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
               disabled={isLoading}
             />
           </div>
@@ -289,7 +289,7 @@ export default function Profile() {
                 updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
               }}
               placeholder={`Enter ${field.fieldName.toLowerCase()}`}
-              className="flex-1 bg-white border-gray-200 text-gray-900"
+              className="flex-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
               disabled={isLoading}
             />
           </div>
@@ -308,7 +308,7 @@ export default function Profile() {
                 updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
               }}
               placeholder={`Enter ${field.fieldName.toLowerCase()}`}
-              className="flex-1 bg-white border-gray-200 text-gray-900"
+              className="flex-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
               disabled={isLoading}
             />
           </div>
@@ -328,7 +328,7 @@ export default function Profile() {
                 updateCustomFieldValueMutation.mutate({ fieldId: field.id, value });
               }}
               placeholder={`Enter ${field.fieldName.toLowerCase()}`}
-              className="flex-1 bg-white border-gray-200 text-gray-900"
+              className="flex-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
               disabled={isLoading}
             />
           </div>
@@ -340,7 +340,7 @@ export default function Profile() {
 
   if (!user || isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-white min-h-0">
+      <div className="flex-1 flex flex-col min-h-0">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
@@ -349,21 +349,19 @@ export default function Profile() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0">
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Profile</h1>
-              <p className="text-gray-600 mt-1">Manage your personal information</p>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#d85c45' }}>
+              <UserIcon className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
-                <UserIcon className="w-5 h-5 text-white" />
-              </div>
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Profile</h1>
+              <p className="text-[#506477] mt-0.5">Manage your personal information</p>
             </div>
           </div>
-          <div className="flex gap-1 mt-4 border-b border-gray-200 -mb-4 lg:-mb-6 pb-0">
+          <div className="flex gap-1 mt-4 border-b border-[#d9cdbd] -mb-4 lg:-mb-6 pb-0">
             <button
               onClick={() => setActiveTab('profile')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'profile' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
@@ -395,7 +393,7 @@ export default function Profile() {
               </div>
             </div>
           )}
-          <Card className="bg-white border-gray-200">
+          <Card className="bg-[#faf8f4] border-[#d9cdbd]">
             <CardHeader className="text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
                 <QrCode className="w-5 h-5 text-gray-700" />
@@ -406,7 +404,7 @@ export default function Profile() {
               </p>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4 pb-8">
-              <div className="p-4 bg-white border-2 border-gray-200 rounded-xl inline-block">
+              <div className="p-4 bg-[#faf8f4] border-2 border-[#d9cdbd] rounded-xl inline-block">
                 <QRCode value={user.email} size={200} />
               </div>
               <p className="text-xs text-gray-400 font-mono">{user.email}</p>
@@ -415,7 +413,7 @@ export default function Profile() {
         </div>
       ) : (
         <div className="space-y-6">
-        <Card className="bg-white border-gray-200">
+        <Card className="bg-[#faf8f4] border-[#d9cdbd]">
           <CardHeader>
             <CardTitle className="text-gray-900">Personal Information</CardTitle>
             <p className="text-sm text-gray-500">
@@ -439,7 +437,7 @@ export default function Profile() {
                     id="goByFirstName"
                     {...form.register("goByFirstName")}
                     placeholder="e.g., John"
-                    className="mt-1 bg-white border-gray-200 text-gray-900"
+                    className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   />
                   {form.formState.errors.goByFirstName && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.goByFirstName.message}</p>
@@ -452,7 +450,7 @@ export default function Profile() {
                     id="lastName"
                     {...form.register("lastName")}
                     placeholder="e.g., Smith"
-                    className="mt-1 bg-white border-gray-200 text-gray-900"
+                    className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   />
                   {form.formState.errors.lastName && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.lastName.message}</p>
@@ -465,7 +463,7 @@ export default function Profile() {
                     id="studentId"
                     {...form.register("studentId")}
                     placeholder="Enter your student ID"
-                    className="mt-1 bg-white border-gray-200 text-gray-900"
+                    className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   />
                   {form.formState.errors.studentId && (
                     <p className="text-sm text-red-600 mt-1">{form.formState.errors.studentId.message}</p>
@@ -480,7 +478,7 @@ export default function Profile() {
                   type="email"
                   {...form.register("personalEmailAddress")}
                   placeholder="your.email@example.com"
-                  className="mt-1 bg-white border-gray-200 text-gray-900"
+                  className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                 />
                 {form.formState.errors.personalEmailAddress && (
                   <p className="text-sm text-red-600 mt-1">{form.formState.errors.personalEmailAddress.message}</p>
@@ -494,7 +492,7 @@ export default function Profile() {
                   type="tel"
                   {...form.register("cellPhoneNumber")}
                   placeholder="(555) 123-4567"
-                  className="mt-1 bg-white border-gray-200 text-gray-900"
+                  className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                 />
                 {form.formState.errors.cellPhoneNumber && (
                   <p className="text-sm text-red-600 mt-1">{form.formState.errors.cellPhoneNumber.message}</p>
@@ -507,10 +505,10 @@ export default function Profile() {
                   value={form.watch("gradeLevel")}
                   onValueChange={(value) => form.setValue("gradeLevel", value)}
                 >
-                  <SelectTrigger className="mt-1 bg-white border-gray-200 text-gray-900">
+                  <SelectTrigger className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900">
                     <SelectValue placeholder="Select your grade level" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border-gray-200">
+                  <SelectContent className="bg-[#faf8f4] border-[#d9cdbd]">
                     <SelectItem value="9" className="text-gray-900 hover:bg-gray-100">9th Grade</SelectItem>
                     <SelectItem value="10" className="text-gray-900 hover:bg-gray-100">10th Grade</SelectItem>
                     <SelectItem value="11" className="text-gray-900 hover:bg-gray-100">11th Grade</SelectItem>
@@ -551,7 +549,7 @@ export default function Profile() {
         </Card>
 
         {customFields.length > 0 && (
-          <Card className="bg-white border-gray-200">
+          <Card className="bg-[#faf8f4] border-[#d9cdbd]">
             <CardHeader>
               <CardTitle className="text-gray-900">Additional Information</CardTitle>
             </CardHeader>

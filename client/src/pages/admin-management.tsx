@@ -143,7 +143,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-white min-h-0">
+      <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -152,18 +152,16 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0">
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
+      <div className="bg-[#faf8f4] bg-white border-b border-[#d9cdbd] flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-            <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Admin Management</h1>
-              <p className="text-gray-600 mt-1">Add or remove administrator privileges</p>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#506477' }}>
+              <UserPlus className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
-                <Settings className="w-5 h-5 text-white" />
-              </div>
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Admin Management</h1>
+              <p className="text-[#506477] mt-0.5">Add or remove administrator privileges</p>
             </div>
           </div>
         </div>
@@ -181,7 +179,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
             <CardContent>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-black hover:bg-gray-800 text-white">
+                  <Button className="bg-[#17324d] hover:bg-[#1f3d5a] text-white">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add Admin
                   </Button>
@@ -202,7 +200,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
                         className="mt-1"
                         required
                       />
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-[#506477] mt-1">
                         The person must have a Google account and must sign in at least once before being granted admin privileges.
                       </p>
                     </div>
@@ -217,7 +215,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
                       <Button 
                         type="submit" 
                         disabled={addAdminMutation.isPending}
-                        className="bg-black hover:bg-gray-800 text-white"
+                        className="bg-[#17324d] hover:bg-[#1f3d5a] text-white"
                       >
                         {addAdminMutation.isPending ? "Adding..." : "Add Admin"}
                       </Button>
@@ -239,9 +237,9 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
           <CardContent>
             {adminProfiles.length === 0 ? (
               <div className="text-center py-12">
-                <Shield className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No administrators found</h3>
-                <p className="text-gray-500">Add administrators to manage the system</p>
+                <Shield className="w-16 h-16 mx-auto mb-4 text-[#8fa5b4]" />
+                <h3 className="text-lg font-medium text-[#17324d] mb-2">No administrators found</h3>
+                <p className="text-[#506477]">Add administrators to manage the system</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -249,14 +247,14 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
                   const isCurrentUser = member.userEmail?.toLowerCase() === user?.email?.toLowerCase();
                   const displayName = adminNames[member.userEmail] || member.userName || member.userEmail;
                   return (
-                    <div key={member.userEmail} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div key={member.userEmail} className="flex items-center justify-between p-4 border rounded-lg hover:bg-[#faf8f4] transition-colors">
                       <div className="flex items-center space-x-3">
                         <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
                           <UserIcon className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <h3 className="font-medium text-gray-900">
+                            <h3 className="font-medium text-[#17324d]">
                               {displayName}
                             </h3>
                             {isCurrentUser && (
@@ -265,7 +263,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center space-x-1 text-sm text-gray-500">
+                          <div className="flex items-center space-x-1 text-sm text-[#506477]">
                             <Mail className="w-4 h-4" />
                             <span>{member.userEmail}</span>
                           </div>

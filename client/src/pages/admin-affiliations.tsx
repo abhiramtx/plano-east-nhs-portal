@@ -121,9 +121,9 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-200 pb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Affiliations</h2>
-        <p className="text-sm text-gray-500 mt-1">
+      <div className="border-b border-[#d9cdbd] pb-4">
+        <h2 className="text-xl font-semibold text-[#17324d]">Affiliations</h2>
+        <p className="text-sm text-[#506477] mt-1">
           Affiliate <strong>{club.name}</strong> as a sub-club under another (super-) club, or approve sub-clubs that want to feed hours into this one.
           Hours from a sub-club only flow into the super-club for volunteers who are members of <em>both</em>.
         </p>
@@ -143,16 +143,16 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
         </CardHeader>
         <CardContent>
           {inLoading ? (
-            <p className="text-sm text-gray-500">Loading...</p>
+            <p className="text-sm text-[#506477]">Loading...</p>
           ) : incomingPending.length === 0 ? (
-            <p className="text-sm text-gray-500">No pending requests.</p>
+            <p className="text-sm text-[#506477]">No pending requests.</p>
           ) : (
             <div className="space-y-2">
               {incomingPending.map(a => (
-                <div key={a.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div key={a.id} className="flex items-center justify-between p-3 border border-[#d9cdbd] rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">{a.subClubName}</p>
-                    <p className="text-xs text-gray-500">Requested by {a.requestedBy} · {a.requestedAt.toLocaleDateString()}</p>
+                    <p className="font-medium text-[#17324d]">{a.subClubName}</p>
+                    <p className="text-xs text-[#506477]">Requested by {a.requestedBy} · {a.requestedAt.toLocaleDateString()}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => respondMutation.mutate({ id: a.id, status: 'approved' })} className="bg-emerald-600 hover:bg-emerald-700 text-white">
@@ -179,28 +179,28 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Sub-clubs feeding INTO this club</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#506477] mb-2">Sub-clubs feeding INTO this club</p>
             {incomingApproved.length === 0 ? (
-              <p className="text-sm text-gray-500">No approved sub-clubs yet.</p>
+              <p className="text-sm text-[#506477]">No approved sub-clubs yet.</p>
             ) : (
               <div className="space-y-2">
                 {incomingApproved.map(a => {
                   const independent = a.independentApproval !== false; // default true
                   return (
-                  <div key={a.id} className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
+                  <div key={a.id} className="p-3 bg-[#faf8f4] border border-[#d9cdbd] rounded-lg space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">{a.subClubName}</p>
-                        <p className="text-xs text-gray-500">Approved {a.respondedAt?.toLocaleDateString()}</p>
+                        <p className="font-medium text-[#17324d]">{a.subClubName}</p>
+                        <p className="text-xs text-[#506477]">Approved {a.respondedAt?.toLocaleDateString()}</p>
                       </div>
                       <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="flex items-start justify-between gap-3 pt-2 border-t border-gray-200">
+                    <div className="flex items-start justify-between gap-3 pt-2 border-t border-[#d9cdbd]">
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">Independent approval</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-sm font-medium text-[#17324d]">Independent approval</p>
+                        <p className="text-xs text-[#506477] mt-0.5">
                           {independent
                             ? `On — opted-in hours from ${a.subClubName} land here as Pending and you approve them separately. The sub-club's status is untouched.`
                             : `Off — this club shares the sub-club's approval status. Approve or reject in either place and both sides update together.`}
@@ -218,16 +218,16 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
             )}
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Super-clubs this club feeds INTO</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#506477] mb-2">Super-clubs this club feeds INTO</p>
             {outgoingApproved.length === 0 ? (
-              <p className="text-sm text-gray-500">Not affiliated as a sub-club anywhere yet.</p>
+              <p className="text-sm text-[#506477]">Not affiliated as a sub-club anywhere yet.</p>
             ) : (
               <div className="space-y-2">
                 {outgoingApproved.map(a => (
-                  <div key={a.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div key={a.id} className="flex items-center justify-between p-3 bg-[#faf8f4] border border-[#d9cdbd] rounded-lg">
                     <div>
-                      <p className="font-medium text-gray-900">{a.superClubName}</p>
-                      <p className="text-xs text-gray-500">Approved {a.respondedAt?.toLocaleDateString()}</p>
+                      <p className="font-medium text-[#17324d]">{a.superClubName}</p>
+                      <p className="text-xs text-[#506477]">Approved {a.respondedAt?.toLocaleDateString()}</p>
                     </div>
                     <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                       <Trash2 className="w-4 h-4" />
@@ -250,7 +250,7 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
         </CardHeader>
         <CardContent>
           <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8fa5b4]" />
             <Input
               placeholder="Search clubs..."
               value={searchQuery}
@@ -260,21 +260,21 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
           </div>
           <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
             {outLoading ? (
-              <p className="text-sm text-gray-500">Loading...</p>
+              <p className="text-sm text-[#506477]">Loading...</p>
             ) : candidateClubs.length === 0 ? (
-              <p className="text-sm text-gray-500">No clubs match.</p>
+              <p className="text-sm text-[#506477]">No clubs match.</p>
             ) : (
               candidateClubs.map(c => {
                 const existing = outgoingMap.get(c.id);
                 return (
-                  <div key={c.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div key={c.id} className="flex items-center justify-between p-3 border border-[#d9cdbd] rounded-lg">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden" style={{ backgroundColor: c.logoUrl ? undefined : c.color }}>
                         {c.logoUrl && <img src={c.logoUrl} alt={c.name} className="w-full h-full object-cover" />}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{c.name}</p>
-                        <p className="text-xs text-gray-500 truncate">{c.description || 'No description'}</p>
+                        <p className="font-medium text-[#17324d] truncate">{c.name}</p>
+                        <p className="text-xs text-[#506477] truncate">{c.description || 'No description'}</p>
                       </div>
                     </div>
                     {existing ? (
@@ -286,7 +286,7 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
                         {existing.status}
                       </Badge>
                     ) : (
-                      <Button size="sm" onClick={() => requestMutation.mutate(c)} disabled={requestMutation.isPending} className="bg-black text-white hover:bg-gray-800">
+                      <Button size="sm" onClick={() => requestMutation.mutate(c)} disabled={requestMutation.isPending} className="bg-[#17324d] text-white hover:bg-[#1f3d5a]">
                         <Send className="w-3 h-3 mr-1" /> Request
                       </Button>
                     )}
@@ -307,10 +307,10 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
           <CardContent className="space-y-2">
             {outgoingPending.map(a => (
               <div key={a.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">{a.superClubName}</span>
+                <span className="text-[#17324d]">{a.superClubName}</span>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pending</Badge>
-                  <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="h-7 px-2 text-gray-500 hover:text-red-600">
+                  <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="h-7 px-2 text-[#506477] hover:text-red-600">
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
@@ -318,10 +318,10 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
             ))}
             {outgoingRejected.map(a => (
               <div key={a.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-700">{a.superClubName}</span>
+                <span className="text-[#17324d]">{a.superClubName}</span>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>
-                  <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="h-7 px-2 text-gray-500 hover:text-red-600">
+                  <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="h-7 px-2 text-[#506477] hover:text-red-600">
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>

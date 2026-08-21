@@ -68,9 +68,9 @@ export default function Home() {
 
   if (initializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-white">
+      <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-[#faf8f4]">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl border border-gray-200 p-8">
+          <div className="bg-[#faf8f4] rounded-2xl border border-[#d9cdbd] p-8">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p className="text-gray-600">Initializing...</p>
@@ -82,11 +82,11 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-white">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-[#faf8f4]">
       <div className="w-full max-w-md">
         {!user ? (
           // Sign-in Card
-          <div className="bg-white rounded-2xl border border-gray-200 p-8 transition-all duration-300">
+          <div className="bg-[#faf8f4] rounded-2xl border border-[#d9cdbd] p-8 transition-all duration-300">
             {/* Header */}
             <div className="text-center mb-8">
               <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
@@ -106,7 +106,7 @@ export default function Home() {
               <div className="space-y-3">
                 <button
                   onClick={handleGoogleSignIn}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 flex items-center justify-center space-x-3 hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+                  className="w-full bg-[#faf8f4] border border-[#c9bfae] rounded-lg px-4 py-3 flex items-center justify-center space-x-3 hover:bg-[#faf8f4] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
                 >
                   {/* Google Logo */}
                   <svg width="20" height="20" viewBox="0 0 24 24">
@@ -134,7 +134,7 @@ export default function Home() {
             )}
 
             {/* Footer */}
-            <div className="mt-8 pt-6 border-t border-gray-100">
+            <div className="mt-8 pt-6 border-t border-[#d9cdbd]">
               <p className="text-xs text-gray-500 text-center">
                 By signing in, you agree to our{" "}
                 <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and{" "}
@@ -144,7 +144,7 @@ export default function Home() {
           </div>
         ) : (
           // Authenticated Card
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 transition-all duration-300">
+          <div className="bg-[#faf8f4] rounded-2xl shadow-lg border border-[#d9cdbd] p-8 transition-all duration-300">
             {/* Header */}
             <div className="text-center mb-8">
               <div className="mx-auto w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-4">
@@ -165,7 +165,7 @@ export default function Home() {
             </div>
 
             {/* User Info Card */}
-            <div className="bg-gray-50 rounded-xl p-6 mb-6">
+            <div className="bg-[#faf8f4] rounded-xl p-6 mb-6">
               <div className="flex items-center space-x-4">
                 {user.photoURL ? (
                   <img 

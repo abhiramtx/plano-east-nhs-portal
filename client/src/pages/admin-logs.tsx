@@ -231,7 +231,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-white min-h-0">
+      <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -248,12 +248,12 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
       <DialogHeader>
         <DialogTitle>{editingRuleId ? 'Edit Conditional Rule' : 'Add Conditional Rule'}</DialogTitle>
       </DialogHeader>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-[#506477]">
         Approved Sub-Club Hours submissions whose date falls within this range will also be counted toward the selected log's total (no new entries are created).
       </p>
       <div className="space-y-4 mt-2">
         <div>
-          <Label className="text-gray-900">Target Log</Label>
+          <Label className="text-[#17324d]">Target Log</Label>
           <Select value={ruleForm.targetLogId} onValueChange={handleRuleTargetChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select a log…" />
@@ -267,7 +267,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-gray-900">From Date</Label>
+            <Label className="text-[#17324d]">From Date</Label>
             <Input
               type="date"
               value={ruleForm.fromDate}
@@ -275,7 +275,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
             />
           </div>
           <div>
-            <Label className="text-gray-900">To Date</Label>
+            <Label className="text-[#17324d]">To Date</Label>
             <Input
               type="date"
               value={ruleForm.toDate}
@@ -284,7 +284,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
           </div>
         </div>
         <div>
-          <Label className="text-gray-900">Label <span className="text-gray-400 font-normal">(optional)</span></Label>
+          <Label className="text-[#17324d]">Label <span className="text-[#8fa5b4] font-normal">(optional)</span></Label>
           <Input
             placeholder="e.g., Fall 2024 campaign"
             value={ruleForm.label}
@@ -294,7 +294,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
         <Button
           onClick={handleSaveRule}
           disabled={createRuleMutation.isPending || updateRuleMutation.isPending}
-          className="w-full bg-black hover:bg-gray-800 text-white"
+          className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
         >
           {(createRuleMutation.isPending || updateRuleMutation.isPending) ? "Saving…" : (editingRuleId ? "Update Rule" : "Add Rule")}
         </Button>
@@ -303,16 +303,16 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
   );
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0">
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
+      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-            <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Hours Logs</h1>
-              <p className="text-gray-600 mt-1">Create and manage hour-tracking logs (e.g., "Fall Semester")</p>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#e5a72c' }}>
+              <BookOpen className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
-              <BookOpen className="w-5 h-5 text-white" />
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Hours Logs</h1>
+              <p className="text-[#506477] mt-0.5">Create and manage hour-tracking logs (e.g., "Fall Semester")</p>
             </div>
           </div>
         </div>
@@ -322,7 +322,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
         {/* System logs (e.g. Sub-Club Hours) */}
         {systemLogs.length > 0 && (
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">System Logs</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#506477]">System Logs</p>
             {systemLogs.map((log: HoursLog) => (
               <Card key={log.id} className="border-blue-200 bg-blue-50">
                 <CardContent className="p-4">
@@ -356,10 +356,10 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
         {/* Regular logs */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Your Logs</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-[#506477]">Your Logs</p>
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-black hover:bg-gray-800 text-white">
+                <Button size="sm" className="bg-[#17324d] hover:bg-[#1f3d5a] text-white">
                   <Plus className="w-4 h-4 mr-1" />
                   Add Log
                 </Button>
@@ -370,7 +370,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="logName" className="text-gray-900">Log Name</Label>
+                    <Label htmlFor="logName" className="text-[#17324d]">Log Name</Label>
                     <Input
                       id="logName"
                       placeholder="e.g., Fall Semester"
@@ -379,7 +379,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="hoursRequired" className="text-gray-900">Hours Required</Label>
+                    <Label htmlFor="hoursRequired" className="text-[#17324d]">Hours Required</Label>
                     <Input
                       id="hoursRequired"
                       type="number"
@@ -388,12 +388,12 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
                       value={formData.hoursRequired}
                       onChange={(e) => setFormData({ ...formData, hoursRequired: parseFloat(e.target.value) || 0 })}
                     />
-                    <p className="text-xs text-gray-500 mt-1">Minimum hours volunteers must complete for this log</p>
+                    <p className="text-xs text-[#506477] mt-1">Minimum hours volunteers must complete for this log</p>
                   </div>
                   <Button
                     onClick={handleAdd}
                     disabled={createLogMutation.isPending}
-                    className="w-full bg-black hover:bg-gray-800 text-white"
+                    className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
                   >
                     {createLogMutation.isPending ? "Creating..." : "Create Log"}
                   </Button>
@@ -405,9 +405,9 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
           {regularLogs.length === 0 ? (
             <Card>
               <CardContent className="p-12 text-center">
-                <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No custom logs yet</h3>
-                <p className="text-gray-500">Create your first log to start tracking hours by period</p>
+                <BookOpen className="w-16 h-16 mx-auto mb-4 text-[#8fa5b4]" />
+                <h3 className="text-lg font-medium text-[#17324d] mb-2">No custom logs yet</h3>
+                <p className="text-[#506477]">Create your first log to start tracking hours by period</p>
               </CardContent>
             </Card>
           ) : (
@@ -418,7 +418,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
                     {isEditingId === log.id ? (
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor={`edit-name-${log.id}`} className="text-gray-900">Log Name</Label>
+                          <Label htmlFor={`edit-name-${log.id}`} className="text-[#17324d]">Log Name</Label>
                           <Input
                             id={`edit-name-${log.id}`}
                             placeholder="e.g., Fall Semester"
@@ -427,7 +427,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
                           />
                         </div>
                         <div>
-                          <Label htmlFor={`edit-hours-${log.id}`} className="text-gray-900">Hours Required</Label>
+                          <Label htmlFor={`edit-hours-${log.id}`} className="text-[#17324d]">Hours Required</Label>
                           <Input
                             id={`edit-hours-${log.id}`}
                             type="number"
@@ -454,13 +454,13 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
                     ) : (
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <h3 className="text-lg font-medium text-gray-900">{log.name}</h3>
+                          <h3 className="text-lg font-medium text-[#17324d]">{log.name}</h3>
                           <div className="mt-2 flex flex-wrap gap-2">
                             <span className="inline-block px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
                               {log.hoursRequired} hours required
                             </span>
                             <span className={`inline-block px-2 py-1 text-sm rounded-full ${
-                              log.isOpen ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                              log.isOpen ? 'bg-green-100 text-green-800' : 'bg-[#eee5d7] text-[#506477]'
                             }`}>
                               {log.isOpen ? 'Open' : 'Closed'}
                             </span>
@@ -474,7 +474,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
                         </div>
                         <div className="flex items-center gap-3 ml-4">
                           <div className="flex items-center gap-2">
-                            <Label className="text-sm text-gray-500">{log.isOpen ? 'Open' : 'Closed'}</Label>
+                            <Label className="text-sm text-[#506477]">{log.isOpen ? 'Open' : 'Closed'}</Label>
                             <Switch
                               checked={log.isOpen}
                               onCheckedChange={() => handleToggleOpen(log)}
@@ -507,8 +507,8 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Sub-Club Hours → Log Rules</p>
-                <p className="text-xs text-gray-400 mt-0.5">Define date ranges where federated Sub-Club Hours also count toward a specific log's total</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#506477]">Sub-Club Hours → Log Rules</p>
+                <p className="text-xs text-[#8fa5b4] mt-0.5">Define date ranges where federated Sub-Club Hours also count toward a specific log's total</p>
               </div>
               <Dialog open={isAddRuleOpen} onOpenChange={(v) => {
                 setIsAddRuleOpen(v);
@@ -525,10 +525,10 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
             </div>
 
             {rules.length === 0 ? (
-              <Card className="border-dashed border-gray-200">
+              <Card className="border-dashed border-[#d9cdbd]">
                 <CardContent className="p-6 text-center">
-                  <GitMerge className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm text-gray-400">No conditional rules yet. Add a rule to make Sub-Club Hours count toward a specific log within a date range.</p>
+                  <GitMerge className="w-10 h-10 mx-auto mb-2 text-[#b0c0cc]" />
+                  <p className="text-sm text-[#8fa5b4]">No conditional rules yet. Add a rule to make Sub-Club Hours count toward a specific log within a date range.</p>
                 </CardContent>
               </Card>
             ) : (

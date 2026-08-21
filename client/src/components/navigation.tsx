@@ -17,7 +17,7 @@ export function Navigation({ user, onSignOut }: NavigationProps) {
   ];
 
   return (
-    <nav className="bg-white shadow-sm border-b">
+    <nav className="bg-[#faf8f4] shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">

@@ -259,8 +259,8 @@ export function WorldMap({
             anchor="center"
           >
             <div className="relative">
-              <div className="absolute inset-0 w-8 h-8 -translate-x-1/2 -translate-y-1/2 bg-white/30 rounded-full animate-ping" />
-              <div className="w-5 h-5 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full border-2 border-white shadow-lg" />
+              <div className="absolute inset-0 w-8 h-8 -translate-x-1/2 -translate-y-1/2 bg-[#faf8f4]/30 rounded-full animate-ping" />
+              <div className="w-5 h-5 -translate-x-1/2 -translate-y-1/2 bg-[#faf8f4] rounded-full border-2 border-white shadow-lg" />
             </div>
           </Marker>
         )}
@@ -276,7 +276,7 @@ export function WorldMap({
           >
             <CardHeader className="pb-2 relative">
               <button
-                className="absolute top-3 right-3 p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                className="absolute top-3 right-3 p-1.5 hover:bg-[#faf8f4]/10 rounded-full transition-colors"
                 onClick={() => setSelectedRequestPopup(null)}
               >
                 <X className="w-4 h-4" />
@@ -306,7 +306,7 @@ export function WorldMap({
               {onJoinRequest && !isJoined && (
                 <Button 
                   size="sm" 
-                  className="w-full bg-white text-black hover:bg-gray-200"
+                  className="w-full bg-[#faf8f4] text-black hover:bg-gray-200"
                   onClick={() => {
                     onJoinRequest(selectedRequestPopup);
                     setSelectedRequestPopup(null);
@@ -425,15 +425,15 @@ export function LocationPicker({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 text-sm shadow-sm"
+            className="w-full px-4 py-2 bg-[#faf8f4] border border-[#d9cdbd] rounded-lg text-gray-900 placeholder:text-gray-400 text-sm shadow-sm"
           />
           {searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg max-h-48 overflow-y-auto z-[200]">
+            <div className="absolute top-full left-0 right-0 mt-1 bg-[#faf8f4] border border-[#d9cdbd] rounded-lg overflow-hidden shadow-lg max-h-48 overflow-y-auto z-[200]">
               {searchResults.map((result, index) => (
                 <button
                   key={index}
                   onClick={() => handleSearchSelect(result)}
-                  className="w-full px-4 py-2 text-left text-xs text-gray-900 hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                  className="w-full px-4 py-2 text-left text-xs text-gray-900 hover:bg-[#faf8f4] border-b border-[#d9cdbd] last:border-0"
                 >
                   {result.display_name}
                 </button>

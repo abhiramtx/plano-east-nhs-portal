@@ -149,14 +149,18 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
   };
 
   return (
-    <div className="flex-1 flex bg-white min-h-0">
-      <div className="w-56 border-r border-gray-200 flex-shrink-0 bg-white flex flex-col">
-        <div className="flex-shrink-0 px-4 py-4 border-b border-gray-200">
-          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <Settings className="w-4 h-4" />
-            Settings
-          </h3>
-          <p className="text-xs text-gray-500 mt-1">Configure your club</p>
+    <div className="flex-1 flex bg-[#faf8f4] min-h-0">
+      <div className="w-56 border-r border-[#d9cdbd] flex-shrink-0 bg-[#faf8f4] flex flex-col">
+        <div className="flex-shrink-0 px-4 py-4 border-b border-[#d9cdbd]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#506477' }}>
+              <Settings className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-[#17324d]">Settings</h3>
+              <p className="text-xs text-[#506477]">Configure your club</p>
+            </div>
+          </div>
         </div>
         <div className="flex-1 p-3 space-y-1 overflow-auto">
           {([
@@ -170,13 +174,13 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
             <button
               key={id}
               onClick={() => setInnerPage(id)}
-              className={`w-full px-3 py-2.5 rounded-lg text-left transition-colors ${innerPage === id ? 'bg-gray-100 text-gray-900' : 'text-gray-700 hover:bg-gray-50'}`}
+              className={`w-full px-3 py-2.5 rounded-lg text-left transition-colors ${innerPage === id ? 'bg-[#eee5d7] text-[#17324d]' : 'text-[#17324d] hover:bg-[#faf8f4]'}`}
             >
               <div className="flex items-center gap-2">
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 <div>
                   <div className="text-sm font-medium leading-tight">{label}</div>
-                  <div className="text-xs text-gray-500 leading-tight">{desc}</div>
+                  <div className="text-xs text-[#506477] leading-tight">{desc}</div>
                 </div>
               </div>
             </button>
@@ -184,13 +188,13 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto bg-white">
+      <div className="flex-1 overflow-auto bg-[#faf8f4]">
         <div className="p-6 lg:p-8">
         {innerPage === 'logs' && (
           <div className="space-y-6">
-            <div className="border-b border-gray-200 pb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Hours Logs</h2>
-              <p className="text-sm text-gray-500 mt-1">Logs are named time periods (e.g., "Fall Semester", "Spring 2026") with an hours requirement. Volunteers see open logs in their Hours tab and submit entries to specific logs. You can view per-log progress in the Volunteers tab.</p>
+            <div className="border-b border-[#d9cdbd] pb-4">
+              <h2 className="text-xl font-semibold text-[#17324d]">Hours Logs</h2>
+              <p className="text-sm text-[#506477] mt-1">Logs are named time periods (e.g., "Fall Semester", "Spring 2026") with an hours requirement. Volunteers see open logs in their Hours tab and submit entries to specific logs. You can view per-log progress in the Volunteers tab.</p>
             </div>
             <AdminLogs user={user} club={club} />
           </div>
@@ -198,9 +202,9 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
 
         {innerPage === 'approvals' && (
           <div className="space-y-6">
-            <div className="border-b border-gray-200 pb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Approvals</h2>
-              <p className="text-sm text-gray-500 mt-1">Configure how the hours approval workflow works. You can require multiple admins to approve or reject before a submission is finalized — great for clubs with multiple admins who want checks and balances.</p>
+            <div className="border-b border-[#d9cdbd] pb-4">
+              <h2 className="text-xl font-semibold text-[#17324d]">Approvals</h2>
+              <p className="text-sm text-[#506477] mt-1">Configure how the hours approval workflow works. You can require multiple admins to approve or reject before a submission is finalized — great for clubs with multiple admins who want checks and balances.</p>
             </div>
             <Card>
               <CardHeader>
@@ -221,7 +225,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                     value={approvalsRequired}
                     onChange={(e) => setApprovalsRequired(e.target.value)}
                   />
-                  <p className="text-xs text-gray-500">Number of unique admins that must approve before hours are finalized</p>
+                  <p className="text-xs text-[#506477]">Number of unique admins that must approve before hours are finalized</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Rejections Required</Label>
@@ -231,7 +235,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                     value={rejectionsRequired}
                     onChange={(e) => setRejectionsRequired(e.target.value)}
                   />
-                  <p className="text-xs text-gray-500">Number of unique admins that must reject before hours are rejected</p>
+                  <p className="text-xs text-[#506477]">Number of unique admins that must reject before hours are rejected</p>
                 </div>
                 <Button
                   onClick={() => {
@@ -241,7 +245,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                     });
                   }}
                   disabled={updateSettingsMutation.isPending}
-                  className="w-full bg-black hover:bg-gray-800 text-white"
+                  className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Save Approval Settings
@@ -253,9 +257,9 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
 
         {innerPage === 'club' && (
           <div className="space-y-6">
-            <div className="border-b border-gray-200 pb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Club</h2>
-              <p className="text-sm text-gray-500 mt-1">Your club's public identity on the platform — name, color, and home base location for territory calculations.</p>
+            <div className="border-b border-[#d9cdbd] pb-4">
+              <h2 className="text-xl font-semibold text-[#17324d]">Club</h2>
+              <p className="text-sm text-[#506477] mt-1">Your club's public identity on the platform — name, color, and home base location for territory calculations.</p>
             </div>
             <Card>
               <CardHeader>
@@ -277,7 +281,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                   />
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-16 h-16 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                      className="w-16 h-16 rounded-xl border border-[#d9cdbd] flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                       style={{ backgroundColor: clubLogoUrl ? undefined : clubColor }}
                       onClick={() => clubLogoRef.current?.click()}
                     >
@@ -295,7 +299,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                           Remove
                         </Button>
                       )}
-                      <p className="text-xs text-gray-400 mt-1">Optional. Max 2MB. Square images work best.</p>
+                      <p className="text-xs text-[#8fa5b4] mt-1">Optional. Max 2MB. Square images work best.</p>
                     </div>
                   </div>
                 </div>
@@ -313,13 +317,13 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                     <Input id="clubColor" type="color" value={clubColor} onChange={(e) => setClubColor(e.target.value)} className="w-12 h-10" />
                     <Input type="text" value={clubColor} onChange={(e) => setClubColor(e.target.value)} placeholder="#000000" className="flex-1" />
                   </div>
-                  <p className="text-xs text-gray-500">Used for your territory circles on the world map</p>
+                  <p className="text-xs text-[#506477]">Used for your territory circles on the world map</p>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     onClick={() => updateClubMutation.mutate({ name: clubName, description: clubDescription, color: clubColor, logoUrl: clubLogoUrl || undefined })}
                     disabled={updateClubMutation.isPending}
-                    className="flex-1 bg-black hover:bg-gray-800 text-white"
+                    className="flex-1 bg-[#17324d] hover:bg-[#1f3d5a] text-white"
                   >
                     <Save className="w-4 h-4 mr-2" />Save Club Info
                   </Button>
@@ -328,7 +332,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                     onClick={() => syncHoursMutation.mutate()}
                     disabled={syncHoursMutation.isPending}
                     title="Recalculate total approved hours from all submissions"
-                    className="border-gray-200 text-gray-600 hover:bg-gray-50"
+                    className="border-[#d9cdbd] text-[#506477] hover:bg-[#faf8f4]"
                   >
                     {syncHoursMutation.isPending ? "Syncing..." : "Sync Hours"}
                   </Button>
@@ -355,14 +359,14 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                     <Input id="clubLongitude" value={clubLongitude} onChange={(e) => setClubLongitude(e.target.value)} placeholder="e.g. -97.7431" />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">Tip: Find coordinates by right-clicking any location on Google Maps.</p>
+                <p className="text-xs text-[#506477]">Tip: Find coordinates by right-clicking any location on Google Maps.</p>
                 <Button
                   onClick={() => updateClubMutation.mutate({
                     latitude: parseFloat(clubLatitude) || undefined,
                     longitude: parseFloat(clubLongitude) || undefined
                   })}
                   disabled={updateClubMutation.isPending}
-                  className="w-full bg-black hover:bg-gray-800 text-white"
+                  className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
                 >
                   <Save className="w-4 h-4 mr-2" />Save Location
                 </Button>
@@ -380,8 +384,8 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Password-protect joining</p>
-                    <p className="text-xs text-gray-500">Only volunteers who know the password can join</p>
+                    <p className="text-sm font-medium text-[#17324d]">Password-protect joining</p>
+                    <p className="text-xs text-[#506477]">Only volunteers who know the password can join</p>
                   </div>
                   <Switch checked={showPasswordField} onCheckedChange={setShowPasswordField} />
                 </div>
@@ -389,7 +393,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                   <div className="space-y-2">
                     <Label htmlFor="clubPassword">New Password</Label>
                     <Input id="clubPassword" type="password" value={clubPassword} onChange={(e) => setClubPassword(e.target.value)} placeholder="Leave empty to keep current password" />
-                    <Button onClick={() => toast({ title: "Info", description: "Password update coming soon" })} className="w-full bg-black hover:bg-gray-800 text-white">
+                    <Button onClick={() => toast({ title: "Info", description: "Password update coming soon" })} className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white">
                       <Save className="w-4 h-4 mr-2" />Save Password
                     </Button>
                   </div>
@@ -415,12 +419,12 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                       <Input
                         readOnly
                         value={`${window.location.origin}/join/${currentInviteCode}`}
-                        className="font-mono text-sm bg-gray-50 border-gray-200"
+                        className="font-mono text-sm bg-[#faf8f4] border-[#d9cdbd]"
                       />
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-shrink-0 border-gray-200"
+                        className="flex-shrink-0 border-[#d9cdbd]"
                         onClick={() => {
                           navigator.clipboard.writeText(`${window.location.origin}/join/${currentInviteCode}`);
                           toast({ title: "Copied!", description: "Invite link copied to clipboard." });
@@ -432,18 +436,18 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full border-gray-200 text-gray-600"
+                      className="w-full border-[#d9cdbd] text-[#506477]"
                       onClick={() => generateInviteMutation.mutate()}
                       disabled={generateInviteMutation.isPending}
                     >
                       <RefreshCw className="w-3.5 h-3.5 mr-2" />
                       {generateInviteMutation.isPending ? "Regenerating..." : "Regenerate Link"}
                     </Button>
-                    <p className="text-xs text-gray-400">Regenerating creates a new link — the old one will stop working immediately.</p>
+                    <p className="text-xs text-[#8fa5b4]">Regenerating creates a new link — the old one will stop working immediately.</p>
                   </div>
                 ) : (
                   <Button
-                    className="w-full bg-black hover:bg-gray-800 text-white"
+                    className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
                     onClick={() => generateInviteMutation.mutate()}
                     disabled={generateInviteMutation.isPending}
                   >
@@ -458,9 +462,9 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
 
         {innerPage === 'members' && (
           <div className="space-y-6">
-            <div className="border-b border-gray-200 pb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Members</h2>
-              <p className="text-sm text-gray-500 mt-1">Control what information volunteers provide in their profiles, which fields are visible on reports, and add custom fields for your club's specific needs.</p>
+            <div className="border-b border-[#d9cdbd] pb-4">
+              <h2 className="text-xl font-semibold text-[#17324d]">Members</h2>
+              <p className="text-sm text-[#506477] mt-1">Control what information volunteers provide in their profiles, which fields are visible on reports, and add custom fields for your club's specific needs.</p>
             </div>
             <Card>
               <CardHeader>
@@ -480,7 +484,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                   <div key={label} className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>{label}</Label>
-                      <p className="text-sm text-gray-500">{desc}</p>
+                      <p className="text-sm text-[#506477]">{desc}</p>
                     </div>
                     <Switch checked={checked} onCheckedChange={set} />
                   </div>
@@ -488,11 +492,11 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                 <div className="flex items-center justify-between pt-2 border-t">
                   <div className="space-y-0.5">
                     <Label>Require Proof Image</Label>
-                    <p className="text-sm text-gray-500">Volunteers must attach a photo when submitting hours</p>
+                    <p className="text-sm text-[#506477]">Volunteers must attach a photo when submitting hours</p>
                   </div>
                   <Switch checked={requireProofImage} onCheckedChange={setRequireProofImage} />
                 </div>
-                <Button onClick={handleSaveVisibility} disabled={updateSettingsMutation.isPending} className="w-full bg-black hover:bg-gray-800 text-white">
+                <Button onClick={handleSaveVisibility} disabled={updateSettingsMutation.isPending} className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white">
                   <Save className="w-4 h-4 mr-2" />Save Visibility Settings
                 </Button>
               </CardContent>
@@ -503,9 +507,9 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
 
         {innerPage === 'territory' && (
           <div className="space-y-6">
-            <div className="border-b border-gray-200 pb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Territory</h2>
-              <p className="text-sm text-gray-500 mt-1">Territory circles on the world map grow as your club logs hours at a location. Configure how quickly inactive territories shrink (decay) and whether high-need areas earn bonus credit.</p>
+            <div className="border-b border-[#d9cdbd] pb-4">
+              <h2 className="text-xl font-semibold text-[#17324d]">Territory</h2>
+              <p className="text-sm text-[#506477] mt-1">Territory circles on the world map grow as your club logs hours at a location. Configure how quickly inactive territories shrink (decay) and whether high-need areas earn bonus credit.</p>
             </div>
             <Card>
               <CardHeader>
@@ -519,19 +523,19 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                 <div className="space-y-2">
                   <Label>Decay Rate (miles per week)</Label>
                   <Input type="number" step="0.5" value={decayRate} onChange={(e) => setDecayRate(e.target.value)} />
-                  <p className="text-xs text-gray-500">How many miles a circle's radius shrinks each week of inactivity. Default: 0.25</p>
+                  <p className="text-xs text-[#506477]">How many miles a circle's radius shrinks each week of inactivity. Default: 0.25</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Maximum Decay Floor</Label>
                   <Input type="number" value={maxDecay} onChange={(e) => setMaxDecay(e.target.value)} />
-                  <p className="text-xs text-gray-500">A circle cannot decay below this % of its peak radius (e.g., 10 = 10% minimum). Prevents circles from disappearing entirely.</p>
+                  <p className="text-xs text-[#506477]">A circle cannot decay below this % of its peak radius (e.g., 10 = 10% minimum). Prevents circles from disappearing entirely.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>High-Need Area Bonus Multiplier</Label>
                   <Input type="number" step="0.1" value={bonusMultiplier} onChange={(e) => setBonusMultiplier(e.target.value)} />
-                  <p className="text-xs text-gray-500">Hours logged in tagged high-need areas count as this multiple (e.g., 1.5 = 50% bonus). Encourages service where it matters most.</p>
+                  <p className="text-xs text-[#506477]">Hours logged in tagged high-need areas count as this multiple (e.g., 1.5 = 50% bonus). Encourages service where it matters most.</p>
                 </div>
-                <Button onClick={handleSaveDecay} disabled={updateSettingsMutation.isPending} className="w-full bg-black hover:bg-gray-800 text-white">
+                <Button onClick={handleSaveDecay} disabled={updateSettingsMutation.isPending} className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white">
                   <Save className="w-4 h-4 mr-2" />Save Territory Settings
                 </Button>
               </CardContent>
@@ -542,9 +546,9 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                 <CardDescription>How circle size is calculated</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2 text-sm text-gray-700">
-                  <p><span className="font-mono text-xs bg-gray-200 px-1 rounded">radius = 4 + 16 × min(1, log₁₀(hours+1) / log₁₀(1000))</span></p>
-                  <p className="text-xs text-gray-500 mt-2">Circles range from 4 miles (new) to 20 miles (1,000+ hours) at each unique location. When two circles from the same club overlap, they blend together like a metaball effect.</p>
+                <div className="bg-[#faf8f4] rounded-lg p-4 space-y-2 text-sm text-[#17324d]">
+                  <p><span className="font-mono text-xs bg-[#e0d6c8] px-1 rounded">radius = 4 + 16 × min(1, log₁₀(hours+1) / log₁₀(1000))</span></p>
+                  <p className="text-xs text-[#506477] mt-2">Circles range from 4 miles (new) to 20 miles (1,000+ hours) at each unique location. When two circles from the same club overlap, they blend together like a metaball effect.</p>
                 </div>
               </CardContent>
             </Card>

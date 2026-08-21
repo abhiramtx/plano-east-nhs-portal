@@ -17,7 +17,7 @@ export function ProfileCompletionGuard({
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-white min-h-0">
+      <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
         </div>
@@ -27,9 +27,9 @@ export function ProfileCompletionGuard({
 
   if (!isProfileComplete) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#faf8f4] flex items-center justify-center p-4">
         <div className="max-w-lg w-full">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-[#faf8f4] rounded-2xl shadow-sm border border-[#d9cdbd] overflow-hidden">
             <div className="bg-black p-6 text-white text-center">
               <img src={logoImg} alt="VolunteerClub" className="w-16 h-16 rounded-xl mx-auto mb-4" />
               <h3 className="text-2xl font-bold mb-2">

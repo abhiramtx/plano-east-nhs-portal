@@ -70,16 +70,16 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0">
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
+      <div className="bg-[#faf8f4] bg-white border-b border-[#d9cdbd] flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Database Management</h1>
-              <p className="text-gray-600 mt-1">Year-end archival and data reset for {club.name}.</p>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#17324d' }}>
+              <Database className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
-              <Database className="w-5 h-5 text-white" />
+            <div>
+              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Database Management</h1>
+              <p className="text-[#506477] mt-0.5">Year-end archival and data reset for {club.name}.</p>
             </div>
           </div>
         </div>
@@ -106,7 +106,7 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
                   value={schoolYear}
                   onChange={(e) => setSchoolYear(e.target.value)}
                 />
-                <p className="text-xs text-gray-500">This label is attached to all archived entries so volunteers can find them in their History.</p>
+                <p className="text-xs text-[#506477]">This label is attached to all archived entries so volunteers can find them in their History.</p>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -169,7 +169,7 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="text-sm text-gray-600 space-y-2">
+              <ul className="text-sm text-[#506477] space-y-2">
                 <li>• Always archive before wiping — archived data is permanent and unrecoverable otherwise</li>
                 <li>• Volunteers can view all archived years in their History tab after the reset</li>
                 <li>• Club totals reset to zero — leaderboard standings restart for the new year</li>

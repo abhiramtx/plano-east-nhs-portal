@@ -116,13 +116,13 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white border border-[#d9cdbd] rounded-2xl p-6 shadow-sm">
+        <div className="bg-[#faf8f4] border border-[#d9cdbd] rounded-2xl p-6 shadow-sm">
           {/* Google */}
           <Button
             type="button"
             onClick={handleGoogle}
             disabled={googleLoading || loading}
-            className="w-full bg-white hover:bg-[#f7f2e9] text-[#17324d] font-medium h-11 rounded-xl flex items-center gap-3 mb-5 border border-[#d9cdbd] shadow-none"
+            className="w-full bg-[#faf8f4] hover:bg-[#f7f2e9] text-[#17324d] font-medium h-11 rounded-xl flex items-center gap-3 mb-5 border border-[#d9cdbd] shadow-none"
           >
             {googleLoading ? (
               <div className="w-4 h-4 border-2 border-[#506477] border-t-transparent rounded-full animate-spin" />
@@ -149,7 +149,7 @@ export default function LoginPage() {
                   placeholder="Your name"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="bg-white border-[#d9cdbd] text-[#17324d] placeholder:text-[#b0a898] rounded-xl h-11 focus:border-[#506477] focus:ring-0"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-[#17324d] placeholder:text-[#b0a898] rounded-xl h-11 focus:border-[#506477] focus:ring-0"
                   autoComplete="name"
                 />
               </div>
@@ -162,7 +162,7 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="bg-white border-[#d9cdbd] text-[#17324d] placeholder:text-[#b0a898] rounded-xl h-11 focus:border-[#506477] focus:ring-0"
+                className="bg-[#faf8f4] border-[#d9cdbd] text-[#17324d] placeholder:text-[#b0a898] rounded-xl h-11 focus:border-[#506477] focus:ring-0"
                 autoComplete="email"
                 required
               />
@@ -176,7 +176,7 @@ export default function LoginPage() {
                   placeholder={mode === "sign-up" ? "Min. 6 characters" : "••••••••"}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="bg-white border-[#d9cdbd] text-[#17324d] placeholder:text-[#b0a898] rounded-xl h-11 pr-10 focus:border-[#506477] focus:ring-0"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-[#17324d] placeholder:text-[#b0a898] rounded-xl h-11 pr-10 focus:border-[#506477] focus:ring-0"
                   autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
                   required
                 />

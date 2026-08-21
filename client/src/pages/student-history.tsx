@@ -67,7 +67,7 @@ export default function StudentHistory() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-white min-h-0">
+      <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
@@ -76,9 +76,9 @@ export default function StudentHistory() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0">
+    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+      <div className="bg-[#faf8f4] border-b border-[#d9cdbd] flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
             <div>
@@ -231,7 +231,7 @@ export default function StudentHistory() {
                                 content={({ active, payload, label }) => {
                                   if (active && payload && payload.length) {
                                     return (
-                                      <div className="bg-white p-3 border border-gray-200 rounded-lg">
+                                      <div className="bg-[#faf8f4] p-3 border border-[#d9cdbd] rounded-lg">
                                         <p className="font-medium text-gray-900">{label}</p>
                                         <p className="text-blue-600">
                                           <span className="font-medium">{payload[0].value}</span> hours

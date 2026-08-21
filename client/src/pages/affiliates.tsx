@@ -114,20 +114,18 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
   const bookmarkedEvents = eventsQueries.data || [];
 
   return (
-    <div className="flex-1 flex flex-col bg-white min-h-0">
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#8b5cf6' }}>
+              <Trophy className="w-7 h-7 text-white" />
+            </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Affiliates</h1>
-              <p className="text-gray-600 mt-1">
+              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Affiliates</h1>
+              <p className="text-[#506477] mt-0.5">
                 Sub-clubs feeding hours into <strong>{club.name}</strong>, plus clubs you've bookmarked.
               </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center justify-center w-10 h-10 bg-black rounded-lg">
-                <Award className="w-5 h-5 text-white" />
-              </div>
             </div>
           </div>
         </div>
@@ -136,7 +134,7 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
       <div className="flex-1 overflow-auto p-4 lg:p-6 space-y-8">
 
         {/* Leaderboard */}
-        <Card>
+        <Card className="bg-[#faf8f4] border-[#d9cdbd]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Trophy className="w-5 h-5 text-yellow-600" />
@@ -146,26 +144,26 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
           </CardHeader>
           <CardContent>
             {leaderboard.length === 0 ? (
-              <p className="text-sm text-gray-500">No approved sub-clubs yet.</p>
+              <p className="text-sm text-[#506477]">No approved sub-clubs yet.</p>
             ) : (
               <div className="space-y-2">
                 {leaderboard.map((row, i) => (
-                  <div key={row.clubId} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div key={row.clubId} className="flex items-center justify-between p-3 border border-[#d9cdbd] rounded-lg">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ${
                         i === 0 ? 'bg-yellow-100 text-yellow-700' :
-                        i === 1 ? 'bg-gray-200 text-gray-700' :
+                        i === 1 ? 'bg-[#eee5d7] text-[#506477]' :
                         i === 2 ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-500'
+                        'bg-[#f0ebe0] text-[#506477]'
                       }`}>{i + 1}</div>
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{row.clubName}</p>
-                        <p className="text-xs text-gray-500">{row.peopleCount} contributor{row.peopleCount === 1 ? '' : 's'}</p>
+                        <p className="font-medium text-[#17324d] truncate">{row.clubName}</p>
+                        <p className="text-xs text-[#506477]">{row.peopleCount} contributor{row.peopleCount === 1 ? '' : 's'}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">{row.hours.toFixed(1)}</p>
-                      <p className="text-xs text-gray-500">hours</p>
+                      <p className="font-semibold text-[#17324d]">{row.hours.toFixed(1)}</p>
+                      <p className="text-xs text-[#506477]">hours</p>
                     </div>
                   </div>
                 ))}
@@ -175,7 +173,7 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
         </Card>
 
         {/* Search & bookmark */}
-        <Card>
+        <Card className="bg-[#faf8f4] border-[#d9cdbd]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Bookmark className="w-5 h-5" />
@@ -185,7 +183,7 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
           </CardHeader>
           <CardContent>
             <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9eada0]" />
               <Input
                 placeholder="Search all clubs..."
                 value={searchQuery}
@@ -197,21 +195,21 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
               {filteredClubs.slice(0, 25).map(c => {
                 const isBookmarked = bookmarkSet.has(c.id);
                 return (
-                  <div key={c.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div key={c.id} className="flex items-center justify-between p-3 border border-[#d9cdbd] rounded-lg">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ backgroundColor: c.logoUrl ? undefined : c.color }}>
                         {c.logoUrl ? <img src={c.logoUrl} alt={c.name} className="w-full h-full object-cover" /> : <Trophy className="w-4 h-4 text-white" />}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium text-sm text-gray-900 truncate">{c.name}</p>
-                        <p className="text-xs text-gray-500 truncate">{c.totalApprovedHours.toFixed(1)} hours</p>
+                        <p className="font-medium text-sm text-[#17324d] truncate">{c.name}</p>
+                        <p className="text-xs text-[#506477] truncate">{c.totalApprovedHours.toFixed(1)} hours</p>
                       </div>
                     </div>
                     <Button
                       size="sm"
                       variant={isBookmarked ? 'outline' : 'default'}
                       onClick={() => isBookmarked ? removeMutation.mutate(c.id) : addMutation.mutate(c.id)}
-                      className={isBookmarked ? '' : 'bg-black text-white hover:bg-gray-800'}
+                      className={isBookmarked ? 'border-[#d9cdbd] text-[#506477]' : 'bg-[#17324d] text-white hover:bg-[#1f3d5a]'}
                     >
                       {isBookmarked ? <><BookmarkCheck className="w-3.5 h-3.5 mr-1" /> Saved</> : <><Bookmark className="w-3.5 h-3.5 mr-1" /> Save</>}
                     </Button>
@@ -224,7 +222,7 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
 
         {/* Bookmarked club events */}
         {bookmarks.length > 0 && (
-          <Card>
+          <Card className="bg-[#faf8f4] border-[#d9cdbd]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Calendar className="w-5 h-5" />
@@ -233,7 +231,7 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
             </CardHeader>
             <CardContent>
               {bookmarkedEvents.every(g => g.events.length === 0) ? (
-                <p className="text-sm text-gray-500">No open events from your bookmarked clubs right now.</p>
+                <p className="text-sm text-[#506477]">No open events from your bookmarked clubs right now.</p>
               ) : (
                 <div className="space-y-4">
                   {bookmarkedEvents.map(group => {
@@ -241,22 +239,22 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
                     const c = clubById.get(group.clubId);
                     return (
                       <div key={group.clubId}>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">{c?.name || 'Club'}</p>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-[#506477] mb-2">{c?.name || 'Club'}</p>
                         <div className="space-y-2">
                           {group.events.map(ev => (
-                            <div key={ev.id} className="p-3 border border-gray-200 rounded-lg">
+                            <div key={ev.id} className="p-3 border border-[#d9cdbd] rounded-lg">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0">
-                                  <p className="font-medium text-sm text-gray-900">{ev.name}</p>
+                                  <p className="font-medium text-sm text-[#17324d]">{ev.name}</p>
                                   {ev.logName && (
-                                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                    <p className="text-xs text-[#506477] flex items-center gap-1 mt-0.5">
                                       <MapPin className="w-3 h-3" /> {ev.logName}
                                     </p>
                                   )}
                                 </div>
-                                <Badge variant="outline" className="text-xs">{ev.createdAt.toLocaleDateString()}</Badge>
+                                <Badge variant="outline" className="text-xs border-[#d9cdbd] text-[#506477]">{ev.createdAt.toLocaleDateString()}</Badge>
                               </div>
-                              {ev.description && <p className="text-xs text-gray-600 mt-2">{ev.description}</p>}
+                              {ev.description && <p className="text-xs text-[#506477] mt-2">{ev.description}</p>}
                             </div>
                           ))}
                         </div>

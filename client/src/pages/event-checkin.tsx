@@ -263,7 +263,7 @@ export default function EventCheckin() {
             <p className="font-bold text-gray-900 text-xl">Checked out!</p>
             <p className="text-sm text-gray-500 mt-1">See you next time.</p>
           </div>
-          <div className="w-full max-w-xs bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm space-y-1">
+          <div className="w-full max-w-xs bg-[#faf8f4] border border-[#d9cdbd] rounded-xl px-4 py-3 text-sm space-y-1">
             <div className="flex justify-between text-gray-600">
               <span>Arrived</span>
               <span className="font-medium">{formatTime(stage.record.checkInTime)}</span>
@@ -273,7 +273,7 @@ export default function EventCheckin() {
               <span className="font-medium">{formatTime(stage.record.checkOutTime)}</span>
             </div>
             {mins != null && (
-              <div className="flex justify-between text-gray-700 font-semibold border-t border-gray-200 pt-1 mt-1">
+              <div className="flex justify-between text-gray-700 font-semibold border-t border-[#d9cdbd] pt-1 mt-1">
                 <span>Time attended</span>
                 <span>{mins} min{hrs ? ` (${hrs}h)` : ''}</span>
               </div>
@@ -300,8 +300,8 @@ export default function EventCheckin() {
   const eventName = 'event' in stage ? stage.event.name : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="min-h-screen bg-[#faf8f4] flex items-center justify-center p-4">
+      <div className="w-full max-w-sm bg-[#faf8f4] rounded-2xl shadow-xl overflow-hidden">
         {/* Header */}
         <div className={`${headerBg} px-6 py-5 text-white`}>
           <div className="flex items-center gap-2 mb-1">

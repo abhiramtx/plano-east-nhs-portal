@@ -286,7 +286,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   }, [currentClub?.id]);
 
   return (
-    <div className="min-h-screen bg-[#f7f2e9] text-[#17324d]">
+    <div className="min-h-screen bg-[#f7f2e9] text-[#17324d] paper-grid">
       <nav className="bg-[#f7f2e9]/95 backdrop-blur-xl border-b border-[#d9cdbd] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -334,7 +334,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 return (
                   <div
                     key={club.id}
-                    className="flex items-center space-x-4 p-4 border rounded-2xl bg-white border-[#d9cdbd]"
+                    className="flex items-center space-x-4 p-4 border rounded-2xl bg-[#eee5d7] border-[#d9cdbd]"
                   >
                     <div
                       className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
@@ -408,7 +408,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
 
           {/* Join a Club — wider column */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 app-box p-5">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-5 h-5 text-[#2d827d]" />
               <h2 className="text-xl font-semibold text-[#17324d]">Join a Club</h2>
@@ -421,11 +421,11 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 placeholder="Search clubs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white border-[#d9cdbd] text-[#17324d] placeholder:text-[#506477]/60 h-11 rounded-xl"
+                className="pl-10 bg-[#f7f2e9] border-[#d9cdbd] text-[#17324d] placeholder:text-[#506477]/60 h-11 rounded-xl"
               />
             </div>
 
-            <div className="bg-white border border-[#d9cdbd] rounded-2xl overflow-hidden">
+            <div className="border border-[#d9cdbd] rounded-xl overflow-hidden">
               {clubsLoading ? (
                 <div className="flex justify-center py-12">
                   <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#17324d]"></div>
@@ -494,12 +494,12 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
           {/* Leaderboard — side column */}
           {!clubsLoading && clubs.length > 0 && (
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 app-box p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Trophy className="w-5 h-5 text-[#e5a72c]" />
                 <h2 className="text-xl font-semibold text-[#17324d]">Leaderboard</h2>
               </div>
-              <div className="bg-white border border-[#d9cdbd] rounded-2xl overflow-hidden">
+              <div className="border border-[#d9cdbd] rounded-xl overflow-hidden">
                 {[...clubs]
                   .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours)
                   .map((club, index) => (
@@ -568,8 +568,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
       {/* Create Club Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] bg-[#f7f2e9] border-[#d9cdbd] text-[#17324d] p-0 overflow-hidden">
-          <div className="flex h-full">
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] bg-[#f7f2e9] border-[#d9cdbd] text-[#17324d] p-0 overflow-hidden !block">
+          <div className="flex" style={{ height: '90vh' }}>
             <div className="w-[340px] min-w-[300px] p-6 overflow-y-auto border-r border-[#d9cdbd] flex-shrink-0 min-h-0">
               <DialogHeader className="mb-6">
                 <DialogTitle className="text-2xl text-[#17324d]">Create Your Club</DialogTitle>
@@ -630,7 +630,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                     placeholder="Enter club name"
                     value={newClub.name}
                     onChange={(e) => setNewClub({ ...newClub, name: e.target.value })}
-                    className="bg-white border-[#d9cdbd] text-[#17324d]"
+                    className="bg-[#faf8f4] border-[#d9cdbd] text-[#17324d]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -640,7 +640,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                     placeholder="What's your club about?"
                     value={newClub.description}
                     onChange={(e) => setNewClub({ ...newClub, description: e.target.value })}
-                    className="bg-white border-[#d9cdbd] text-[#17324d]"
+                    className="bg-[#faf8f4] border-[#d9cdbd] text-[#17324d]"
                     rows={3}
                   />
                 </div>
@@ -682,7 +682,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       placeholder="Set a password"
                       value={newClub.password}
                       onChange={(e) => setNewClub({ ...newClub, password: e.target.value })}
-                      className="bg-white border-[#d9cdbd] text-[#17324d]"
+                      className="bg-[#faf8f4] border-[#d9cdbd] text-[#17324d]"
                     />
                   </div>
                 )}
@@ -745,7 +745,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 placeholder="Enter club password"
                 value={joinPassword}
                 onChange={(e) => setJoinPassword(e.target.value)}
-                className="bg-white border-[#d9cdbd] text-[#17324d]"
+                className="bg-[#faf8f4] border-[#d9cdbd] text-[#17324d]"
               />
             </div>
           </div>

@@ -238,7 +238,7 @@ export default function ServiceRequests() {
   };
 
   const RequestCard = ({ request, showActions = true }: { request: ServiceRequest; showActions?: boolean }) => (
-    <Card className="bg-white border-gray-200 hover:border-gray-300 transition-all">
+    <Card className="bg-[#faf8f4] border-[#d9cdbd] hover:border-[#c9bfae] transition-all">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
@@ -279,7 +279,7 @@ export default function ServiceRequests() {
       </CardContent>
       {showActions && (
         <CardFooter className="pt-0 flex gap-2">
-          <Button variant="outline" size="sm" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => handleViewRequest(request)}>
+          <Button variant="outline" size="sm" className="border-[#d9cdbd] text-gray-600 hover:bg-gray-100" onClick={() => handleViewRequest(request)}>
             <Eye className="w-4 h-4 mr-1" /> View
           </Button>
           {isMyRequest(request) ? (
@@ -304,7 +304,7 @@ export default function ServiceRequests() {
   );
 
   return (
-    <div className="p-6 space-y-6 max-h-screen overflow-y-auto bg-white pt-16 lg:pt-6">
+    <div className="p-6 space-y-6 max-h-screen overflow-y-auto bg-[#faf8f4] pt-16 lg:pt-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
@@ -322,7 +322,7 @@ export default function ServiceRequests() {
       </div>
 
       <Tabs defaultValue="available" className="space-y-4">
-        <TabsList className="bg-gray-100 border-gray-200">
+        <TabsList className="bg-gray-100 border-[#d9cdbd]">
           <TabsTrigger value="available">Available ({openRequests.length})</TabsTrigger>
           <TabsTrigger value="my-requests">My Requests ({myRequests.length})</TabsTrigger>
           <TabsTrigger value="joined">Joined ({myParticipations.length})</TabsTrigger>
@@ -330,7 +330,7 @@ export default function ServiceRequests() {
 
         <TabsContent value="available" className="space-y-4">
           {openRequests.length === 0 ? (
-            <Card className="p-8 text-center bg-gray-50 border-gray-200">
+            <Card className="p-8 text-center bg-[#faf8f4] border-[#d9cdbd]">
               <Users className="w-12 h-12 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-500">No service requests available yet.</p>
               <p className="text-sm text-gray-400">Be the first to request help!</p>
@@ -346,7 +346,7 @@ export default function ServiceRequests() {
 
         <TabsContent value="my-requests" className="space-y-4">
           {myRequests.length === 0 ? (
-            <Card className="p-8 text-center bg-gray-50 border-gray-200">
+            <Card className="p-8 text-center bg-[#faf8f4] border-[#d9cdbd]">
               <Building className="w-12 h-12 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-500">You haven't created any service requests yet.</p>
               <Button className="mt-4 bg-black text-white hover:bg-gray-800" onClick={() => setCreateDialogOpen(true)}>
@@ -365,7 +365,7 @@ export default function ServiceRequests() {
 
         <TabsContent value="joined" className="space-y-4">
           {myParticipations.length === 0 ? (
-            <Card className="p-8 text-center bg-gray-50 border-gray-200">
+            <Card className="p-8 text-center bg-[#faf8f4] border-[#d9cdbd]">
               <Check className="w-12 h-12 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-500">You haven't joined any service requests yet.</p>
               <p className="text-sm text-gray-400">Browse available requests to get started!</p>
@@ -376,7 +376,7 @@ export default function ServiceRequests() {
                 const request = openRequests.find(r => r.id === participation.requestId) || 
                                myRequests.find(r => r.id === participation.requestId);
                 return (
-                  <Card key={participation.id} className="p-4 bg-white border-gray-200">
+                  <Card key={participation.id} className="p-4 bg-[#faf8f4] border-[#d9cdbd]">
                     <div className="flex justify-between items-center">
                       <div>
                         <h3 className="font-medium text-gray-900">{request?.title || "Service Request"}</h3>
@@ -386,7 +386,7 @@ export default function ServiceRequests() {
                         <Badge variant={
                           participation.status === 'completed' ? 'default' :
                           participation.status === 'approved' ? 'secondary' : 'outline'
-                        } className="bg-gray-100 text-gray-600 border-gray-200">
+                        } className="bg-gray-100 text-gray-600 border-[#d9cdbd]">
                           {participation.status}
                         </Badge>
                         {participation.hoursAwarded && (
@@ -405,7 +405,7 @@ export default function ServiceRequests() {
       </Tabs>
 
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#faf8f4] border-[#d9cdbd]">
           <DialogHeader>
             <DialogTitle className="text-gray-900">Request Service</DialogTitle>
             <DialogDescription className="text-gray-500">
@@ -417,7 +417,7 @@ export default function ServiceRequests() {
               <div className="col-span-2">
                 <Label className="text-gray-700">Title *</Label>
                 <Input
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   value={newRequest.title}
                   onChange={e => setNewRequest(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g., Park Cleanup Day"
@@ -426,7 +426,7 @@ export default function ServiceRequests() {
               <div className="col-span-2">
                 <Label className="text-gray-700">Description *</Label>
                 <Textarea
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   value={newRequest.description}
                   onChange={e => setNewRequest(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Describe the volunteer work needed..."
@@ -436,7 +436,7 @@ export default function ServiceRequests() {
               <div>
                 <Label className="text-gray-700">Hours Offered *</Label>
                 <Input
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   type="number"
                   min="0.5"
                   step="0.5"
@@ -447,7 +447,7 @@ export default function ServiceRequests() {
               <div>
                 <Label className="text-gray-700">Max Participants</Label>
                 <Input
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   type="number"
                   min="1"
                   value={newRequest.maxParticipants}
@@ -457,7 +457,7 @@ export default function ServiceRequests() {
               <div>
                 <Label className="text-gray-700">Organization Name</Label>
                 <Input
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   value={newRequest.organizationName}
                   onChange={e => setNewRequest(prev => ({ ...prev, organizationName: e.target.value }))}
                   placeholder="Your organization"
@@ -466,7 +466,7 @@ export default function ServiceRequests() {
               <div>
                 <Label className="text-gray-700">Date & Time</Label>
                 <Input
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   type="datetime-local"
                   value={newRequest.dateTime}
                   onChange={e => setNewRequest(prev => ({ ...prev, dateTime: e.target.value }))}
@@ -475,7 +475,7 @@ export default function ServiceRequests() {
               <div>
                 <Label className="text-gray-700">Contact Email *</Label>
                 <Input
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   type="email"
                   value={newRequest.contactEmail}
                   onChange={e => setNewRequest(prev => ({ ...prev, contactEmail: e.target.value }))}
@@ -484,7 +484,7 @@ export default function ServiceRequests() {
               <div>
                 <Label className="text-gray-700">Contact Phone</Label>
                 <Input
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   type="tel"
                   value={newRequest.contactPhone}
                   onChange={e => setNewRequest(prev => ({ ...prev, contactPhone: e.target.value }))}
@@ -494,7 +494,7 @@ export default function ServiceRequests() {
               <div className="col-span-2">
                 <Label className="text-gray-700">Location *</Label>
                 <Input
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   value={newRequest.location}
                   onChange={e => setNewRequest(prev => ({ ...prev, location: e.target.value }))}
                   placeholder="Address or location description"
@@ -503,7 +503,7 @@ export default function ServiceRequests() {
               <div className="col-span-2">
                 <Label className="text-gray-700">Requirements (Optional)</Label>
                 <Textarea
-                  className="bg-white border-gray-200 text-gray-900"
+                  className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                   value={newRequest.requirements}
                   onChange={e => setNewRequest(prev => ({ ...prev, requirements: e.target.value }))}
                   placeholder="Any special requirements or skills needed..."
@@ -525,7 +525,7 @@ export default function ServiceRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => setCreateDialogOpen(false)}>
+            <Button variant="outline" className="border-[#d9cdbd] text-gray-600 hover:bg-gray-100" onClick={() => setCreateDialogOpen(false)}>
               Cancel
             </Button>
             <Button className="bg-black text-white hover:bg-gray-800" onClick={handleCreateRequest} disabled={createMutation.isPending}>
@@ -536,7 +536,7 @@ export default function ServiceRequests() {
       </Dialog>
 
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-lg bg-white border-gray-200">
+        <DialogContent className="max-w-lg bg-[#faf8f4] border-[#d9cdbd]">
           <DialogHeader>
             <DialogTitle className="text-gray-900">{selectedRequest?.title}</DialogTitle>
           </DialogHeader>
@@ -601,7 +601,7 @@ export default function ServiceRequests() {
       </Dialog>
 
       <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white border-gray-200">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-[#faf8f4] border-[#d9cdbd]">
           <DialogHeader>
             <DialogTitle className="text-gray-900">Manage: {selectedRequest?.title}</DialogTitle>
             <DialogDescription className="text-gray-500">
@@ -620,14 +620,14 @@ export default function ServiceRequests() {
               </Button>
             </div>
             {participants.length === 0 ? (
-              <Card className="p-6 text-center bg-gray-50 border-gray-200">
+              <Card className="p-6 text-center bg-[#faf8f4] border-[#d9cdbd]">
                 <Users className="w-8 h-8 mx-auto text-gray-400 mb-2" />
                 <p className="text-gray-500">No volunteers have joined yet.</p>
               </Card>
             ) : (
               <div className="space-y-3">
                 {participants.map(participant => (
-                  <Card key={participant.id} className="p-4 bg-gray-50 border-gray-200">
+                  <Card key={participant.id} className="p-4 bg-[#faf8f4] border-[#d9cdbd]">
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium text-gray-900">{participant.userName}</p>
@@ -678,7 +678,7 @@ export default function ServiceRequests() {
       </Dialog>
 
       <Dialog open={awardHoursDialogOpen} onOpenChange={setAwardHoursDialogOpen}>
-        <DialogContent className="bg-white border-gray-200">
+        <DialogContent className="bg-[#faf8f4] border-[#d9cdbd]">
           <DialogHeader>
             <DialogTitle className="text-gray-900">Award Hours</DialogTitle>
             <DialogDescription className="text-gray-500">
@@ -689,7 +689,7 @@ export default function ServiceRequests() {
             <div>
               <Label className="text-gray-700">Hours to Award</Label>
               <Input
-                className="bg-white border-gray-200 text-gray-900"
+                className="bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
                 type="number"
                 min="0.5"
                 step="0.5"
@@ -699,7 +699,7 @@ export default function ServiceRequests() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100" onClick={() => setAwardHoursDialogOpen(false)}>
+            <Button variant="outline" className="border-[#d9cdbd] text-gray-600 hover:bg-gray-100" onClick={() => setAwardHoursDialogOpen(false)}>
               Cancel
             </Button>
             <Button 

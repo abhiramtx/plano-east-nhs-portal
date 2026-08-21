@@ -331,7 +331,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
 
       {/* Event selection */}
       {!editingSubmission && (
-        <div className="p-3 bg-gray-50 rounded-lg space-y-3">
+        <div className="p-3 bg-[#faf8f4] rounded-lg space-y-3">
           <div className="space-y-1">
               <Label className="text-gray-700 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
@@ -339,7 +339,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
               </Label>
               <p className="text-xs text-gray-500">Link these hours to a specific event</p>
               <Select value={selectedEventId} onValueChange={(v) => { setSelectedEventId(v === '__none__' ? '' : v); setPasswordError(''); setEventPassword(''); }}>
-                <SelectTrigger className="bg-white">
+                <SelectTrigger className="bg-[#faf8f4]">
                   <SelectValue placeholder="No event (general submission)" />
                 </SelectTrigger>
                 <SelectContent className="z-[200]">
@@ -367,7 +367,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                     value={eventPassword}
                     onChange={e => { setEventPassword(e.target.value); setPasswordError(''); }}
                     placeholder="Enter the event password..."
-                    className={`bg-white ${passwordError ? 'border-red-400' : ''}`}
+                    className={`bg-[#faf8f4] ${passwordError ? 'border-red-400' : ''}`}
                   />
                   {passwordError && <p className="text-xs text-red-600">{passwordError}</p>}
                 </div>
@@ -405,19 +405,19 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="activityName" className="text-gray-700">Activity Name</Label>
-          <Input id="activityName" {...form.register("activityName")} placeholder="Enter the activity name" className="mt-1 bg-white border-gray-200 text-gray-900" />
+          <Input id="activityName" {...form.register("activityName")} placeholder="Enter the activity name" className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900" />
           {form.formState.errors.activityName && <p className="text-sm text-red-600 mt-1">{form.formState.errors.activityName.message}</p>}
         </div>
         <div>
           <Label htmlFor="hours" className="text-gray-700">Number of Hours</Label>
-          <Input id="hours" type="number" step="0.5" min="0" {...form.register("hours")} placeholder="e.g., 2.5" className="mt-1 bg-white border-gray-200 text-gray-900" />
+          <Input id="hours" type="number" step="0.5" min="0" {...form.register("hours")} placeholder="e.g., 2.5" className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900" />
           {form.formState.errors.hours && <p className="text-sm text-red-600 mt-1">{form.formState.errors.hours.message}</p>}
         </div>
       </div>
 
       <div>
         <Label htmlFor="date" className="text-gray-700">Date of Service</Label>
-        <Input id="date" type="date" {...form.register("date")} className="mt-1 bg-white border-gray-200 text-gray-900" />
+        <Input id="date" type="date" {...form.register("date")} className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900" />
         {form.formState.errors.date && <p className="text-sm text-red-600 mt-1">{form.formState.errors.date.message}</p>}
       </div>
 
@@ -441,7 +441,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
               value={locationSearch}
               onChange={e => setLocationSearch(e.target.value)}
               placeholder="Search for a location..."
-              className="pl-10 bg-white border-gray-200 text-gray-900"
+              className="pl-10 bg-[#faf8f4] border-[#d9cdbd] text-gray-900"
             />
             {isSearchingLocation && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
             {dropdownPos && locationResults.length > 0 && createPortal(
@@ -455,14 +455,14 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
                   width: dropdownPos.width,
                   pointerEvents: 'auto',
                 }}
-                className="bg-white border border-gray-200 rounded-lg shadow-xl max-h-48 overflow-y-auto"
+                className="bg-[#faf8f4] border border-[#d9cdbd] rounded-lg shadow-xl max-h-48 overflow-y-auto"
               >
                 {locationResults.map((result, index) => (
                   <button
                     key={index}
                     type="button"
                     onMouseDown={e => { e.preventDefault(); handleLocationSelect(result); }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                    className="w-full text-left px-4 py-2 hover:bg-[#faf8f4] text-sm text-gray-700 border-b border-[#d9cdbd] last:border-b-0"
                   >
                     {result.display_name}
                   </button>
@@ -476,7 +476,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
 
       <div>
         <Label htmlFor="description" className="text-gray-700">Description of Service</Label>
-        <Textarea id="description" {...form.register("description")} placeholder="Describe what you did during your service hours..." className="mt-1 bg-white border-gray-200 text-gray-900" rows={4} />
+        <Textarea id="description" {...form.register("description")} placeholder="Describe what you did during your service hours..." className="mt-1 bg-[#faf8f4] border-[#d9cdbd] text-gray-900" rows={4} />
         {form.formState.errors.description && <p className="text-sm text-red-600 mt-1">{form.formState.errors.description.message}</p>}
       </div>
 
@@ -484,7 +484,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
         <Label className="text-gray-700">Proof of Service {requireProofImage ? '(Required)' : '(Optional)'}</Label>
         <p className="text-sm text-gray-500 mb-3">Upload a photo as proof of your service (JPG or PNG, max 1MB)</p>
         {!selectedFile && !imagePreview ? (
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+          <div className="border-2 border-dashed border-[#c9bfae] rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
             <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" id="file-upload" />
             <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
               <Upload className="w-8 h-8 text-gray-400 mb-2" />
@@ -493,7 +493,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
           </div>
         ) : (
           <div className="relative">
-            <img src={imagePreview || ''} alt="Preview" className="max-w-full h-48 object-cover rounded-lg border border-gray-200" />
+            <img src={imagePreview || ''} alt="Preview" className="max-w-full h-48 object-cover rounded-lg border border-[#d9cdbd]" />
             <button type="button" onClick={() => { setSelectedFile(null); setImagePreview(null); }} className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1">
               <X className="w-4 h-4" />
             </button>
@@ -503,7 +503,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
       </div>
 
       <div className="flex justify-end space-x-3 pt-4">
-        <Button type="button" variant="outline" className="border-gray-200 text-gray-600 hover:bg-gray-100"
+        <Button type="button" variant="outline" className="border-[#d9cdbd] text-gray-600 hover:bg-gray-100"
           onClick={() => { form.reset(); setSelectedFile(null); setImagePreview(null); setSelectedLocation(null); setLocationSearch(""); setSelectedEventId(''); setEventPassword(''); onCancel?.(); }}>
           Cancel
         </Button>

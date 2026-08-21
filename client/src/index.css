@@ -14,15 +14,15 @@
   --line:        #d9cdbd;
 
   /* Shadcn/UI token remapping */
-  --background: 40 38% 94%;          /* #f7f2e9 */
-  --foreground: 210 52% 19%;         /* #17324d */
-  --muted: 35 35% 88%;               /* #eee5d7 */
-  --muted-foreground: 210 20% 39%;   /* #506477 */
-  --popover: 40 38% 94%;
+  --background: 42 50% 96%;          /* #f8f5ee — lighter warm cream */
+  --foreground: 210 52% 19%;         /* #17324d ink */
+  --muted: 38 30% 91%;               /* #ede7dc — soft divider tone */
+  --muted-foreground: 210 20% 39%;   /* #506477 ink-soft */
+  --popover: 0 0% 100%;
   --popover-foreground: 210 52% 19%;
-  --card: 0 0% 100%;                 /* white cards on warm bg */
+  --card: 0 0% 100%;                 /* white — clearly pops from the beige background */
   --card-foreground: 210 52% 19%;
-  --border: 35 23% 80%;              /* #d9cdbd */
+  --border: 35 23% 80%;              /* #d9cdbd line */
   --input: 35 23% 80%;
   --primary: 210 52% 19%;            /* ink */
   --primary-foreground: 40 38% 94%;  /* paper */
@@ -42,53 +42,62 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    @apply antialiased bg-background text-foreground;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Fraunces', Georgia, serif;
+  }
+
+  /* Inputs: stay white so they're clearly distinct from the off-white card surface */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    background-color: white !important;
   }
 }
 
 @layer components {
+  /* Paper grid — applies the landing-page texture */
+  .paper-grid {
+    background-image:
+      linear-gradient(rgba(23, 50, 77, .016) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(23, 50, 77, .016) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Fun-box card — bordered with offset shadow, like the landing page */
+  .app-box {
+    background-color: var(--paper-deep);
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    box-shadow: 4px 4px 0 rgba(23, 50, 77, 0.1);
+  }
+
   .card {
-    @apply border border-gray-200 bg-white rounded-lg;
+    @apply border rounded-lg;
+    border-color: var(--line);
+    background-color: #faf8f4;
     box-shadow: none !important;
   }
 }
 
 @keyframes float-slow {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(30px, -40px) scale(1.1);
-  }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%       { transform: translate(30px, -40px) scale(1.1); }
 }
 
 @keyframes float-medium {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(-25px, 35px) scale(1.05);
-  }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%       { transform: translate(-25px, 35px) scale(1.05); }
 }
 
 @keyframes float-fast {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(20px, 25px) scale(0.95);
-  }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%       { transform: translate(20px, 25px) scale(0.95); }
 }
 
-.animate-float-slow {
-  animation: float-slow 15s ease-in-out infinite;
-}
-
-.animate-float-medium {
-  animation: float-medium 10s ease-in-out infinite;
-}
-
-.animate-float-fast {
-  animation: float-fast 7s ease-in-out infinite;
-}
+.animate-float-slow   { animation: float-slow   15s ease-in-out infinite; }
+.animate-float-medium { animation: float-medium  10s ease-in-out infinite; }
+.animate-float-fast   { animation: float-fast     7s ease-in-out infinite; }
