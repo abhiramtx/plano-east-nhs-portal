@@ -78,7 +78,7 @@ function VolunteerInterface({
   }, [location, setLocation]);
 
   return (
-    <div className="flex h-screen bg-gray-950">
+    <div className="flex h-screen bg-[#f7f2e9]">
       <VolunteerSidebar
         user={user}
         club={club}

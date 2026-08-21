@@ -25,7 +25,8 @@ import {
   Timestamp,
   writeBatch,
   setDoc,
-  onSnapshot
+  onSnapshot,
+  deleteField
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -501,8 +502,235 @@ export const recalculateClubHours = async (clubId: string): Promise<void> => {
   });
 };
 
+const commitInBatches = async (
+  docs: any[],
+  apply: (batch: ReturnType<typeof writeBatch>, docSnap: any) => void,
+): Promise<void> => {
+  for (let start = 0; start < docs.length; start += 450) {
+    const batch = writeBatch(db);
+    docs.slice(start, start + 450).forEach(docSnap => apply(batch, docSnap));
+    await batch.commit();
+  }
+};
+
+const withoutSuperClubData = (submission: Record<string, any>, superClubId: string): Record<string, any> => {
+  const remainingStatuses = { ...(submission.superClubStatus || {}) };
+  delete remainingStatuses[superClubId];
+  const withRemainingStatuses = Object.keys(remainingStatuses).length > 0
+    ? { ...submission, superClubStatus: remainingStatuses }
+    : (() => {
+      const { superClubStatus: _superClubStatus, ...withoutStatuses } = submission;
+      return withoutStatuses;
+    })();
+  if (submission.superClubId !== superClubId) return withRemainingStatuses;
+
+  const {
+    superClubId: _superClubId,
+    superClubName: _superClubName,
+    superClubLogId: _superClubLogId,
+    superClubLogName: _superClubLogName,
+    ...withoutFormerParent
+  } = withRemainingStatuses;
+  return withoutFormerParent;
+};
+
+const getFederatedDocuments = async (
+  collectionName: string,
+  superClubId: string,
+  subClubId?: string,
+): Promise<any[]> => {
+  const collectionRef = collection(db, collectionName);
+  const statusField = `superClubStatus.${superClubId}.status`;
+  const snapshots = await Promise.all([
+    getDocs(query(collectionRef, where("superClubId", "==", superClubId))),
+    ...(['pending', 'approved', 'rejected'] as const).map(status =>
+      getDocs(query(collectionRef, where(statusField, "==", status))),
+    ),
+  ]);
+  const documents = new Map<string, any>();
+  snapshots.flatMap(snap => snap.docs).forEach(docSnap => documents.set(docSnap.id, docSnap));
+  return Array.from(documents.values()).filter(docSnap =>
+    !subClubId || docSnap.data().clubId === subClubId,
+  );
+};
+
+const clearFederatedArchiveData = async (
+  superClubId: string,
+  subClubId?: string,
+): Promise<void> => {
+  const [archivedSubmissions, yearlyArchives] = await Promise.all([
+    getFederatedDocuments("submissionArchive", superClubId, subClubId),
+    getDocs(collection(db, "yearlyArchives")),
+  ]);
+  const yearlySnapshotsToUpdate = yearlyArchives.docs.filter(docSnap =>
+    (docSnap.data().submissions || []).some((submission: any) =>
+      (submission.superClubId === superClubId || submission.superClubStatus?.[superClubId]) &&
+      (!subClubId || submission.clubId === subClubId),
+    ),
+  );
+
+  await Promise.all([
+    commitInBatches(archivedSubmissions, (batch, docSnap) => {
+      const data = docSnap.data();
+      const updates: Record<string, any> = {
+        [`superClubStatus.${superClubId}`]: deleteField(),
+      };
+      if (data.superClubId === superClubId) {
+        updates.superClubId = deleteField();
+        updates.superClubName = deleteField();
+        updates.superClubLogId = deleteField();
+        updates.superClubLogName = deleteField();
+      }
+      batch.update(docSnap.ref, updates);
+    }),
+    commitInBatches(yearlySnapshotsToUpdate, (batch, docSnap) => {
+      const archive = docSnap.data();
+      batch.update(docSnap.ref, {
+        submissions: (archive.submissions || []).map((submission: any) =>
+          (submission.superClubId === superClubId || submission.superClubStatus?.[superClubId]) &&
+          (!subClubId || submission.clubId === subClubId)
+            ? withoutSuperClubData(submission, superClubId)
+            : submission,
+        ),
+      });
+    }),
+  ]);
+};
+
+const clearFederatedSubmissionData = async (
+  superClubId: string,
+  subClubId?: string,
+): Promise<void> => {
+  const matchingSubmissions = await getFederatedDocuments("submissions", superClubId, subClubId);
+
+  await commitInBatches(matchingSubmissions, (batch, docSnap) => {
+    const data = docSnap.data();
+    const updates: Record<string, any> = {
+      [`superClubStatus.${superClubId}`]: deleteField(),
+    };
+    if (data.superClubId === superClubId) {
+      updates.superClubId = deleteField();
+      updates.superClubName = deleteField();
+      updates.superClubLogId = deleteField();
+      updates.superClubLogName = deleteField();
+    }
+    batch.update(docSnap.ref, updates);
+  });
+  await clearFederatedArchiveData(superClubId, subClubId);
+};
+
 export const deleteClub = async (clubId: string): Promise<void> => {
+  const [
+    outgoingAffiliations,
+    incomingAffiliations,
+    ownSubmissions,
+    clubEvents,
+    clubBookmarks,
+    clubRules,
+    primaryMemberships,
+    additionalMemberships,
+    archivedSubmissions,
+    yearlyArchives,
+    clubHoursLogs,
+    clubCustomFields,
+    clubLeaveHistory,
+  ] = await Promise.all([
+    getDocs(query(collection(db, "affiliations"), where("subClubId", "==", clubId))),
+    getDocs(query(collection(db, "affiliations"), where("superClubId", "==", clubId))),
+    getDocs(query(collection(db, "submissions"), where("clubId", "==", clubId))),
+    getDocs(query(collection(db, "events"), where("clubId", "==", clubId))),
+    getDocs(query(collection(db, "clubBookmarks"), where("clubId", "==", clubId))),
+    getDocs(query(collection(db, "subClubHoursRules"), where("clubId", "==", clubId))),
+    getDocs(query(collection(db, "userProfiles"), where("clubId", "==", clubId))),
+    getDocs(query(collection(db, "userProfiles"), where("clubIds", "array-contains", clubId))),
+    getDocs(query(collection(db, "submissionArchive"), where("clubId", "==", clubId))),
+    getDocs(collection(db, "yearlyArchives")),
+    getDocs(query(collection(db, "hoursLogs"), where("clubId", "==", clubId))),
+    getDocs(query(collection(db, "customFields"), where("clubId", "==", clubId))),
+    getDocs(query(collection(db, "clubLeaveHistory"), where("clubId", "==", clubId))),
+  ]);
+
+  // A deleted parent must not leave any child club pointing at a non-existent
+  // destination. Source club records are preserved; only the shared copy is removed.
+  await clearFederatedSubmissionData(clubId);
+
+  const attendanceByClub = await getDocs(query(
+    collection(db, "eventAttendance"),
+    where("clubId", "==", clubId),
+  ));
+  const attendanceForEvents = await Promise.all(
+    clubEvents.docs.map(eventDoc => getDocs(query(
+      collection(db, "eventAttendance"),
+      where("eventId", "==", eventDoc.id),
+    ))),
+  );
+  const attendanceDocs = new Map<string, any>();
+  [...attendanceByClub.docs, ...attendanceForEvents.flatMap(snap => snap.docs)].forEach(docSnap => {
+    attendanceDocs.set(docSnap.id, docSnap);
+  });
+
+  const membershipDocs = new Map<string, any>();
+  [...primaryMemberships.docs, ...additionalMemberships.docs].forEach(docSnap => {
+    membershipDocs.set(docSnap.id, docSnap);
+  });
+  const archiveSnapshotsToUpdate = yearlyArchives.docs.filter(docSnap =>
+    (docSnap.data().submissions || []).some((submission: any) => submission.clubId === clubId),
+  );
+  const customFieldValuesByClub = await getDocs(query(
+    collection(db, "customFieldValues"),
+    where("clubId", "==", clubId),
+  ));
+  const customFieldValuesByField = await Promise.all(
+    clubCustomFields.docs.map(fieldDoc => getDocs(query(
+      collection(db, "customFieldValues"),
+      where("customFieldId", "==", fieldDoc.id),
+    ))),
+  );
+  const customFieldValues = new Map<string, any>();
+  [...customFieldValuesByClub.docs, ...customFieldValuesByField.flatMap(snap => snap.docs)].forEach(docSnap => {
+    customFieldValues.set(docSnap.id, docSnap);
+  });
+
+  await Promise.all([
+    commitInBatches(ownSubmissions.docs, (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(clubEvents.docs, (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(Array.from(attendanceDocs.values()), (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(clubBookmarks.docs, (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(clubRules.docs, (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(clubHoursLogs.docs, (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(clubCustomFields.docs, (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(Array.from(customFieldValues.values()), (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(clubLeaveHistory.docs, (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(archivedSubmissions.docs, (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(archiveSnapshotsToUpdate, (batch, docSnap) => {
+      const archive = docSnap.data();
+      batch.update(docSnap.ref, {
+        submissions: (archive.submissions || []).filter((submission: any) => submission.clubId !== clubId),
+      });
+    }),
+    commitInBatches([...outgoingAffiliations.docs, ...incomingAffiliations.docs], (batch, docSnap) => batch.delete(docSnap.ref)),
+    commitInBatches(Array.from(membershipDocs.values()), (batch, docSnap) => {
+      const profile = docSnap.data();
+      const remainingClubIds = Array.isArray(profile.clubIds)
+        ? profile.clubIds.filter((id: string) => id !== clubId)
+        : [];
+      batch.update(docSnap.ref, {
+        clubId: profile.clubId === clubId ? (remainingClubIds[0] || null) : profile.clubId || null,
+        clubIds: remainingClubIds,
+        role: profile.clubId === clubId ? null : profile.role || null,
+        joinedAt: profile.clubId === clubId ? null : profile.joinedAt || null,
+        updatedAt: Timestamp.fromDate(new Date()),
+      });
+    }),
+  ]);
+
   await deleteDoc(doc(db, "clubs", clubId));
+
+  const formerSuperClubIds = outgoingAffiliations.docs
+    .map(docSnap => docSnap.data())
+    .filter(data => data.status === 'approved')
+    .map(data => data.superClubId as string);
+  await Promise.all(formerSuperClubIds.map(superClubId => recalculateClubHours(superClubId)));
 };
 
 // ============ MEMBERSHIPS ============
@@ -2175,7 +2403,22 @@ export const respondToAffiliation = async (
 };
 
 export const removeAffiliation = async (affiliationId: string): Promise<void> => {
-  await deleteDoc(doc(db, "affiliations", affiliationId));
+  const affiliationRef = doc(db, "affiliations", affiliationId);
+  const affiliationSnap = await getDoc(affiliationRef);
+  if (!affiliationSnap.exists()) return;
+
+  const affiliation = affiliationSnap.data() as Affiliation;
+  if (affiliation.status === 'approved') {
+    await clearFederatedSubmissionData(affiliation.superClubId, affiliation.subClubId);
+  }
+
+  await deleteDoc(affiliationRef);
+
+  // Federated hours are included in the super-club's aggregate total, so make
+  // that total accurate immediately after the relationship disappears.
+  if (affiliation.status === 'approved') {
+    await recalculateClubHours(affiliation.superClubId);
+  }
 };
 
 // URL-safe slug derived from a club name. Used for /:clubSlug/... routing.

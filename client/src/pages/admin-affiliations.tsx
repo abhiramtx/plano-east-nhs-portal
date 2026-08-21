@@ -87,9 +87,20 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
     mutationFn: (id: string) => removeAffiliation(id),
     onSuccess: () => {
       invalidateAllAffiliationViews();
-      toast({ title: 'Affiliation removed' });
+      toast({
+        title: 'Affiliation removed',
+        description: 'Shared sub-club hours have been removed from the former super-club.',
+      });
     },
   });
+
+  const confirmRemoval = (id: string) => {
+    if (confirm(
+      'Remove this affiliation? Shared hours will be permanently removed from the super-club. The sub-club’s original hour records will remain in the sub-club.',
+    )) {
+      removeMutation.mutate(id);
+    }
+  };
 
   const outgoingMap = useMemo(() => {
     const m = new Map<string, Affiliation>();
@@ -182,7 +193,7 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
                         <p className="font-medium text-gray-900">{a.subClubName}</p>
                         <p className="text-xs text-gray-500">Approved {a.respondedAt?.toLocaleDateString()}</p>
                       </div>
-                      <Button size="sm" variant="ghost" onClick={() => removeMutation.mutate(a.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                      <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -218,7 +229,7 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
                       <p className="font-medium text-gray-900">{a.superClubName}</p>
                       <p className="text-xs text-gray-500">Approved {a.respondedAt?.toLocaleDateString()}</p>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => removeMutation.mutate(a.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
@@ -299,7 +310,7 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
                 <span className="text-gray-700">{a.superClubName}</span>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Pending</Badge>
-                  <Button size="sm" variant="ghost" onClick={() => removeMutation.mutate(a.id)} className="h-7 px-2 text-gray-500 hover:text-red-600">
+                  <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="h-7 px-2 text-gray-500 hover:text-red-600">
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
@@ -310,7 +321,7 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
                 <span className="text-gray-700">{a.superClubName}</span>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>
-                  <Button size="sm" variant="ghost" onClick={() => removeMutation.mutate(a.id)} className="h-7 px-2 text-gray-500 hover:text-red-600">
+                  <Button size="sm" variant="ghost" onClick={() => confirmRemoval(a.id)} className="h-7 px-2 text-gray-500 hover:text-red-600">
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>

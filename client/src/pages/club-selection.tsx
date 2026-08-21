@@ -286,8 +286,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   }, [currentClub?.id]);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <nav className="bg-white/90 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-50">
+    <div className="min-h-screen bg-[#f7f2e9] text-[#17324d]">
+      <nav className="bg-[#f7f2e9]/95 backdrop-blur-xl border-b border-[#d9cdbd] sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div
@@ -295,11 +295,20 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
               onClick={() => setLocation('/landing')}
             >
               <img src={logoImg} alt="VolunteerClub" className="w-10 h-10 rounded-xl" />
-              <span className="text-xl font-bold">VolunteerClub</span>
+              <span className="text-xl font-bold text-[#17324d]">VolunteerClub</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500 hidden sm:block">{user.email}</span>
-              <Button variant="outline" size="sm" onClick={onSignOut} className="border-gray-200 text-gray-600 hover:bg-gray-100">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-[#506477] hidden sm:block">{user.email}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCreateDialogOpen(true)}
+                className="border-[#d9cdbd] text-[#17324d] hover:bg-[#eee5d7]"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                New Club
+              </Button>
+              <Button variant="outline" size="sm" onClick={onSignOut} className="border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7]">
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </Button>
@@ -308,43 +317,46 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-10">
+        {/* Your Clubs */}
         {userClubLoading ? (
-          <div className="flex items-center justify-center py-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#17324d]"></div>
           </div>
         ) : userMemberships.length > 0 ? (
           <div className="mb-10">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Your Clubs ({userMemberships.length})</p>
-            </div>
-            <div className="space-y-3">
+            <p className="text-xs text-[#506477] uppercase tracking-wide font-medium mb-3">
+              Your Clubs ({userMemberships.length})
+            </p>
+            <div className="space-y-2">
               {userMemberships.map(({ club, membership }) => {
                 const isActive = club.id === activeClub?.id;
                 return (
                   <div
                     key={club.id}
-                    className="flex items-center space-x-4 p-5 border rounded-2xl bg-white border-gray-200"
+                    className="flex items-center space-x-4 p-4 border rounded-2xl bg-white border-[#d9cdbd]"
                   >
                     <div
-                      className="w-14 h-14 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                      className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
                       style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
                     >
                       {club.logoUrl
                         ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
-                        : <Trophy className="w-7 h-7 text-white" />
+                        : <Trophy className="w-5 h-5 text-white" />
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-lg font-semibold text-gray-900 truncate">{club.name}</h2>
-                      <p className="text-sm text-gray-500">{club.totalApprovedHours.toFixed(1)} total hours · {membership.role === 'admin' ? 'Admin' : 'Member'}</p>
+                      <h2 className="text-sm font-semibold text-[#17324d] truncate">{club.name}</h2>
+                      <p className="text-xs text-[#506477]">
+                        {club.totalApprovedHours.toFixed(1)} hrs · {membership.role === 'admin' ? 'Admin' : 'Member'}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
                         onClick={() => isActive ? onClubSelected(club, membership) : switchClubMutation.mutate(club)}
                         disabled={switchClubMutation.isPending}
-                        className="bg-black text-white hover:bg-gray-800"
+                        className="bg-[#17324d] text-[#f7f2e9] hover:bg-[#1e3f61]"
                       >
                         Open
                         <ChevronRight className="w-4 h-4 ml-1" />
@@ -358,7 +370,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                           }
                         }}
                         disabled={leaveSpecificMutation.isPending}
-                        className="border-gray-200 text-gray-600 hover:bg-gray-100"
+                        className="border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7]"
                       >
                         Leave
                       </Button>
@@ -370,20 +382,20 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           </div>
         ) : (
           <div className="mb-10">
-            <div className="flex items-center space-x-4 p-5 bg-gray-50 border border-gray-200 rounded-2xl">
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-200">
-                <UserCircle className="w-7 h-7 text-gray-500" />
+            <div className="flex items-center space-x-4 p-5 bg-[#eee5d7] border border-[#d9cdbd] rounded-2xl">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#d9cdbd]">
+                <UserCircle className="w-6 h-6 text-[#506477]" />
               </div>
               <div className="flex-1">
-                <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-0.5">No Club Yet</p>
-                <h2 className="text-lg font-semibold text-gray-900">Go Solo</h2>
-                <p className="text-sm text-gray-500">Start your own personal volunteer hub — just for you</p>
+                <p className="text-xs text-[#506477] uppercase tracking-wide font-medium mb-0.5">No Club Yet</p>
+                <h2 className="text-sm font-semibold text-[#17324d]">Go Solo</h2>
+                <p className="text-xs text-[#506477]">Start your own personal volunteer hub — just for you</p>
               </div>
               <Button
                 size="sm"
                 onClick={() => goSoloMutation.mutate()}
                 disabled={goSoloMutation.isPending}
-                className="bg-black text-white hover:bg-gray-800"
+                className="bg-[#17324d] text-[#f7f2e9] hover:bg-[#1e3f61]"
               >
                 {goSoloMutation.isPending ? "Setting up..." : "Go Solo"}
                 <ChevronRight className="w-4 h-4 ml-1" />
@@ -392,205 +404,185 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           </div>
         )}
 
-        <div className="relative mb-8">
-            <Search className="w-5 h-5 absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Search clubs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 h-12 rounded-xl"
-            />
-          </div>
+        {/* Join + Leaderboard — side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
 
-        <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card 
-                className="bg-gradient-to-br from-blue-50 to-purple-50 border-gray-200 transition-all cursor-pointer hover:border-gray-300 hover:scale-[1.02]"
-                onClick={() => setCreateDialogOpen(true)}
-              >
-                <CardHeader className="text-center py-8">
-                  <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Plus className="w-8 h-8 text-white" />
-                  </div>
-                  <CardTitle className="text-xl text-gray-900">Create a Club</CardTitle>
-                  <CardDescription className="text-gray-500">
-                    Start your own volunteer club and invite friends
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-center pb-8">
-                  <Button className="bg-black text-white hover:bg-gray-800">
-                    Create <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-gray-200">
-                <CardHeader>
-                  <CardTitle className="text-gray-900 flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Join a Club
-                  </CardTitle>
-                  <CardDescription className="text-gray-500">
-                    {clubs.length} clubs available
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {clubsLoading ? (
-                    <div className="flex justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                    </div>
-                  ) : filteredClubs.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      {searchQuery ? "No clubs match your search" : "No clubs yet. Be the first!"}
-                    </div>
-                  ) : (
-                    <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                      {filteredClubs.map((club) => (
-                        <div 
-                          key={club.id}
-                          className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div 
-                              className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
-                              style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
-                            >
-                              {club.logoUrl
-                                ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
-                                : <Trophy className="w-6 h-6 text-white" />
-                              }
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-gray-900">{club.name}</h3>
-                                {club.isPrivate && <Lock className="w-4 h-4 text-gray-400" />}
-                              </div>
-                              <p className="text-sm text-gray-500 line-clamp-1">{club.description || "No description"}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {isSuperAdmin && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (confirm(`Delete "${club.name}"? This cannot be undone.`)) {
-                                    deleteClubMutation.mutate(club.id);
-                                  }
-                                }}
-                                className="p-1 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                title="Delete club"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            )}
-                            <Button 
-                              size="sm"
-                              onClick={() => handleJoinClub(club)}
-                              disabled={joinClubMutation.isPending || joinedClubIds.has(club.id)}
-                              className="bg-black text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {joinedClubIds.has(club.id) ? 'Joined' : 'Join'}
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+          {/* Join a Club — wider column */}
+          <div className="lg:col-span-3">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="w-5 h-5 text-[#2d827d]" />
+              <h2 className="text-xl font-semibold text-[#17324d]">Join a Club</h2>
+              <span className="text-sm text-[#506477] ml-1">· {clubs.length} clubs</span>
             </div>
 
-            {/* Club Leaderboard */}
-            {!clubsLoading && clubs.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Trophy className="w-5 h-5 text-gray-700" />
-                  <h2 className="text-lg font-semibold text-gray-900">Club Leaderboard</h2>
+            <div className="relative mb-3">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#506477]" />
+              <Input
+                placeholder="Search clubs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-white border-[#d9cdbd] text-[#17324d] placeholder:text-[#506477]/60 h-11 rounded-xl"
+              />
+            </div>
+
+            <div className="bg-white border border-[#d9cdbd] rounded-2xl overflow-hidden">
+              {clubsLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-[#17324d]"></div>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-                  {[...clubs]
-                    .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours)
-                    .map((club, index) => (
-                      <div
-                        key={club.id}
-                        className={`flex items-center gap-4 px-5 py-4 ${
-                          index !== clubs.length - 1 ? 'border-b border-gray-100' : ''
-                        } ${club.id === currentClub?.id ? 'bg-gray-50' : ''}`}
-                      >
-                        <div className="w-8 text-center flex-shrink-0">
-                          {index === 0 ? (
-                            <span className="text-xl">🥇</span>
-                          ) : index === 1 ? (
-                            <span className="text-xl">🥈</span>
-                          ) : index === 2 ? (
-                            <span className="text-xl">🥉</span>
-                          ) : (
-                            <span className="text-sm font-semibold text-gray-400">#{index + 1}</span>
-                          )}
-                        </div>
+              ) : filteredClubs.length === 0 ? (
+                <div className="text-center py-12 text-[#506477]">
+                  {searchQuery ? "No clubs match your search" : "No clubs yet. Be the first!"}
+                </div>
+              ) : (
+                <div className="divide-y divide-[#d9cdbd]">
+                  {filteredClubs.map((club) => (
+                    <div
+                      key={club.id}
+                      className="flex items-center justify-between px-5 py-4 hover:bg-[#f7f2e9] transition-colors"
+                    >
+                      <div className="flex items-center space-x-3">
                         <div
-                          className="w-9 h-9 rounded-xl flex-shrink-0 overflow-hidden"
+                          className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
                           style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
                         >
                           {club.logoUrl
                             ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
-                            : null}
+                            : <Trophy className="w-5 h-5 text-white" />
+                          }
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-gray-900 text-sm">{club.name}</p>
-                            {club.id === currentClub?.id && (
-                              <span className="text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-full">You</span>
-                            )}
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="font-semibold text-[#17324d] text-sm">{club.name}</h3>
+                            {club.isPrivate && <Lock className="w-3.5 h-3.5 text-[#506477]" />}
                           </div>
-                          <p className="text-xs text-gray-500">{club.description || ''}</p>
+                          <p className="text-xs text-[#506477] line-clamp-1">{club.description || "No description"}</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right flex-shrink-0">
-                            <p className="font-semibold text-gray-900 text-sm">{club.totalApprovedHours.toFixed(0)}</p>
-                            <p className="text-xs text-gray-400">hours</p>
-                          </div>
-                          {isSuperAdmin && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm(`Delete "${club.name}"? This cannot be undone.`)) {
-                                  deleteClubMutation.mutate(club.id);
-                                }
-                              }}
-                              className="p-1 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-                              title="Delete club"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isSuperAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Delete "${club.name}" and all of its hours, events, logs, affiliations, and club data? This cannot be undone.`)) {
+                                deleteClubMutation.mutate(club.id);
+                              }
+                            }}
+                            className="p-1 rounded-lg text-[#d9cdbd] hover:text-[#d85c45] hover:bg-[#f7f2e9] transition-colors"
+                            title="Delete club"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={() => handleJoinClub(club)}
+                          disabled={joinClubMutation.isPending || joinedClubIds.has(club.id)}
+                          className={joinedClubIds.has(club.id)
+                            ? "bg-[#eee5d7] text-[#506477] cursor-default pointer-events-none"
+                            : "bg-[#17324d] text-[#f7f2e9] hover:bg-[#1e3f61]"}
+                        >
+                          {joinedClubIds.has(club.id) ? 'Joined' : 'Join'}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Leaderboard — side column */}
+          {!clubsLoading && clubs.length > 0 && (
+            <div className="lg:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-5 h-5 text-[#e5a72c]" />
+                <h2 className="text-xl font-semibold text-[#17324d]">Leaderboard</h2>
+              </div>
+              <div className="bg-white border border-[#d9cdbd] rounded-2xl overflow-hidden">
+                {[...clubs]
+                  .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours)
+                  .map((club, index) => (
+                    <div
+                      key={club.id}
+                      className={`flex items-center gap-3 px-4 py-3.5 ${
+                        index !== clubs.length - 1 ? 'border-b border-[#d9cdbd]' : ''
+                      } ${club.id === currentClub?.id ? 'bg-[#f7f2e9]' : ''}`}
+                    >
+                      <div className="w-7 text-center flex-shrink-0">
+                        {index === 0 ? (
+                          <span className="text-lg">🥇</span>
+                        ) : index === 1 ? (
+                          <span className="text-lg">🥈</span>
+                        ) : index === 2 ? (
+                          <span className="text-lg">🥉</span>
+                        ) : (
+                          <span className="text-xs font-semibold text-[#506477]">#{index + 1}</span>
+                        )}
+                      </div>
+                      <div
+                        className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden"
+                        style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
+                      >
+                        {club.logoUrl
+                          ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
+                          : null}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-[#17324d] text-sm truncate">{club.name}</p>
+                          {club.id === currentClub?.id && (
+                            <span className="text-[10px] bg-[#eee5d7] text-[#506477] px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                              You
+                            </span>
                           )}
                         </div>
                       </div>
-                    ))}
-                </div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-bold text-[#17324d] text-sm">{club.totalApprovedHours.toFixed(0)}</p>
+                          <p className="text-[10px] text-[#506477]">hrs</p>
+                        </div>
+                        {isSuperAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Delete "${club.name}" and all of its hours, events, logs, affiliations, and club data? This cannot be undone.`)) {
+                                deleteClubMutation.mutate(club.id);
+                              }
+                            }}
+                            className="p-1 rounded-lg text-[#d9cdbd] hover:text-[#d85c45] hover:bg-[#f7f2e9] transition-colors flex-shrink-0"
+                            title="Delete club"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
               </div>
-            )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Create Club Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] bg-white border-gray-200 text-gray-900 p-0 overflow-hidden">
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] bg-[#f7f2e9] border-[#d9cdbd] text-[#17324d] p-0 overflow-hidden">
           <div className="flex h-full">
-            <div className="w-[340px] min-w-[300px] p-6 overflow-y-auto border-r border-gray-200 flex-shrink-0 min-h-0">
+            <div className="w-[340px] min-w-[300px] p-6 overflow-y-auto border-r border-[#d9cdbd] flex-shrink-0 min-h-0">
               <DialogHeader className="mb-6">
-                <DialogTitle className="text-2xl text-gray-900">Create Your Club</DialogTitle>
-                <DialogDescription className="text-gray-500">
+                <DialogTitle className="text-2xl text-[#17324d]">Create Your Club</DialogTitle>
+                <DialogDescription className="text-[#506477]">
                   Start a new volunteer club and invite your friends
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-5">
-                {/* Logo Upload */}
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Club Logo</Label>
+                  <Label className="text-[#17324d]">Club Logo</Label>
                   <div className="flex items-center gap-4">
                     <div
-                      className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-dashed border-gray-300 cursor-pointer hover:border-gray-400 transition-colors"
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-dashed border-[#d9cdbd] cursor-pointer hover:border-[#506477] transition-colors"
                       style={{ backgroundColor: newClub.logoUrl ? undefined : newClub.color }}
                       onClick={() => logoFileRef.current?.click()}
                     >
@@ -604,7 +596,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="border-gray-200 text-gray-600 hover:bg-gray-100 w-full"
+                        className="border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7] w-full"
                         onClick={() => logoFileRef.current?.click()}
                       >
                         <Upload className="w-4 h-4 mr-2" />
@@ -613,13 +605,13 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       {newClub.logoUrl && (
                         <button
                           type="button"
-                          className="text-xs text-red-500 hover:text-red-700 mt-1 w-full text-center"
+                          className="text-xs text-[#d85c45] hover:text-[#c0513c] mt-1 w-full text-center"
                           onClick={() => setNewClub(prev => ({ ...prev, logoUrl: "" }))}
                         >
                           Remove logo
                         </button>
                       )}
-                      <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 2MB</p>
+                      <p className="text-xs text-[#506477] mt-1">PNG, JPG up to 2MB</p>
                     </div>
                   </div>
                   <input
@@ -632,34 +624,34 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-700">Club Name</Label>
+                  <Label htmlFor="name" className="text-[#17324d]">Club Name</Label>
                   <Input
                     id="name"
                     placeholder="Enter club name"
                     value={newClub.name}
                     onChange={(e) => setNewClub({ ...newClub, name: e.target.value })}
-                    className="bg-white border-gray-200 text-gray-900"
+                    className="bg-white border-[#d9cdbd] text-[#17324d]"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-gray-700">Description</Label>
+                  <Label htmlFor="description" className="text-[#17324d]">Description</Label>
                   <Textarea
                     id="description"
                     placeholder="What's your club about?"
                     value={newClub.description}
                     onChange={(e) => setNewClub({ ...newClub, description: e.target.value })}
-                    className="bg-white border-gray-200 text-gray-900"
+                    className="bg-white border-[#d9cdbd] text-[#17324d]"
                     rows={3}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-gray-700">Club Color</Label>
+                  <Label className="text-[#17324d]">Club Color</Label>
                   <div className="flex flex-wrap gap-2">
                     {CLUB_COLORS.map((color) => (
                       <button
                         key={color}
                         type="button"
-                        className={`w-9 h-9 rounded-xl transition-all cursor-pointer ${newClub.color === color ? 'ring-2 ring-gray-900 scale-110' : 'hover:scale-105'}`}
+                        className={`w-9 h-9 rounded-xl transition-all cursor-pointer ${newClub.color === color ? 'ring-2 ring-[#17324d] scale-110' : 'hover:scale-105'}`}
                         style={{ backgroundColor: color }}
                         onClick={(e) => {
                           e.preventDefault();
@@ -669,12 +661,12 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-gray-400">Used as the territory color on the map</p>
+                  <p className="text-xs text-[#506477]">Used as the territory color on the map</p>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-gray-700">Private Club</Label>
-                    <p className="text-sm text-gray-500">Require a password to join</p>
+                    <Label className="text-[#17324d]">Private Club</Label>
+                    <p className="text-sm text-[#506477]">Require a password to join</p>
                   </div>
                   <Switch
                     checked={newClub.isPrivate}
@@ -683,25 +675,25 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 </div>
                 {newClub.isPrivate && (
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-gray-700">Club Password</Label>
+                    <Label htmlFor="password" className="text-[#17324d]">Club Password</Label>
                     <Input
                       id="password"
                       type="password"
                       placeholder="Set a password"
                       value={newClub.password}
                       onChange={(e) => setNewClub({ ...newClub, password: e.target.value })}
-                      className="bg-white border-gray-200 text-gray-900"
+                      className="bg-white border-[#d9cdbd] text-[#17324d]"
                     />
                   </div>
                 )}
                 <div className="flex gap-3 pt-4">
-                  <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="flex-1 border-gray-200 text-gray-600 hover:bg-gray-100">
+                  <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="flex-1 border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7]">
                     Cancel
                   </Button>
-                  <Button 
+                  <Button
                     onClick={handleCreateClub}
                     disabled={createClubMutation.isPending}
-                    className="flex-1 bg-black text-white hover:bg-gray-800"
+                    className="flex-1 bg-[#17324d] text-[#f7f2e9] hover:bg-[#1e3f61]"
                   >
                     {createClubMutation.isPending ? "Creating..." : "Create Club"}
                   </Button>
@@ -709,12 +701,12 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
               </div>
             </div>
             <div className="flex-1 flex flex-col min-w-0">
-              <div className="p-4 border-b border-gray-200">
-                <Label className="flex items-center gap-2 text-gray-700">
+              <div className="p-4 border-b border-[#d9cdbd]">
+                <Label className="flex items-center gap-2 text-[#17324d]">
                   <MapPin className="w-4 h-4" />
                   Club Location
                 </Label>
-                <p className="text-sm text-gray-500 mt-1">Click on the map to set your club's headquarters</p>
+                <p className="text-sm text-[#506477] mt-1">Click on the map to set your club's headquarters</p>
               </div>
               <div className="flex-1 relative">
                 <LocationPicker
@@ -724,8 +716,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 />
               </div>
               {newClub.latitude && newClub.longitude && (
-                <div className="p-4 border-t border-gray-200 bg-gray-50">
-                  <p className="text-sm text-gray-500">
+                <div className="p-4 border-t border-[#d9cdbd] bg-[#eee5d7]">
+                  <p className="text-sm text-[#506477]">
                     Location: {newClub.latitude.toFixed(4)}, {newClub.longitude.toFixed(4)}
                   </p>
                 </div>
@@ -737,34 +729,34 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
       {/* Join Club Dialog */}
       <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-white border-gray-200 text-gray-900">
+        <DialogContent className="sm:max-w-md bg-[#f7f2e9] border-[#d9cdbd] text-[#17324d]">
           <DialogHeader>
-            <DialogTitle className="text-gray-900">Join {selectedClub?.name}</DialogTitle>
-            <DialogDescription className="text-gray-500">
+            <DialogTitle className="text-[#17324d]">Join {selectedClub?.name}</DialogTitle>
+            <DialogDescription className="text-[#506477]">
               This club is private. Enter the password to join.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="joinPassword" className="text-gray-700">Password</Label>
+              <Label htmlFor="joinPassword" className="text-[#17324d]">Password</Label>
               <Input
                 id="joinPassword"
                 type="password"
                 placeholder="Enter club password"
                 value={joinPassword}
                 onChange={(e) => setJoinPassword(e.target.value)}
-                className="bg-white border-gray-200 text-gray-900"
+                className="bg-white border-[#d9cdbd] text-[#17324d]"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setJoinDialogOpen(false)} className="border-gray-200 text-gray-600">
+            <Button variant="outline" onClick={() => setJoinDialogOpen(false)} className="border-[#d9cdbd] text-[#506477]">
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={confirmJoin}
               disabled={joinClubMutation.isPending}
-              className="bg-black text-white hover:bg-gray-800"
+              className="bg-[#17324d] text-[#f7f2e9] hover:bg-[#1e3f61]"
             >
               {joinClubMutation.isPending ? "Joining..." : "Join Club"}
             </Button>
