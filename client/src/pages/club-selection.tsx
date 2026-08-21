@@ -287,32 +287,31 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
   return (
     <div className="min-h-screen bg-[#f7f2e9] text-[#17324d] paper-grid">
-      <nav className="bg-[#f7f2e9]/95 backdrop-blur-xl border-b border-[#d9cdbd] sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div
-              className="flex items-center space-x-3 cursor-pointer"
-              onClick={() => setLocation('/landing')}
+      <nav className="bg-[#f7f2e9]/95 backdrop-blur-xl sticky top-0 z-50 shadow-[0_1px_0_rgba(23,50,77,.08),0_10px_30px_rgba(23,50,77,.04)]">
+        <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 lg:px-8">
+          <button
+            className="flex items-center gap-3 text-left"
+            onClick={() => setLocation('/landing')}
+          >
+            <img src={logoImg} alt="VolunteerClub" className="h-10 w-10 rounded-xl object-cover" />
+            <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: '19px', fontWeight: 700, letterSpacing: '-0.02em', color: '#17324d' }}>VolunteerClub</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-[#506477] hidden sm:block">{user.email}</span>
+            <button
+              onClick={onSignOut}
+              className="rounded-full bg-[#eee5d7] px-4 py-2 text-sm font-bold text-[#17324d] hover:bg-[#d9cdbd] transition-colors flex items-center gap-1.5"
             >
-              <img src={logoImg} alt="VolunteerClub" className="w-10 h-10 rounded-xl" />
-              <span className="text-xl font-bold text-[#17324d]">VolunteerClub</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-[#506477] hidden sm:block">{user.email}</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setCreateDialogOpen(true)}
-                className="border-[#d9cdbd] text-[#17324d] hover:bg-[#eee5d7]"
-              >
-                <Plus className="w-4 h-4 mr-1.5" />
-                New Club
-              </Button>
-              <Button variant="outline" size="sm" onClick={onSignOut} className="border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7]">
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
+            </button>
+            <button
+              onClick={() => setCreateDialogOpen(true)}
+              className="rounded-full bg-[#17324d] px-5 py-2.5 text-sm font-bold text-[#f7f2e9] transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              New Club
+            </button>
           </div>
         </div>
       </nav>
@@ -439,7 +438,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                   {filteredClubs.map((club) => (
                     <div
                       key={club.id}
-                      className="flex items-center justify-between px-5 py-4 hover:bg-[#f7f2e9] transition-colors"
+                      className="flex items-center justify-between px-5 py-4 bg-[#faf8f4]"
                     >
                       <div className="flex items-center space-x-3">
                         <div
