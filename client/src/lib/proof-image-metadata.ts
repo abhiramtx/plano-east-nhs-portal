@@ -126,42 +126,48 @@ export async function extractProofImageMetadata(file: File): Promise<ProofImageM
     const height = firstNumber(parsed, ["ImageHeight", "ExifImageHeight", "PixelYDimension"]);
     const latitude = firstNumber(parsed, ["latitude", "Latitude", "GPSLatitude"]);
     const longitude = firstNumber(parsed, ["longitude", "Longitude", "GPSLongitude"]);
-    const metadata = Object.fromEntries(
-      Object.entries({
+    const make = asText(parsed.Make);
+    const model = asText(parsed.Model);
+    const lensModel = asText(parsed.LensModel);
+    const software = asText(parsed.Software);
+    const orientation = asNumber(parsed.Orientation);
+    const iso = asNumber(parsed.ISO);
+    const exposureTime = asNumber(parsed.ExposureTime);
+    const fNumber = asNumber(parsed.FNumber);
+    const focalLength = asNumber(parsed.FocalLength);
+
+    return {
       ...base,
       metadataAvailable: Boolean(
         captureDate.value ||
-        asText(parsed.Make) ||
-        asText(parsed.Model) ||
-        asText(parsed.LensModel) ||
-        asText(parsed.Software) ||
-        asNumber(parsed.Orientation) !== undefined ||
-        asNumber(parsed.ISO) !== undefined ||
-        asNumber(parsed.ExposureTime) !== undefined ||
-        asNumber(parsed.FNumber) !== undefined ||
-        asNumber(parsed.FocalLength) !== undefined ||
+        make ||
+        model ||
+        lensModel ||
+        software ||
+        orientation !== undefined ||
+        iso !== undefined ||
+        exposureTime !== undefined ||
+        fNumber !== undefined ||
+        focalLength !== undefined ||
         latitude !== undefined ||
         longitude !== undefined,
       ),
-      capturedAt: captureDate.value,
-      capturedAtSource: captureDate.source,
-      make: asText(parsed.Make),
-      model: asText(parsed.Model),
-      lensModel: asText(parsed.LensModel),
-      software: asText(parsed.Software),
-      width,
-      height,
-      orientation: asNumber(parsed.Orientation),
-      iso: asNumber(parsed.ISO),
-      exposureTime: asNumber(parsed.ExposureTime),
-      fNumber: asNumber(parsed.FNumber),
-      focalLength: asNumber(parsed.FocalLength),
-      latitude,
-      longitude,
-      }).filter(([, value]) => value !== undefined),
-    ) as ProofImageMetadata;
-
-    return metadata;
+      ...(captureDate.value ? { capturedAt: captureDate.value } : {}),
+      ...(captureDate.source ? { capturedAtSource: captureDate.source } : {}),
+      ...(make ? { make } : {}),
+      ...(model ? { model } : {}),
+      ...(lensModel ? { lensModel } : {}),
+      ...(software ? { software } : {}),
+      ...(width !== undefined ? { width } : {}),
+      ...(height !== undefined ? { height } : {}),
+      ...(orientation !== undefined ? { orientation } : {}),
+      ...(iso !== undefined ? { iso } : {}),
+      ...(exposureTime !== undefined ? { exposureTime } : {}),
+      ...(fNumber !== undefined ? { fNumber } : {}),
+      ...(focalLength !== undefined ? { focalLength } : {}),
+      ...(latitude !== undefined ? { latitude } : {}),
+      ...(longitude !== undefined ? { longitude } : {}),
+    };
   } catch (error) {
     console.warn("Unable to read photo EXIF metadata:", error);
     return base;

@@ -1,0 +1,1 @@
+- [EXIF parser runtime checks](exif-parser-runtime-checks.md) — validate camera uploads through a browser-bundled File/Blob path, not Node's File reader.
