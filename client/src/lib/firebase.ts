@@ -89,6 +89,7 @@ export interface HoursSubmission {
   hours: number;
   description: string;
   proofImageUrl?: string;
+  proofImageMetadata?: import("./proof-image-metadata").ProofImageMetadata;
   status: string;
   date: string;
   activityName?: string;

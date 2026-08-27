@@ -39,6 +39,7 @@ import {
   Award,
   GitMerge,
 } from "lucide-react";
+import { ProofMetadata } from "@/components/proof-metadata";
 
 interface AdminStudentsProps {
   user: User | null;
@@ -1639,6 +1640,26 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                 )}
                               </div>
                             </div>
+                            {submission.proofImageUrl && (
+                              <div className="mt-4 border-t border-[#e8dfd4] pt-4">
+                                <div className="mb-3 flex items-center gap-2 text-sm font-medium text-[#17324d]">
+                                  <Eye className="h-4 w-4" />
+                                  Photo proof verification
+                                </div>
+                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[180px_1fr]">
+                                  <img
+                                    src={submission.proofImageUrl}
+                                    alt="Proof of service"
+                                    className="h-32 w-full rounded-lg border border-[#d9cdbd] object-cover"
+                                  />
+                                  <ProofMetadata
+                                    metadata={submission.proofImageMetadata}
+                                    serviceDate={submission.date}
+                                    compact
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

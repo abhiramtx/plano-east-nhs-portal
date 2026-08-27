@@ -10,6 +10,7 @@ import {
   checkInUser,
   getApprovedSuperClubs, Affiliation,
 } from "@/lib/firebase";
+import { extractProofImageMetadata } from "@/lib/proof-image-metadata";
 import type { HoursLog } from "@shared/schema";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -183,7 +184,9 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
       }
 
       let proofImageUrl = editingSubmission?.proofImageUrl;
+      let proofImageMetadata = editingSubmission?.proofImageMetadata;
       if (selectedFile) {
+        proofImageMetadata = await extractProofImageMetadata(selectedFile);
         const compressed = await compressImage(selectedFile);
         const reader = new FileReader();
         const base64 = new Promise<string>((resolve) => { reader.onloadend = () => resolve(reader.result as string); });
@@ -202,6 +205,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
           status: 'pending',
         };
         if (proofImageUrl !== undefined) updateData.proofImageUrl = proofImageUrl;
+        if (proofImageMetadata !== undefined) updateData.proofImageMetadata = proofImageMetadata;
         if (selectedLocation) {
           updateData.latitude = selectedLocation.lat;
           updateData.longitude = selectedLocation.lng;
@@ -244,6 +248,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
           createdAt: now,
         };
         if (proofImageUrl) submissionData.proofImageUrl = proofImageUrl;
+        if (proofImageMetadata) submissionData.proofImageMetadata = proofImageMetadata;
         if (selectedLocation) {
           submissionData.latitude = selectedLocation.lat;
           submissionData.longitude = selectedLocation.lng;

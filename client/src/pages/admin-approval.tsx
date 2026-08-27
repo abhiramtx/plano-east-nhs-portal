@@ -21,6 +21,7 @@ import {
   Club
 } from '@/lib/firebase';
 import { HoursLog } from '@shared/schema';
+import { ProofMetadata } from '@/components/proof-metadata';
 import { 
   Clock, 
   Calendar, 
@@ -627,6 +628,10 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                           <Eye className="w-4 h-4 mr-2" />
                           View Full Size
                         </Button>
+                        <ProofMetadata
+                          metadata={selectedSubmission.proofImageMetadata}
+                          serviceDate={selectedSubmission.date}
+                        />
                       </div>
                     ) : (
                       <div className="text-center py-8">

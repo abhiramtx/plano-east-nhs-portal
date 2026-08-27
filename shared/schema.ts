@@ -63,6 +63,7 @@ export const insertHoursSubmissionSchema = z.object({
   date: z.any(),
   hours: z.string().min(1),
   proofImageUrl: z.string().optional(),
+  proofImageMetadata: z.record(z.any()).optional(),
   status: z.string().default("pending"),
   rejectReason: z.string().optional(),
   serviceRequestId: z.string().optional(),
