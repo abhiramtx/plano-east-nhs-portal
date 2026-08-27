@@ -42,6 +42,8 @@ const compressImage = (file: File): Promise<File> => {
   });
 };
 
+const MAX_PROOF_IMAGE_SIZE_BYTES = 20 * 1024 * 1024;
+
 const formSchema = z.object({
   activityName: z.string().min(1, "Activity name is required"),
   description: z.string().min(1, "Description is required"),
@@ -316,7 +318,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { toast({ title: "Invalid file type", description: "Please select a JPG or PNG", variant: "destructive" }); return; }
-    if (file.size > 1 * 1024 * 1024) { toast({ title: "File too large", description: "Max 1MB", variant: "destructive" }); return; }
+    if (file.size > MAX_PROOF_IMAGE_SIZE_BYTES) { toast({ title: "File too large", description: "Max 20MB", variant: "destructive" }); return; }
     setSelectedFile(file);
     const reader = new FileReader();
     reader.onload = (e) => setImagePreview(e.target?.result as string);
@@ -487,7 +489,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
 
       <div>
         <Label className="text-gray-700">Proof of Service {requireProofImage ? '(Required)' : '(Optional)'}</Label>
-        <p className="text-sm text-gray-500 mb-3">Upload a photo as proof of your service (JPG or PNG, max 1MB)</p>
+        <p className="text-sm text-gray-500 mb-3">Upload a photo as proof of your service (JPG or PNG, max 20MB)</p>
         {!selectedFile && !imagePreview ? (
           <div className="border-2 border-dashed border-[#c9bfae] rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
             <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" id="file-upload" />
