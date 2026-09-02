@@ -222,9 +222,9 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
+      <div className="flex-1 flex flex-col bg-background min-h-0">
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -233,16 +233,16 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
   const editingField = isEditingId ? fields.find((f: CustomField) => f.id === isEditingId) : null;
 
   return (
-    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
-      <div className="bg-[#faf8f4] bg-white border-b border-[#d9cdbd] flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-background min-h-0">
+      <div className="bg-card border-b border-border flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#d85c45' }}>
-              <Settings className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-destructive">
+              <Settings className="w-7 h-7 text-destructive-foreground" />
             </div>
             <div>
-              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Custom Fields</h1>
-              <p className="text-[#506477] mt-0.5">Create fields that appear on volunteer profiles</p>
+              <h1 className="page-title text-xl lg:text-2xl font-bold text-foreground">Custom Fields</h1>
+              <p className="text-muted-foreground mt-0.5">Create fields that appear on volunteer profiles</p>
             </div>
           </div>
         </div>
@@ -252,7 +252,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
         <div className="mb-6">
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#17324d] hover:bg-[#1f3d5a] text-white">
+              <Button className="bg-primary hover:bg-primary/85 text-primary-foreground">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Custom Field
               </Button>
@@ -263,7 +263,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="fieldName" className="text-[#17324d]">Field Name</Label>
+                  <Label htmlFor="fieldName" className="text-foreground">Field Name</Label>
                   <Input
                     id="fieldName"
                     placeholder="e.g., Preferred Location"
@@ -273,7 +273,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="description" className="text-[#17324d]">Description (Optional)</Label>
+                  <Label htmlFor="description" className="text-foreground">Description (Optional)</Label>
                   <Input
                     id="description"
                     placeholder="Brief description shown to volunteers"
@@ -283,7 +283,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="fieldType" className="text-[#17324d]">Field Type</Label>
+                  <Label htmlFor="fieldType" className="text-foreground">Field Type</Label>
                   <Select value={formData.fieldType} onValueChange={(value: any) => setFormData({ ...formData, fieldType: value })}>
                     <SelectTrigger id="fieldType">
                       <SelectValue />
@@ -302,7 +302,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
 
                 {(formData.fieldType === 'select' || formData.fieldType === 'multiselect') && (
                   <div>
-                    <Label htmlFor="selectOptions" className="text-[#17324d]">Options (comma-separated)</Label>
+                    <Label htmlFor="selectOptions" className="text-foreground">Options (comma-separated)</Label>
                     <Textarea
                       id="selectOptions"
                       placeholder="Option 1, Option 2, Option 3"
@@ -314,7 +314,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                 )}
 
                 <div>
-                  <Label htmlFor="defaultValue" className="text-[#17324d]">Default Value (Optional)</Label>
+                  <Label htmlFor="defaultValue" className="text-foreground">Default Value (Optional)</Label>
                   <Input
                     id="defaultValue"
                     placeholder="Leave empty for no default"
@@ -350,7 +350,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                 <Button
                   onClick={handleAdd}
                   disabled={createFieldMutation.isPending}
-                  className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
+                  className="w-full bg-primary hover:bg-primary/85 text-primary-foreground"
                 >
                   {createFieldMutation.isPending ? "Creating..." : "Create Field"}
                 </Button>
@@ -362,9 +362,9 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
         {fields.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
-              <Settings className="w-16 h-16 mx-auto mb-4 text-[#8fa5b4]" />
-              <h3 className="text-lg font-medium text-[#17324d] mb-2">No custom fields yet</h3>
-              <p className="text-[#506477]">Create your first custom field to get started</p>
+              <Settings className="w-16 h-16 mx-auto mb-4 text-muted-foreground/60" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No custom fields yet</h3>
+              <p className="text-muted-foreground">Create your first custom field to get started</p>
             </CardContent>
           </Card>
         ) : (
@@ -375,7 +375,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                   {isEditingId === field.id ? (
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor={`edit-fieldName-${field.id}`} className="text-[#17324d]">Field Name</Label>
+                        <Label htmlFor={`edit-fieldName-${field.id}`} className="text-foreground">Field Name</Label>
                         <Input
                           id={`edit-fieldName-${field.id}`}
                           placeholder="e.g., Preferred Location"
@@ -385,7 +385,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                       </div>
 
                       <div>
-                        <Label htmlFor={`edit-description-${field.id}`} className="text-[#17324d]">Description (Optional)</Label>
+                        <Label htmlFor={`edit-description-${field.id}`} className="text-foreground">Description (Optional)</Label>
                         <Input
                           id={`edit-description-${field.id}`}
                           placeholder="Brief description shown to volunteers"
@@ -395,7 +395,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                       </div>
 
                       <div>
-                        <Label htmlFor={`edit-fieldType-${field.id}`} className="text-[#17324d]">Field Type</Label>
+                        <Label htmlFor={`edit-fieldType-${field.id}`} className="text-foreground">Field Type</Label>
                         <Select value={formData.fieldType} onValueChange={(value: any) => setFormData({ ...formData, fieldType: value })}>
                           <SelectTrigger id={`edit-fieldType-${field.id}`}>
                             <SelectValue />
@@ -414,7 +414,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
 
                       {(formData.fieldType === 'select' || formData.fieldType === 'multiselect') && (
                         <div>
-                          <Label htmlFor={`edit-selectOptions-${field.id}`} className="text-[#17324d]">Options (comma-separated)</Label>
+                          <Label htmlFor={`edit-selectOptions-${field.id}`} className="text-foreground">Options (comma-separated)</Label>
                           <Textarea
                             id={`edit-selectOptions-${field.id}`}
                             placeholder="Option 1, Option 2, Option 3"
@@ -426,7 +426,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                       )}
 
                       <div>
-                        <Label htmlFor={`edit-defaultValue-${field.id}`} className="text-[#17324d]">Default Value (Optional)</Label>
+                        <Label htmlFor={`edit-defaultValue-${field.id}`} className="text-foreground">Default Value (Optional)</Label>
                         <Input
                           id={`edit-defaultValue-${field.id}`}
                           placeholder="Leave empty for no default"
@@ -463,7 +463,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                         <Button
                           onClick={() => handleUpdate(field)}
                           disabled={updateFieldMutation.isPending}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                          className="flex-1 bg-chart-3 hover:bg-chart-3/85 text-primary-foreground"
                         >
                           <Save className="w-4 h-4 mr-2" />
                           {updateFieldMutation.isPending ? "Saving..." : "Save"}
@@ -480,21 +480,21 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                   ) : (
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="text-lg font-medium text-[#17324d]">{field.fieldName}</h3>
+                        <h3 className="text-lg font-medium text-foreground">{field.fieldName}</h3>
                         {field.description && (
-                          <p className="text-sm text-[#506477] mt-0.5">{field.description}</p>
+                          <p className="text-sm text-muted-foreground mt-0.5">{field.description}</p>
                         )}
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <span className="inline-block px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">
+                          <span className="inline-block px-2 py-1 text-sm rounded-full bg-primary/15 text-primary border border-primary/30">
                             {field.fieldType}
                           </span>
                           {field.required && (
-                            <span className="inline-block px-2 py-1 text-sm rounded-full bg-red-100 text-red-800">
+                            <span className="inline-block px-2 py-1 text-sm rounded-full bg-destructive/15 text-destructive border border-destructive/30">
                               Required
                             </span>
                           )}
                           {field.filterable && (
-                            <span className="inline-block px-2 py-1 text-sm rounded-full bg-purple-100 text-purple-800">
+                            <span className="inline-block px-2 py-1 text-sm rounded-full bg-chart-5/15 text-chart-5 border border-chart-5/30">
                               Filterable
                             </span>
                           )}
@@ -511,7 +511,7 @@ export function AdminCustomFields({ user, club }: AdminCustomFieldsProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-red-600 hover:bg-red-50"
+                          className="text-destructive hover:bg-destructive/10"
                           onClick={() => deleteFieldMutation.mutate(field.id)}
                           disabled={deleteFieldMutation.isPending}
                         >

@@ -317,8 +317,8 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-[#506477]">Getting your assignment...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Getting your assignment...</p>
         </div>
       </div>
     );
@@ -328,26 +328,26 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <Clock className="w-16 h-16 mx-auto mb-4 text-[#8fa5b4]" />
-          <h3 className="text-lg font-medium text-[#17324d] mb-2">No Assignment Available</h3>
-          <p className="text-[#506477]">All submissions have been reviewed or assigned to other administrators</p>
+          <Clock className="w-16 h-16 mx-auto mb-4 text-muted-foreground/60" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No Assignment Available</h3>
+          <p className="text-muted-foreground">All submissions have been reviewed or assigned to other administrators</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
-      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-background min-h-0">
+      <div className="bg-card border-b border-border flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#22c55e' }}>
-                <CheckCircle className="w-7 h-7 text-white" />
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-chart-3">
+                <CheckCircle className="w-7 h-7 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Hours Approval</h1>
-                <p className="text-[#506477] mt-0.5">Review and approve volunteer hour submissions</p>
+                <h1 className="page-title text-xl lg:text-2xl font-bold text-foreground">Hours Approval</h1>
+                <p className="text-muted-foreground mt-0.5">Review and approve volunteer hour submissions</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -364,27 +364,27 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                     <ChevronDown className="w-3 h-3" />
                   </Button>
                   {logDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-1 w-56 bg-[#faf8f4] border border-[#d9cdbd] rounded-lg shadow-lg z-50">
+                    <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-lg shadow-lg z-50">
                       <div className="p-2">
                         <button
                           onClick={() => setSelectedLogIds([])}
                           className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${
-                            selectedLogIds.length === 0 ? 'bg-[#eee5d7] font-medium' : 'hover:bg-[#faf8f4]'
+                            selectedLogIds.length === 0 ? 'bg-secondary font-medium' : 'hover:bg-background'
                           }`}
                         >
                           All Logs
                         </button>
-                        <div className="border-t border-[#e8dfd4] my-1" />
+                        <div className="border-t border-border my-1" />
                         {hoursLogs.map((log: HoursLog) => (
                           <label
                             key={log.id}
-                            className="flex items-center gap-2 px-3 py-2 rounded hover:bg-[#faf8f4] cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-2 rounded hover:bg-background cursor-pointer"
                           >
                             <Checkbox
                               checked={selectedLogIds.includes(log.id)}
                               onCheckedChange={() => toggleLogId(log.id)}
                             />
-                            <span className="text-sm text-[#17324d] truncate">{log.name}</span>
+                            <span className="text-sm text-foreground truncate">{log.name}</span>
                             {!log.isOpen && (
                               <Badge variant="secondary" className="text-xs ml-auto">Closed</Badge>
                             )}
@@ -395,8 +395,8 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                   )}
                 </div>
               )}
-              <div className="flex items-center justify-center w-10 h-10 bg-[#17324d] rounded-lg">
-                <CheckCircle className="w-5 h-5 text-white" />
+              <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
+                <CheckCircle className="w-5 h-5 text-primary-foreground" />
               </div>
             </div>
           </div>
@@ -404,34 +404,34 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
       </div>
 
       <div className="flex-1 flex min-h-0">
-        <div className="w-80 bg-[#faf8f4] border-r border-[#d9cdbd] flex flex-col">
-          <div className="p-4 border-b border-[#d9cdbd] bg-[#faf8f4]">
+        <div className="w-80 bg-background border-r border-border flex flex-col">
+          <div className="p-4 border-b border-border bg-card">
             <div className="flex items-center space-x-3 mb-3">
-              <div className="flex items-center justify-center w-10 h-10 bg-[#17324d] rounded-full">
-                <span className="text-white text-sm font-medium">
+              <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-full">
+                <span className="text-primary-foreground text-sm font-medium">
                   {assignedStudent?.email?.split('@')[0].substring(0, 2).toUpperCase()}
                 </span>
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="font-medium text-[#17324d]">
+                  <h3 className="font-medium text-foreground">
                     {[assignedStudent?.goByFirstName, assignedStudent?.lastName].filter(Boolean).join(' ') || assignedStudent?.displayName || assignedStudent?.email}
                   </h3>
                   {assignedStudent?.userRole === 1 && (
                     <Badge variant="secondary" className="text-xs">Admin</Badge>
                   )}
                 </div>
-                <p className="text-sm text-[#506477]">{assignedStudent?.email}</p>
+                <p className="text-sm text-muted-foreground">{assignedStudent?.email}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center space-x-2">
-                <IdCard className="w-4 h-4 text-[#8fa5b4]" />
-                <span className="text-[#506477]">ID: {assignedStudent?.studentId || 'N/A'}</span>
+                <IdCard className="w-4 h-4 text-muted-foreground/80" />
+                <span className="text-muted-foreground">ID: {assignedStudent?.studentId || 'N/A'}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <GraduationCap className="w-4 h-4 text-[#8fa5b4]" />
-                <span className="text-[#506477]">Grade: {assignedStudent?.gradeLevel || 'N/A'}</span>
+                <GraduationCap className="w-4 h-4 text-muted-foreground/80" />
+                <span className="text-muted-foreground">Grade: {assignedStudent?.gradeLevel || 'N/A'}</span>
               </div>
             </div>
             <div className="mt-3">
@@ -448,16 +448,16 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            <h4 className="font-medium text-[#17324d] mb-3">Pending Activities ({filteredSubmissions.length})</h4>
+            <h4 className="font-medium text-foreground mb-3">Pending Activities ({filteredSubmissions.length})</h4>
             {submissionsLoading ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p className="text-sm text-[#506477]">Loading activities...</p>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                <p className="text-sm text-muted-foreground">Loading activities...</p>
               </div>
             ) : filteredSubmissions.length === 0 ? (
               <div className="text-center py-8">
-                <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-400" />
-                <p className="text-sm text-[#506477]">
+                <CheckCircle className="w-12 h-12 mx-auto mb-2 text-chart-3" />
+                <p className="text-sm text-muted-foreground">
                   {selectedLogIds.length > 0 ? 'No activities for selected logs' : 'All activities reviewed!'}
                 </p>
               </div>
@@ -469,24 +469,24 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                     onClick={() => setSelectedSubmission(submission)}
                     className={`w-full text-left p-3 rounded-lg border transition-colors ${
                       selectedSubmission?.id === submission.id
-                        ? 'bg-blue-50 border-blue-200'
-                        : 'bg-[#faf8f4] border-[#d9cdbd] hover:bg-[#faf8f4]'
+                        ? 'bg-primary/10 border-primary/30'
+                        : 'bg-card border-border hover:bg-background'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm text-[#17324d] truncate">
+                      <span className="font-medium text-sm text-foreground truncate">
                         {submission.activityName || 'Unnamed Activity'}
                       </span>
-                      <span className="text-xs text-[#506477]">{submission.hours}h</span>
+                      <span className="text-xs text-muted-foreground">{submission.hours}h</span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-[#506477]">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <div className="flex items-center">
                         <Calendar className="w-3 h-3 mr-1" />
                         {formatDate(submission.date)}
                       </div>
                       <div className="flex items-center gap-1">
                         {(submission as any).__fedFromSubClubName && (
-                          <Badge className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 hover:bg-blue-100">
+                          <Badge className="text-[10px] px-1.5 py-0 bg-primary/15 text-primary hover:bg-primary/20">
                             ↑ {(submission as any).__fedFromSubClubName}
                           </Badge>
                         )}
@@ -508,23 +508,23 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
           {selectedSubmission ? (
             <div className="p-6">
               {(selectedSubmission as any).__fedFromSubClubName && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-sm text-blue-900">
-                  <BookOpen className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                <div className="mb-4 p-3 bg-primary/10 border border-primary/30 rounded-lg flex items-center gap-2 text-sm text-foreground">
+                  <BookOpen className="w-4 h-4 text-primary flex-shrink-0" />
                   Submitted by sub-club: <strong>{(selectedSubmission as any).__fedFromSubClubName}</strong>
-                  <span className="ml-auto text-xs text-blue-700 font-normal">
+                  <span className="ml-auto text-xs text-muted-foreground font-normal">
                     {(selectedSubmission as any).__sharedApproval ? 'Shared approval — approving here also approves in sub-club.' : 'Independent approval — only counts for this club.'}
                   </span>
                 </div>
               )}
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-semibold text-[#17324d]">
+                  <h2 className="text-xl font-semibold text-foreground">
                     {selectedSubmission.activityName || 'Unnamed Activity'}
                   </h2>
                 </div>
                 <div className="flex items-center space-x-3">
                   {(approvalsRequired > 1 || rejectionsRequired > 1) && (
-                    <span className="text-xs text-[#506477] mr-2">
+                    <span className="text-xs text-muted-foreground mr-2">
                       {(selectedSubmission.approvals || []).length}/{approvalsRequired} approvals
                       {' · '}
                       {(selectedSubmission.rejections || []).length}/{rejectionsRequired} rejections
@@ -534,7 +534,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                     onClick={() => updateStatusMutation.mutate({ id: selectedSubmission.id, status: 'pending' })}
                     disabled={updateStatusMutation.isPending}
                     variant="outline"
-                    className="text-yellow-600 hover:bg-yellow-50 border-yellow-200"
+                    className="text-chart-1 hover:bg-chart-1/10 border-chart-1/30"
                   >
                     <Clock className="w-4 h-4 mr-2" />
                     Pending
@@ -542,7 +542,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                   <Button
                     onClick={handleApprove}
                     disabled={updateStatusMutation.isPending || alreadyApproved(selectedSubmission)}
-                    className="bg-green-600 hover:bg-green-700 text-white"
+                    className="bg-chart-3 hover:bg-chart-3/85 text-primary-foreground"
                   >
                     <CheckCircle className="w-4 h-4 mr-2" />
                     {alreadyApproved(selectedSubmission) ? 'Approved' : 'Approve'}
@@ -551,7 +551,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                     onClick={() => setRejectingSubmission(selectedSubmission?.id || null)}
                     disabled={updateStatusMutation.isPending || alreadyRejected(selectedSubmission)}
                     variant="outline"
-                    className="text-red-600 hover:bg-red-50 border-red-200"
+                    className="text-destructive hover:bg-destructive/10 border-destructive/30"
                   >
                     <XCircle className="w-4 h-4 mr-2" />
                     {alreadyRejected(selectedSubmission) ? 'Rejected' : 'Reject'}
@@ -569,32 +569,32 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-[#17324d]">Activity Name</label>
-                      <p className="text-[#17324d]">{selectedSubmission.activityName || 'Not provided'}</p>
+                        <label className="text-sm font-medium text-foreground">Activity Name</label>
+                        <p className="text-foreground">{selectedSubmission.activityName || 'Not provided'}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-[#17324d]">Description</label>
-                      <p className="text-[#17324d]">{selectedSubmission.description}</p>
+                        <label className="text-sm font-medium text-foreground">Description</label>
+                        <p className="text-foreground">{selectedSubmission.description}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium text-[#17324d]">Date</label>
-                        <p className="text-[#17324d]">{formatDate(selectedSubmission.date)}</p>
+                          <label className="text-sm font-medium text-foreground">Date</label>
+                          <p className="text-foreground">{formatDate(selectedSubmission.date)}</p>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-[#17324d]">Hours</label>
-                        <p className="text-[#17324d]">{selectedSubmission.hours}</p>
+                          <label className="text-sm font-medium text-foreground">Hours</label>
+                          <p className="text-foreground">{selectedSubmission.hours}</p>
                       </div>
                     </div>
                     {selectedSubmission.logName && (
                       <div>
-                        <label className="text-sm font-medium text-[#17324d]">Log</label>
-                        <p className="text-[#17324d]">{selectedSubmission.logName}</p>
+                        <label className="text-sm font-medium text-foreground">Log</label>
+                        <p className="text-foreground">{selectedSubmission.logName}</p>
                       </div>
                     )}
                     <div>
-                      <label className="text-sm font-medium text-[#17324d]">Submitted</label>
-                      <p className="text-[#17324d]">{formatDate(selectedSubmission.createdAt)}</p>
+                      <label className="text-sm font-medium text-foreground">Submitted</label>
+                      <p className="text-foreground">{formatDate(selectedSubmission.createdAt)}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -635,8 +635,8 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                       </div>
                     ) : (
                       <div className="text-center py-8">
-                        <ImageIcon className="w-12 h-12 mx-auto mb-2 text-[#8fa5b4]" />
-                        <p className="text-[#506477]">No proof image provided</p>
+                        <ImageIcon className="w-12 h-12 mx-auto mb-2 text-muted-foreground/60" />
+                        <p className="text-muted-foreground">No proof image provided</p>
                       </div>
                     )}
                   </CardContent>
@@ -646,9 +646,9 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <Clock className="w-16 h-16 mx-auto mb-4 text-[#8fa5b4]" />
-                <h3 className="text-lg font-medium text-[#17324d] mb-2">Select an Activity</h3>
-                <p className="text-[#506477]">Choose an activity from the sidebar to review</p>
+                <Clock className="w-16 h-16 mx-auto mb-4 text-muted-foreground/60" />
+                <h3 className="text-lg font-medium text-foreground mb-2">Select an Activity</h3>
+                <p className="text-muted-foreground">Choose an activity from the sidebar to review</p>
               </div>
             </div>
           )}
@@ -658,9 +658,9 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
       {imageModalOpen && selectedSubmission?.proofImageUrl && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="relative max-w-4xl max-h-[90vh] overflow-auto">
-            <button
+             <button
               onClick={() => setImageModalOpen(false)}
-              className="absolute top-4 right-4 bg-[#faf8f4] bg-opacity-20 hover:bg-opacity-30 rounded-full p-2 transition-colors"
+               className="absolute top-4 right-4 bg-card/20 hover:bg-card/30 rounded-full p-2 transition-colors"
             >
               <X className="w-6 h-6 text-white" />
             </button>
@@ -675,18 +675,18 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
 
       {rejectingSubmission && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[100]">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+          <div className="bg-card rounded-xl shadow-2xl w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-[#17324d]">Reject Submission</h2>
+              <h2 className="text-lg font-semibold text-foreground">Reject Submission</h2>
               <button
                 onClick={() => setRejectingSubmission(null)}
-                className="text-[#506477] hover:text-[#17324d] transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
-              <p className="text-sm text-[#506477]">
+              <p className="text-sm text-muted-foreground">
                 Please provide a reason for rejecting this submission. This will be visible to the student.
               </p>
               <Textarea
@@ -694,16 +694,16 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 rows={3}
-                className="bg-white"
+                className="bg-card"
               />
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" className="border-[#d9cdbd] text-[#506477]" onClick={() => setRejectingSubmission(null)}>
+                <Button variant="outline" className="border-border text-muted-foreground" onClick={() => setRejectingSubmission(null)}>
                   Cancel
                 </Button>
                 <Button
                   onClick={() => handleReject(rejectingSubmission)}
                   disabled={!rejectReason.trim() || updateStatusMutation.isPending}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-destructive hover:bg-destructive/85 text-destructive-foreground"
                 >
                   {updateStatusMutation.isPending ? "Rejecting..." : "Reject Submission"}
                 </Button>

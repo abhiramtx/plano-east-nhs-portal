@@ -143,25 +143,25 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
+      <div className="flex-1 flex flex-col bg-background min-h-0">
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
-      <div className="bg-[#faf8f4] bg-white border-b border-[#d9cdbd] flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-background min-h-0">
+      <div className="bg-card border-b border-border flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#506477' }}>
-              <UserPlus className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-secondary">
+              <UserPlus className="w-7 h-7 text-secondary-foreground" />
             </div>
             <div>
-              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Admin Management</h1>
-              <p className="text-[#506477] mt-0.5">Add or remove administrator privileges</p>
+              <h1 className="page-title text-xl lg:text-2xl font-bold text-foreground">Admin Management</h1>
+              <p className="text-muted-foreground mt-0.5">Add or remove administrator privileges</p>
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
             <CardContent>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-[#17324d] hover:bg-[#1f3d5a] text-white">
+                  <Button className="bg-primary hover:bg-primary/85 text-primary-foreground">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Add Admin
                   </Button>
@@ -200,7 +200,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
                         className="mt-1"
                         required
                       />
-                      <p className="text-sm text-[#506477] mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         The person must have a Google account and must sign in at least once before being granted admin privileges.
                       </p>
                     </div>
@@ -215,7 +215,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
                       <Button 
                         type="submit" 
                         disabled={addAdminMutation.isPending}
-                        className="bg-[#17324d] hover:bg-[#1f3d5a] text-white"
+                        className="bg-primary hover:bg-primary/85 text-primary-foreground"
                       >
                         {addAdminMutation.isPending ? "Adding..." : "Add Admin"}
                       </Button>
@@ -237,9 +237,9 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
           <CardContent>
             {adminProfiles.length === 0 ? (
               <div className="text-center py-12">
-                <Shield className="w-16 h-16 mx-auto mb-4 text-[#8fa5b4]" />
-                <h3 className="text-lg font-medium text-[#17324d] mb-2">No administrators found</h3>
-                <p className="text-[#506477]">Add administrators to manage the system</p>
+                <Shield className="w-16 h-16 mx-auto mb-4 text-muted-foreground/60" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No administrators found</h3>
+                <p className="text-muted-foreground">Add administrators to manage the system</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -247,23 +247,23 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
                   const isCurrentUser = member.userEmail?.toLowerCase() === user?.email?.toLowerCase();
                   const displayName = adminNames[member.userEmail] || member.userName || member.userEmail;
                   return (
-                    <div key={member.userEmail} className="flex items-center justify-between p-4 border rounded-lg hover:bg-[#faf8f4] transition-colors">
+                    <div key={member.userEmail} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-background transition-colors">
                       <div className="flex items-center space-x-3">
-                        <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
-                          <UserIcon className="w-5 h-5 text-blue-600" />
+                        <div className="flex items-center justify-center w-10 h-10 bg-primary/15 rounded-full">
+                          <UserIcon className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <h3 className="font-medium text-[#17324d]">
+                            <h3 className="font-medium text-foreground">
                               {displayName}
                             </h3>
                             {isCurrentUser && (
-                              <Badge className="bg-green-100 text-green-800">
+                              <Badge className="bg-chart-3/15 text-chart-3 border-chart-3/30">
                                 You
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center space-x-1 text-sm text-[#506477]">
+                          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                             <Mail className="w-4 h-4" />
                             <span>{member.userEmail}</span>
                           </div>
@@ -271,7 +271,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                        <Badge className="bg-purple-100 text-purple-800">
+                        <Badge className="bg-chart-5/15 text-chart-5 border-chart-5/30">
                           <Shield className="w-3 h-3 mr-1" />
                           Admin
                         </Badge>
@@ -281,7 +281,7 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
                             size="sm"
                             onClick={() => handleRemoveAdmin(member.userEmail)}
                             disabled={removeAdminMutation.isPending}
-                            className="text-red-600 hover:bg-red-50"
+                            className="text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 className="w-4 h-4 mr-1" />
                             Remove

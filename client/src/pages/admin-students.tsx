@@ -600,12 +600,12 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
 
   const getRequirementStatus = (approvedHours: number) => {
     if (approvedHours >= 15) {
-      return { status: 'met', color: 'border border-[var(--teal)]/35 bg-[var(--teal)]/15 text-[var(--teal)]', text: 'Requirement Met' };
+      return { status: 'met', color: 'bg-chart-3/15 text-chart-3 border-chart-3/30', text: 'Requirement Met' };
     } else {
       const needed = 15 - approvedHours;
       return { 
         status: 'pending', 
-        color: 'border border-primary/35 bg-primary/15 text-primary',
+        color: 'bg-chart-1/15 text-chart-1 border-chart-1/30',
         text: `${needed.toFixed(1)} hours needed` 
       };
     }
@@ -613,9 +613,9 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'border border-[var(--teal)]/35 bg-[var(--teal)]/15 text-[var(--teal)]';
-      case 'rejected': return 'border border-destructive/35 bg-destructive/15 text-destructive';
-      default: return 'border border-primary/35 bg-primary/15 text-primary';
+      case 'approved': return 'bg-chart-3/15 text-chart-3 border-chart-3/30';
+      case 'rejected': return 'bg-destructive/15 text-destructive border-destructive/30';
+      default: return 'bg-chart-1/15 text-chart-1 border-chart-1/30';
     }
   };
 
@@ -665,23 +665,23 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-[#506477]">Loading member data...</p>
+          <p className="text-muted-foreground">Loading member data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex bg-[#faf8f4] min-h-0">
+    <div className="flex-1 flex bg-background min-h-0">
       {showFilters && (
-        <div className="w-56 border-r border-[#d9cdbd] flex-shrink-0 bg-[#faf8f4] overflow-y-auto">
+        <div className="w-56 border-r border-border flex-shrink-0 bg-background overflow-y-auto">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-medium text-[#17324d] flex items-center gap-2">
+              <h3 className="font-medium text-foreground flex items-center gap-2">
                 <Filter className="w-4 h-4" />
                 Filters
                 {activeFilterCount > 0 && (
-                  <Badge className="border-primary/30 bg-primary/15 text-primary">{activeFilterCount}</Badge>
+                  <Badge className="bg-primary/15 text-primary border-primary/30">{activeFilterCount}</Badge>
                 )}
               </h3>
               <Button
@@ -706,7 +706,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
 
             <div className="space-y-6">
               <div>
-                <h4 className="text-sm font-medium text-[#17324d] mb-3">Grade Level</h4>
+                <h4 className="text-sm font-medium text-foreground mb-3">Grade Level</h4>
                 <div className="space-y-2">
                   {gradeLevels.map(grade => (
                     <div key={grade} className="flex items-center space-x-2">
@@ -717,7 +717,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                           handleFilterChange('gradeLevels', grade, checked as boolean)
                         }
                       />
-                      <label htmlFor={`grade-${grade}`} className="text-sm text-[#17324d]">
+                      <label htmlFor={`grade-${grade}`} className="text-sm text-foreground">
                         Grade {grade}
                       </label>
                     </div>
@@ -728,7 +728,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
               <Separator />
 
               <div>
-                <h4 className="text-sm font-medium text-[#17324d] mb-3">Requirements</h4>
+                <h4 className="text-sm font-medium text-foreground mb-3">Requirements</h4>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -738,7 +738,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                         handleFilterChange('requirementStatus', 'met', checked as boolean)
                       }
                     />
-                    <label htmlFor="req-met" className="text-sm text-[#17324d]">
+                    <label htmlFor="req-met" className="text-sm text-foreground">
                       Requirements Met
                     </label>
                   </div>
@@ -750,7 +750,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                         handleFilterChange('requirementStatus', 'not-met', checked as boolean)
                       }
                     />
-                    <label htmlFor="req-not-met" className="text-sm text-[#17324d]">
+                    <label htmlFor="req-not-met" className="text-sm text-foreground">
                       Requirements Not Met
                     </label>
                   </div>
@@ -760,7 +760,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
               <Separator />
 
               <div>
-                <h4 className="text-sm font-medium text-[#17324d] mb-3">Submission Status</h4>
+                <h4 className="text-sm font-medium text-foreground mb-3">Submission Status</h4>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -770,7 +770,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                         handleFilterChange('submissionStatus', 'has-pending', checked as boolean)
                       }
                     />
-                    <label htmlFor="has-pending" className="text-sm text-[#17324d]">
+                    <label htmlFor="has-pending" className="text-sm text-foreground">
                       Has Pending Hours
                     </label>
                   </div>
@@ -782,7 +782,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                         handleFilterChange('submissionStatus', 'no-pending', checked as boolean)
                       }
                     />
-                    <label htmlFor="no-pending" className="text-sm text-[#17324d]">
+                    <label htmlFor="no-pending" className="text-sm text-foreground">
                       No Pending Hours
                     </label>
                   </div>
@@ -792,7 +792,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
               <Separator />
 
               <div>
-                <h4 className="text-sm font-medium text-[#17324d] mb-3">Role</h4>
+                <h4 className="text-sm font-medium text-foreground mb-3">Role</h4>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -802,7 +802,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                         handleFilterChange('userRoles', 'student', checked as boolean)
                       }
                     />
-                    <label htmlFor="role-student" className="text-sm text-[#17324d]">
+                    <label htmlFor="role-student" className="text-sm text-foreground">
                       Students
                     </label>
                   </div>
@@ -814,7 +814,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                         handleFilterChange('userRoles', 'admin', checked as boolean)
                       }
                     />
-                    <label htmlFor="role-admin" className="text-sm text-[#17324d]">
+                    <label htmlFor="role-admin" className="text-sm text-foreground">
                       Admins
                     </label>
                   </div>
@@ -826,11 +826,11 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   <Separator />
 
                   <div>
-                    <h4 className="text-sm font-medium text-[#17324d] mb-3">Additional Parameters</h4>
+                    <h4 className="text-sm font-medium text-foreground mb-3">Additional Parameters</h4>
                     <div className="space-y-4">
                       {filterableCustomFields.map(field => (
                         <div key={field.id}>
-                          <label htmlFor={`filter-${field.id}`} className="text-sm font-medium text-[#17324d] mb-1 block">
+                          <label htmlFor={`filter-${field.id}`} className="text-sm font-medium text-foreground mb-1 block">
                             {field.fieldName}
                           </label>
                           {(field.fieldType === 'select' || field.fieldType === 'multiselect' || field.fieldType === 'checkbox') ? (
@@ -858,7 +858,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                             });
                                           }}
                                         />
-                                        <label htmlFor={`filter-${field.id}-${option}`} className="text-sm text-[#17324d]">{option}</label>
+                                        <label htmlFor={`filter-${field.id}-${option}`} className="text-sm text-foreground">{option}</label>
                                       </div>
                                     );
                                   })}
@@ -885,7 +885,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                             });
                                           }}
                                         />
-                                        <label htmlFor={`filter-${field.id}-${option}`} className="text-sm text-[#17324d]">{option}</label>
+                                        <label htmlFor={`filter-${field.id}-${option}`} className="text-sm text-foreground">{option}</label>
                                       </div>
                                     );
                                   })}
@@ -907,7 +907,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                   }
                                 }));
                               }}
-                              className="w-full text-sm bg-transparent border-0 border-b border-[#c9bfae] focus:border-[#17324d] focus:outline-none py-1 px-0 text-[#17324d] placeholder-gray-400"
+                              className="w-full text-sm bg-transparent border-0 border-b border-border focus:border-primary focus:outline-none py-1 px-0 text-foreground placeholder:text-muted-foreground/60"
                             />
                           )}
                         </div>
@@ -920,11 +920,11 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                 <>
                   <Separator />
                   <div>
-                    <h4 className="text-sm font-medium text-[#17324d] mb-3">Hour Logs</h4>
+                    <h4 className="text-sm font-medium text-foreground mb-3">Hour Logs</h4>
                     <div className="space-y-4">
                       {hoursLogs.map(log => (
                         <div key={log.id}>
-                          <span className="text-sm font-medium text-[#17324d] mb-1 block">{log.name} ({log.hoursRequired}h)</span>
+                          <span className="text-sm font-medium text-foreground mb-1 block">{log.name} ({log.hoursRequired}h)</span>
                           <div className="space-y-2">
                             {['met', 'not-met'].map(val => {
                               const selected = (filters.logs[log.id] || []).includes(val);
@@ -946,7 +946,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                       });
                                     }}
                                   />
-                                  <label htmlFor={`log-${log.id}-${val}`} className="text-sm text-[#17324d]">
+                                  <label htmlFor={`log-${log.id}-${val}`} className="text-sm text-foreground">
                                     {val === 'met' ? 'Met' : 'Not Met'}
                                   </label>
                                 </div>
@@ -980,12 +980,12 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
           <DialogHeader>
             <DialogTitle>Export to CSV</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-[#506477]">
+          <p className="text-sm text-muted-foreground">
             {students.length} volunteer{students.length !== 1 ? 's' : ''} will be exported. Select columns to include:
           </p>
-          <div className="max-h-72 overflow-y-auto space-y-2 border border-[#d9cdbd] rounded p-3">
+          <div className="max-h-72 overflow-y-auto space-y-2 border border-border rounded p-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-[#506477] uppercase">Columns</span>
+              <span className="text-xs font-medium text-muted-foreground uppercase">Columns</span>
               <button
                 type="button"
               className="text-xs text-primary hover:underline"
@@ -1006,7 +1006,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   checked={!!csvColumns[col.key]}
                   onCheckedChange={(checked) => setCsvColumns(prev => ({ ...prev, [col.key]: !!checked }))}
                 />
-                <label htmlFor={`csv-${col.key}`} className="text-sm text-[#17324d] cursor-pointer">
+                <label htmlFor={`csv-${col.key}`} className="text-sm text-foreground cursor-pointer">
                   {col.label}
                 </label>
               </div>
@@ -1016,7 +1016,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
             <Button
               onClick={downloadCsv}
               disabled={!allCsvColumns.some(c => csvColumns[c.key])}
-              className="flex-1 bg-[#17324d] hover:bg-[#1f3d5a] text-white"
+              className="flex-1 bg-primary hover:bg-primary/85 text-primary-foreground"
             >
               <Download className="w-4 h-4 mr-2" />
               Download
@@ -1037,7 +1037,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
           <DialogHeader>
             <DialogTitle>Remove Member</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-[#506477]">
+          <p className="text-sm text-muted-foreground">
             Are you sure you want to remove <strong>{memberToKick?.name || memberToKick?.email}</strong> from the club? Their hours history will remain, but they will lose access.
           </p>
           <div className="flex gap-2 pt-2">
@@ -1060,16 +1060,16 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       </Dialog>
 
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
+        <div className="bg-card border-b border-border flex-shrink-0">
           <div className="px-4 lg:px-6 py-4 lg:py-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#3b82f6' }}>
-                  <Users className="w-7 h-7 text-white" />
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-primary">
+                  <Users className="w-7 h-7 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Member Management</h1>
-                  <p className="text-[#506477] mt-0.5">Track member progress and manage requirements</p>
+                  <h1 className="page-title text-xl lg:text-2xl font-bold text-foreground">Member Management</h1>
+                  <p className="text-muted-foreground mt-0.5">Track member progress and manage requirements</p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -1092,7 +1092,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
         <div className="flex-1 overflow-auto p-4 lg:p-6">
           <div className="mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8fa5b4] w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground/80 w-4 h-4" />
               <Input
                 placeholder="Search members by name or email..."
                 value={searchTerm}
@@ -1107,11 +1107,11 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-[#506477]">Total Members</p>
-                    <p className="text-2xl font-bold text-[#17324d]">{students.length}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Total Members</p>
+                    <p className="text-2xl font-bold text-foreground">{students.length}</p>
                   </div>
-                  <div className="p-3 bg-[#eee5d7] rounded-full">
-                    <Users className="w-5 h-5 text-[#17324d]" />
+                  <div className="p-3 bg-secondary rounded-full">
+                    <Users className="w-5 h-5 text-secondary-foreground" />
                   </div>
                 </div>
               </CardContent>
@@ -1121,13 +1121,13 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-[#506477]">Requirements Met</p>
-                    <p className="text-2xl font-bold text-[var(--teal)]">
+                    <p className="text-sm font-medium text-muted-foreground">Requirements Met</p>
+                    <p className="text-2xl font-bold text-chart-3">
                       {students.filter((s: any) => s.approvedHours >= 15).length}
                     </p>
                   </div>
-                  <div className="rounded-full bg-[var(--teal)]/15 p-3">
-                    <CheckCircle2 className="h-5 w-5 text-[var(--teal)]" />
+                  <div className="rounded-full bg-chart-3/15 p-3">
+                    <CheckCircle2 className="h-5 w-5 text-chart-3" />
                   </div>
                 </div>
               </CardContent>
@@ -1137,7 +1137,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-[#506477]">Pending Review</p>
+                    <p className="text-sm font-medium text-muted-foreground">Pending Review</p>
                     <p className="text-2xl font-bold text-primary">
                       {students.filter((s: any) => s.pendingHours > 0).length}
                     </p>
@@ -1156,7 +1156,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                 <Users className="w-5 h-5" />
                 Student Progress
                 {activeFilterCount > 0 && (
-                  <Badge className="border-primary/30 bg-primary/15 text-primary">
+                  <Badge className="bg-primary/15 text-primary border-primary/30">
                     {students.length} of {allStudents.length} shown
                   </Badge>
                 )}
@@ -1165,9 +1165,9 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
             <CardContent>
               {students.length === 0 ? (
                 <div className="text-center py-12">
-                  <Users className="w-16 h-16 mx-auto mb-4 text-[#8fa5b4]" />
-                  <h3 className="text-lg font-medium text-[#17324d] mb-2">No students found</h3>
-                  <p className="text-[#506477]">
+                  <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground/60" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No students found</h3>
+                  <p className="text-muted-foreground">
                     {searchTerm || activeFilterCount > 0 
                       ? "Try adjusting your search terms or filters" 
                       : "Students will appear here once they submit hours"
@@ -1184,19 +1184,19 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                     return (
                       <div 
                         key={index} 
-                        className="border border-[#d9cdbd] rounded-xl p-4 hover:bg-[#faf8f4] transition-colors cursor-pointer" 
+                        className="border border-border rounded-xl p-4 hover:bg-background transition-colors cursor-pointer"
                         onClick={() => setSelectedStudent(student)}
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <div className="flex items-center justify-center w-10 h-10 bg-gray-900 rounded-full flex-shrink-0">
-                              <span className="text-white text-sm font-medium">
+                            <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-full flex-shrink-0">
+                              <span className="text-primary-foreground text-sm font-medium">
                                 {student.studentName?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || student.email.substring(0, 2).toUpperCase()}
                               </span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-[#17324d] truncate">{student.studentName}</h3>
+                                <h3 className="font-semibold text-foreground truncate">{student.studentName}</h3>
                                 {student.userRole === 1 && (
                                   <Badge className="border-primary/30 bg-primary/15 text-primary text-xs flex-shrink-0">Admin</Badge>
                                 )}
@@ -1210,7 +1210,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                   </a>
                                 )}
                               </div>
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#506477]">
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                                 <span className="flex items-center gap-1">
                                   <Mail className="w-3 h-3" />
                                   {student.email}
@@ -1228,7 +1228,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                   </span>
                                 )}
                               </div>
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#506477] mt-1">
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                                 {student.studentId && (
                                   <span className="flex items-center gap-1">
                                     <Hash className="w-3 h-3" />
@@ -1245,7 +1245,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                           
                           <div className="flex flex-col items-end gap-2 flex-shrink-0">
                             {lastActivity && (
-                              <span className="text-xs text-[#8fa5b4]">{lastActivity}</span>
+                              <span className="text-xs text-muted-foreground/80">{lastActivity}</span>
                             )}
                             {(() => {
                               const membership = (clubMembers as Membership[]).find(m => m.userEmail === student.email);
@@ -1268,22 +1268,22 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-[#e8dfd4]">
+                        <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-border">
                           <div className="text-center">
-                            <div className="text-xs text-[#506477]">Total Hours</div>
-                            <div className="text-sm font-bold text-[#17324d]">{student.totalHours.toFixed(1)}</div>
+                            <div className="text-xs text-muted-foreground">Total Hours</div>
+                            <div className="text-sm font-bold text-foreground">{student.totalHours.toFixed(1)}</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-xs text-[#506477]">Approved</div>
-                            <div className="text-sm font-bold text-[#17324d]">{student.approvedHours.toFixed(1)}</div>
+                            <div className="text-xs text-muted-foreground">Approved</div>
+                            <div className="text-sm font-bold text-foreground">{student.approvedHours.toFixed(1)}</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-xs text-[#506477]">Pending</div>
-                            <div className="text-sm font-bold text-[#17324d]">{student.pendingHours.toFixed(1)}</div>
+                            <div className="text-xs text-muted-foreground">Pending</div>
+                            <div className="text-sm font-bold text-foreground">{student.pendingHours.toFixed(1)}</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-xs text-[#506477]">Submissions</div>
-                            <div className="text-sm font-bold text-[#17324d]">{student.submissionCount}</div>
+                            <div className="text-xs text-muted-foreground">Submissions</div>
+                            <div className="text-sm font-bold text-foreground">{student.submissionCount}</div>
                           </div>
                         </div>
                       </div>
@@ -1297,26 +1297,26 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       </div>
 
       <Dialog open={!!selectedStudent} onOpenChange={() => setSelectedStudent(null)}>
-        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 bg-[#faf8f4] [&>button:last-child]:hidden">
+        <DialogContent className="max-w-6xl w-[95vw] max-h-[90vh] overflow-y-auto p-0 bg-card [&>button:last-child]:hidden">
           <DialogHeader className="sr-only">
             <DialogTitle>{selectedStudent?.studentName} - Profile</DialogTitle>
           </DialogHeader>
           <div className="p-8 pb-0">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <div className="flex items-center justify-center w-14 h-14 bg-gray-900 rounded-full">
-                  <span className="text-white text-lg font-medium">
+                <div className="flex items-center justify-center w-14 h-14 bg-primary rounded-full">
+                  <span className="text-primary-foreground text-lg font-medium">
                     {selectedStudent?.studentName?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || '??'}
                   </span>
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-[#17324d]">{selectedStudent?.studentName}</h2>
+                    <h2 className="text-xl font-bold text-foreground">{selectedStudent?.studentName}</h2>
                     {selectedStudent?.userRole === 1 && (
                       <Badge className="border-primary/30 bg-primary/15 text-primary text-xs">Admin</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-[#506477]">Student Profile & Hours Review</p>
+                  <p className="text-sm text-muted-foreground">Student Profile & Hours Review</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -1331,7 +1331,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-[#17324d] hover:bg-[#1f3d5a] text-white flex items-center gap-1"
+                  className="bg-primary hover:bg-primary/85 text-primary-foreground flex items-center gap-1"
                   onClick={() => { setShowGrantDialog(true); setGrantDate(new Date().toISOString().split('T')[0]); }}
                 >
                   <Award className="w-4 h-4" />
@@ -1345,73 +1345,73 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="border border-[#d9cdbd] rounded-xl p-4">
-                <h4 className="font-semibold text-[#17324d] mb-3">Contact Information</h4>
+              <div className="border border-border rounded-xl p-4">
+                <h4 className="font-semibold text-foreground mb-3">Contact Information</h4>
                 <div className="space-y-3">
                   <div>
-                    <div className="flex items-center gap-1 text-xs text-[#506477] mb-0.5">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
                       <Mail className="w-3 h-3" />
                       Google Account
                     </div>
-                    <p className="text-sm font-medium text-[#17324d]">{selectedStudent?.email}</p>
+                    <p className="text-sm font-medium text-foreground">{selectedStudent?.email}</p>
                   </div>
                   {selectedStudent?.personalEmail && (
                     <div>
-                      <div className="flex items-center gap-1 text-xs text-[#506477] mb-0.5">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
                         <Mail className="w-3 h-3" />
                         Personal Email
                       </div>
-                      <p className="text-sm font-medium text-[#17324d]">{selectedStudent.personalEmail}</p>
+                      <p className="text-sm font-medium text-foreground">{selectedStudent.personalEmail}</p>
                     </div>
                   )}
                   {selectedStudent?.phone && (
                     <div>
-                      <div className="flex items-center gap-1 text-xs text-[#506477] mb-0.5">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
                         <Phone className="w-3 h-3" />
                         Phone Number
                       </div>
-                      <p className="text-sm font-medium text-[#17324d]">{selectedStudent.phone}</p>
+                      <p className="text-sm font-medium text-foreground">{selectedStudent.phone}</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="border border-[#d9cdbd] rounded-xl p-4">
-                <h4 className="font-semibold text-[#17324d] mb-3">Academic Information</h4>
+              <div className="border border-border rounded-xl p-4">
+                <h4 className="font-semibold text-foreground mb-3">Academic Information</h4>
                 <div className="space-y-3">
                   <div>
-                    <div className="flex items-center gap-1 text-xs text-[#506477] mb-0.5">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
                       <GraduationCap className="w-3 h-3" />
                       Grade Level
                     </div>
-                    <p className="text-sm font-medium text-[#17324d]">Grade {selectedStudent?.gradeLevel}</p>
+                    <p className="text-sm font-medium text-foreground">Grade {selectedStudent?.gradeLevel}</p>
                   </div>
                   {selectedStudent?.studentId && (
                     <div>
-                      <div className="flex items-center gap-1 text-xs text-[#506477] mb-0.5">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
                         <Hash className="w-3 h-3" />
                         Student ID
                       </div>
-                      <p className="text-sm font-medium text-[#17324d]">{selectedStudent.studentId}</p>
+                      <p className="text-sm font-medium text-foreground">{selectedStudent.studentId}</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="border border-[#d9cdbd] rounded-xl p-4">
-                <h4 className="font-semibold text-[#17324d] mb-3">Custom Fields</h4>
+              <div className="border border-border rounded-xl p-4">
+                <h4 className="font-semibold text-foreground mb-3">Custom Fields</h4>
                 <div className="space-y-3">
                   {(() => {
                     const userId = selectedStudent?.email?.replace(/\./g, ',') || '';
                     const vals = customFieldValues[userId] || {};
                     const fieldsWithValues = customFields.filter((f: CustomField) => vals[f.id]);
                     if (fieldsWithValues.length === 0) {
-                      return <p className="text-sm text-[#8fa5b4] italic">No custom fields set</p>;
+                      return <p className="text-sm text-muted-foreground/80 italic">No custom fields set</p>;
                     }
                     return fieldsWithValues.map((field: CustomField) => (
                       <div key={field.id}>
-                        <div className="text-xs text-[#506477] mb-0.5">{field.fieldName}</div>
-                        <p className="text-sm font-medium text-[#17324d]">
+                        <div className="text-xs text-muted-foreground mb-0.5">{field.fieldName}</div>
+                        <p className="text-sm font-medium text-foreground">
                           {field.fieldType === 'checkbox' ? (vals[field.id] === 'true' ? 'Yes' : 'No') : vals[field.id]}
                         </p>
                       </div>
@@ -1423,7 +1423,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
 
             {hoursLogs.length > 0 && (
               <div className="mb-6">
-                <h4 className="font-semibold text-[#17324d] mb-3 flex items-center gap-2">
+                <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                   <BookOpen className="w-4 h-4" />
                   Log Progress
                 </h4>
@@ -1433,21 +1433,21 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                     const pct = Math.min(100, (logHours / log.hoursRequired) * 100);
                     const met = logHours >= log.hoursRequired;
                     return (
-                      <div key={log.id} className="border border-[#d9cdbd] rounded-xl p-4">
+                      <div key={log.id} className="border border-border rounded-xl p-4">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-[#17324d]">{log.name}</span>
+                          <span className="text-sm font-medium text-foreground">{log.name}</span>
                           <Badge variant={met ? "default" : "outline"} className={met ? "border border-[var(--teal)]/35 bg-[var(--teal)]/15 text-[var(--teal)] text-xs" : "text-xs"}>
                             {met ? 'Met' : 'Not Met'}
                           </Badge>
                         </div>
-                        <div className="text-2xl font-bold text-[#17324d]">{logHours.toFixed(1)} <span className="text-sm font-normal text-[#506477]">/ {log.hoursRequired}h</span></div>
-                        <div className="w-full bg-[#e0d6c8] rounded-full h-2 mt-2">
+                        <div className="text-2xl font-bold text-foreground">{logHours.toFixed(1)} <span className="text-sm font-normal text-muted-foreground">/ {log.hoursRequired}h</span></div>
+                        <div className="w-full bg-secondary rounded-full h-2 mt-2">
                           <div 
                             className={`h-2 rounded-full transition-all ${met ? 'bg-[var(--teal)]' : 'bg-foreground'}`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <div className="text-xs text-[#506477] mt-1">
+                        <div className="text-xs text-muted-foreground mt-1">
                           {met ? 'Requirement met' : `${(log.hoursRequired - logHours).toFixed(1)} hours remaining`}
                         </div>
                         {(() => {
@@ -1456,9 +1456,9 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                           const contrib = getSubClubContributionForStudentLog(studentEmail, String(log.id));
                           if (contrib <= 0) return null;
                           return (
-                            <div className="flex items-start gap-1.5 mt-2 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-                              <GitMerge className="w-3 h-3 text-amber-600 flex-shrink-0 mt-0.5" />
-                              <span className="text-xs text-amber-800">
+                            <div className="flex items-start gap-1.5 mt-2 bg-chart-1/10 border border-chart-1/30 rounded-lg px-2 py-1.5">
+                              <GitMerge className="w-3 h-3 text-chart-1 flex-shrink-0 mt-0.5" />
+                              <span className="text-xs text-chart-1">
                                 {contrib.toFixed(1)}h from Sub-Club contributions count toward this log
                               </span>
                             </div>
@@ -1472,33 +1472,33 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
             )}
 
             <div className="grid grid-cols-4 gap-3 mb-6">
-              <div className="border border-[#d9cdbd] rounded-xl p-4 text-center">
-                <div className="text-xs text-[#506477] mb-1">Total Hours</div>
-                <div className="text-2xl font-bold text-[#17324d]">{selectedStudent?.totalHours?.toFixed(1)}</div>
+              <div className="border border-border rounded-xl p-4 text-center">
+                <div className="text-xs text-muted-foreground mb-1">Total Hours</div>
+                <div className="text-2xl font-bold text-foreground">{selectedStudent?.totalHours?.toFixed(1)}</div>
               </div>
-              <div className="border border-[#d9cdbd] rounded-xl p-4 text-center">
-                <div className="text-xs text-[#506477] mb-1">Approved</div>
-                <div className="text-2xl font-bold text-[#17324d]">{selectedStudent?.approvedHours?.toFixed(1)}</div>
+              <div className="border border-border rounded-xl p-4 text-center">
+                <div className="text-xs text-muted-foreground mb-1">Approved</div>
+                <div className="text-2xl font-bold text-foreground">{selectedStudent?.approvedHours?.toFixed(1)}</div>
               </div>
-              <div className="border border-[#d9cdbd] rounded-xl p-4 text-center">
-                <div className="text-xs text-[#506477] mb-1">Pending</div>
-                <div className="text-2xl font-bold text-[#17324d]">{selectedStudent?.pendingHours?.toFixed(1)}</div>
+              <div className="border border-border rounded-xl p-4 text-center">
+                <div className="text-xs text-muted-foreground mb-1">Pending</div>
+                <div className="text-2xl font-bold text-foreground">{selectedStudent?.pendingHours?.toFixed(1)}</div>
               </div>
-              <div className="border border-[#d9cdbd] rounded-xl p-4 text-center">
-                <div className="text-xs text-[#506477] mb-1">Submissions</div>
-                <div className="text-2xl font-bold text-[#17324d]">{selectedStudent?.submissionCount}</div>
+              <div className="border border-border rounded-xl p-4 text-center">
+                <div className="text-xs text-muted-foreground mb-1">Submissions</div>
+                <div className="text-2xl font-bold text-foreground">{selectedStudent?.submissionCount}</div>
               </div>
             </div>
           </div>
 
           <div className="px-8 pb-8">
-            <h3 className="font-semibold text-[#17324d] text-lg mb-4">Hours Submissions</h3>
+            <h3 className="font-semibold text-foreground text-lg mb-4">Hours Submissions</h3>
             {studentSubmissionsLoading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#17324d]"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : studentSubmissions.length === 0 ? (
-              <div className="text-center py-8 text-[#506477]">
+              <div className="text-center py-8 text-muted-foreground">
                 No submissions found
               </div>
             ) : (
@@ -1532,13 +1532,13 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   return sections.map(section => (
                     <div key={section.key}>
                       <div className="flex items-center gap-2 mb-3">
-                        <BookOpen className="w-4 h-4 text-[#506477]" />
-                        <h4 className="font-semibold text-[#17324d]">{section.logName}</h4>
+                        <BookOpen className="w-4 h-4 text-muted-foreground" />
+                        <h4 className="font-semibold text-foreground">{section.logName}</h4>
                         <Badge variant="outline" className="text-xs">{section.items.length}</Badge>
                       </div>
                       <div className="space-y-3 ml-6">
                         {section.items.map((submission: HoursSubmission) => (
-                          <div key={submission.id} className="border border-[#d9cdbd] rounded-xl p-4">
+                          <div key={submission.id} className="border border-border rounded-xl p-4">
                             <div className="flex items-start justify-between mb-2">
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
@@ -1546,12 +1546,12 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                     {getStatusIcon(submission.status)}
                                     <span className="ml-1 capitalize">{submission.status}</span>
                                   </Badge>
-                                  <span className="text-sm text-[#506477]">{formatDate(submission.date)}</span>
+                                  <span className="text-sm text-muted-foreground">{formatDate(submission.date)}</span>
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <h4 className="font-semibold text-[#17324d]">{submission.activityName || 'Unnamed Activity'}</h4>
+                                  <h4 className="font-semibold text-foreground">{submission.activityName || 'Unnamed Activity'}</h4>
                                   {(submission as any).grantedByAdmin && (
-                                    <Badge className="border-[var(--teal)]/30 bg-[var(--teal)]/15 text-[var(--teal)] text-xs">
+                                    <Badge className="bg-chart-3/15 text-chart-3 border-chart-3/30 text-xs">
                                       <Award className="w-3 h-3 mr-1" /> Granted by Admin
                                     </Badge>
                                   )}
@@ -1567,9 +1567,9 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                   )}
                                 </div>
                                 {submission.description && (
-                                  <p className="text-sm text-[#506477]">{submission.description}</p>
+                                  <p className="text-sm text-muted-foreground">{submission.description}</p>
                                 )}
-                                <div className="flex items-center gap-4 mt-1 text-sm text-[#506477]">
+                                <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
                                     {editingSubmissionHours?.id === submission.id ? (
@@ -1584,7 +1584,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                           onClick={e => e.stopPropagation()}
                                         />
                                         <button
-                                          className="text-[var(--teal)] hover:text-[var(--teal)]/80"
+                                          className="text-chart-3 hover:text-chart-3/80"
                                           onClick={e => { e.stopPropagation(); editSubmissionHoursMutation.mutate({ id: submission.id, hours: parseFloat(editingSubmissionHours.hours) }); }}
                                         ><Check className="w-3 h-3" /></button>
                                         <button
@@ -1593,8 +1593,8 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                         ><X className="w-3 h-3" /></button>
                                       </span>
                                     ) : (
-                                      <span className="flex items-center gap-1 cursor-pointer hover:text-[#17324d]" onClick={e => { e.stopPropagation(); setEditingSubmissionHours({ id: submission.id, hours: String(submission.hours) }); }}>
-                                        {submission.hours} hours <span className="text-[#8fa5b4] text-xs">(click to edit)</span>
+                                      <span className="flex items-center gap-1 cursor-pointer hover:text-foreground" onClick={e => { e.stopPropagation(); setEditingSubmissionHours({ id: submission.id, hours: String(submission.hours) }); }}>
+                                        {submission.hours} hours <span className="text-muted-foreground/80 text-xs">(click to edit)</span>
                                       </span>
                                     )}
                                   </span>
@@ -1610,7 +1610,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                     size="sm"
                                     variant="outline"
                                     onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: submission.id, status: 'pending' }); }}
-                                    className="text-[#506477] border-[#c9bfae]"
+                                    className="text-muted-foreground border-border"
                                   >
                                     <Clock className="w-3 h-3 mr-1" />
                                     Pending
@@ -1621,7 +1621,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                     size="sm"
                                     variant="outline"
                                     onClick={(e) => { e.stopPropagation(); updateStatusMutation.mutate({ id: submission.id, status: 'approved' }); }}
-                                    className="text-[#17324d] border-[#c9bfae]"
+                                    className="text-foreground border-border"
                                   >
                                     <Check className="w-3 h-3 mr-1" />
                                     Approve
@@ -1632,7 +1632,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                     size="sm"
                                     variant="outline"
                                     onClick={(e) => { e.stopPropagation(); setRejectingSubmission(submission.id); }}
-                                    className="text-[#506477] border-[#c9bfae]"
+                                    className="text-muted-foreground border-border"
                                   >
                                     <XCircle className="w-3 h-3 mr-1" />
                                     Reject
@@ -1641,8 +1641,8 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                               </div>
                             </div>
                             {submission.proofImageUrl && (
-                              <div className="mt-4 border-t border-[#e8dfd4] pt-4">
-                                <div className="mb-3 flex items-center gap-2 text-sm font-medium text-[#17324d]">
+                              <div className="mt-4 border-t border-border pt-4">
+                                <div className="mb-3 flex items-center gap-2 text-sm font-medium text-foreground">
                                   <Eye className="h-4 w-4" />
                                   Photo proof verification
                                 </div>
@@ -1650,7 +1650,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                                   <img
                                     src={submission.proofImageUrl}
                                     alt="Proof of service"
-                                    className="h-32 w-full rounded-lg border border-[#d9cdbd] object-cover"
+                                    className="h-32 w-full rounded-lg border border-border object-cover"
                                   />
                                   <ProofMetadata
                                     metadata={submission.proofImageMetadata}
@@ -1708,7 +1708,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
               Grant Hours to {selectedStudent?.studentName}
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-[#506477] -mt-1">
+          <p className="text-sm text-muted-foreground -mt-1">
             This creates an auto-approved submission on behalf of this volunteer. It will appear in their hours with a "Granted by Admin" badge.
           </p>
           <div className="space-y-4 pt-2">
@@ -1738,7 +1738,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
               />
             </div>
             <div className="space-y-1">
-              <Label>Append to Log <span className="text-[#8fa5b4]">(optional)</span></Label>
+              <Label>Append to Log <span className="text-muted-foreground/80">(optional)</span></Label>
               <Select value={grantLogId} onValueChange={setGrantLogId}>
                 <SelectTrigger>
                   <SelectValue placeholder="No log" />
@@ -1754,7 +1754,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
             <div className="flex gap-2 pt-2">
               <Button variant="outline" className="flex-1" onClick={() => setShowGrantDialog(false)}>Cancel</Button>
               <Button
-                className="flex-1 bg-[#17324d] hover:bg-[#1f3d5a] text-white"
+                className="flex-1 bg-primary hover:bg-primary/85 text-primary-foreground"
                 onClick={() => grantHoursMutation.mutate()}
                 disabled={!grantHours || parseFloat(grantHours) <= 0 || grantHoursMutation.isPending}
               >
@@ -1775,15 +1775,15 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="text-center space-y-4 py-2">
-            <p className="text-sm text-[#506477]">
+            <p className="text-sm text-muted-foreground">
               This QR code encodes the volunteer's email. Use it with a Scan QR event — the volunteer shows this on their phone and you scan it to check them in or out.
             </p>
             <div className="flex justify-center">
-              <div className="p-4 bg-[#faf8f4] border-2 border-[#d9cdbd] rounded-xl inline-block">
+              <div className="p-4 bg-card border-2 border-border rounded-xl inline-block">
                 {showStudentQR && <QRCode value={showStudentQR} size={180} />}
               </div>
             </div>
-            <p className="text-xs text-[#8fa5b4] font-mono">{showStudentQR}</p>
+            <p className="text-xs text-muted-foreground/80 font-mono">{showStudentQR}</p>
           </div>
         </DialogContent>
       </Dialog>

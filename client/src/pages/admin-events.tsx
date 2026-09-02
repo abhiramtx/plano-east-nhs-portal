@@ -41,10 +41,10 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 };
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
-  none: 'bg-green-100 text-green-700',
-  password: 'bg-yellow-100 text-yellow-700',
-  scan_qr: 'bg-blue-100 text-blue-700',
-  show_qr: 'bg-purple-100 text-purple-700',
+  none: 'bg-chart-3/15 text-chart-3 border-chart-3/30',
+  password: 'bg-chart-1/15 text-chart-1 border-chart-1/30',
+  scan_qr: 'bg-primary/15 text-primary border-primary/30',
+  show_qr: 'bg-chart-5/15 text-chart-5 border-chart-5/30',
 };
 
 const formatTime = (date?: Date) => {
@@ -110,21 +110,21 @@ function QRScanner({ onScan, onError }: { onScan: (text: string) => void; onErro
     <div className="space-y-3">
       <div
         ref={containerRef}
-        className="w-full rounded-lg overflow-hidden border border-[#d9cdbd] bg-[#faf8f4] min-h-[380px] flex items-center justify-center"
+        className="w-full rounded-lg overflow-hidden border border-border bg-card min-h-[380px] flex items-center justify-center"
       >
         {!started && (
           <div className="text-center p-4">
-            <Camera className="w-10 h-10 text-[#8fa5b4] mx-auto mb-2" />
-            <p className="text-sm text-[#506477]">Camera not started</p>
+            <Camera className="w-10 h-10 text-muted-foreground/60 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Camera not started</p>
           </div>
         )}
       </div>
       {error && (
-        <p className="text-sm text-red-600 text-center">{error}</p>
+        <p className="text-sm text-destructive text-center">{error}</p>
       )}
       <div className="flex gap-2 justify-center">
         {!started ? (
-          <Button onClick={startScanner} className="bg-[#17324d] hover:bg-[#1f3d5a] text-white">
+          <Button onClick={startScanner} className="bg-primary hover:bg-primary/85 text-primary-foreground">
             <Camera className="w-4 h-4 mr-2" />
             Start Camera
           </Button>
@@ -445,29 +445,29 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
   const grantedCount = attendance.filter(a => a.grantStatus === 'granted').length;
 
   return (
-    <div className="flex-1 flex bg-[#faf8f4] min-h-0 overflow-hidden">
+    <div className="flex-1 flex bg-background min-h-0 overflow-hidden">
       {/* Left Panel: Event List */}
-      <div className="w-80 border-r border-[#d9cdbd] flex flex-col flex-shrink-0">
-        <div className="bg-white px-4 py-4 border-b border-[#d9cdbd] flex items-center justify-between">
+      <div className="w-80 border-r border-border flex flex-col flex-shrink-0">
+        <div className="bg-card px-4 py-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#2d827d' }}>
-              <Calendar className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-chart-3">
+              <Calendar className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#17324d]">Events</h3>
-              <p className="text-xs text-[#506477]">QR or password check-in · grant hours</p>
+              <h3 className="text-base font-bold text-foreground">Events</h3>
+              <p className="text-xs text-muted-foreground">QR or password check-in · grant hours</p>
             </div>
           </div>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-[#17324d] hover:bg-[#1f3d5a] text-white flex-shrink-0">
+              <Button size="sm" className="bg-primary hover:bg-primary/85 text-primary-foreground flex-shrink-0">
                 <Plus className="w-4 h-4" />
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Create Event</DialogTitle>
-                <p className="text-sm text-[#506477]">
+                  <p className="text-sm text-muted-foreground">
                   Events let you track attendance and grant hours. QR Code events use time-tracking to automatically calculate hours based on how long each person stayed.
                 </p>
               </DialogHeader>
@@ -477,7 +477,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                   <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Beach Cleanup, Food Drive..." />
                 </div>
                 <div className="space-y-1">
-                  <Label>Description <span className="text-[#8fa5b4]">(optional)</span></Label>
+                  <Label>Description <span className="text-muted-foreground/80">(optional)</span></Label>
                   <Textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Brief description..." rows={2} />
                 </div>
                 <div className="space-y-1">
@@ -492,7 +492,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                     </SelectContent>
                   </Select>
                   {(newType === 'scan_qr' || newType === 'show_qr') && (
-                    <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                      <p className="text-xs text-primary bg-primary/10 p-2 rounded">
                       ⏱ QR events track check-in and check-out times. You can set conditionals to grant different hours based on time stayed.
                     </p>
                   )}
@@ -504,7 +504,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                   </div>
                 )}
                 <Button
-                  className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
+                  className="w-full bg-primary hover:bg-primary/85 text-primary-foreground"
                   onClick={() => createMutation.mutate()}
                   disabled={!newName.trim() || createMutation.isPending}
                 >
@@ -517,13 +517,13 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
         <div className="flex-1 overflow-auto p-3 space-y-2">
           {isLoading && (
-            <div className="text-center py-8 text-[#8fa5b4] text-sm">Loading events...</div>
+            <div className="text-center py-8 text-muted-foreground/80 text-sm">Loading events...</div>
           )}
           {!isLoading && events.length === 0 && (
             <div className="text-center py-12">
-              <Calendar className="w-10 h-10 text-[#b0c0cc] mx-auto mb-3" />
-              <p className="text-sm font-medium text-[#506477]">No events yet</p>
-              <p className="text-xs text-[#8fa5b4] mt-1">Create your first event above</p>
+              <Calendar className="w-10 h-10 text-muted-foreground/60 mx-auto mb-3" />
+              <p className="text-sm font-medium text-muted-foreground">No events yet</p>
+              <p className="text-xs text-muted-foreground/80 mt-1">Create your first event above</p>
             </div>
           )}
           {events.map(event => {
@@ -532,16 +532,16 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
               <button
                 key={event.id}
                 onClick={() => { setSelectedEventId(event.id); setActiveTab('information'); }}
-                className={`w-full text-left rounded-lg border p-3 transition-colors ${isSelected ? 'bg-[#eee5d7] border-gray-400' : 'bg-[#faf8f4] border-[#d9cdbd] hover:bg-[#faf8f4]'}`}
+                className={`w-full text-left rounded-lg border p-3 transition-colors ${isSelected ? 'bg-secondary border-border' : 'bg-card border-border hover:bg-background'}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${event.isOpen !== false ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      <p className="font-medium text-[#17324d] text-sm truncate">{event.name}</p>
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${event.isOpen !== false ? 'bg-chart-3' : 'bg-muted-foreground/40'}`} />
+                      <p className="font-medium text-foreground text-sm truncate">{event.name}</p>
                     </div>
                     {event.description && (
-                      <p className="text-xs text-[#506477] mt-0.5 line-clamp-1 pl-3.5">{event.description}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1 pl-3.5">{event.description}</p>
                     )}
                   </div>
                   <Badge className={`text-xs flex-shrink-0 ${EVENT_TYPE_COLORS[event.type]}`}>
@@ -556,29 +556,29 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
       {/* Right Panel: Event Workspace */}
       {!selectedEvent ? (
-        <div className="flex-1 flex items-center justify-center bg-[#faf8f4]">
+        <div className="flex-1 flex items-center justify-center bg-background">
           <div className="text-center">
-            <Calendar className="w-16 h-16 text-[#b0c0cc] mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-[#506477]">Select an Event</h3>
-            <p className="text-sm text-[#8fa5b4] mt-1">Click an event on the left to manage it</p>
+            <Calendar className="w-16 h-16 text-muted-foreground/60 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-muted-foreground">Select an Event</h3>
+            <p className="text-sm text-muted-foreground/80 mt-1">Click an event on the left to manage it</p>
           </div>
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Event Header */}
-          <div className="px-6 py-4 border-b border-[#d9cdbd] bg-white flex-shrink-0">
+          <div className="px-6 py-4 border-b border-border bg-card flex-shrink-0">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-[#17324d]">{selectedEvent.name}</h2>
+                  <h2 className="text-xl font-bold text-foreground">{selectedEvent.name}</h2>
                   <Badge className={EVENT_TYPE_COLORS[selectedEvent.type]}>{EVENT_TYPE_LABELS[selectedEvent.type]}</Badge>
                 </div>
                 {selectedEvent.description && (
-                  <p className="text-sm text-[#506477] mt-0.5">{selectedEvent.description}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{selectedEvent.description}</p>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-4 text-sm text-[#506477] mr-4">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mr-4">
                   <span className="flex items-center gap-1"><Users className="w-4 h-4" />{attendance.length} attended</span>
                   <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{checkedInCount} checked in</span>
                   <span className="flex items-center gap-1"><Award className="w-4 h-4" />{grantedCount} granted</span>
@@ -586,7 +586,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
                   onClick={() => deleteMutation.mutate(selectedEvent.id)}
                   disabled={deleteMutation.isPending}
                 >
@@ -596,15 +596,15 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
             </div>
 
             {/* Tab Nav */}
-            <div className="flex gap-1 mt-3 border-b border-[#d9cdbd] -mb-4 pb-0">
+            <div className="flex gap-1 mt-3 border-b border-border -mb-4 pb-0">
               {(['information', 'qrcode', 'grant'] as EventTab[]).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                     activeTab === tab
-                      ? 'border-[#17324d] text-[#17324d]'
-                      : 'border-transparent text-[#506477] hover:text-[#17324d]'
+                      ? 'border-primary text-foreground'
+                      : 'border-transparent text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {tab === 'information' && 'Information'}
@@ -630,20 +630,20 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
             {activeTab === 'information' && (
               <div className="space-y-5">
                 {/* Open / Closed toggle */}
-                <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 ${editIsOpen ? 'bg-green-50 border-green-200' : 'bg-[#faf8f4] border-[#d9cdbd]'}`}>
+                <div className={`rounded-xl border p-4 flex items-center justify-between gap-4 ${editIsOpen ? 'bg-chart-3/10 border-chart-3/30' : 'bg-card border-border'}`}>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${editIsOpen ? 'bg-green-500' : 'bg-gray-400'}`} />
-                      <p className="font-semibold text-sm text-[#17324d]">{editIsOpen ? 'Event is Open' : 'Event is Closed'}</p>
+                      <span className={`w-2.5 h-2.5 rounded-full ${editIsOpen ? 'bg-chart-3' : 'bg-muted-foreground/50'}`} />
+                      <p className="font-semibold text-sm text-foreground">{editIsOpen ? 'Event is Open' : 'Event is Closed'}</p>
                     </div>
-                    <p className="text-xs text-[#506477] mt-0.5 pl-4.5">
+                    <p className="text-xs text-muted-foreground mt-0.5 pl-4.5">
                       {editIsOpen ? 'Volunteers can currently check in.' : 'Check-in is paused. No new attendance will be recorded.'}
                     </p>
                   </div>
                   <Button
                     size="sm"
                     variant={editIsOpen ? 'outline' : 'default'}
-                    className={editIsOpen ? 'border-[#c9bfae] text-[#17324d] hover:bg-[#eee5d7]' : 'bg-green-600 hover:bg-green-700 text-white'}
+                    className={editIsOpen ? 'border-border text-foreground hover:bg-secondary' : 'bg-chart-3 hover:bg-chart-3/85 text-primary-foreground'}
                     onClick={() => toggleOpenMutation.mutate(!editIsOpen)}
                     disabled={toggleOpenMutation.isPending}
                   >
@@ -686,7 +686,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                     <Button
                       onClick={() => updateMutation.mutate()}
                       disabled={updateMutation.isPending}
-                      className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
+                      className="w-full bg-primary hover:bg-primary/85 text-primary-foreground"
                     >
                       <Save className="w-4 h-4 mr-2" />
                       {updateMutation.isPending ? "Saving..." : "Save Changes"}
@@ -702,9 +702,9 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                 {selectedEvent.type === 'none' && (
                   <Card>
                     <CardContent className="pt-6 text-center">
-                      <AlertCircle className="w-8 h-8 text-[#8fa5b4] mx-auto mb-2" />
-                      <p className="text-[#506477] font-medium">This event has no QR code</p>
-                      <p className="text-sm text-[#8fa5b4] mt-1">Change the check-in method to "Scan QR" or "Show QR" in the Information tab.</p>
+                      <AlertCircle className="w-8 h-8 text-muted-foreground/60 mx-auto mb-2" />
+                      <p className="text-muted-foreground font-medium">This event has no QR code</p>
+                      <p className="text-sm text-muted-foreground/80 mt-1">Change the check-in method to "Scan QR" or "Show QR" in the Information tab.</p>
                     </CardContent>
                   </Card>
                 )}
@@ -712,8 +712,8 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                 {selectedEvent.type === 'password' && (
                   <Card>
                     <CardContent className="pt-6 text-center">
-                      <p className="text-[#506477] font-medium">Password-protected event</p>
-                      <p className="text-sm text-[#8fa5b4] mt-1">Volunteers enter a password when submitting hours. No QR scanning needed.</p>
+                      <p className="text-muted-foreground font-medium">Password-protected event</p>
+                      <p className="text-sm text-muted-foreground/80 mt-1">Volunteers enter a password when submitting hours. No QR scanning needed.</p>
                     </CardContent>
                   </Card>
                 )}
@@ -722,15 +722,15 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-sm font-semibold text-[#17324d] flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                           <QrCode className="w-4 h-4" /> Event QR Codes
                         </h3>
-                        <p className="text-xs text-[#506477] mt-0.5">Display on a screen or print. Volunteers scan to check in and out — time is recorded automatically.</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Display on a screen or print. Volunteers scan to check in and out — time is recorded automatically.</p>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-[#d9cdbd] text-[#506477] flex-shrink-0"
+                        className="border-border text-muted-foreground flex-shrink-0"
                         onClick={() => window.print()}
                       >
                         <Printer className="w-3.5 h-3.5 mr-1.5" />
@@ -740,36 +740,36 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
                     <div className="grid grid-cols-2 gap-4">
                       {/* Check-in */}
-                      <div className="rounded-2xl border border-green-200 bg-green-50 overflow-hidden">
-                        <div className="bg-green-500 px-4 py-3 flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-white" />
-                          <span className="text-sm font-semibold text-white">Check-in</span>
+                      <div className="rounded-2xl border border-chart-3/30 bg-chart-3/10 overflow-hidden">
+                        <div className="bg-chart-3 px-4 py-3 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
+                          <span className="text-sm font-semibold text-primary-foreground">Check-in</span>
                         </div>
                         <div className="p-6 flex flex-col items-center gap-3">
-                          <div className="bg-[#faf8f4] rounded-xl p-4 shadow-sm border border-green-100">
+                          <div className="bg-card rounded-xl p-4 border border-chart-3/30">
                             <QRCode
                               value={`${window.location.origin}/event-checkin?eventId=${selectedEvent.id}&action=checkin`}
                               size={180}
                             />
                           </div>
-                          <p className="text-xs font-medium text-green-700">Volunteers scan when they <strong>arrive</strong></p>
+                          <p className="text-xs font-medium text-chart-3">Volunteers scan when they <strong>arrive</strong></p>
                         </div>
                       </div>
 
                       {/* Check-out */}
-                      <div className="rounded-2xl border border-red-200 bg-red-50 overflow-hidden">
-                        <div className="bg-red-500 px-4 py-3 flex items-center gap-2">
-                          <XCircle className="w-4 h-4 text-white" />
-                          <span className="text-sm font-semibold text-white">Check-out</span>
+                      <div className="rounded-2xl border border-destructive/30 bg-destructive/10 overflow-hidden">
+                        <div className="bg-destructive px-4 py-3 flex items-center gap-2">
+                          <XCircle className="w-4 h-4 text-destructive-foreground" />
+                          <span className="text-sm font-semibold text-destructive-foreground">Check-out</span>
                         </div>
                         <div className="p-6 flex flex-col items-center gap-3">
-                          <div className="bg-[#faf8f4] rounded-xl p-4 shadow-sm border border-red-100">
+                          <div className="bg-card rounded-xl p-4 border border-destructive/30">
                             <QRCode
                               value={`${window.location.origin}/event-checkin?eventId=${selectedEvent.id}&action=checkout`}
                               size={180}
                             />
                           </div>
-                          <p className="text-xs font-medium text-red-700">Volunteers scan when they <strong>leave</strong></p>
+                          <p className="text-xs font-medium text-destructive">Volunteers scan when they <strong>leave</strong></p>
                         </div>
                       </div>
                     </div>
@@ -789,13 +789,13 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {/* Sub-tabs */}
-                      <div className="flex gap-2 border-b border-[#d9cdbd]">
+                      <div className="flex gap-2 border-b border-border">
                         {(['checkin', 'checkout'] as QRSubTab[]).map(sub => (
                           <button
                             key={sub}
                             onClick={() => setQrSubTab(sub)}
                             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                              qrSubTab === sub ? 'border-[#17324d] text-[#17324d]' : 'border-transparent text-[#506477]'
+                               qrSubTab === sub ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground'
                             }`}
                           >
                             {sub === 'checkin' ? '✓ Check-in Scanner' : '✗ Check-out Scanner'}
@@ -804,7 +804,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                       </div>
 
                       {scanResult && (
-                        <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${scanResult.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                        <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${scanResult.success ? 'bg-chart-3/10 text-chart-3' : 'bg-destructive/10 text-destructive'}`}>
                           {scanResult.success ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                           {scanResult.message}
                         </div>
@@ -820,15 +820,15 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                       {/* Live attendance list */}
                       {attendance.length > 0 && (
                         <div className="mt-4">
-                          <p className="text-sm font-medium text-[#17324d] mb-2">Current Attendance ({attendance.length})</p>
+                          <p className="text-sm font-medium text-foreground mb-2">Current Attendance ({attendance.length})</p>
                           <div className="space-y-1 max-h-48 overflow-auto">
                             {attendance.map(a => (
-                              <div key={a.id} className="flex items-center justify-between text-xs py-1 px-2 bg-[#faf8f4] rounded">
-                                <span className="font-medium text-[#17324d]">{a.userEmail}</span>
-                                <div className="flex items-center gap-2 text-[#506477]">
+                              <div key={a.id} className="flex items-center justify-between text-xs py-1 px-2 bg-card rounded">
+                                <span className="font-medium text-foreground">{a.userEmail}</span>
+                                <div className="flex items-center gap-2 text-muted-foreground">
                                   <span>In: {formatTime(a.checkInTime)}</span>
                                   {a.checkOutTime && <span>Out: {formatTime(a.checkOutTime)}</span>}
-                                  {a.minutesAttended != null && <span className="text-blue-600">{formatMinutes(a.minutesAttended)}</span>}
+                                  {a.minutesAttended != null && <span className="text-primary">{formatMinutes(a.minutesAttended)}</span>}
                                 </div>
                               </div>
                             ))}
@@ -850,12 +850,12 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {editConditionals.length === 0 && (
-                        <p className="text-sm text-[#506477] italic">No conditionals yet. Add one below, or leave empty to manually set hours in Grant Hours tab.</p>
+                        <p className="text-sm text-muted-foreground italic">No conditionals yet. Add one below, or leave empty to manually set hours in Grant Hours tab.</p>
                       )}
                       {editConditionals.map((cond, idx) => (
-                        <div key={cond.id} className="flex items-center gap-2 p-3 bg-[#faf8f4] rounded-lg">
-                          <span className="text-xs text-[#506477] w-4">{idx + 1}.</span>
-                          <span className="text-sm text-[#17324d]">If stayed</span>
+                        <div key={cond.id} className="flex items-center gap-2 p-3 bg-card rounded-lg">
+                          <span className="text-xs text-muted-foreground w-4">{idx + 1}.</span>
+                          <span className="text-sm text-foreground">If stayed</span>
                           <Select value={cond.type} onValueChange={(v) => updateConditional(cond.id, 'type', v)}>
                             <SelectTrigger className="w-28 h-8 text-xs">
                               <SelectValue />
@@ -872,15 +872,15 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                             onChange={e => updateConditional(cond.id, 'thresholdHours', parseFloat(e.target.value) || 0)}
                             className="w-20 h-8 text-xs"
                           />
-                          <span className="text-sm text-[#17324d]">hours → grant</span>
+                          <span className="text-sm text-foreground">hours → grant</span>
                           <Input
                             type="number" step="0.5" min="0"
                             value={cond.grantHours}
                             onChange={e => updateConditional(cond.id, 'grantHours', parseFloat(e.target.value) || 0)}
                             className="w-20 h-8 text-xs"
                           />
-                          <span className="text-sm text-[#17324d]">hrs</span>
-                          <button onClick={() => removeConditional(cond.id)} className="ml-auto text-red-400 hover:text-red-600">
+                          <span className="text-sm text-foreground">hrs</span>
+                          <button onClick={() => removeConditional(cond.id)} className="ml-auto text-destructive/70 hover:text-destructive">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
@@ -890,8 +890,8 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                       </Button>
 
                       {/* Log selector */}
-                      <div className="pt-2 border-t border-[#e8dfd4] space-y-1">
-                        <Label className="text-sm">Append hours to Log <span className="text-[#8fa5b4]">(optional)</span></Label>
+                      <div className="pt-2 border-t border-border space-y-1">
+                        <Label className="text-sm">Append hours to Log <span className="text-muted-foreground/80">(optional)</span></Label>
                         <Select value={editLogId} onValueChange={setEditLogId}>
                           <SelectTrigger>
                             <SelectValue placeholder="No log selected" />
@@ -903,13 +903,13 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                             ))}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-[#8fa5b4]">Hours granted from this event will count toward the selected log's requirement.</p>
+                        <p className="text-xs text-muted-foreground/80">Hours granted from this event will count toward the selected log's requirement.</p>
                       </div>
 
                       <Button
                         onClick={() => updateMutation.mutate()}
                         disabled={updateMutation.isPending}
-                        className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
+                        className="w-full bg-primary hover:bg-primary/85 text-primary-foreground"
                       >
                         <Save className="w-4 h-4 mr-2" />
                         Save Conditionals
@@ -925,15 +925,15 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
               <div className="space-y-5">
                 {/* Required log selector — QR events only */}
                 {isQRType && (
-                  <Card className={!editLogId || editLogId === '_none' ? 'border-amber-300 bg-amber-50' : 'border-green-200 bg-green-50'}>
+                  <Card className={!editLogId || editLogId === '_none' ? 'border-chart-1/30 bg-chart-1/10' : 'border-chart-3/30 bg-chart-3/10'}>
                     <CardContent className="pt-4 pb-4">
                       <div className="flex items-center gap-3">
                         <div className="flex-1 space-y-1">
                           <Label className="text-sm font-semibold">
-                            Append hours to Log <span className="text-red-500">*</span>
+                            Append hours to Log <span className="text-destructive">*</span>
                           </Label>
                           <Select value={editLogId} onValueChange={setEditLogId}>
-                            <SelectTrigger className="bg-[#faf8f4]">
+                            <SelectTrigger className="bg-card">
                               <SelectValue placeholder="Select a log (required)" />
                             </SelectTrigger>
                             <SelectContent>
@@ -948,15 +948,15 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                         </div>
                       </div>
                       {(!editLogId || editLogId === '_none') && (
-                        <p className="text-xs text-amber-700 mt-2">You must select a log before granting hours. Create logs in Settings → Logs.</p>
+                        <p className="text-xs text-chart-1 mt-2">You must select a log before granting hours. Create logs in Settings → Logs.</p>
                       )}
                     </CardContent>
                   </Card>
                 )}
                 {!isQRType && (
-                  <Card className="border-blue-200 bg-blue-50">
+                  <Card className="border-primary/30 bg-primary/10">
                     <CardContent className="pt-4 pb-4">
-                      <p className="text-sm text-blue-800">
+                      <p className="text-sm text-foreground">
                         Hours will be approved into each volunteer's original submission log.
                       </p>
                     </CardContent>
@@ -974,12 +974,12 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {editConditionals.length === 0 && (
-                        <p className="text-sm text-[#506477] italic">No conditionals. Add one below, or leave empty to set hours manually.</p>
+                        <p className="text-sm text-muted-foreground italic">No conditionals. Add one below, or leave empty to set hours manually.</p>
                       )}
                       {editConditionals.map((cond, idx) => (
-                        <div key={cond.id} className="flex items-center gap-2 p-3 bg-[#faf8f4] rounded-lg">
-                          <span className="text-xs text-[#506477] w-4">{idx + 1}.</span>
-                          <span className="text-sm text-[#17324d]">If submitted</span>
+                        <div key={cond.id} className="flex items-center gap-2 p-3 bg-card rounded-lg">
+                          <span className="text-xs text-muted-foreground w-4">{idx + 1}.</span>
+                          <span className="text-sm text-foreground">If submitted</span>
                           <Select value={cond.type} onValueChange={(v) => updateConditional(cond.id, 'type', v)}>
                             <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -989,10 +989,10 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                             </SelectContent>
                           </Select>
                           <Input type="number" step="0.5" min="0" value={cond.thresholdHours} onChange={e => updateConditional(cond.id, 'thresholdHours', parseFloat(e.target.value) || 0)} className="w-20 h-8 text-xs" />
-                          <span className="text-sm text-[#17324d]">hours → grant</span>
+                          <span className="text-sm text-foreground">hours → grant</span>
                           <Input type="number" step="0.5" min="0" value={cond.grantHours} onChange={e => updateConditional(cond.id, 'grantHours', parseFloat(e.target.value) || 0)} className="w-20 h-8 text-xs" />
-                          <span className="text-sm text-[#17324d]">hrs</span>
-                          <button onClick={() => removeConditional(cond.id)} className="ml-auto text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
+                          <span className="text-sm text-foreground">hrs</span>
+                          <button onClick={() => removeConditional(cond.id)} className="ml-auto text-destructive/70 hover:text-destructive"><X className="w-4 h-4" /></button>
                         </div>
                       ))}
                       <Button variant="outline" size="sm" onClick={addConditional} className="w-full">
@@ -1015,9 +1015,9 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                   <CardContent className="space-y-4">
                     {attendance.length === 0 ? (
                       <div className="text-center py-8">
-                        <Users className="w-10 h-10 text-[#b0c0cc] mx-auto mb-2" />
-                        <p className="text-sm text-[#506477]">No attendees yet</p>
-                        <p className="text-xs text-[#8fa5b4] mt-1">
+                        <Users className="w-10 h-10 text-muted-foreground/60 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No attendees yet</p>
+                        <p className="text-xs text-muted-foreground/80 mt-1">
                           {selectedEvent.type === 'none' ? "Attendees are added when volunteers submit hours for this event." : "Attendees will appear here after checking in."}
                         </p>
                       </div>
@@ -1031,7 +1031,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                                 setSelectedAttendees(checked ? attendance.map(a => a.id) : []);
                               }}
                             />
-                            <span className="text-sm text-[#506477]">
+                            <span className="text-sm text-muted-foreground">
                               {selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'Select all'}
                             </span>
                           </div>
@@ -1042,7 +1042,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
                         {/* Default hours — hidden when conditionals active */}
                         {!(((isQRType || selectedEvent.type === 'password') && editConditionals.length > 0)) && (
-                          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                          <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
                             <Label className="text-sm whitespace-nowrap">Default hours for all:</Label>
                             <Input
                               type="number" step="0.5" min="0"
@@ -1051,22 +1051,22 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                               placeholder="e.g. 2.5"
                               className="w-28 h-8"
                             />
-                            <p className="text-xs text-[#506477]">Applied to everyone without a custom amount</p>
+                            <p className="text-xs text-muted-foreground">Applied to everyone without a custom amount</p>
                           </div>
                         )}
 
                         {/* Also forward to superclub */}
                         {superClub && (
-                          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg">
                             <label className="flex items-start gap-2 cursor-pointer">
                               <Checkbox
                                 checked={alsoGrantToSuper}
                                 onCheckedChange={(v) => setAlsoGrantToSuper(!!v)}
                                 disabled={!subClubHoursLog || subClubHoursLog.isOpen === false}
                               />
-                              <span className="text-sm text-blue-900">
+                              <span className="text-sm text-foreground">
                                 <strong>ALSO ADD TO {superClub.superClubName.toUpperCase()}</strong>
-                                <span className="block text-xs text-blue-800 mt-0.5 font-normal">
+                                <span className="block text-xs text-muted-foreground mt-0.5 font-normal">
                                   {!subClubHoursLog
                                     ? `${superClub.superClubName}'s Sub-Club Hours log isn't set up yet.`
                                     : subClubHoursLog.isOpen === false
@@ -1089,7 +1089,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                             return (
                               <div
                                 key={a.id}
-                                className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isSelected ? 'bg-[#faf8f4] border-[#c9bfae]' : 'bg-[#faf8f4] border-[#d9cdbd]'}`}
+                                className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isSelected ? 'bg-secondary border-border' : 'bg-card border-border'}`}
                               >
                                 <Checkbox
                                   checked={isSelected}
@@ -1100,22 +1100,22 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                                   }}
                                 />
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-[#17324d] truncate">{a.userName || a.userEmail}</p>
-                                  <p className="text-xs text-[#506477] truncate">{a.userEmail}</p>
+                                  <p className="text-sm font-medium text-foreground truncate">{a.userName || a.userEmail}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{a.userEmail}</p>
                                 </div>
-                                <div className="text-xs text-[#506477] space-y-0.5 text-right flex-shrink-0">
+                                <div className="text-xs text-muted-foreground space-y-0.5 text-right flex-shrink-0">
                                   {isPasswordEvent && a.minutesAttended != null && (
-                                    <div className="text-[#17324d] font-medium">Submitted: {a.minutesAttended / 60}h</div>
+                                    <div className="text-foreground font-medium">Submitted: {a.minutesAttended / 60}h</div>
                                   )}
                                   {!isPasswordEvent && a.checkInTime && <div>In: {formatTime(a.checkInTime)}</div>}
                                   {!isPasswordEvent && a.checkOutTime && <div>Out: {formatTime(a.checkOutTime)}</div>}
-                                  {!isPasswordEvent && a.minutesAttended != null && <div className="text-blue-600 font-medium">{formatMinutes(a.minutesAttended)}</div>}
+                                  {!isPasswordEvent && a.minutesAttended != null && <div className="text-primary font-medium">{formatMinutes(a.minutesAttended)}</div>}
                                 </div>
                                 {conditionalHours != null && (
-                                  <Badge className="bg-blue-100 text-blue-700 text-xs">{conditionalHours}h (auto)</Badge>
+                                  <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">{conditionalHours}h (auto)</Badge>
                                 )}
                                 {a.grantStatus === 'granted' && (
-                                  <Badge className="bg-green-100 text-green-700 text-xs">✓ {a.hoursGranted}h granted</Badge>
+                                  <Badge className="bg-chart-3/15 text-chart-3 border-chart-3/30 text-xs">✓ {a.hoursGranted}h granted</Badge>
                                 )}
                                 <Input
                                   type="number" step="0.5" min="0"
@@ -1134,7 +1134,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                           disabled={grantMutation.isPending || (isQRType
                             ? (!editLogId || editLogId === '_none') || (selectedAttendees.length === 0 && !defaultHours && editConditionals.length === 0 && !Object.values(overrideHours).some(Boolean))
                             : attendance.length === 0)}
-                          className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
+                          className="w-full bg-primary hover:bg-primary/85 text-primary-foreground"
                         >
                           <Award className="w-4 h-4 mr-2" />
                           {grantMutation.isPending ? "Granting..." : `Grant Hours to ${selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'all attendees'}`}

@@ -70,16 +70,16 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
-      <div className="bg-[#faf8f4] bg-white border-b border-[#d9cdbd] flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-background min-h-0">
+      <div className="bg-card border-b border-border flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#17324d' }}>
-              <Database className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-primary">
+              <Database className="w-7 h-7 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Database Management</h1>
-              <p className="text-[#506477] mt-0.5">Year-end archival and data reset for {club.name}.</p>
+              <h1 className="page-title text-xl lg:text-2xl font-bold text-foreground">Database Management</h1>
+              <p className="text-muted-foreground mt-0.5">Year-end archival and data reset for {club.name}.</p>
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Archive className="w-5 h-5 text-blue-600" />
+                <Archive className="w-5 h-5 text-primary" />
                 <span>Year-End Archive & Reset</span>
               </CardTitle>
               <CardDescription>
@@ -106,21 +106,21 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
                   value={schoolYear}
                   onChange={(e) => setSchoolYear(e.target.value)}
                 />
-                <p className="text-xs text-[#506477]">This label is attached to all archived entries so volunteers can find them in their History.</p>
+                <p className="text-xs text-muted-foreground">This label is attached to all archived entries so volunteers can find them in their History.</p>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
-                  <Calendar className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <Calendar className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-blue-800 text-sm">What gets archived:</p>
-                    <ul className="text-sm text-blue-700 mt-1 space-y-1">
+                    <p className="font-medium text-foreground text-sm">What gets archived:</p>
+                    <ul className="text-sm text-muted-foreground mt-1 space-y-1">
                       <li>• All approved and pending hour submissions</li>
                       <li>• Hours log periods and their data</li>
                       <li>• Service request participation records</li>
                     </ul>
-                    <p className="font-medium text-blue-800 text-sm mt-2">What is preserved:</p>
-                    <ul className="text-sm text-blue-700 mt-1 space-y-1">
+                    <p className="font-medium text-foreground text-sm mt-2">What is preserved:</p>
+                    <ul className="text-sm text-muted-foreground mt-1 space-y-1">
                       <li>• User profiles and admin roles</li>
                       <li>• Club and membership structure</li>
                       <li>• Historical archives from prior years</li>
@@ -143,7 +143,7 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center space-x-2">
-                      <AlertTriangle className="w-5 h-5 text-red-600" />
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
                       <span>Confirm Year-End Reset</span>
                     </AlertDialogTitle>
                     <AlertDialogDescription>
@@ -152,7 +152,7 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleArchiveAndWipe} className="bg-red-600 hover:bg-red-700">
+                    <AlertDialogAction onClick={handleArchiveAndWipe} className="bg-destructive hover:bg-destructive/85 text-destructive-foreground">
                       Yes, Archive & Reset
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -164,12 +164,12 @@ export function AdminDatabase({ user, club }: AdminDatabaseProps) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-green-600" />
+                <Shield className="w-5 h-5 text-chart-3" />
                 <span>Safety Notes</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ul className="text-sm text-[#506477] space-y-2">
+              <ul className="text-sm text-muted-foreground space-y-2">
                 <li>• Always archive before wiping — archived data is permanent and unrecoverable otherwise</li>
                 <li>• Volunteers can view all archived years in their History tab after the reset</li>
                 <li>• Club totals reset to zero — leaderboard standings restart for the new year</li>

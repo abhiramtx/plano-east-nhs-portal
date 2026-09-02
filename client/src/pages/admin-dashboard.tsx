@@ -93,9 +93,9 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'border-[var(--teal)]/35 bg-[var(--teal)]/15 text-[var(--teal)]';
+      case 'approved': return 'bg-chart-3/15 text-chart-3 border-chart-3/30';
       case 'rejected': return 'border-destructive/35 bg-destructive/15 text-destructive';
-      default: return 'border-primary/35 bg-primary/15 text-primary';
+      default: return 'bg-chart-1/15 text-chart-1 border-chart-1/30';
     }
   };
 
@@ -113,7 +113,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
+      <div className="flex-1 flex flex-col bg-background min-h-0">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
@@ -122,16 +122,16 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
-      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
+    <div className="flex-1 flex flex-col bg-background min-h-0">
+      <div className="bg-card border-b border-border flex-shrink-0">
         <div className="px-4 lg:px-6 py-4 lg:py-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#17324d' }}>
-              <Award className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-primary">
+              <Award className="w-7 h-7 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Admin Dashboard</h1>
-              <p className="text-[#506477] mt-0.5">Manage student submissions and track program progress</p>
+              <h1 className="page-title text-xl lg:text-2xl font-bold text-foreground">Admin Dashboard</h1>
+              <p className="text-muted-foreground mt-0.5">Manage student submissions and track program progress</p>
             </div>
           </div>
         </div>
@@ -143,11 +143,11 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#506477]">Total Submissions</p>
-                  <p className="text-2xl font-bold text-[#17324d]">{stats.totalSubmissions}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalSubmissions}</p>
                 </div>
-                <div className="p-3 bg-[#eee5d7] rounded-full">
-                  <Users className="w-5 h-5 text-[#17324d]" />
+                <div className="p-3 bg-secondary rounded-full">
+                  <Users className="w-5 h-5 text-secondary-foreground" />
                 </div>
               </div>
             </CardContent>
@@ -157,7 +157,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#506477]">Pending Review</p>
+                  <p className="text-sm font-medium text-muted-foreground">Pending Review</p>
                   <p className="text-2xl font-bold text-primary">{stats.pendingSubmissions}</p>
                 </div>
                 <div className="rounded-full bg-primary/15 p-3">
@@ -171,11 +171,11 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#506477]">Approved Hours</p>
-                  <p className="text-2xl font-bold text-[var(--teal)]">{stats.approvedHours.toFixed(1)}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Approved Hours</p>
+                  <p className="text-2xl font-bold text-chart-3">{stats.approvedHours.toFixed(1)}</p>
                 </div>
-                <div className="rounded-full bg-[var(--teal)]/15 p-3">
-                  <CheckCircle2 className="h-5 w-5 text-[var(--teal)]" />
+                <div className="rounded-full bg-chart-3/15 p-3">
+                  <CheckCircle2 className="h-5 w-5 text-chart-3" />
                 </div>
               </div>
             </CardContent>
@@ -185,11 +185,11 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-[#506477]">Total Hours</p>
-                  <p className="text-2xl font-bold text-[var(--coral)]">{stats.totalHours.toFixed(1)}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Total Hours</p>
+                  <p className="text-2xl font-bold text-chart-5">{stats.totalHours.toFixed(1)}</p>
                 </div>
-                <div className="rounded-full bg-[var(--coral)]/15 p-3">
-                  <TrendingUp className="h-5 w-5 text-[var(--coral)]" />
+                <div className="rounded-full bg-chart-5/15 p-3">
+                  <TrendingUp className="h-5 w-5 text-chart-5" />
                 </div>
               </div>
             </CardContent>
@@ -206,16 +206,16 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
           <CardContent>
             {submissions.length === 0 ? (
               <div className="text-center py-12">
-                <Clock className="w-16 h-16 mx-auto mb-4 text-[#8fa5b4]" />
-                <h3 className="text-lg font-medium text-[#17324d] mb-2">No submissions yet</h3>
-                <p className="text-[#506477]">Students will see their submissions here once they start submitting hours</p>
+                <Clock className="w-16 h-16 mx-auto mb-4 text-muted-foreground/60" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No submissions yet</h3>
+                <p className="text-muted-foreground">Students will see their submissions here once they start submitting hours</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {submissions.map((submission: HoursSubmission) => {
                   const profile = profiles.find((p: UserProfile) => p.email === submission.userEmail);
                   return (
-                    <div key={submission.id} className="p-4 lg:p-6 border rounded-lg hover:bg-[#faf8f4] transition-colors">
+                    <div key={submission.id} className="p-4 lg:p-6 border border-border rounded-lg hover:bg-background transition-colors">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 lg:gap-3 mb-3">
@@ -223,23 +223,23 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                               {getStatusIcon(submission.status)}
                               <span className="ml-1 capitalize">{submission.status}</span>
                             </Badge>
-                            <span className="text-sm text-[#506477]">
+                            <span className="text-sm text-muted-foreground">
                               {submission.userName}
                             </span>
                           </div>
                           
-                          <div className="text-sm text-[#506477] mb-3 space-y-1">
+                          <div className="text-sm text-muted-foreground mb-3 space-y-1">
                             <div>Email: {submission.userEmail}</div>
                             {profile?.gradeLevel && (
                               <div>Grade: {profile.gradeLevel}</div>
                             )}
                           </div>
                           
-                          <h3 className="font-medium text-[#17324d] mb-2">
+                          <h3 className="font-medium text-foreground mb-2">
                             {submission.activityName || "Activity Name Not Provided"}
                           </h3>
                           
-                          <div className="flex items-center gap-4 text-sm text-[#506477] mb-2">
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                             <div className="flex items-center">
                               <Calendar className="w-4 h-4 mr-1" />
                               {formatDate(submission.date)}
@@ -250,7 +250,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                             </div>
                           </div>
                           
-                          <p className="text-[#506477] text-sm mb-4">{submission.description}</p>
+                          <p className="text-muted-foreground text-sm mb-4">{submission.description}</p>
                         </div>
                         
                         <div className="flex items-center space-x-2">
@@ -272,7 +272,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                                 size="sm"
                                 onClick={() => handleStatusUpdate(submission.id, 'approved')}
                                 disabled={updateStatusMutation.isPending}
-                                className="text-[var(--teal)] hover:bg-[var(--teal)]/10"
+                                className="text-chart-3 hover:bg-chart-3/10"
                               >
                                 <Check className="w-4 h-4 mr-1" />
                                 Approve
@@ -301,8 +301,8 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
       </div>
 
       {selectedSubmission && selectedSubmission.proofImageUrl && (
-        <div className="fixed inset-0 bg-[#17324d] bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#faf8f4] rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
+        <div className="fixed inset-0 bg-background/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-card rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Proof of Service</h3>
@@ -311,13 +311,13 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                 </Button>
               </div>
               <div className="mb-4">
-                <p className="text-sm text-[#506477] mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   <strong>Student:</strong> {selectedSubmission.userName}
                 </p>
-                <p className="text-sm text-[#506477] mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   <strong>Activity:</strong> {selectedSubmission.activityName || "Not provided"}
                 </p>
-                <p className="text-sm text-[#506477]">
+                <p className="text-sm text-muted-foreground">
                   <strong>Hours:</strong> {selectedSubmission.hours}
                 </p>
               </div>
