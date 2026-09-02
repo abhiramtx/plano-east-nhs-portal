@@ -169,7 +169,7 @@ export default function Hours({ club }: HoursProps) {
   return (
     <ProfileCompletionGuard user={user}>
       <div className="flex-1 flex flex-col h-full">
-      <div className="flex-shrink-0 px-4 lg:px-6">
+      <div className="flex-shrink-0 px-4 pt-6 lg:px-6 lg:pt-6">
         <ClubPageHeader
           club={club}
           title="Hours Management"
