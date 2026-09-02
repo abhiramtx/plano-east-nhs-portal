@@ -169,7 +169,7 @@ export default function Hours({ club }: HoursProps) {
   return (
     <ProfileCompletionGuard user={user}>
       <div className="flex-1 flex flex-col h-full">
-      <div className="p-6 flex-shrink-0">
+      <div className="flex-shrink-0 px-4 lg:px-6">
         <ClubPageHeader
           club={club}
           title="Hours Management"
@@ -223,29 +223,29 @@ export default function Hours({ club }: HoursProps) {
         />
 
         {hoursLogs.length > 0 && (
-          <div className="px-4 lg:px-6 pb-2">
+          <div className="mt-6 pb-2">
             <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
               <div className="flex min-w-full gap-2">
-              {hoursLogs.map(log => {
-                const isOpen = openLogs.some(l => String(l.id) === String(log.id));
-                return (
-                  <button
-                    key={log.id}
-                    onClick={() => setSelectedLogId(String(log.id))}
-                    className={`flex min-w-[150px] flex-1 items-center justify-center rounded-lg px-4 py-2 text-center text-sm font-medium whitespace-nowrap transition-colors ${
-                      selectedLogId === String(log.id)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-secondary text-secondary-foreground hover:bg-accent'
-                    }`}
-                  >
-                    {log.name}
-                    <span className="ml-1.5 text-xs opacity-75">({log.hoursRequired}h req)</span>
-                    {!isOpen && (
-                      <span className="ml-1.5 text-xs opacity-60">· Closed</span>
-                    )}
-                  </button>
-                );
-              })}
+                {hoursLogs.map(log => {
+                  const isOpen = openLogs.some(l => String(l.id) === String(log.id));
+                  return (
+                    <button
+                      key={log.id}
+                      onClick={() => setSelectedLogId(String(log.id))}
+                      className={`flex min-w-[150px] flex-1 items-center justify-center rounded-lg px-4 py-2 text-center text-sm font-medium whitespace-nowrap transition-colors ${
+                        selectedLogId === String(log.id)
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-secondary text-secondary-foreground hover:bg-accent'
+                      }`}
+                    >
+                      {log.name}
+                      <span className="ml-1.5 text-xs opacity-75">({log.hoursRequired}h req)</span>
+                      {!isOpen && (
+                        <span className="ml-1.5 text-xs opacity-60">· Closed</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function Hours({ club }: HoursProps) {
           const pct = Math.min(100, (totalHours / selectedLog.hoursRequired) * 100);
           const met = totalHours >= selectedLog.hoursRequired;
           return (
-            <div className="px-4 lg:px-6 pb-2">
+            <div className="pb-2">
               <div className="w-full rounded-xl border border-border bg-background px-4 py-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-foreground">{selectedLog.name} Progress</span>
