@@ -140,7 +140,7 @@ export default function ClubJoin() {
   const isLoading = clubLoading || authLoading || (!!authUser && membershipLoading);
 
   const pageShell = (children: React.ReactNode) => (
-    <div className="min-h-screen bg-black flex flex-col">
+    <div className="paper-grid min-h-screen bg-[#121212] flex flex-col">
       <header className="px-6 py-4 flex items-center gap-2.5">
         <img src={logoImg} alt="VolunteerClub" className="h-7 w-auto" />
         <span className="font-semibold text-white text-sm tracking-tight">VolunteerClub.io</span>
@@ -154,7 +154,7 @@ export default function ClubJoin() {
 
   if (isLoading) {
     return pageShell(
-      <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm p-10 flex items-center justify-center">
+      <div className="bg-[#faf8f4] border border-border rounded-2xl shadow-xl w-full max-w-sm p-10 flex items-center justify-center">
         <Loader2 className="w-7 h-7 text-gray-300 animate-spin" />
       </div>
     );
@@ -162,7 +162,7 @@ export default function ClubJoin() {
 
   if (!authUser) {
     return pageShell(
-      <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm p-8">
+      <div className="bg-[#faf8f4] border border-border rounded-2xl shadow-xl w-full max-w-sm p-8">
         <AuthPanel
           heading="Sign in to join"
           subheading="Sign in to view and join this club."
@@ -173,7 +173,7 @@ export default function ClubJoin() {
 
   if (clubError || club === null) {
     return pageShell(
-      <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm p-10 flex flex-col items-center gap-4 text-center">
+      <div className="bg-[#faf8f4] border border-border rounded-2xl shadow-xl w-full max-w-sm p-10 flex flex-col items-center gap-4 text-center">
         <div className="w-14 h-14 bg-[#faf8f4] rounded-2xl flex items-center justify-center border border-[#d9cdbd]">
           <AlertCircle className="w-7 h-7 text-red-400" />
         </div>
@@ -189,7 +189,7 @@ export default function ClubJoin() {
 
   if (joined) {
     return pageShell(
-      <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm p-10 flex flex-col items-center gap-5 text-center">
+      <div className="bg-[#faf8f4] border border-border rounded-2xl shadow-xl w-full max-w-sm p-10 flex flex-col items-center gap-5 text-center">
         <div
           className="w-20 h-20 rounded-2xl flex items-center justify-center overflow-hidden border border-[#d9cdbd]"
           style={{ backgroundColor: club.color || "#111827" }}
@@ -219,7 +219,7 @@ export default function ClubJoin() {
   const alreadyInAnotherClub = !!userClubData && userClubData.membership.clubId !== club.id;
 
   return pageShell(
-    <div className="bg-[#faf8f4] rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+    <div className="bg-[#faf8f4] border border-border rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
       <div className="p-7 flex flex-col items-center text-center gap-4">
 
         {/* Logo */}
