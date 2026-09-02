@@ -99,8 +99,8 @@ export default function Dashboard({ club }: DashboardProps) {
                   <p className="text-sm font-medium text-[#506477]">Total Hours</p>
                   <p className="text-2xl font-bold text-[#17324d]">{stats.totalHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-[#d9cdbd]/40 rounded-full">
-                  <Clock className="w-5 h-5 text-[#506477]" />
+                <div className="p-3 bg-[#a8aa9f]/12 rounded-full">
+                  <Clock className="w-5 h-5 text-[#a8aa9f]" />
                 </div>
               </div>
             </CardContent>
@@ -111,10 +111,10 @@ export default function Dashboard({ club }: DashboardProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-[#506477]">Approved Hours</p>
-                  <p className="text-2xl font-bold text-green-700">{stats.approvedHours.toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-[#63a89a]">{stats.approvedHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <CheckCircle2 className="w-5 h-5 text-green-700" />
+                <div className="p-3 bg-[#63a89a]/15 rounded-full">
+                  <CheckCircle2 className="w-5 h-5 text-[#63a89a]" />
                 </div>
               </div>
             </CardContent>
@@ -127,8 +127,8 @@ export default function Dashboard({ club }: DashboardProps) {
                   <p className="text-sm font-medium text-[#506477]">Pending Hours</p>
                   <p className="text-2xl font-bold text-[#e5a72c]">{stats.pendingHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-[#e5a72c]/15 rounded-full">
-                  <AlertCircle className="w-5 h-5 text-[#e5a72c]" />
+                <div className="p-3 bg-[#d7a85a]/15 rounded-full">
+                  <AlertCircle className="w-5 h-5 text-[#d7a85a]" />
                 </div>
               </div>
             </CardContent>
@@ -141,8 +141,8 @@ export default function Dashboard({ club }: DashboardProps) {
                   <p className="text-sm font-medium text-[#506477]">Submissions</p>
                   <p className="text-2xl font-bold text-[#17324d]">{stats.submissionCount}</p>
                 </div>
-                <div className="p-3 bg-[#d9cdbd]/40 rounded-full">
-                  <TrendingUp className="w-5 h-5 text-[#506477]" />
+                <div className="p-3 bg-[#d4785f]/15 rounded-full">
+                  <TrendingUp className="w-5 h-5 text-[#d4785f]" />
                 </div>
               </div>
             </CardContent>

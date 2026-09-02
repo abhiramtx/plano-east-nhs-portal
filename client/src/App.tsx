@@ -78,7 +78,7 @@ function VolunteerInterface({
   }, [location, setLocation]);
 
   return (
-    <div className="flex h-screen bg-[#f7f2e9]">
+    <div className="flex h-screen bg-background">
       <VolunteerSidebar
         user={user}
         club={club}
@@ -86,7 +86,7 @@ function VolunteerInterface({
         onSignOut={onSignOut}
         onLeaveClub={handleLeaveClubClick}
       />
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-0 overflow-auto paper-grid bg-[#f7f2e9]">
+      <div className="flex-1 lg:ml-64 flex flex-col min-h-0 overflow-auto paper-grid bg-background">
         <Switch>
           <Route path="/volunteer/dashboard"><Dashboard club={club} /></Route>
           <Route path="/volunteer/hours"><Hours club={club} /></Route>
@@ -145,9 +145,9 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
   };
 
   return (
-    <div className="flex h-screen bg-[#f7f2e9]">
-      <div className="w-64 bg-[#f7f2e9] border-r border-[#d9cdbd] lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col">
-        <div className="flex flex-col flex-1 min-h-0 bg-[#f7f2e9]">
+    <div className="admin-shell flex h-screen bg-background">
+      <div className="admin-sidebar-shell w-64 bg-background border-r border-border lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col">
+        <div className="flex flex-col flex-1 min-h-0 bg-background">
           <div className="flex items-center flex-shrink-0 px-4 py-4 border-b border-[#d9cdbd]">
             <div className="flex items-center space-x-3">
               <div

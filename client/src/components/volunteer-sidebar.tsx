@@ -107,7 +107,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
       )}
 
       <div className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-[#f7f2e9] border-r border-[#d9cdbd] transform transition-transform duration-300 ease-in-out
+        volunteer-sidebar-shell fixed inset-y-0 left-0 z-50 w-64 bg-[#f7f2e9] border-r border-[#d9cdbd] transform transition-transform duration-300 ease-in-out
         lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex flex-col h-full">

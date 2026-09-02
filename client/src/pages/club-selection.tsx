@@ -42,6 +42,15 @@ const CLUB_COLORS = [
 
 const SUPERADMIN_EMAIL = 'abhiram.tx@gmail.com';
 
+const formatClubDate = (date?: Date) => {
+  if (!date) return "No activity yet";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(date));
+};
+
 export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubSelectionProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -287,27 +296,27 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
   return (
     <div className="min-h-screen bg-[#f7f2e9] text-[#17324d] paper-grid">
-      <nav className="bg-[#f7f2e9]/95 backdrop-blur-xl sticky top-0 z-50 shadow-[0_1px_0_rgba(23,50,77,.08),0_10px_30px_rgba(23,50,77,.04)]">
+      <nav className="bg-background/95 backdrop-blur-xl sticky top-0 z-50 border-b border-border">
         <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 lg:px-8">
           <button
             className="flex items-center gap-3 text-left"
             onClick={() => setLocation('/landing')}
           >
             <img src={logoImg} alt="VolunteerClub" className="h-10 w-10 rounded-xl object-cover" />
-            <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: '19px', fontWeight: 700, letterSpacing: '-0.02em', color: '#17324d' }}>VolunteerClub</span>
+            <span className="text-[19px] font-bold tracking-[-.02em] text-foreground">VolunteerClub</span>
           </button>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-[#506477] hidden sm:block">{user.email}</span>
+            <span className="text-sm text-muted-foreground hidden sm:block">{user.email}</span>
             <button
               onClick={onSignOut}
-              className="rounded-full bg-[#eee5d7] px-4 py-2 text-sm font-bold text-[#17324d] hover:bg-[#d9cdbd] transition-colors flex items-center gap-1.5"
+              className="rounded-full bg-secondary px-4 py-2 text-sm font-bold text-secondary-foreground hover:bg-accent transition-colors flex items-center gap-1.5"
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign Out
             </button>
             <button
               onClick={() => setCreateDialogOpen(true)}
-              className="rounded-full bg-[#17324d] px-5 py-2.5 text-sm font-bold text-[#f7f2e9] transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
+              className="rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
             >
               <Plus className="w-4 h-4" />
               New Club
@@ -316,71 +325,110 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 py-10">
+      <div className="max-w-7xl mx-auto flex flex-col px-4 py-10">
         {/* Your Clubs */}
-        {userClubLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#17324d]"></div>
-          </div>
-        ) : userMemberships.length > 0 ? (
-          <div className="mb-10">
-            <p className="text-xs text-[#506477] uppercase tracking-wide font-medium mb-3">
-              Your Clubs ({userMemberships.length})
-            </p>
-            <div className="space-y-2">
-              {userMemberships.map(({ club, membership }) => {
-                const isActive = club.id === activeClub?.id;
-                return (
-                  <div
-                    key={club.id}
-                    className="flex items-center space-x-4 p-4 border rounded-2xl bg-[#eee5d7] border-[#d9cdbd]"
-                  >
-                    <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
-                      style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
-                    >
-                      {club.logoUrl
-                        ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
-                        : <Trophy className="w-5 h-5 text-white" />
-                      }
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-sm font-semibold text-[#17324d] truncate">{club.name}</h2>
-                      <p className="text-xs text-[#506477]">
-                        {club.totalApprovedHours.toFixed(1)} hrs · {membership.role === 'admin' ? 'Admin' : 'Member'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => isActive ? onClubSelected(club, membership) : switchClubMutation.mutate(club)}
-                        disabled={switchClubMutation.isPending}
-                        className="bg-[#17324d] text-[#f7f2e9] hover:bg-[#1e3f61]"
-                      >
-                        Open
-                        <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          if (confirm(`Leave "${club.name}"? Your submissions will be archived.`)) {
-                            leaveSpecificMutation.mutate({ clubId: club.id, clubName: club.name });
-                          }
-                        }}
-                        disabled={leaveSpecificMutation.isPending}
-                        className="border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7]"
-                      >
-                        Leave
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
+        <div className="order-2 mt-10">
+          {userClubLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#17324d]"></div>
             </div>
-          </div>
-        ) : (
-          <div className="mb-10">
+          ) : userMemberships.length > 0 ? (
+            <div>
+              <p className="text-xs text-[#506477] uppercase tracking-[0.18em] font-bold mb-4">
+              Your Clubs ({userMemberships.length})
+              </p>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                {userMemberships.map(({ club, membership }) => {
+                  const isActive = club.id === activeClub?.id;
+                  return (
+                    <article
+                      key={club.id}
+                      className={`rounded-2xl border bg-[#faf8f4] border-[#d9cdbd] p-5 ${isActive ? "ring-1 ring-primary/50" : ""}`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <div
+                          className="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0"
+                          style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
+                        >
+                          {club.logoUrl
+                            ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
+                            : <Trophy className="w-6 h-6 text-white" />
+                          }
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h2 className="text-lg font-bold text-[#17324d] truncate">{club.name}</h2>
+                              <p className="mt-1 text-xs text-[#506477]">
+                                {membership.role === 'admin' ? 'Admin' : 'Member'} · {club.isPrivate ? 'Private club' : 'Public club'}
+                              </p>
+                            </div>
+                            {isActive && (
+                              <span className="flex-shrink-0 rounded-full bg-[#e5a72c]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#e5a72c]">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="mt-5 min-h-[2.5rem] text-sm leading-5 text-[#506477]">
+                        {club.description || "A place to organize your community impact."}
+                      </p>
+
+                      <div className="mt-5 grid grid-cols-3 divide-x divide-[#d9cdbd] border-y border-[#d9cdbd] py-4">
+                        <div className="pr-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-[#506477]">Total hours</p>
+                          <p className="mt-1 text-lg font-bold text-[#17324d]">{club.totalApprovedHours.toFixed(1)}</p>
+                        </div>
+                        <div className="px-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-[#506477]">This year</p>
+                          <p className="mt-1 text-lg font-bold text-[#17324d]">{(club.yearlyApprovedHours || 0).toFixed(1)}</p>
+                        </div>
+                        <div className="pl-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-[#506477]">Last active</p>
+                          <p className="mt-1 truncate text-sm font-semibold text-[#17324d]" title={formatClubDate(club.lastActivityAt)}>
+                            {formatClubDate(club.lastActivityAt)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-xs text-[#506477]">
+                          Joined {formatClubDate(membership.joinedAt)}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => isActive ? onClubSelected(club, membership) : switchClubMutation.mutate(club)}
+                            disabled={switchClubMutation.isPending}
+                            className="bg-[#17324d] text-[#f7f2e9] hover:bg-[#1e3f61]"
+                          >
+                            Open
+                            <ChevronRight className="w-4 h-4 ml-1" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (confirm(`Leave "${club.name}"? Your submissions will be archived.`)) {
+                                leaveSpecificMutation.mutate({ clubId: club.id, clubName: club.name });
+                              }
+                            }}
+                            disabled={leaveSpecificMutation.isPending}
+                            className="border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7]"
+                          >
+                            Leave
+                          </Button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+                    </div>
+          ) : (
+            <div>
             <div className="flex items-center space-x-4 p-5 bg-[#eee5d7] border border-[#d9cdbd] rounded-2xl">
               <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 bg-[#d9cdbd]">
                 <UserCircle className="w-6 h-6 text-[#506477]" />
@@ -400,11 +448,12 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
         {/* Join + Leaderboard — side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="order-1 grid grid-cols-1 lg:grid-cols-5 gap-8">
 
           {/* Join a Club — wider column */}
           <div className="lg:col-span-3 app-box p-5">

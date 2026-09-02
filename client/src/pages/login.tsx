@@ -86,7 +86,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#f7f2e9] flex items-center justify-center px-4">
       {/* Subtle paper-grid texture */}
       <div
-        className="pointer-events-none fixed inset-0 opacity-[0.04]"
+        className="pointer-events-none fixed inset-0 opacity-[0.02]"
         style={{
           backgroundImage:
             "linear-gradient(#17324d 1px, transparent 1px), linear-gradient(90deg, #17324d 1px, transparent 1px)",
@@ -107,7 +107,7 @@ export default function LoginPage() {
         {/* Logo + heading */}
         <div className="flex flex-col items-center mb-8">
           <img src={logoImg} alt="VolunteerClub" className="w-16 h-16 rounded-2xl mb-4 shadow-md" />
-          <h1 className="text-2xl font-bold text-[#17324d]" style={{ fontFamily: "'Fraunces', Georgia, serif" }}>
+          <h1 className="text-2xl font-bold text-[#17324d]">
             {mode === "sign-in" ? "Welcome back" : "Create account"}
           </h1>
           <p className="text-[#506477] text-sm mt-1">
