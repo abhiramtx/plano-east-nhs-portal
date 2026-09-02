@@ -403,7 +403,7 @@ function VolunteerHistory({ club }: { club: Club }) {
               <Archive className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">My History</h1>
+              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">My History</h1>
               <p className="text-[#506477] mt-0.5 text-sm">Your personal submissions from past archived periods</p>
             </div>
           </div>
@@ -428,7 +428,7 @@ function VolunteerHistory({ club }: { club: Club }) {
             <Archive className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">My History</h1>
+            <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">My History</h1>
             <p className="text-[#506477] mt-0.5 text-sm">Your personal submissions from past archived periods</p>
           </div>
         </div>
@@ -547,7 +547,7 @@ function AdminHistoryView({ club }: { club: Club }) {
             <Archive className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Archived Submissions</h1>
+              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Archived Submissions</h1>
             <p className="text-[#506477] mt-0.5 text-sm">Historical snapshots for {club.name}</p>
           </div>
         </div>

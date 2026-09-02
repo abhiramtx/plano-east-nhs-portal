@@ -81,7 +81,7 @@ export default function Dashboard({ club }: DashboardProps) {
                 <Award className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Dashboard</h1>
+                <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Dashboard</h1>
                 <p className="text-[#506477] mt-0.5">Welcome back, {user?.name?.split(' ')[0]}!</p>
               </div>
             </div>

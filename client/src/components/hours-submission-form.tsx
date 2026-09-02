@@ -385,7 +385,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
 
       {/* Super-club opt-in */}
       {superClub && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+        <div className="p-3 bg-background border border-border rounded-lg space-y-2">
           <label className="flex items-start gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -394,9 +394,9 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
               className="mt-1"
               disabled={!subClubHoursLog || subClubHoursLog.isOpen === false}
             />
-            <span className="text-sm text-blue-900">
+            <span className="text-sm text-foreground">
               <strong>ALSO SUBMIT TO {superClub.superClubName.toUpperCase()}</strong>
-              <span className="block text-xs text-blue-800 mt-0.5 font-normal">
+              <span className="block text-xs text-muted-foreground mt-0.5 font-normal">
                 {!subClubHoursLog
                   ? `${superClub.superClubName}'s Sub-Club Hours log isn't set up yet — check back later.`
                   : subClubHoursLog.isOpen === false

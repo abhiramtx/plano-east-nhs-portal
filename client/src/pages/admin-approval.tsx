@@ -346,7 +346,7 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
                 <CheckCircle className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Hours Approval</h1>
+                <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Hours Approval</h1>
                 <p className="text-[#506477] mt-0.5">Review and approve volunteer hour submissions</p>
               </div>
             </div>

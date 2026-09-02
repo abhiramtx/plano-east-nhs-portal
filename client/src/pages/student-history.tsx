@@ -82,7 +82,7 @@ export default function StudentHistory() {
         <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">History</h1>
+              <h1 className="page-title text-xl lg:text-2xl font-semibold text-gray-900">History</h1>
               <p className="text-gray-600 mt-1">View your service hours from previous years</p>
             </div>
             <div className="flex items-center space-x-2">

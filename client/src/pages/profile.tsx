@@ -357,7 +357,7 @@ export default function Profile() {
               <UserIcon className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Profile</h1>
+              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Profile</h1>
               <p className="text-[#506477] mt-0.5">Manage your personal information</p>
             </div>
           </div>

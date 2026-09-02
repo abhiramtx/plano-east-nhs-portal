@@ -311,7 +311,7 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
               <BookOpen className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Hours Logs</h1>
+              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Hours Logs</h1>
               <p className="text-[#506477] mt-0.5">Create and manage hour-tracking logs (e.g., "Fall Semester")</p>
             </div>
           </div>

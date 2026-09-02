@@ -59,12 +59,14 @@ function QuoteRotator() {
   }, []);
 
   return (
-    <p
-      className="text-center text-xs italic text-gray-400 max-w-xs leading-relaxed transition-opacity duration-500"
-      style={{ opacity: visible ? 1 : 0 }}
-    >
-      "{QUOTES[index]}"
-    </p>
+    <div className="flex h-24 w-full max-w-sm items-center justify-center rounded-2xl border border-border bg-card px-6">
+      <p
+        className="max-w-xs text-center text-sm italic leading-relaxed text-muted-foreground transition-opacity duration-500"
+        style={{ opacity: visible ? 1 : 0 }}
+      >
+        "{QUOTES[index]}"
+      </p>
+    </div>
   );
 }
 
@@ -143,7 +145,7 @@ export default function ClubJoin() {
         <img src={logoImg} alt="VolunteerClub" className="h-7 w-auto" />
         <span className="font-semibold text-white text-sm tracking-tight">VolunteerClub.io</span>
       </header>
-      <div className="flex-1 flex flex-col items-center justify-center gap-5 p-5">
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 p-5">
         <QuoteRotator />
         {children}
       </div>

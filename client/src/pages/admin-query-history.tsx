@@ -266,14 +266,14 @@ export function AdminQueryHistory({ user, club }: Props) {
             <Search className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Query History</h1>
+            <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Query History</h1>
             <p className="text-[#506477] mt-0.5">Look up any volunteer's full archived history</p>
           </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-auto p-6">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="w-full max-w-5xl mx-auto space-y-6">
           <Card className="border-[#d9cdbd]">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-[#17324d] flex items-center gap-2">

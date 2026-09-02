@@ -1068,7 +1068,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
                   <Users className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Member Management</h1>
+                  <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Member Management</h1>
                   <p className="text-[#506477] mt-0.5">Track member progress and manage requirements</p>
                 </div>
               </div>

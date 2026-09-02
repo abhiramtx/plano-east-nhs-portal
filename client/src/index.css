@@ -1,8 +1,22 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.page-title {
+  font-family: "Caveat", cursive;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 0.9;
+}
+
+@media (min-width: 1024px) {
+  .page-title {
+    font-size: 2rem;
+  }
+}
 
 :root {
   /* Charcoal base with warm, earthy accents */
@@ -126,9 +140,16 @@
 [class~="border-[#c9bfae]"] { border-color: hsl(var(--border) / .8) !important; }
 [class~="border-[#e8dfd4]"] { border-color: hsl(var(--border) / .65) !important; }
 [class~="hover:bg-[#eee5d7]"]:hover { background-color: hsl(var(--secondary)) !important; }
+[class~="hover:bg-[#faf8f4]"]:hover,
+[class~="hover:bg-[#f7f2e9]"]:hover,
+[class~="hover:bg-white"]:hover,
+[class~="hover:bg-gray-200"]:hover { background-color: hsl(var(--background)) !important; }
 [class~="hover:bg-[#17324d]"]:hover,
 [class~="hover:bg-[#1e3f61]"]:hover,
 [class~="hover:bg-[#1f3d5a]"]:hover { background-color: hsl(var(--primary) / .84) !important; }
+[class~="hover:bg-blue-100"]:hover { background-color: hsl(var(--primary) / .12) !important; }
+[class~="hover:bg-red-50"]:hover { background-color: hsl(var(--destructive) / .12) !important; }
+[class~="hover:bg-yellow-50"]:hover { background-color: hsl(var(--primary) / .12) !important; }
 [class~="hover:text-[#17324d]"]:hover { color: hsl(var(--foreground)) !important; }
 [class~="hover:text-[#d85c45]"]:hover { color: hsl(var(--destructive)) !important; }
 [class~="bg-[#17324d]/40"] { background-color: hsl(var(--primary) / .4) !important; }
@@ -149,6 +170,15 @@
 [class~="hover:text-gray-700"]:hover { color: hsl(var(--foreground) / .88) !important; }
 [class~="bg-gray-100"] { background-color: hsl(var(--background)) !important; }
 [class~="bg-blue-50"] { background-color: hsl(var(--background)) !important; }
+[class~="bg-blue-100"] { background-color: hsl(var(--primary) / .12) !important; }
+[class~="border-blue-100"],
+[class~="border-blue-200"],
+[class~="border-blue-300"] { border-color: hsl(var(--border)) !important; }
+[class~="text-blue-900"] { color: hsl(var(--foreground)) !important; }
+[class~="text-blue-800"] { color: hsl(var(--foreground) / .9) !important; }
+[class~="text-blue-700"] { color: hsl(var(--muted-foreground)) !important; }
+[class~="text-blue-600"],
+[class~="text-blue-500"] { color: hsl(var(--primary)) !important; }
 [class~="text-blue-700"] { color: hsl(var(--primary)) !important; }
 [class~="border-gray-900"] { border-color: hsl(var(--foreground)) !important; }
 

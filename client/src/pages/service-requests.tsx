@@ -311,7 +311,7 @@ export default function ServiceRequests() {
             <Users className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Service Requests</h1>
+            <h1 className="page-title text-2xl font-bold text-gray-900">Service Requests</h1>
             <p className="text-gray-500">Find volunteer opportunities or request help</p>
           </div>
         </div>

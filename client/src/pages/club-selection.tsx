@@ -376,7 +376,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         {club.description || "A place to organize your community impact."}
                       </p>
 
-                      <div className="mt-5 grid grid-cols-3 divide-x divide-[#d9cdbd] border-y border-[#d9cdbd] py-4">
+                      <div className="mt-5 grid grid-cols-3 divide-x divide-border/60 border-y border-[#d9cdbd] py-4">
                         <div className="pr-3">
                           <p className="text-[10px] font-bold uppercase tracking-wide text-[#506477]">Total hours</p>
                           <p className="mt-1 text-lg font-bold text-[#17324d]">{club.totalApprovedHours.toFixed(1)}</p>
@@ -483,7 +483,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                   {searchQuery ? "No clubs match your search" : "No clubs yet. Be the first!"}
                 </div>
               ) : (
-                <div className="divide-y divide-[#d9cdbd]">
+                <div className="divide-y divide-border/60">
                   {filteredClubs.map((club) => (
                     <div
                       key={club.id}
@@ -554,7 +554,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                     <div
                       key={club.id}
                       className={`flex items-center gap-3 px-4 py-3.5 ${
-                        index !== clubs.length - 1 ? 'border-b border-[#d9cdbd]' : ''
+                        index !== clubs.length - 1 ? 'border-b border-border/60' : ''
                       } ${club.id === currentClub?.id ? 'bg-[#f7f2e9]' : ''}`}
                     >
                       <div className="w-7 text-center flex-shrink-0">

@@ -176,7 +176,7 @@ export default function Hours({ club }: HoursProps) {
                 <Clock className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Hours Management</h1>
+                <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Hours Management</h1>
                 <p className="text-[#506477] mt-0.5">Track and manage your service hours</p>
               </div>
             </div>
@@ -239,8 +239,8 @@ export default function Hours({ club }: HoursProps) {
                     onClick={() => setSelectedLogId(String(log.id))}
                     className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
                       selectedLogId === String(log.id)
-                        ? 'bg-black text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-secondary-foreground hover:bg-accent'
                     }`}
                   >
                     {log.name}
@@ -265,20 +265,20 @@ export default function Hours({ club }: HoursProps) {
           const met = totalHours >= selectedLog.hoursRequired;
           return (
             <div className="px-4 lg:px-6 pb-4">
-              <div className="bg-[#faf8f4] border border-[#d9cdbd] rounded-xl px-4 py-3">
+              <div className="bg-background border border-border rounded-xl px-4 py-3">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-900">{selectedLog.name} Progress</span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${met ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-600'}`}>
+                  <span className="text-sm font-medium text-foreground">{selectedLog.name} Progress</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${met ? 'bg-[#63a89a]/15 text-[#8bc4b7]' : 'bg-[#d7a85a]/15 text-[#e4bd79]'}`}>
                     {met ? 'Requirement Met' : 'In Progress'}
                   </span>
                 </div>
                 <div className="flex items-end gap-3 mb-2">
-                  <span className="text-2xl font-bold text-gray-900 leading-none">{totalHours.toFixed(1)}</span>
-                  <span className="text-sm text-gray-500 mb-0.5">/ {selectedLog.hoursRequired}h required</span>
+                  <span className="text-2xl font-bold text-foreground leading-none">{totalHours.toFixed(1)}</span>
+                  <span className="text-sm text-muted-foreground mb-0.5">/ {selectedLog.hoursRequired}h required</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-muted-foreground/20 rounded-full h-2">
                   <div
-                    className={`h-2 rounded-full transition-all duration-500 ${met ? 'bg-green-600' : 'bg-gray-900'}`}
+                    className={`h-2 rounded-full transition-all duration-500 ${met ? 'bg-[#63a89a]' : 'bg-primary'}`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -304,8 +304,8 @@ export default function Hours({ club }: HoursProps) {
         ) : (
           <>
             {selectedLogIsSystem && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-2 text-sm text-blue-900">
-                <ArrowUpCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
+              <div className="mb-4 p-3 bg-background border border-border rounded-lg flex items-center gap-2 text-sm text-foreground/85">
+                <ArrowUpCircle className="w-4 h-4 text-[#63a89a] flex-shrink-0" />
                 <span>Hours in this log are added automatically from sub-club submissions — you cannot submit directly here.</span>
               </div>
             )}

@@ -256,7 +256,7 @@ export default function MyRequests() {
     <div className="p-6 max-h-screen overflow-y-auto bg-[#faf8f4] pt-16 lg:pt-6">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Service Requests</h1>
+          <h1 className="page-title text-2xl font-bold text-gray-900">My Service Requests</h1>
           <p className="text-gray-500">Manage your volunteer opportunities and participants</p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)} className="bg-black text-white hover:bg-gray-800">

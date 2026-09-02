@@ -157,7 +157,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
             <Globe className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{club.name}</h1>
+            <h1 className="page-title text-2xl font-bold text-gray-900">{club.name}</h1>
             <p className="text-gray-500">{club.description || "No description"}</p>
           </div>
         </div>

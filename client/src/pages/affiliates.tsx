@@ -122,7 +122,7 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
               <Trophy className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-[#17324d]">Affiliates</h1>
+              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Affiliates</h1>
               <p className="text-[#506477] mt-0.5">
                 Sub-clubs feeding hours into <strong>{club.name}</strong>, plus clubs you've bookmarked.
               </p>

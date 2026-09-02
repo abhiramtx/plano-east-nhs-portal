@@ -307,10 +307,10 @@ function ClubScope({
 
   if (!user || membershipsLoading || !match) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading club…</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading club…</p>
         </div>
       </div>
     );
@@ -340,8 +340,8 @@ function RootRedirect({ user }: { user: User | null }) {
     setLocation(user ? '/clubs' : '/landing');
   }, [user, setLocation]);
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary"></div>
     </div>
   );
 }
@@ -454,10 +454,10 @@ function App() {
 
   if (initializing || (user && !clubChecked)) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-500">{user ? 'Loading your club...' : 'Loading...'}</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">{user ? 'Loading your club...' : 'Loading...'}</p>
         </div>
       </div>
     );
