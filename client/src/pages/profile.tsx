@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { User, getCurrentUser, getActiveScanQRCheckIn } from "@/lib/firebase";
+import { User, Club, getCurrentUser, getActiveScanQRCheckIn } from "@/lib/firebase";
 import { insertUserProfileSchema, type UserProfile } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ClubPageHeader } from "@/components/club-page-header";
 import { UserIcon, Save, Loader2, QrCode, CheckCircle2 } from "lucide-react";
 import QRCode from "react-qr-code";
 
@@ -54,7 +55,7 @@ type ProfileData = z.infer<typeof profileSchema>;
 
 const emailToKey = (email: string) => email.replace(/\./g, ',');
 
-export default function Profile() {
+export default function Profile({ club }: { club: Club }) {
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'profile' | 'qr'>('profile');
   const [customFieldValues, setCustomFieldValues] = useState<{ [key: string]: string }>({});
@@ -350,33 +351,28 @@ export default function Profile() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
-        <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#d85c45' }}>
-              <UserIcon className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Profile</h1>
-              <p className="text-[#506477] mt-0.5">Manage your personal information</p>
-            </div>
-          </div>
-          <div className="flex gap-1 mt-4 border-b border-[#d9cdbd] -mb-4 lg:-mb-6 pb-0">
+      <div className="p-6 pb-0 flex-shrink-0">
+        <ClubPageHeader
+          club={club}
+          title="Profile"
+          description="Manage your personal information"
+          icon={UserIcon}
+        />
+          <div className="flex gap-1 mt-4 border-b border-border pb-0">
             <button
               onClick={() => setActiveTab('profile')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'profile' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === 'profile' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
             >
               Profile
             </button>
             <button
               onClick={() => setActiveTab('qr')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === 'qr' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === 'qr' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
             >
               <QrCode className="w-3.5 h-3.5" />
               QR Code
             </button>
           </div>
-        </div>
       </div>
 
       <div className="flex-1 overflow-auto p-4 lg:p-6">

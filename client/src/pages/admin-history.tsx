@@ -23,6 +23,7 @@ import {
   MapPin,
   Image,
 } from 'lucide-react';
+import { ClubPageHeader } from '@/components/club-page-header';
 import {
   LineChart,
   Line,
@@ -397,16 +398,13 @@ function VolunteerHistory({ club }: { club: Club }) {
   if (clubKeys.length === 0) {
     return (
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="bg-white border-b border-[#d9cdbd] px-6 py-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#64748b' }}>
-              <Archive className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">My History</h1>
-              <p className="text-[#506477] mt-0.5 text-sm">Your personal submissions from past archived periods</p>
-            </div>
-          </div>
+        <div className="p-6">
+          <ClubPageHeader
+            club={club}
+            title="My History"
+            description="Your personal submissions from past archived periods"
+            icon={Archive}
+          />
         </div>
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="bg-[#faf8f4] border border-[#d9cdbd] rounded-xl px-10 py-10 text-center shadow-[4px_4px_0_rgba(23,50,77,0.06)]">
@@ -422,16 +420,13 @@ function VolunteerHistory({ club }: { club: Club }) {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Header */}
-      <div className="bg-white border-b border-[#d9cdbd] px-6 py-4 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#64748b' }}>
-            <Archive className="w-7 h-7 text-white" />
-          </div>
-          <div>
-            <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">My History</h1>
-            <p className="text-[#506477] mt-0.5 text-sm">Your personal submissions from past archived periods</p>
-          </div>
-        </div>
+      <div className="p-6 pb-0 flex-shrink-0">
+        <ClubPageHeader
+          club={club}
+          title="My History"
+          description="Your personal submissions from past archived periods"
+          icon={Archive}
+        />
       </div>
 
       {/* Club top-nav */}

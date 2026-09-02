@@ -90,9 +90,9 @@ function VolunteerInterface({
         <Switch>
           <Route path="/volunteer/dashboard"><Dashboard club={club} /></Route>
           <Route path="/volunteer/hours"><Hours club={club} /></Route>
-          <Route path="/volunteer/map"><TerritoryMap currentClubId={club.id} /></Route>
-          <Route path="/volunteer/service-requests"><ServiceRequests /></Route>
-          <Route path="/volunteer/my-requests"><MyRequests /></Route>
+          <Route path="/volunteer/map"><TerritoryMap currentClubId={club.id} club={club} /></Route>
+          <Route path="/volunteer/service-requests"><ServiceRequests club={club} /></Route>
+          <Route path="/volunteer/my-requests"><MyRequests club={club} /></Route>
           <Route path="/volunteer/club">
             <ClubDashboard
               user={user}
@@ -101,7 +101,7 @@ function VolunteerInterface({
               onLeaveClub={handleLeaveClubClick}
             />
           </Route>
-          <Route path="/volunteer/profile"><Profile /></Route>
+          <Route path="/volunteer/profile"><Profile club={club} /></Route>
           <Route path="/volunteer/history"><AdminHistory club={club} isVolunteerView={true} /></Route>
           <Route path="/volunteer/affiliates"><Affiliates user={user} club={club} /></Route>
           <Route path="/volunteer"><Dashboard club={club} /></Route>

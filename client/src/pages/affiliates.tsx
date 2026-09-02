@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Search, Bookmark, BookmarkCheck, Calendar, Network, MapPin, Award } from "lucide-react";
+import { ClubPageHeader } from "@/components/club-page-header";
 
 interface AffiliatesProps {
   user: User;
@@ -115,20 +116,13 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
-        <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#8b5cf6' }}>
-              <Trophy className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Affiliates</h1>
-              <p className="text-[#506477] mt-0.5">
-                Sub-clubs feeding hours into <strong>{club.name}</strong>, plus clubs you've bookmarked.
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="p-6">
+        <ClubPageHeader
+          club={club}
+          title="Affiliates"
+          description={<>Sub-clubs feeding hours into <strong>{club.name}</strong>, plus clubs you've bookmarked.</>}
+          icon={Trophy}
+        />
       </div>
 
       <div className="flex-1 overflow-auto p-4 lg:p-6 space-y-8">

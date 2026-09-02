@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Trophy, Clock, TrendingUp, Users, Search, X } from "lucide-react";
+import { Trophy, Clock, TrendingUp, Users, Search, X, MapPin } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
   getAllApprovedAffiliations,
   Affiliation,
 } from "@/lib/firebase";
+import { ClubPageHeader } from "@/components/club-page-header";
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
@@ -28,6 +29,7 @@ const MAX_ZOOM = 20;
 
 interface TerritoryMapProps {
   currentClubId?: string;
+  club: Club;
 }
 
 function createCirclePolygon(lng: number, lat: number, radiusKm: number, segments: number = 64): number[][] {
@@ -45,7 +47,7 @@ function createCirclePolygon(lng: number, lat: number, radiusKm: number, segment
 }
 
 
-export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
+export default function TerritoryMap({ currentClubId, club }: TerritoryMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [hoveredClubId, setHoveredClubId] = useState<string | null>(null);
   const [territoryTooltip, setTerritoryTooltip] = useState<{ x: number; y: number; name: string } | null>(null);
@@ -298,7 +300,16 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
   }, [mapLoaded, applyTerritoryLayers]);
 
   return (
-    <div className="h-full w-full flex bg-[#faf8f4] overflow-hidden">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-[#faf8f4]">
+      <div className="flex-shrink-0 p-6">
+        <ClubPageHeader
+          club={club}
+          title="Territory Map"
+          description="See where your club is making a difference"
+          icon={MapPin}
+        />
+      </div>
+      <div className="flex min-h-0 flex-1">
       <div className="flex-1 relative">
         <MapGlComponent
           ref={mapRef}
@@ -624,6 +635,7 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

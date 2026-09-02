@@ -17,6 +17,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ClubPageHeader } from "@/components/club-page-header";
 import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe, Link2, Copy, Map as MapIcon } from "lucide-react";
 import MapGlComponent, { NavigationControl, MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -148,85 +149,79 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
 
   return (
     <div className="p-6 space-y-6 min-h-full">
-      <div className="flex items-center justify-between pt-10 lg:pt-0">
-        <div className="flex items-center space-x-4">
-          <div 
-            className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ backgroundColor: club.color }}
-          >
-            <Globe className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h1 className="page-title text-2xl font-bold text-gray-900">{club.name}</h1>
-            <p className="text-gray-500">{club.description || "No description"}</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          {isAdmin && (
-            <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
-              <Crown className="w-3 h-3 mr-1" />
-              Admin
-            </Badge>
-          )}
-          <Button variant="outline" className="border-[#d9cdbd] text-gray-600 hover:bg-gray-100" onClick={() => setLeaveDialogOpen(true)}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Leave Club
-          </Button>
-        </div>
-      </div>
+      <ClubPageHeader
+        club={club}
+        title={club.name}
+        description={club.description || "No description"}
+        icon={Globe}
+        actions={
+          <>
+            {isAdmin && (
+              <Badge variant="secondary" className="border-primary/30 bg-primary/15 text-primary">
+                <Crown className="mr-1 h-3 w-3" />
+                Admin
+              </Badge>
+            )}
+            <Button variant="outline" className="border-border text-muted-foreground hover:bg-background hover:text-foreground" onClick={() => setLeaveDialogOpen(true)}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Leave Club
+            </Button>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-[#faf8f4] border-[#d9cdbd]">
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-green-600" />
+              <div className="w-12 h-12 bg-[var(--teal)]/15 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-[var(--teal)]" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Approved Hours</p>
-                <p className="text-2xl font-bold text-gray-900">{approvedHours.toFixed(1)}</p>
+                <p className="text-sm text-muted-foreground">Approved Hours</p>
+                <p className="text-2xl font-bold text-foreground">{approvedHours.toFixed(1)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-[#faf8f4] border-[#d9cdbd]">
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                <Clock className="w-6 h-6 text-yellow-600" />
+              <div className="w-12 h-12 bg-[var(--marigold)]/15 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-[var(--marigold)]" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Pending Hours</p>
-                <p className="text-2xl font-bold text-gray-900">{pendingHours.toFixed(1)}</p>
+                <p className="text-sm text-muted-foreground">Pending Hours</p>
+                <p className="text-2xl font-bold text-foreground">{pendingHours.toFixed(1)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-[#faf8f4] border-[#d9cdbd]">
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-gray-600" />
+              <div className="w-12 h-12 bg-[var(--ink-soft)]/15 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-[var(--ink-soft)]" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Members</p>
-                <p className="text-2xl font-bold text-gray-900">{members.length}</p>
+                <p className="text-sm text-muted-foreground">Members</p>
+                <p className="text-2xl font-bold text-foreground">{members.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-[#faf8f4] border-[#d9cdbd]">
+        <Card className="bg-card border-border">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 bg-[var(--coral)]/15 rounded-xl flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-[var(--coral)]" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Territory Size</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-muted-foreground">Territory Size</p>
+                <p className="text-2xl font-bold text-foreground">
                   {Math.max(20, Math.sqrt(club.totalApprovedHours) * 10).toFixed(0)}
                 </p>
               </div>
@@ -236,20 +231,20 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
       </div>
 
       {club.inviteCode && (
-        <Card className="bg-[#faf8f4] border-[#d9cdbd]">
+        <Card className="bg-card border-border">
           <CardContent className="py-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-[#faf8f4] border border-[#d9cdbd] rounded-xl flex items-center justify-center flex-shrink-0">
-                <Link2 className="w-4 h-4 text-gray-600" />
+              <div className="w-9 h-9 bg-card border border-border rounded-xl flex items-center justify-center flex-shrink-0">
+                <Link2 className="w-4 h-4 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">Invite Link</p>
-                <p className="text-xs text-gray-500 font-mono truncate">{`${window.location.origin}/join/${club.inviteCode}`}</p>
+                <p className="text-sm font-medium text-foreground">Invite Link</p>
+                <p className="text-xs text-muted-foreground font-mono truncate">{`${window.location.origin}/join/${club.inviteCode}`}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-shrink-0 border-[#d9cdbd] bg-[#faf8f4]"
+                className="flex-shrink-0 border-border bg-card text-muted-foreground hover:bg-background hover:text-foreground"
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/join/${club.inviteCode}`);
                 }}
@@ -263,21 +258,21 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
       )}
 
       <Tabs defaultValue="members" className="space-y-4">
-        <TabsList className="bg-[#eee5d7] border border-[#d9cdbd]">
-          <TabsTrigger value="members" className="data-[state=active]:bg-[#f7f2e9] data-[state=active]:text-[#17324d] text-[#506477]">
+        <TabsList className="border border-border bg-muted">
+          <TabsTrigger value="members" className="text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground">
             <Users className="w-4 h-4 mr-2" />
             Members
           </TabsTrigger>
-          <TabsTrigger value="leaderboard" className="data-[state=active]:bg-[#f7f2e9] data-[state=active]:text-[#17324d] text-[#506477]">
+          <TabsTrigger value="leaderboard" className="text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground">
             <Trophy className="w-4 h-4 mr-2" />
             Leaderboard
           </TabsTrigger>
-          <TabsTrigger value="map" className="data-[state=active]:bg-[#f7f2e9] data-[state=active]:text-[#17324d] text-[#506477]">
+          <TabsTrigger value="map" className="text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground">
             <MapIcon className="w-4 h-4 mr-2" />
             Map
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="settings" className="data-[state=active]:bg-[#f7f2e9] data-[state=active]:text-[#17324d] text-[#506477]">
+            <TabsTrigger value="settings" className="text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground">
               <Settings className="w-4 h-4 mr-2" />
               Settings
             </TabsTrigger>
@@ -285,39 +280,39 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         </TabsList>
 
         <TabsContent value="members">
-          <Card className="bg-[#faf8f4] border-[#d9cdbd]">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-[#17324d]">Club Members</CardTitle>
-              <CardDescription className="text-[#506477]">Manage your club's membership</CardDescription>
+              <CardTitle className="text-foreground">Club Members</CardTitle>
+              <CardDescription className="text-muted-foreground">Manage your club's membership</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {members.map((member) => (
                   <div 
                     key={member.id}
-                    className="flex items-center justify-between p-4 bg-[#f7f2e9]/60 rounded-lg border border-[#d9cdbd]/50"
+                    className="flex items-center justify-between p-4 bg-background/60 rounded-lg border border-border/50"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-[#d9cdbd]/40 rounded-full flex items-center justify-center">
-                        <Users className="w-5 h-5 text-[#506477]" />
+                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                        <Users className="w-5 h-5 text-muted-foreground" />
                       </div>
                       <div>
                         <div className="flex items-center space-x-2">
-                          <p className="font-medium text-[#17324d]">
+                          <p className="font-medium text-foreground">
                             {member.userName || member.userEmail}
                           </p>
                           {member.role === 'admin' && (
-                            <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200 text-xs">
+                            <Badge variant="secondary" className="border-primary/30 bg-primary/15 text-primary text-xs">
                               Admin
                             </Badge>
                           )}
                           {member.userEmail === userEmail && (
-                            <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200 text-xs">
+                            <Badge variant="secondary" className="border-[var(--teal)]/30 bg-[var(--teal)]/15 text-[var(--teal)] text-xs">
                               You
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-[#506477]">
+                        <p className="text-sm text-muted-foreground">
                           {getMemberApprovedHours(member.userEmail).toFixed(1)} approved hours
                         </p>
                       </div>
@@ -343,10 +338,10 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         </TabsContent>
 
         <TabsContent value="leaderboard">
-          <Card className="bg-[#faf8f4] border-[#d9cdbd]">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-[#17324d]">Member Leaderboard</CardTitle>
-              <CardDescription className="text-[#506477]">Top contributors in your club</CardDescription>
+              <CardTitle className="text-foreground">Member Leaderboard</CardTitle>
+              <CardDescription className="text-muted-foreground">Top contributors in your club</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -357,29 +352,29 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                       key={member.id}
                       className={`flex items-center space-x-4 p-4 rounded-lg border ${
                         member.userEmail === userEmail
-                          ? 'bg-[#f7f2e9] border-[#d9cdbd]'
-                          : 'bg-[#f7f2e9]/40 border-[#d9cdbd]/50'
+                          ? 'bg-background border-border'
+                          : 'bg-background/60 border-border/50'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        index === 0 ? 'bg-[#e5a72c] text-[#17324d]' :
-                        index === 1 ? 'bg-[#9eada0] text-white' :
-                        index === 2 ? 'bg-[#d85c45] text-white' :
-                        'bg-[#d9cdbd]/60 text-[#506477]'
+                        index === 0 ? 'bg-[var(--marigold)] text-primary-foreground' :
+                        index === 1 ? 'bg-[var(--teal)] text-primary-foreground' :
+                        index === 2 ? 'bg-[var(--coral)] text-primary-foreground' :
+                        'bg-muted text-muted-foreground'
                       }`}>
                         {index + 1}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-[#17324d]">
+                        <p className="font-medium text-foreground">
                           {member.userName || member.userEmail}
                           {member.userEmail === userEmail && " (You)"}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-[#17324d]">
+                        <p className="font-bold text-foreground">
                           {getMemberApprovedHours(member.userEmail).toFixed(1)}
                         </p>
-                        <p className="text-xs text-[#506477]">hours</p>
+                        <p className="text-xs text-muted-foreground">hours</p>
                       </div>
                     </div>
                   ))}
@@ -389,10 +384,10 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         </TabsContent>
 
         <TabsContent value="map">
-          <Card className="bg-[#faf8f4] border-[#d9cdbd] overflow-hidden">
+          <Card className="bg-card border-border overflow-hidden">
             <CardHeader className="pb-3">
-              <CardTitle className="text-gray-900">Volunteer Territory Map</CardTitle>
-              <CardDescription className="text-gray-500">
+              <CardTitle className="text-foreground">Volunteer Territory Map</CardTitle>
+              <CardDescription className="text-muted-foreground">
                 Each circle shows where a volunteer has logged hours. Bigger circle = more hours at that location.
               </CardDescription>
             </CardHeader>
@@ -424,26 +419,26 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                 {memberTooltip && (
                   <div
                     style={{ left: memberTooltip.x + 12, top: memberTooltip.y - 36, pointerEvents: 'none' }}
-                    className="absolute z-10 bg-[#faf8f4] rounded-lg px-3 py-1.5 shadow-lg border border-[#d9cdbd] text-sm font-semibold text-gray-900 whitespace-nowrap"
+                    className="absolute z-10 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground whitespace-nowrap"
                   >
                     {memberTooltip.name}
                   </div>
                 )}
 
                 {memberCircles.length === 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#faf8f4]/70">
-                    <p className="text-gray-500 text-sm">No location-tagged hours logged yet.</p>
+                  <div className="absolute inset-0 flex items-center justify-center bg-card/70">
+                    <p className="text-muted-foreground text-sm">No location-tagged hours logged yet.</p>
                   </div>
                 )}
               </div>
 
               {/* Legend */}
               {memberCircles.length > 0 && (
-                <div className="px-4 py-3 border-t border-[#d9cdbd] flex flex-wrap gap-3">
+                <div className="px-4 py-3 border-t border-border flex flex-wrap gap-3">
                   {[...memberColorMap.entries()].map(([name, color]) => (
                     <div key={name} className="flex items-center gap-1.5">
                       <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                      <span className="text-xs text-gray-600 truncate max-w-[160px]">{name}</span>
+                      <span className="text-xs text-muted-foreground truncate max-w-[160px]">{name}</span>
                     </div>
                   ))}
                 </div>

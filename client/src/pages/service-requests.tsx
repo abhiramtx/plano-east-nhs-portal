@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, 
+  Club,
   getCurrentUser,
   ServiceRequest,
   ServiceRequestParticipant,
@@ -31,8 +32,9 @@ import {
   Calendar, Users, Check, X, Trash2, Edit, Eye, Award
 } from "lucide-react";
 import { LocationPicker } from "@/components/world-map";
+import { ClubPageHeader } from "@/components/club-page-header";
 
-export default function ServiceRequests() {
+export default function ServiceRequests({ club }: { club: Club }) {
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -304,22 +306,19 @@ export default function ServiceRequests() {
   );
 
   return (
-    <div className="p-6 space-y-6 max-h-screen overflow-y-auto bg-[#faf8f4] pt-16 lg:pt-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
-            <Users className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="page-title text-2xl font-bold text-gray-900">Service Requests</h1>
-            <p className="text-gray-500">Find volunteer opportunities or request help</p>
-          </div>
-        </div>
-        <Button onClick={() => setCreateDialogOpen(true)} className="bg-black text-white hover:bg-gray-800">
-          <Plus className="w-4 h-4 mr-2" />
-          Request Service
-        </Button>
-      </div>
+    <div className="p-6 space-y-6 max-h-screen overflow-y-auto bg-[#faf8f4]">
+      <ClubPageHeader
+        club={club}
+        title="Service Requests"
+        description="Find volunteer opportunities or request help"
+        icon={Users}
+        actions={
+          <Button onClick={() => setCreateDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/85">
+            <Plus className="mr-2 h-4 w-4" />
+            Request Service
+          </Button>
+        }
+      />
 
       <Tabs defaultValue="available" className="space-y-4">
         <TabsList className="bg-gray-100 border-[#d9cdbd]">

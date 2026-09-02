@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   getCurrentUser,
+  Club,
   User,
   ServiceRequest,
   ServiceRequestParticipant,
@@ -28,8 +29,9 @@ import {
   Check, X, Trash2, Edit, Award, Eye, UserMinus, UserCheck, ChevronRight
 } from "lucide-react";
 import { LocationPicker } from "@/components/world-map";
+import { ClubPageHeader } from "@/components/club-page-header";
 
-export default function MyRequests() {
+export default function MyRequests({ club }: { club: Club }) {
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -253,16 +255,20 @@ export default function MyRequests() {
   const completedCount = participants.filter(p => p.status === 'completed').length;
 
   return (
-    <div className="p-6 max-h-screen overflow-y-auto bg-[#faf8f4] pt-16 lg:pt-6">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="page-title text-2xl font-bold text-gray-900">My Service Requests</h1>
-          <p className="text-gray-500">Manage your volunteer opportunities and participants</p>
-        </div>
-        <Button onClick={() => setCreateDialogOpen(true)} className="bg-black text-white hover:bg-gray-800">
-          <Plus className="w-4 h-4 mr-2" />
-          Create Request
-        </Button>
+    <div className="p-6 max-h-screen overflow-y-auto bg-[#faf8f4]">
+      <div className="mb-8">
+        <ClubPageHeader
+          club={club}
+          title="My Service Requests"
+          description="Manage your volunteer opportunities and participants"
+          icon={Building}
+          actions={
+            <Button onClick={() => setCreateDialogOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/85">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Request
+            </Button>
+          }
+        />
       </div>
 
       {isLoading ? (

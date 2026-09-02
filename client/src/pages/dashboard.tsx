@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
+import { ClubPageHeader } from "@/components/club-page-header";
 
 interface DashboardProps {
   club: Club;
@@ -72,21 +73,13 @@ export default function Dashboard({ club }: DashboardProps) {
   return (
     <ProfileCompletionGuard user={user}>
     <div className="flex-1 flex flex-col min-h-0">
-      {/* Header */}
-      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
-        <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#e5a72c' }}>
-                <Award className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Dashboard</h1>
-                <p className="text-[#506477] mt-0.5">Welcome back, {user?.name?.split(' ')[0]}!</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="p-6">
+        <ClubPageHeader
+          club={club}
+          title="Dashboard"
+          description={`Welcome back, ${user?.name?.split(' ')[0]}!`}
+          icon={Award}
+        />
       </div>
 
       <div className="flex-1 overflow-auto p-4 lg:p-6">

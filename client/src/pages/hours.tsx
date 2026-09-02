@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit, Zap, ArrowUpCircle, GitMerge } from "lucide-react";
 import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
+import { ClubPageHeader } from "@/components/club-page-header";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import type { HoursLog } from "@shared/schema";
 
@@ -168,24 +169,18 @@ export default function Hours({ club }: HoursProps) {
   return (
     <ProfileCompletionGuard user={user}>
       <div className="flex-1 flex flex-col h-full">
-      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
-        <div className="px-4 lg:px-6 py-4 lg:py-6 pt-16 lg:pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#2d827d' }}>
-                <Clock className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Hours Management</h1>
-                <p className="text-[#506477] mt-0.5">Track and manage your service hours</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
+      <div className="p-6 flex-shrink-0">
+        <ClubPageHeader
+          club={club}
+          title="Hours Management"
+          description="Track and manage your service hours"
+          icon={Clock}
+          actions={
               <Dialog open={isFormOpen} onOpenChange={(selectedLogIsSystem || !selectedLogIsOpen) ? undefined : setIsFormOpen}>
                 {(!selectedLogIsSystem && (selectedLogIsOpen || !selectedLogId)) && (
                   <DialogTrigger asChild>
                     <Button 
-                      className="bg-black hover:bg-gray-800 text-white"
+                      className="bg-primary text-primary-foreground hover:bg-primary/85"
                       disabled={hoursLogs.length > 0 && !selectedLogId}
                     >
                       <Plus className="w-4 h-4 mr-2" />
@@ -224,9 +219,8 @@ export default function Hours({ club }: HoursProps) {
                 </div>
               </DialogContent>
               </Dialog>
-            </div>
-          </div>
-        </div>
+          }
+        />
 
         {hoursLogs.length > 0 && (
           <div className="px-4 lg:px-6 pb-2">
