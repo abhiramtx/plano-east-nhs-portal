@@ -93,9 +93,9 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'border-[var(--teal)]/35 bg-[var(--teal)]/15 text-[var(--teal)]';
+      case 'rejected': return 'border-destructive/35 bg-destructive/15 text-destructive';
+      default: return 'border-primary/35 bg-primary/15 text-primary';
     }
   };
 
@@ -115,7 +115,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
     return (
       <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -158,10 +158,10 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-[#506477]">Pending Review</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pendingSubmissions}</p>
+                  <p className="text-2xl font-bold text-primary">{stats.pendingSubmissions}</p>
                 </div>
-                <div className="p-3 bg-yellow-50 rounded-full">
-                  <AlertCircle className="w-5 h-5 text-yellow-600" />
+                <div className="rounded-full bg-primary/15 p-3">
+                  <AlertCircle className="h-5 w-5 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -172,10 +172,10 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-[#506477]">Approved Hours</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.approvedHours.toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-[var(--teal)]">{stats.approvedHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-green-50 rounded-full">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <div className="rounded-full bg-[var(--teal)]/15 p-3">
+                  <CheckCircle2 className="h-5 w-5 text-[var(--teal)]" />
                 </div>
               </div>
             </CardContent>
@@ -186,10 +186,10 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-[#506477]">Total Hours</p>
-                  <p className="text-2xl font-bold text-purple-600">{stats.totalHours.toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-[var(--coral)]">{stats.totalHours.toFixed(1)}</p>
                 </div>
-                <div className="p-3 bg-purple-50 rounded-full">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
+                <div className="rounded-full bg-[var(--coral)]/15 p-3">
+                  <TrendingUp className="h-5 w-5 text-[var(--coral)]" />
                 </div>
               </div>
             </CardContent>
@@ -272,7 +272,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                                 size="sm"
                                 onClick={() => handleStatusUpdate(submission.id, 'approved')}
                                 disabled={updateStatusMutation.isPending}
-                                className="text-green-600 hover:bg-green-50"
+                                className="text-[var(--teal)] hover:bg-[var(--teal)]/10"
                               >
                                 <Check className="w-4 h-4 mr-1" />
                                 Approve
@@ -282,7 +282,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                                 size="sm"
                                 onClick={() => handleStatusUpdate(submission.id, 'rejected')}
                                 disabled={updateStatusMutation.isPending}
-                                className="text-red-600 hover:bg-red-50"
+                                className="text-destructive hover:bg-destructive/10"
                               >
                                 <X className="w-4 h-4 mr-1" />
                                 Reject

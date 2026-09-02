@@ -224,14 +224,15 @@ export default function Hours({ club }: HoursProps) {
 
         {hoursLogs.length > 0 && (
           <div className="px-4 lg:px-6 pb-2">
-            <div className="flex items-center gap-2 overflow-x-auto">
+            <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
+              <div className="flex min-w-full gap-2">
               {hoursLogs.map(log => {
                 const isOpen = openLogs.some(l => String(l.id) === String(log.id));
                 return (
                   <button
                     key={log.id}
                     onClick={() => setSelectedLogId(String(log.id))}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
+                    className={`flex min-w-[150px] flex-1 items-center justify-center rounded-lg px-4 py-2 text-center text-sm font-medium whitespace-nowrap transition-colors ${
                       selectedLogId === String(log.id)
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-secondary text-secondary-foreground hover:bg-accent'
@@ -245,6 +246,7 @@ export default function Hours({ club }: HoursProps) {
                   </button>
                 );
               })}
+              </div>
             </div>
           </div>
         )}
@@ -258,8 +260,8 @@ export default function Hours({ club }: HoursProps) {
           const pct = Math.min(100, (totalHours / selectedLog.hoursRequired) * 100);
           const met = totalHours >= selectedLog.hoursRequired;
           return (
-            <div className="px-4 lg:px-6 pb-4">
-              <div className="bg-background border border-border rounded-xl px-4 py-3">
+            <div className="px-4 lg:px-6 pb-2">
+              <div className="w-full rounded-xl border border-border bg-background px-4 py-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-foreground">{selectedLog.name} Progress</span>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${met ? 'bg-[#63a89a]/15 text-[#8bc4b7]' : 'bg-[#d7a85a]/15 text-[#e4bd79]'}`}>
@@ -290,7 +292,7 @@ export default function Hours({ club }: HoursProps) {
         })()}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-4 pt-0 lg:px-6 lg:pb-6">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -304,7 +306,7 @@ export default function Hours({ club }: HoursProps) {
               </div>
             )}
             {selectedLog && !selectedLogIsOpen && !selectedLogIsSystem && (
-              <div className="mb-4 p-3 bg-[#faf8f4] border border-[#d9cdbd] rounded-lg flex items-center gap-2 text-sm text-gray-700">
+              <div className="mb-3 flex items-center gap-2 rounded-lg border border-border bg-card p-3 text-sm text-foreground/85">
                 <AlertCircle className="w-4 h-4 text-gray-500 flex-shrink-0" />
                 <span>This log is closed — submissions are no longer accepted, but your recorded hours are shown below.</span>
               </div>
