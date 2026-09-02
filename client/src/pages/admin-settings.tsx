@@ -546,9 +546,13 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                 <CardDescription>How circle size is calculated</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-[#faf8f4] rounded-lg p-4 space-y-2 text-sm text-[#17324d]">
-                  <p><span className="font-mono text-xs bg-[#e0d6c8] px-1 rounded">radius = 4 + 16 × min(1, log₁₀(hours+1) / log₁₀(1000))</span></p>
-                  <p className="text-xs text-[#506477] mt-2">Circles range from 4 miles (new) to 20 miles (1,000+ hours) at each unique location. When two circles from the same club overlap, they blend together like a metaball effect.</p>
+                <div className="space-y-3 rounded-lg border border-border bg-background p-4">
+                  <code className="block w-full overflow-x-auto whitespace-nowrap rounded-md border border-border bg-muted px-3 py-2 font-mono text-sm text-primary">
+                    radius = 4 + 16 × min(1, log₁₀(hours+1) / log₁₀(1000))
+                  </code>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    Circles range from 4 miles (new) to 20 miles (1,000+ hours) at each unique location. When two circles from the same club overlap, they blend together like a metaball effect.
+                  </p>
                 </div>
               </CardContent>
             </Card>
