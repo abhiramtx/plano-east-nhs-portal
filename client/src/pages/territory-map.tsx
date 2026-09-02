@@ -21,7 +21,7 @@ import {
   Affiliation,
 } from "@/lib/firebase";
 
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;

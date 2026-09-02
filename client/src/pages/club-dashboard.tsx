@@ -21,7 +21,7 @@ import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe, Link2,
 import MapGlComponent, { NavigationControl, MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
 const MEMBER_COLORS = [
   '#ef4444','#f97316','#eab308','#22c55e','#14b8a6',

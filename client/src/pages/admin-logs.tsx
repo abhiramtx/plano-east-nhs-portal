@@ -303,22 +303,8 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
   );
 
   return (
-    <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
-      <div className="bg-white border-b border-[#d9cdbd] flex-shrink-0">
-        <div className="px-4 lg:px-6 py-4 lg:py-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#e5a72c' }}>
-              <BookOpen className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="page-title text-xl lg:text-2xl font-bold text-[#17324d]">Hours Logs</h1>
-              <p className="text-[#506477] mt-0.5">Create and manage hour-tracking logs (e.g., "Fall Semester")</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-auto p-4 lg:p-6 space-y-6">
+    <div className="flex flex-col min-h-0">
+      <div className="overflow-auto p-4 lg:p-6 space-y-6">
         {/* System logs (e.g. Sub-Club Hours) */}
         {systemLogs.length > 0 && (
           <div className="space-y-3">
