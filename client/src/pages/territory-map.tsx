@@ -487,13 +487,13 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
         </div>
 
         <div className="absolute bottom-4 left-4 flex flex-col space-y-2">
-          <div className="flex items-center space-x-2 bg-[#faf8f4]/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-[#d9cdbd] shadow">
+          <div className="flex items-center space-x-2 bg-[#121212]/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10">
             <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500" />
-            <span className="text-xs text-gray-700">Volunteer Territory ({serverCircles.length} locations)</span>
+            <span className="text-xs text-gray-200">Volunteer Territory ({serverCircles.length} locations)</span>
           </div>
-          <div className="flex items-center space-x-2 bg-[#faf8f4]/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-[#d9cdbd] shadow">
-            <Users className="w-3 h-3 text-gray-700" />
-            <span className="text-xs text-gray-700">Club HQ</span>
+          <div className="flex items-center space-x-2 bg-[#121212]/90 backdrop-blur-md rounded-lg px-3 py-1.5 border border-white/10">
+            <Users className="w-3 h-3 text-gray-200" />
+            <span className="text-xs text-gray-200">Club HQ</span>
           </div>
         </div>
       </div>
@@ -533,8 +533,8 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                   <AreaChart data={monthlyProgress} margin={{ top: 2, right: 2, left: -28, bottom: 0 }}>
                     <defs>
                       <linearGradient id="progressGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#111827" stopOpacity={0.15} />
-                        <stop offset="95%" stopColor="#111827" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#d7a85a" stopOpacity={0.22} />
+                        <stop offset="95%" stopColor="#d7a85a" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="month" axisLine={false} tickLine={false}
@@ -551,8 +551,8 @@ export default function TerritoryMap({ currentClubId }: TerritoryMapProps) {
                         ) : null
                       }
                     />
-                    <Area type="monotone" dataKey="hours" stroke="#111827" strokeWidth={2}
-                      fill="url(#progressGrad)" dot={false} activeDot={{ r: 3, fill: '#111827' }} />
+                    <Area type="monotone" dataKey="hours" stroke="#d7a85a" strokeWidth={2}
+                      fill="url(#progressGrad)" dot={false} activeDot={{ r: 3, fill: '#d7a85a' }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

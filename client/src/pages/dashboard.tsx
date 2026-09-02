@@ -193,9 +193,9 @@ export default function Dashboard({ club }: DashboardProps) {
                     <Line
                       type="monotone"
                       dataKey="hours"
-                      stroke="#17324d"
+                      stroke="#d4785f"
                       strokeWidth={3}
-                      dot={{ fill: '#17324d', strokeWidth: 2, r: 4 }}
+                      dot={{ fill: '#d4785f', strokeWidth: 2, r: 4 }}
                       activeDot={{ r: 6, fill: '#d85c45' }}
                     />
                   </LineChart>
