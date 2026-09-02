@@ -135,27 +135,27 @@ function Landing({ onSignIn }: LandingProps) {
             </Reveal>
             <Reveal delay={130}>
               <div className="relative mx-auto w-full max-w-[510px]">
-                <div className="rounded-[28px] border border-[var(--ink)]/15 bg-[#e4eee8] p-3 shadow-[12px_14px_0_rgba(23,50,77,.12)]">
-                  <div className="relative h-[390px] overflow-hidden rounded-[20px] bg-[#d9e8df]">
-                    <div className="absolute inset-0 opacity-45" style={{ backgroundImage: "linear-gradient(30deg, transparent 48%, #98bcb0 49%, transparent 51%), linear-gradient(150deg, transparent 48%, #98bcb0 49%, transparent 51%)", backgroundSize: "82px 82px" }} />
-                    <div className="absolute left-[13%] top-[18%] h-32 w-48 rotate-12 rounded-[45%] bg-[#c4dcd0]" />
-                    <div className="absolute right-[8%] top-[39%] h-44 w-40 -rotate-12 rounded-[48%] bg-[#c4dcd0]" />
+                <div className="rounded-[28px] border border-[var(--line)] bg-[var(--paper-deep)] p-3">
+                  <div className="relative h-[390px] overflow-hidden rounded-[20px] bg-[#171b19]">
+                    <div className="absolute inset-0 opacity-45" style={{ backgroundImage: "linear-gradient(30deg, transparent 48%, #314a44 49%, transparent 51%), linear-gradient(150deg, transparent 48%, #314a44 49%, transparent 51%)", backgroundSize: "82px 82px" }} />
+                    <div className="absolute left-[13%] top-[18%] h-32 w-48 rotate-12 rounded-[45%] bg-[var(--teal)]/15" />
+                    <div className="absolute right-[8%] top-[39%] h-44 w-40 -rotate-12 rounded-[48%] bg-[var(--teal)]/15" />
                     <div className="map-line left-[25%] top-[47%] w-[44%] rotate-[15deg]" /><div className="map-line left-[47%] top-[55%] w-[28%] rotate-[-32deg]" />
                     <div className="map-dot left-[25%] top-[44%] h-5 w-5 bg-[var(--coral)] text-[var(--coral)]" /><div className="map-dot left-[45%] top-[53%] h-7 w-7 bg-[var(--marigold)] text-[var(--marigold)]" /><div className="map-dot left-[70%] top-[28%] h-4 w-4 bg-[var(--teal)] text-[var(--teal)]" /><div className="map-dot left-[72%] top-[67%] h-5 w-5 bg-[var(--coral)] text-[var(--coral)]" />
-                    <div className="absolute bottom-4 left-4 rounded-xl border border-[var(--ink)]/10 bg-[var(--paper)]/90 p-3 shadow-md"><p className="text-[10px] font-bold uppercase tracking-widest text-[var(--teal)]">This month</p><p className="serif mt-1 text-2xl">126 hours</p><p className="text-xs text-[var(--ink-soft)]">across 8 local places</p></div>
+                    <div className="absolute bottom-4 left-4 rounded-xl border border-[var(--line)] bg-[var(--paper)]/90 p-3"><p className="text-[10px] font-bold uppercase tracking-widest text-[var(--teal)]">This month</p><p className="serif mt-1 text-2xl">126 hours</p><p className="text-xs text-[var(--ink-soft)]">across 8 local places</p></div>
                     <div className="absolute right-4 top-4 rounded-full bg-[var(--ink)] px-3 py-1.5 text-xs font-bold text-[var(--paper)]">The work, mapped</div>
                   </div>
                 </div>
-                <div className="absolute -bottom-7 -left-5 -rotate-6 rounded-xl bg-[var(--marigold)] px-4 py-3 font-bold text-[var(--ink)] shadow-md"><Sparkles size={15} className="mr-2 inline" />A living record</div>
+                <div className="absolute -bottom-7 -left-5 -rotate-6 rounded-xl border border-[var(--line)] bg-[var(--marigold)] px-4 py-3 font-bold text-[var(--ink)]"><Sparkles size={15} className="mr-2 inline" />A living record</div>
               </div>
             </Reveal>
           </div>
         </section>
 
-        <section className="border-y border-[var(--line)] bg-[var(--ink)] px-5 py-8 text-[var(--paper)]">
+        <section className="border-y border-[var(--line)] bg-[var(--paper)] px-5 py-8 text-[var(--ink)]">
           <div className="mx-auto flex max-w-6xl flex-col gap-4 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
             <p className="serif text-xl">Made for the people who keep a club moving.</p>
-            <p className="text-sm text-[var(--paper)]/65">Organizers · members · faculty advisors · neighbors</p>
+            <p className="text-sm text-[var(--ink-soft)]">Organizers · members · faculty advisors · neighbors</p>
           </div>
         </section>
 
@@ -164,19 +164,19 @@ function Landing({ onSignIn }: LandingProps) {
             <Reveal><SectionLabel>The useful middle</SectionLabel><div className="grid gap-8 lg:grid-cols-[.8fr_1.2fr]"><h2 className="max-w-md text-4xl leading-tight tracking-[-.04em] md:text-6xl">The work is human.<br /><span className="text-[var(--teal)]">The record can be simple.</span></h2><p className="max-w-xl self-end text-lg leading-8 text-[var(--ink-soft)]">No performance theater. Just the details a real club needs after the meeting ends: who came, what happened, which hours are ready, and where your people made a difference.</p></div></Reveal>
             <div className="mt-16 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
               {[
-                { icon: CalendarDays, title: "Plan the next thing", text: "Keep events, details, and attendance in one shared place.", color: "bg-[#f4d9c8]" },
-                { icon: Clock3, title: "Make hours count", text: "Members submit time. Admins review it without a spreadsheet chase.", color: "bg-[#d4e6dc]" },
-                { icon: MapPin, title: "See your footprint", text: "Connect service hours to the places and people they reached.", color: "bg-[#f0dfaf]" },
-                { icon: Users, title: "Keep people in step", text: "A clear home for club members, roles, and the work ahead.", color: "bg-[#d8d9e9]" },
+                { icon: CalendarDays, title: "Plan the next thing", text: "Keep events, details, and attendance in one shared place.", color: "bg-[var(--coral)]/15 text-[var(--coral)]" },
+                { icon: Clock3, title: "Make hours count", text: "Members submit time. Admins review it without a spreadsheet chase.", color: "bg-[var(--teal)]/15 text-[var(--teal)]" },
+                { icon: MapPin, title: "See your footprint", text: "Connect service hours to the places and people they reached.", color: "bg-[var(--marigold)]/15 text-[var(--marigold)]" },
+                { icon: Users, title: "Keep people in step", text: "A clear home for club members, roles, and the work ahead.", color: "bg-[var(--ink-soft)]/15 text-[var(--ink)]" },
               ].map((item, i) => <Reveal key={item.title} delay={i * 70}><article className="h-full border-t-2 border-[var(--ink)] pt-5"><div className={`mb-6 flex h-12 w-12 items-center justify-center rounded-2xl ${item.color}`}><item.icon size={22} /></div><h3 className="text-2xl">{item.title}</h3><p className="mt-3 leading-7 text-[var(--ink-soft)]">{item.text}</p></article></Reveal>)}
             </div>
           </div>
         </section>
 
-        <section id="events" className="bg-[var(--paper-deep)] px-5 py-24 lg:py-32">
+        <section id="events" className="bg-[var(--paper)] px-5 py-24 lg:py-32">
           <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1fr_.9fr]">
             <Reveal><SectionLabel>For the day-of details</SectionLabel><h2 className="max-w-xl text-4xl leading-tight tracking-[-.04em] md:text-6xl">From “who’s coming?” to “thank you for being here.”</h2><p className="mt-6 max-w-lg text-lg leading-8 text-[var(--ink-soft)]">Set up an event that matches the moment. Keep it open for ongoing service, protect it with a code, or use a quick QR check-in when everyone arrives at once.</p><div className="mt-8 space-y-4">{["Open events for flexible service", "Password events for your club", "QR check-in and check-out for accurate time"].map((x) => <p key={x} className="flex items-center gap-3 font-semibold"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--teal)] text-white"><Check size={14} /></span>{x}</p>)}</div></Reveal>
-            <Reveal delay={120}><div className="relative rounded-[26px] bg-[var(--ink)] p-6 text-[var(--paper)] shadow-[10px_10px_0_var(--coral)]"><div className="flex items-center justify-between border-b border-[var(--paper)]/15 pb-5"><div><p className="text-xs uppercase tracking-[.18em] text-[var(--paper)]/55">Saturday, April 19</p><h3 className="mt-2 text-3xl">River clean-up</h3></div><div className="rounded-xl bg-[var(--marigold)] p-3 text-[var(--ink)]"><QrCode size={24} /></div></div><div className="py-6"><div className="flex items-center justify-between text-sm text-[var(--paper)]/65"><span>Attendance</span><span className="text-[var(--paper)]">18 of 24 spots</span></div><div className="mt-3 h-3 rounded-full bg-[var(--paper)]/15"><div className="h-3 w-3/4 rounded-full bg-[var(--marigold)]" /></div></div><div className="grid grid-cols-2 gap-3 border-t border-[var(--paper)]/15 pt-5 text-sm"><p><span className="block text-[var(--paper)]/50">Meet at</span>South footbridge</p><p><span className="block text-[var(--paper)]/50">Hours logged</span>41.5 so far</p></div></div></Reveal>
+            <Reveal delay={120}><div className="relative rounded-[26px] border border-[var(--line)] bg-[var(--paper-deep)] p-6 text-[var(--ink)]"><div className="flex items-center justify-between border-b border-[var(--line)] pb-5"><div><p className="text-xs uppercase tracking-[.18em] text-[var(--ink-soft)]">Saturday, April 19</p><h3 className="mt-2 text-3xl">River clean-up</h3></div><div className="rounded-xl bg-[var(--marigold)] p-3 text-[var(--ink)]"><QrCode size={24} /></div></div><div className="py-6"><div className="flex items-center justify-between text-sm text-[var(--ink-soft)]"><span>Attendance</span><span className="text-[var(--ink)]">18 of 24 spots</span></div><div className="mt-3 h-3 rounded-full bg-[var(--line)]"><div className="h-3 w-3/4 rounded-full bg-[var(--marigold)]" /></div></div><div className="grid grid-cols-2 gap-3 border-t border-[var(--line)] pt-5 text-sm"><p><span className="block text-[var(--ink-soft)]">Meet at</span>South footbridge</p><p><span className="block text-[var(--ink-soft)]">Hours logged</span>41.5 so far</p></div></div></Reveal>
           </div>
         </section>
 
