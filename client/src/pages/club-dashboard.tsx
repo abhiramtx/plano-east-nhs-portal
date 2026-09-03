@@ -21,7 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ClubPageHeader } from "@/components/club-page-header";
-import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe, Link2, Copy, Map as MapIcon } from "lucide-react";
+import { Users, Trophy, Clock, Settings, UserMinus, Crown, LogOut, Globe, Link2, Copy, ShieldCheck, Palette, Map as MapIcon } from "lucide-react";
 import MapGlComponent, { NavigationControl, MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -483,30 +483,63 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
 
         {isAdmin && (
           <TabsContent value="settings">
-            <Card className="bg-[#faf8f4] border-[#d9cdbd]">
-              <CardHeader>
-                <CardTitle className="text-gray-900">Club Settings</CardTitle>
-                <CardDescription className="text-gray-500">Manage your club's configuration</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-[#faf8f4] rounded-lg">
-                    <h3 className="font-medium text-gray-900 mb-2">Club Privacy</h3>
-                    <p className="text-sm text-gray-500 mb-2">
-                      {club.isPrivate ? "This club is private and requires a password to join." : "This club is public and anyone can join."}
-                    </p>
-                    <Badge variant={club.isPrivate ? "secondary" : "outline"} className={club.isPrivate ? "bg-gray-200 text-gray-700" : "border-[#c9bfae] text-gray-700"}>
-                      {club.isPrivate ? "Private" : "Public"}
-                    </Badge>
+            <Card className="border-border bg-card shadow-none">
+              <CardHeader className="border-b border-border px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Settings className="h-4 w-4" />
                   </div>
-                  <div className="p-4 bg-[#faf8f4] rounded-lg">
-                    <h3 className="font-medium text-gray-900 mb-2">Club Color</h3>
-                    <div className="flex items-center space-x-3">
-                      <div 
-                        className="w-8 h-8 rounded-lg"
+                  <div>
+                    <CardTitle className="text-base font-semibold text-foreground">Club Settings</CardTitle>
+                    <CardDescription className="mt-1 text-xs">Manage privacy and appearance</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-background/30 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                          <ShieldCheck className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium text-foreground">Club privacy</h3>
+                          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                            {club.isPrivate ? "A password is required to join this club." : "Anyone can join this club."}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={club.isPrivate
+                          ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"}
+                      >
+                        {club.isPrivate ? "Private" : "Public"}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-border bg-background/30 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <Palette className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-medium text-foreground">Club color</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">Accent color used for this club.</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center gap-3">
+                      <div
+                        className="h-10 w-10 shrink-0 rounded-lg border border-white/10"
                         style={{ backgroundColor: club.color }}
                       />
-                      <span className="text-sm text-gray-500">{club.color}</span>
+                      <div>
+                        <p className="font-mono text-sm font-medium uppercase text-foreground">{club.color}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">Current accent</p>
+                      </div>
                     </div>
                   </div>
                 </div>
