@@ -1,2 +1,3 @@
 - [EXIF parser runtime checks](exif-parser-runtime-checks.md) — validate camera uploads through a browser-bundled File/Blob path, not Node's File reader.
 - [Protected preview routes](protected-preview-routes.md) — isolated preview screenshots may not retain auth; pair visual capture with build and workflow checks.
+- [Duplicate profile records](duplicate-profile-records.md) — merge dotted and comma-form profile documents by normalized email before resolving names or contact details.
