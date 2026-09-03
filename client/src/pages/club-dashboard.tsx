@@ -138,6 +138,30 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
     applyMemberLayers(mapRef.current.getMap(), memberGeoJson);
   }, [mapLoaded, memberGeoJson, applyMemberLayers]);
 
+  const focusMember = useCallback((name: string) => {
+    const circles = namedMemberCircles.filter(circle => circle.volunteerName === name);
+    if (!mapRef.current || circles.length === 0) return;
+
+    if (circles.length === 1) {
+      mapRef.current.flyTo({
+        center: [circles[0].longitude, circles[0].latitude],
+        zoom: 9,
+        duration: 1200,
+      });
+      return;
+    }
+
+    const minLongitude = Math.min(...circles.map(circle => circle.longitude));
+    const maxLongitude = Math.max(...circles.map(circle => circle.longitude));
+    const minLatitude = Math.min(...circles.map(circle => circle.latitude));
+    const maxLatitude = Math.max(...circles.map(circle => circle.latitude));
+
+    mapRef.current.fitBounds(
+      [[minLongitude, minLatitude], [maxLongitude, maxLatitude]],
+      { padding: 80, maxZoom: 9, duration: 1200 },
+    );
+  }, [namedMemberCircles]);
+
   const leaveClubMutation = useMutation({
     mutationFn: async () => {
       await leaveClubWithArchive(userEmail, club.id, club.name);
@@ -470,10 +494,16 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
               {memberCircles.length > 0 && (
                 <div className="px-4 py-3 border-t border-border flex flex-wrap gap-3">
                   {[...memberColorMap.entries()].map(([name, color]) => (
-                    <div key={name} className="flex items-center gap-1.5">
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => focusMember(name)}
+                      aria-label={`Zoom to ${name}'s territory`}
+                      className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
                       <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
                       <span className="text-xs text-muted-foreground truncate max-w-[160px]">{name}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
