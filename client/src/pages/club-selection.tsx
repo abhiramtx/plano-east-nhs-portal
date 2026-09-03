@@ -3,8 +3,11 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, 
+  UserProfile,
   getClubs, 
   getUserMemberships,
+  getUserProfile,
+  getProfileDisplayName,
   switchActiveClub,
   createClub, 
   createMembership,
@@ -75,6 +78,15 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const userEmail = user.email || '';
   const isSuperAdmin = userEmail === SUPERADMIN_EMAIL;
 
+  const { data: profile } = useQuery<UserProfile | null>({
+    queryKey: ['firebase-user-profile-selection', userEmail],
+    queryFn: () => getUserProfile(userEmail),
+    enabled: !!userEmail,
+    staleTime: 60000,
+  });
+
+  const displayName = getProfileDisplayName(profile, userEmail);
+
   const { data: userMemberships = [], isLoading: userClubLoading } = useQuery({
     queryKey: ['firebase-user-memberships', userEmail],
     queryFn: () => getUserMemberships(userEmail),
@@ -120,7 +132,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       const membership = await createMembership({
         clubId: club.id,
         userEmail: userEmail,
-        userName: user.name || userEmail.split('@')[0],
+        userName: displayName,
         role: 'admin',
       });
       await ensureClubCreatorIsAdmin(club.id, userEmail);
@@ -142,7 +154,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const goSoloMutation = useMutation({
     mutationFn: async () => {
       const randomPassword = Math.random().toString(36).substring(2, 10);
-      const userName = user.name || userEmail.split('@')[0];
+      const userName = displayName;
       const club = await createClub({
         name: `${userName}'s Hub`,
         description: 'My personal volunteer hub',
@@ -180,7 +192,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       const membership = await createMembership({
         clubId: club.id,
         userEmail: userEmail,
-        userName: user.name || userEmail.split('@')[0],
+        userName: displayName,
         role: 'member',
       });
       return { club, membership };
@@ -260,7 +272,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         id: userEmail,
         clubId: club.id,
         userEmail,
-        userName: user.name || userEmail.split('@')[0],
+        userName: displayName,
         role: 'member',
         joinedAt: new Date(),
       };

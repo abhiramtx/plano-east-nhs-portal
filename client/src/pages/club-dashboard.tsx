@@ -5,8 +5,11 @@ import {
   Club, 
   Membership, 
   HoursSubmission,
+  UserProfile,
   getMemberships,
   getClubSubmissions,
+  getAllUserProfiles,
+  getProfileDisplayName,
   leaveClubWithArchive,
   deleteMembership
 } from "@/lib/firebase";
@@ -67,6 +70,20 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
     queryFn: () => getMemberships(club.id),
   });
 
+  const { data: profiles = [] } = useQuery<UserProfile[]>({
+    queryKey: ['firebase-user-profiles'],
+    queryFn: getAllUserProfiles,
+    staleTime: 60000,
+  });
+
+  const profilesByEmail = useMemo(() => {
+    const byEmail = new Map<string, UserProfile>();
+    profiles.forEach(profile => {
+      if (profile.email) byEmail.set(profile.email.toLowerCase(), profile);
+    });
+    return byEmail;
+  }, [profiles]);
+
   const { data: clubSubmissions = [] } = useQuery<HoursSubmission[]>({
     queryKey: ['firebase-club-submissions', club.id],
     queryFn: () => getClubSubmissions(club.id),
@@ -78,22 +95,33 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
     refetchInterval: 60000,
   });
 
+  const namedMemberCircles = useMemo(
+    () => memberCircles.map(circle => ({
+      ...circle,
+      volunteerName: getProfileDisplayName(
+        profilesByEmail.get(circle.volunteerName.toLowerCase()),
+        circle.volunteerName,
+      ),
+    })),
+    [memberCircles, profilesByEmail],
+  );
+
   // Build a stable color map: sorted unique names → palette index
   const memberColorMap = useMemo(() => {
-    const names = [...new Set(memberCircles.map(c => c.volunteerName))].sort();
+    const names = [...new Set(namedMemberCircles.map(c => c.volunteerName))].sort();
     const m = new Map<string, string>();
     names.forEach((n, i) => m.set(n, MEMBER_COLORS[i % MEMBER_COLORS.length]));
     return m;
-  }, [memberCircles]);
+  }, [namedMemberCircles]);
 
   const memberGeoJson = useMemo(() => ({
     type: 'FeatureCollection' as const,
-    features: memberCircles.map(c => ({
+    features: namedMemberCircles.map(c => ({
       type: 'Feature' as const,
       properties: { color: memberColorMap.get(c.volunteerName) || '#3b82f6', name: c.volunteerName, hours: c.hours },
       geometry: { type: 'Polygon' as const, coordinates: [createCirclePolygon(c.longitude, c.latitude, c.radiusKm)] },
     })),
-  }), [memberCircles, memberColorMap]);
+  }), [namedMemberCircles, memberColorMap]);
 
   const applyMemberLayers = useCallback((map: any, geoJson: any) => {
     if (map.getSource('member-territories')) {

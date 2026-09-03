@@ -9,6 +9,8 @@ import {
   getClubStats,
   getUserMembership,
   createMembership,
+  getUserProfile,
+  getProfileDisplayName,
   clubSlug,
 } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -117,6 +119,13 @@ export default function ClubJoin() {
     enabled: !!authUser?.email,
   });
 
+  const { data: profile } = useQuery({
+    queryKey: ["user-profile-join", authUser?.email],
+    queryFn: () => getUserProfile(authUser!.email),
+    enabled: !!authUser?.email,
+    staleTime: 60000,
+  });
+
   const joinMutation = useMutation({
     mutationFn: async () => {
       if (!club || !authUser) throw new Error("Not ready");
@@ -124,7 +133,7 @@ export default function ClubJoin() {
       return createMembership({
         clubId: club.id,
         userEmail: authUser.email,
-        userName: authUser.name || authUser.email.split("@")[0],
+        userName: getProfileDisplayName(profile, authUser.email),
         role: "member",
       });
     },

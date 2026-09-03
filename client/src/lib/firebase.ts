@@ -229,6 +229,17 @@ export interface UserProfile {
   updatedAt: Date;
 }
 
+export const getProfileDisplayName = (
+  profile: Pick<UserProfile, 'goByFirstName' | 'lastName'> | null | undefined,
+  email: string,
+): string => {
+  const name = [profile?.goByFirstName, profile?.lastName]
+    .map(value => value?.trim())
+    .filter(Boolean)
+    .join(' ');
+  return name || email;
+};
+
 let currentUser: User | null = null;
 let authListeners: ((user: User | null) => void)[] = [];
 
@@ -752,7 +763,7 @@ export const getMemberships = async (clubId: string): Promise<Membership[]> => {
       id: docSnap.id,
       clubId,
       userEmail: d.email,
-      userName: d.goByFirstName || d.displayName || (d.email || '').split('@')[0],
+      userName: getProfileDisplayName(d, d.email || ''),
       role: d.role || 'member',
       joinedAt: d.joinedAt ? toDate(d.joinedAt) : new Date(),
     });
@@ -781,7 +792,7 @@ export const getUserMemberships = async (
         id: snap.docs[0].id,
         clubId,
         userEmail: data.email || userEmail,
-        userName: data.goByFirstName || data.displayName || userEmail.split('@')[0],
+        userName: getProfileDisplayName(data, data.email || userEmail),
         role: clubId === data.clubId ? (data.role || 'member') : 'member',
         joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
       },

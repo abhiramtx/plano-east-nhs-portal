@@ -6,6 +6,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import {
   User, HoursSubmission, createSubmission, updateSubmission,
+  getUserProfile, getProfileDisplayName,
   getClubEvents, ClubEvent,
   checkInUser,
   getApprovedSuperClubs, Affiliation,
@@ -97,6 +98,13 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
   const [alsoSubmitToSuper, setAlsoSubmitToSuper] = useState<boolean>(!!editingSubmission?.superClubId);
 
   const { toast } = useToast();
+
+  const { data: profile } = useQuery({
+    queryKey: ['firebase-user-profile-hours-form', user?.email],
+    queryFn: () => getUserProfile(user!.email),
+    enabled: !!user?.email,
+    staleTime: 60000,
+  });
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -242,7 +250,7 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
         const submissionData: any = {
           clubId: clubId || '',
           userEmail: user?.email || '',
-          userName: user?.name || '',
+          userName: getProfileDisplayName(profile, user?.email || ''),
           hours: parseFloat(data.hours),
           description: data.description,
           activityName: data.activityName,

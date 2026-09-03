@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { User, Club, Membership, getUserProfile, logClubLeave } from "@/lib/firebase";
+import { User, Club, Membership, getUserProfile, getProfileDisplayName, logClubLeave } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -39,10 +39,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
   });
 
 
-  const profileName = profile
-    ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ')
-    : '';
-  const displayName = profileName || user.name;
+  const displayName = getProfileDisplayName(profile, user.email);
 
   const navGroups: { label: string; items: { path: string; icon: any; label: string }[] }[] = [
     {

@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, 
   Club,
+  UserProfile,
   getCurrentUser,
+  getAllUserProfiles,
+  getProfileDisplayName,
   ServiceRequest,
   ServiceRequestParticipant,
   getOpenServiceRequests,
@@ -73,6 +76,23 @@ export default function ServiceRequests({ club }: { club: Club }) {
 
   const userEmail = user?.email || '';
 
+  const { data: profiles = [] } = useQuery<UserProfile[]>({
+    queryKey: ['firebase-user-profiles'],
+    queryFn: getAllUserProfiles,
+    staleTime: 60000,
+  });
+
+  const profilesByEmail = useMemo(() => {
+    const byEmail = new Map<string, UserProfile>();
+    profiles.forEach(profile => {
+      if (profile.email) byEmail.set(profile.email.toLowerCase(), profile);
+    });
+    return byEmail;
+  }, [profiles]);
+
+  const displayNameForEmail = (email: string) =>
+    getProfileDisplayName(profilesByEmail.get(email.toLowerCase()), email);
+
   const { data: openRequests = [] } = useQuery<ServiceRequest[]>({
     queryKey: ['firebase-open-service-requests'],
     queryFn: getOpenServiceRequests,
@@ -101,7 +121,7 @@ export default function ServiceRequests({ club }: { club: Club }) {
       return await createServiceRequest({
         ...newRequest,
         createdBy: userEmail,
-        creatorName: user?.name || userEmail.split('@')[0],
+        creatorName: displayNameForEmail(userEmail),
         creatorEmail: userEmail,
         hoursOffered: newRequest.hoursOffered,
         latitude: newRequest.latitude || undefined,
@@ -136,7 +156,7 @@ export default function ServiceRequests({ club }: { club: Club }) {
 
   const joinMutation = useMutation({
     mutationFn: async (request: ServiceRequest) => {
-      return await joinServiceRequest(request.id, userEmail, user?.name || userEmail.split('@')[0]);
+      return await joinServiceRequest(request.id, userEmail, displayNameForEmail(userEmail));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['firebase-my-participations'] });
@@ -629,7 +649,7 @@ export default function ServiceRequests({ club }: { club: Club }) {
                   <Card key={participant.id} className="p-4 bg-[#faf8f4] border-[#d9cdbd]">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium text-gray-900">{participant.userName}</p>
+                        <p className="font-medium text-gray-900">{displayNameForEmail(participant.userEmail)}</p>
                         <p className="text-sm text-gray-500">{participant.userEmail}</p>
                         <p className="text-xs text-gray-400">
                           Joined {participant.joinedAt.toLocaleDateString()}
@@ -681,7 +701,7 @@ export default function ServiceRequests({ club }: { club: Club }) {
           <DialogHeader>
             <DialogTitle className="text-gray-900">Award Hours</DialogTitle>
             <DialogDescription className="text-gray-500">
-              Award volunteer hours to {selectedParticipant?.userName}
+              Award volunteer hours to {selectedParticipant ? displayNameForEmail(selectedParticipant.userEmail) : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

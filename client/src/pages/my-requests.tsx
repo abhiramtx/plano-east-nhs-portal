@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   getCurrentUser,
   Club,
   User,
+  UserProfile,
+  getAllUserProfiles,
+  getProfileDisplayName,
   ServiceRequest,
   ServiceRequestParticipant,
   getMyServiceRequests,
@@ -79,6 +82,23 @@ export default function MyRequests({ club }: { club: Club }) {
 
   const userEmail = user?.email || '';
 
+  const { data: profiles = [] } = useQuery<UserProfile[]>({
+    queryKey: ['firebase-user-profiles'],
+    queryFn: getAllUserProfiles,
+    staleTime: 60000,
+  });
+
+  const profilesByEmail = useMemo(() => {
+    const byEmail = new Map<string, UserProfile>();
+    profiles.forEach(profile => {
+      if (profile.email) byEmail.set(profile.email.toLowerCase(), profile);
+    });
+    return byEmail;
+  }, [profiles]);
+
+  const displayNameForEmail = (email: string) =>
+    getProfileDisplayName(profilesByEmail.get(email.toLowerCase()), email);
+
   const { data: myRequests = [], isLoading } = useQuery<ServiceRequest[]>({
     queryKey: ['firebase-my-service-requests', userEmail],
     queryFn: () => getMyServiceRequests(userEmail),
@@ -114,7 +134,7 @@ export default function MyRequests({ club }: { club: Club }) {
         ...formData,
         createdBy: userEmail,
         creatorEmail: userEmail,
-        creatorName: user?.name || userEmail.split('@')[0],
+        creatorName: displayNameForEmail(userEmail),
         latitude: formData.latitude || undefined,
         longitude: formData.longitude || undefined,
       });
@@ -591,7 +611,7 @@ export default function MyRequests({ club }: { club: Club }) {
                         <Users className="w-5 h-5 text-gray-500" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{participant.userName}</p>
+                        <p className="font-medium text-gray-900">{displayNameForEmail(participant.userEmail)}</p>
                         <p className="text-sm text-gray-500">{participant.userEmail}</p>
                       </div>
                     </div>
@@ -636,7 +656,7 @@ export default function MyRequests({ club }: { club: Club }) {
           <DialogHeader>
             <DialogTitle className="text-gray-900">Award Hours</DialogTitle>
             <DialogDescription className="text-gray-500">
-              Confirm the hours to award to {selectedParticipant?.userName}
+              Confirm the hours to award to {selectedParticipant ? displayNameForEmail(selectedParticipant.userEmail) : ''}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

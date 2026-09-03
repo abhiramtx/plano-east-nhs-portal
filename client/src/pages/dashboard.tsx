@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User, getCurrentUser, getUserSubmissions, getUserSuperClubFedSubmissions, HoursSubmission, getClubsForUser, Club } from "@/lib/firebase";
+import { User, UserProfile, getCurrentUser, getUserProfile, getProfileDisplayName, getUserSubmissions, getUserSuperClubFedSubmissions, HoursSubmission, getClubsForUser, Club } from "@/lib/firebase";
 import { Clock, TrendingUp, Calendar, Award, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,15 @@ export default function Dashboard({ club }: DashboardProps) {
   }, []);
 
   const userEmail = user?.email || '';
+
+  const { data: profile } = useQuery<UserProfile | null>({
+    queryKey: ['firebase-user-profile-dashboard', userEmail],
+    queryFn: () => getUserProfile(userEmail),
+    enabled: !!userEmail,
+    staleTime: 60000,
+  });
+
+  const displayName = getProfileDisplayName(profile, userEmail);
 
   const { data: submissions = [] } = useQuery<HoursSubmission[]>({
     queryKey: ['firebase-user-submissions', userEmail, club.id],
@@ -77,7 +86,7 @@ export default function Dashboard({ club }: DashboardProps) {
         <ClubPageHeader
           club={club}
           title="Dashboard"
-          description={`Welcome back, ${user?.name?.split(' ')[0]}!`}
+          description={`Welcome back, ${displayName}!`}
           icon={Award}
         />
       </div>
