@@ -764,9 +764,10 @@ export const deleteClub = async (clubId: string): Promise<void> => {
 
 export const getMemberships = async (clubId: string): Promise<Membership[]> => {
   // Query both legacy single-club field and the multi-club array, then merge unique-by-email.
-  const [aSnap, bSnap] = await Promise.all([
+  const [aSnap, bSnap, profileSnap] = await Promise.all([
     getDocs(query(collection(db, "userProfiles"), where("clubId", "==", clubId))),
     getDocs(query(collection(db, "userProfiles"), where("clubIds", "array-contains", clubId))),
+    getDocs(collection(db, "userProfiles")),
   ]);
   const membersByEmail = new Map<string, { id: string; data: Record<string, any> }>();
   for (const docSnap of [...aSnap.docs, ...bSnap.docs]) {
@@ -777,6 +778,18 @@ export const getMemberships = async (clubId: string): Promise<Membership[]> => {
       id: existing?.id || docSnap.id,
       data: mergeNonEmptyProfileData(existing?.data || {}, d),
     });
+  }
+
+  // Membership and profile data may live in separate dotted/comma-form
+  // documents. Join the profile-only records onto the club members here.
+  for (const docSnap of profileSnap.docs) {
+    const d = docSnap.data();
+    const userEmail = normalizeProfileEmail(String(d.email || d.userEmail || d.userId || docSnap.id));
+    const key = userEmail.toLowerCase();
+    const existing = membersByEmail.get(key);
+    if (existing) {
+      existing.data = mergeNonEmptyProfileData(existing.data, d);
+    }
   }
 
   const out: Membership[] = [];
