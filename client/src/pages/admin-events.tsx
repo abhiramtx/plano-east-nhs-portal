@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   User, Club, ClubEvent, EventAttendance, EventConditional, Affiliation,
   getClubEvents, createEvent, updateEvent, deleteEvent,
-  getEventAttendance, checkInUser, checkOutUser, grantEventHours,
+  getEventAttendance, removeEventAttendance, checkInUser, checkOutUser, grantEventHours,
   approveEventSubmissionsForAttendees,
   getApprovedSuperClubs, recalculateClubHours
 } from "@/lib/firebase";
@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Trash2, Save, Calendar, Users, Clock, QrCode, Award, ChevronRight,
@@ -169,6 +169,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
   const [defaultHours, setDefaultHours] = useState('');
   const [overrideHours, setOverrideHours] = useState<Record<string, string>>({});
   const [alsoGrantToSuper, setAlsoGrantToSuper] = useState(false);
+  const [attendeeToRemove, setAttendeeToRemove] = useState<EventAttendance | null>(null);
 
   const { data: events = [], isLoading } = useQuery<ClubEvent[]>({
     queryKey: ['firebase-club-events', club.id],
@@ -287,6 +288,28 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
       qc.invalidateQueries({ queryKey: ['firebase-club-events', club.id] });
       setSelectedEventId(null);
       toast({ title: "Event deleted" });
+    },
+  });
+
+  const removeAttendeeMutation = useMutation({
+    mutationFn: (attendanceId: string) => removeEventAttendance(attendanceId),
+    onSuccess: (_, attendanceId) => {
+      qc.invalidateQueries({ queryKey: ['firebase-event-attendance', selectedEvent?.id] });
+      setSelectedAttendees(prev => prev.filter(id => id !== attendanceId));
+      setOverrideHours(prev => {
+        const next = { ...prev };
+        delete next[attendanceId];
+        return next;
+      });
+      setAttendeeToRemove(null);
+      toast({ title: "Attendee removed", description: "They can check in again if the event is still open." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Could not remove attendee",
+        description: error?.message || "Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -823,12 +846,23 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                           <p className="text-sm font-medium text-foreground mb-2">Current Attendance ({attendance.length})</p>
                           <div className="space-y-1 max-h-48 overflow-auto">
                             {attendance.map(a => (
-                              <div key={a.id} className="flex items-center justify-between text-xs py-1 px-2 bg-card rounded">
+                              <div key={a.id} className="flex items-center justify-between gap-2 text-xs py-1 px-2 bg-card rounded">
                                 <span className="font-medium text-foreground">{a.userEmail}</span>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <span>In: {formatTime(a.checkInTime)}</span>
                                   {a.checkOutTime && <span>Out: {formatTime(a.checkOutTime)}</span>}
                                   {a.minutesAttended != null && <span className="text-primary">{formatMinutes(a.minutesAttended)}</span>}
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    aria-label={`Remove ${a.userName || a.userEmail} from this event`}
+                                    title="Remove attendee"
+                                    className="h-7 w-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                    onClick={() => setAttendeeToRemove(a)}
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </Button>
                                 </div>
                               </div>
                             ))}
@@ -1124,6 +1158,17 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                                   onChange={e => setOverrideHours(prev => ({ ...prev, [a.id]: e.target.value }))}
                                   className="w-24 h-7 text-xs"
                                 />
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={`Remove ${a.userName || a.userEmail} from this event`}
+                                  title="Remove attendee"
+                                  className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={() => setAttendeeToRemove(a)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
                               </div>
                             );
                           })}
@@ -1148,6 +1193,30 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
           </div>
         </div>
       )}
+
+      <Dialog open={!!attendeeToRemove} onOpenChange={open => !open && setAttendeeToRemove(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove attendee?</DialogTitle>
+            <DialogDescription>
+              Remove {attendeeToRemove?.userName || attendeeToRemove?.userEmail} from this event? Any hours already granted will remain in their history.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setAttendeeToRemove(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => attendeeToRemove && removeAttendeeMutation.mutate(attendeeToRemove.id)}
+              disabled={removeAttendeeMutation.isPending}
+            >
+              {removeAttendeeMutation.isPending ? "Removing..." : "Remove attendee"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -2142,6 +2142,10 @@ export const getEventAttendance = async (eventId: string): Promise<EventAttendan
   return snap.docs.map(toAttendance);
 };
 
+export const removeEventAttendance = async (attendanceId: string): Promise<void> => {
+  await deleteDoc(doc(db, "eventAttendance", attendanceId));
+};
+
 export const checkInUser = async (eventId: string, eventName: string, userEmail: string, userName: string, clubId?: string, submittedHours?: number): Promise<EventAttendance> => {
   const now = new Date();
   // Check if already checked in
