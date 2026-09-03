@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, getClubSubmissions, getAllUserProfiles, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, deleteMembership, getSuperClubFedSubmissions, setSuperClubApprovalStatus, getSubClubHoursRules, SubClubHoursRule, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
+import { User, getClubSubmissions, getAllUserProfiles, getProfileDisplayName, getUserSubmissionsAllClubs, updateSubmission, createSubmission, getMemberships, deleteMembership, getSuperClubFedSubmissions, setSuperClubApprovalStatus, getSubClubHoursRules, SubClubHoursRule, HoursSubmission, UserProfile, Club, Membership } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -340,9 +340,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
   clubMembers.forEach((member: Membership) => {
     const key = member.userEmail;
     const profile = findProfile(member.userEmail);
-    const displayName = profile
-      ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ') || member.userName
-      : member.userName;
+    const displayName = getProfileDisplayName(profile, member.userEmail);
     const isComplete = !!(profile?.goByFirstName && profile?.lastName && profile?.studentId && profile?.personalEmailAddress && profile?.cellPhoneNumber && profile?.gradeLevel);
     studentStats[key] = {
       email: member.userEmail,
@@ -369,7 +367,7 @@ export function AdminStudents({ user, club }: AdminStudentsProps) {
       const isComplete = !!(profile?.goByFirstName && profile?.lastName && profile?.studentId && profile?.personalEmailAddress && profile?.cellPhoneNumber && profile?.gradeLevel);
       studentStats[key] = {
         email: submission.userEmail,
-        studentName: submission.userName,
+        studentName: getProfileDisplayName(profile, submission.userEmail),
         gradeLevel: profile?.gradeLevel || 'N/A',
         userRole: profile?.userRole || 0,
         personalEmail: profile?.personalEmailAddress || '',

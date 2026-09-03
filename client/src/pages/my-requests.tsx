@@ -99,6 +99,9 @@ export default function MyRequests({ club }: { club: Club }) {
   const displayNameForEmail = (email: string) =>
     getProfileDisplayName(profilesByEmail.get(email.toLowerCase()), email);
 
+  const personalEmailForEmail = (email: string) =>
+    profilesByEmail.get(email.toLowerCase())?.personalEmailAddress || email;
+
   const { data: myRequests = [], isLoading } = useQuery<ServiceRequest[]>({
     queryKey: ['firebase-my-service-requests', userEmail],
     queryFn: () => getMyServiceRequests(userEmail),
@@ -612,7 +615,7 @@ export default function MyRequests({ club }: { club: Club }) {
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{displayNameForEmail(participant.userEmail)}</p>
-                        <p className="text-sm text-gray-500">{participant.userEmail}</p>
+                        <p className="text-sm text-gray-500">{personalEmailForEmail(participant.userEmail)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

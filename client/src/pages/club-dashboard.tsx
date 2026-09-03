@@ -340,6 +340,9 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                             </Badge>
                           )}
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                          {member.personalEmailAddress || member.userEmail}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {getMemberApprovedHours(member.userEmail).toFixed(1)} approved hours
                         </p>
@@ -396,6 +399,9 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                         <p className="font-medium text-foreground">
                           {member.userName || member.userEmail}
                           {member.userEmail === userEmail && " (You)"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {member.personalEmailAddress || member.userEmail}
                         </p>
                       </div>
                       <div className="text-right">

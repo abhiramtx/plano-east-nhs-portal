@@ -93,6 +93,9 @@ export default function ServiceRequests({ club }: { club: Club }) {
   const displayNameForEmail = (email: string) =>
     getProfileDisplayName(profilesByEmail.get(email.toLowerCase()), email);
 
+  const personalEmailForEmail = (email: string) =>
+    profilesByEmail.get(email.toLowerCase())?.personalEmailAddress || email;
+
   const { data: openRequests = [] } = useQuery<ServiceRequest[]>({
     queryKey: ['firebase-open-service-requests'],
     queryFn: getOpenServiceRequests,
@@ -650,7 +653,7 @@ export default function ServiceRequests({ club }: { club: Club }) {
                     <div className="flex justify-between items-center">
                       <div>
                         <p className="font-medium text-gray-900">{displayNameForEmail(participant.userEmail)}</p>
-                        <p className="text-sm text-gray-500">{participant.userEmail}</p>
+                        <p className="text-sm text-gray-500">{personalEmailForEmail(participant.userEmail)}</p>
                         <p className="text-xs text-gray-400">
                           Joined {participant.joinedAt.toLocaleDateString()}
                         </p>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, subscribeToClubSubmissions, getAllUserProfiles, updateSubmission, HoursSubmission, UserProfile, Club } from "@/lib/firebase";
+import { User, subscribeToClubSubmissions, getAllUserProfiles, getProfileDisplayName, updateSubmission, HoursSubmission, UserProfile, Club } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -213,7 +213,7 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
             ) : (
               <div className="space-y-4">
                 {submissions.map((submission: HoursSubmission) => {
-                  const profile = profiles.find((p: UserProfile) => p.email === submission.userEmail);
+                  const profile = profiles.find((p: UserProfile) => p.email?.toLowerCase() === submission.userEmail?.toLowerCase());
                   return (
                     <div key={submission.id} className="p-4 lg:p-6 border border-border rounded-lg hover:bg-background transition-colors">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-4 sm:space-y-0">
@@ -224,12 +224,12 @@ export function AdminDashboard({ user, club }: AdminDashboardProps) {
                               <span className="ml-1 capitalize">{submission.status}</span>
                             </Badge>
                             <span className="text-sm text-muted-foreground">
-                              {submission.userName}
+                              {getProfileDisplayName(profile, submission.userEmail)}
                             </span>
                           </div>
                           
                           <div className="text-sm text-muted-foreground mb-3 space-y-1">
-                            <div>Email: {submission.userEmail}</div>
+                            <div>Email: {profile?.personalEmailAddress || submission.userEmail}</div>
                             {profile?.gradeLevel && (
                               <div>Grade: {profile.gradeLevel}</div>
                             )}

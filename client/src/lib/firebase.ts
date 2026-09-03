@@ -77,6 +77,7 @@ export interface Membership {
   clubId: string;
   userEmail: string;
   userName: string;
+  personalEmailAddress?: string;
   role: string;
   joinedAt: Date;
 }
@@ -239,6 +240,8 @@ export const getProfileDisplayName = (
     .join(' ');
   return name || email;
 };
+
+const normalizeProfileEmail = (value: string): string => value.replace(/,/g, '.');
 
 let currentUser: User | null = null;
 let authListeners: ((user: User | null) => void)[] = [];
@@ -759,11 +762,13 @@ export const getMemberships = async (clubId: string): Promise<Membership[]> => {
     if (seen.has(docSnap.id)) continue;
     seen.add(docSnap.id);
     const d = docSnap.data();
+    const userEmail = normalizeProfileEmail(String(d.email || d.userEmail || d.userId || docSnap.id));
     out.push({
       id: docSnap.id,
       clubId,
-      userEmail: d.email,
-      userName: getProfileDisplayName(d, d.email || ''),
+      userEmail,
+      userName: getProfileDisplayName(d, userEmail),
+      personalEmailAddress: d.personalEmailAddress || undefined,
       role: d.role || 'member',
       joinedAt: d.joinedAt ? toDate(d.joinedAt) : new Date(),
     });
@@ -791,8 +796,9 @@ export const getUserMemberships = async (
       membership: {
         id: snap.docs[0].id,
         clubId,
-        userEmail: data.email || userEmail,
-        userName: getProfileDisplayName(data, data.email || userEmail),
+        userEmail: normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail)),
+        userName: getProfileDisplayName(data, normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail))),
+        personalEmailAddress: data.personalEmailAddress || undefined,
         role: clubId === data.clubId ? (data.role || 'member') : 'member',
         joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
       },
@@ -834,8 +840,9 @@ export const getUserMembership = async (userEmail: string): Promise<{ membership
   const membership = {
     id: userProfileDoc.id,
     clubId: data.clubId,
-    userEmail: data.email,
-    userName: data.goByFirstName || data.displayName || userEmail.split('@')[0],
+    userEmail: normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail)),
+    userName: getProfileDisplayName(data, normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail))),
+    personalEmailAddress: data.personalEmailAddress || undefined,
     role: data.role || 'member',
     joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
   } as Membership;
@@ -1482,12 +1489,16 @@ export const getAllSubmissions = async (): Promise<HoursSubmission[]> => {
 
 export const getAllUserProfiles = async (): Promise<UserProfile[]> => {
   const querySnapshot = await getDocs(collection(db, "userProfiles"));
-  return querySnapshot.docs.map(doc => ({
-    email: doc.id,
-    ...doc.data(),
-    createdAt: toDate(doc.data().createdAt),
-    updatedAt: toDate(doc.data().updatedAt),
-  })) as UserProfile[];
+  return querySnapshot.docs.map(docSnap => {
+    const data = docSnap.data();
+    const email = normalizeProfileEmail(String(data.email || data.userEmail || data.userId || docSnap.id));
+    return {
+      ...data,
+      email,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+    };
+  }) as UserProfile[];
 };
 
 export const getAdminProfiles = async (): Promise<UserProfile[]> => {

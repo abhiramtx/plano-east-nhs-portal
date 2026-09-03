@@ -45,6 +45,7 @@ export default function EventCheckin() {
   // Start in signin stage (no event loaded yet) — load event only after auth
   const [stage, setStage] = useState<Stage>(eventId ? { type: 'signin' } : { type: 'event-not-found' });
   const [signedInDisplayName, setSignedInDisplayName] = useState("");
+  const [signedInPersonalEmail, setSignedInPersonalEmail] = useState("");
 
   // Auth listener: when user signs in, move to 'loading' so we can fetch the event with auth
   useEffect(() => {
@@ -82,6 +83,7 @@ export default function EventCheckin() {
     const proceed = async () => {
       const profile = await getUserProfile(email).catch(() => null);
       setSignedInDisplayName(getProfileDisplayName(profile, email));
+      setSignedInPersonalEmail(profile?.personalEmailAddress || email);
 
       // Membership check — must belong to the event's club
       const requiredClubId = clubId || event.targetClubId;
@@ -250,7 +252,7 @@ export default function EventCheckin() {
           </div>
           <div className="w-full max-w-xs bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700">
             <p className="font-medium">{signedInDisplayName || auth.currentUser?.email}</p>
-            <p className="text-xs text-green-600 mt-0.5">{auth.currentUser?.email}</p>
+            <p className="text-xs text-green-600 mt-0.5">{signedInPersonalEmail || auth.currentUser?.email}</p>
           </div>
           <p className="text-xs text-gray-400">Scan the check-out QR when you leave to record your time.</p>
         </div>
