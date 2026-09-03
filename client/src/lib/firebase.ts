@@ -434,8 +434,11 @@ export const createClub = async (clubData: Omit<Club, 'id' | 'createdAt' | 'upda
 
 export const updateClub = async (clubId: string, updates: Partial<Club>): Promise<void> => {
   const docRef = doc(db, "clubs", clubId);
+  const safeUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([, value]) => value !== undefined),
+  );
   await updateDoc(docRef, {
-    ...updates,
+    ...safeUpdates,
     updatedAt: Timestamp.fromDate(new Date()),
   });
 };

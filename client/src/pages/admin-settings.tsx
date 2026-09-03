@@ -33,7 +33,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
 
   const [clubName, setClubName] = useState(club.name || '');
   const [clubDescription, setClubDescription] = useState(club.description || '');
-  const [showPasswordField, setShowPasswordField] = useState(false);
+  const [showPasswordField, setShowPasswordField] = useState(Boolean(club.isPrivate));
   const [clubPassword, setClubPassword] = useState('');
   const [clubColor, setClubColor] = useState(club.color || '#000000');
   const [clubLogoUrl, setClubLogoUrl] = useState(club.logoUrl || '');
@@ -41,6 +41,11 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
   const [clubLongitude, setClubLongitude] = useState(club.longitude?.toString() || '');
   const [currentInviteCode, setCurrentInviteCode] = useState(club.inviteCode || '');
   const clubLogoRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setShowPasswordField(Boolean(club.isPrivate));
+    setClubPassword('');
+  }, [club.id, club.isPrivate]);
 
   const [showStudentId, setShowStudentId] = useState(true);
   const [showGradeLevel, setShowGradeLevel] = useState(true);
@@ -91,12 +96,40 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['firebase-club', club.id] });
       queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', user.email] });
       toast({ title: "Club updated", description: "Changes saved successfully." });
     },
     onError: (error: any) => {
       toast({ title: "Failed to update club", description: error.message, variant: "destructive" });
     }
   });
+
+  const handlePasswordProtectionChange = (enabled: boolean) => {
+    setShowPasswordField(enabled);
+    if (!enabled) {
+      setClubPassword('');
+      updateClubMutation.mutate({ isPrivate: false, password: '' });
+      return;
+    }
+
+    // Existing passwords can be re-enabled without exposing them in the form.
+    if (club.password) {
+      updateClubMutation.mutate({ isPrivate: true });
+    }
+  };
+
+  const handleSavePassword = () => {
+    const password = clubPassword.trim();
+    if (!password) {
+      toast({
+        title: "Password required",
+        description: "Enter a password before enabling password-protected joining.",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateClubMutation.mutate({ isPrivate: true, password });
+  };
 
   const syncHoursMutation = useMutation({
     mutationFn: () => recalculateClubHours(club.id),
@@ -385,15 +418,31 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-[#17324d]">Password-protect joining</p>
-                    <p className="text-xs text-[#506477]">Only volunteers who know the password can join</p>
+                    <p className="text-xs text-[#506477]">
+                      {showPasswordField ? "Only volunteers who know the password can join" : "Anyone can join without a password"}
+                    </p>
                   </div>
-                  <Switch checked={showPasswordField} onCheckedChange={setShowPasswordField} />
+                  <Switch
+                    checked={showPasswordField}
+                    onCheckedChange={handlePasswordProtectionChange}
+                    disabled={updateClubMutation.isPending}
+                  />
                 </div>
                 {showPasswordField && (
                   <div className="space-y-2">
                     <Label htmlFor="clubPassword">New Password</Label>
-                    <Input id="clubPassword" type="password" value={clubPassword} onChange={(e) => setClubPassword(e.target.value)} placeholder="Leave empty to keep current password" />
-                    <Button onClick={() => toast({ title: "Info", description: "Password update coming soon" })} className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white">
+                    <Input
+                      id="clubPassword"
+                      type="password"
+                      value={clubPassword}
+                      onChange={(e) => setClubPassword(e.target.value)}
+                      placeholder={club.password ? "Enter a new password to change it" : "Set a password"}
+                    />
+                    <Button
+                      onClick={handleSavePassword}
+                      disabled={updateClubMutation.isPending || !clubPassword.trim()}
+                      className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
+                    >
                       <Save className="w-4 h-4 mr-2" />Save Password
                     </Button>
                   </div>
