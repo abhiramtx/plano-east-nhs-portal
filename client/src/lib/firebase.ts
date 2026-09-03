@@ -243,6 +243,18 @@ export const getProfileDisplayName = (
 
 const normalizeProfileEmail = (value: string): string => value.replace(/,/g, '.');
 
+const mergeNonEmptyProfileData = (...records: Record<string, any>[]): Record<string, any> => {
+  const merged: Record<string, any> = {};
+  for (const record of records) {
+    for (const [key, value] of Object.entries(record || {})) {
+      if (value === undefined || value === null || value === '') continue;
+      if (Array.isArray(value) && value.length === 0) continue;
+      merged[key] = value;
+    }
+  }
+  return merged;
+};
+
 let currentUser: User | null = null;
 let authListeners: ((user: User | null) => void)[] = [];
 
@@ -756,15 +768,23 @@ export const getMemberships = async (clubId: string): Promise<Membership[]> => {
     getDocs(query(collection(db, "userProfiles"), where("clubId", "==", clubId))),
     getDocs(query(collection(db, "userProfiles"), where("clubIds", "array-contains", clubId))),
   ]);
-  const seen = new Set<string>();
-  const out: Membership[] = [];
+  const membersByEmail = new Map<string, { id: string; data: Record<string, any> }>();
   for (const docSnap of [...aSnap.docs, ...bSnap.docs]) {
-    if (seen.has(docSnap.id)) continue;
-    seen.add(docSnap.id);
     const d = docSnap.data();
     const userEmail = normalizeProfileEmail(String(d.email || d.userEmail || d.userId || docSnap.id));
+    const existing = membersByEmail.get(userEmail.toLowerCase());
+    membersByEmail.set(userEmail.toLowerCase(), {
+      id: existing?.id || docSnap.id,
+      data: mergeNonEmptyProfileData(existing?.data || {}, d),
+    });
+  }
+
+  const out: Membership[] = [];
+  for (const member of membersByEmail.values()) {
+    const d = member.data;
+    const userEmail = normalizeProfileEmail(String(d.email || d.userEmail || d.userId || member.id));
     out.push({
-      id: docSnap.id,
+      id: member.id,
       clubId,
       userEmail,
       userName: getProfileDisplayName(d, userEmail),
@@ -780,10 +800,9 @@ export const getMemberships = async (clubId: string): Promise<Membership[]> => {
 export const getUserMemberships = async (
   userEmail: string,
 ): Promise<{ membership: Membership; club: Club }[]> => {
-  const q = query(collection(db, "userProfiles"), where("email", "==", userEmail));
-  const snap = await getDocs(q);
-  if (snap.empty) return [];
-  const data = snap.docs[0].data();
+  const profile = await getUserProfile(userEmail);
+  if (!profile) return [];
+  const data = profile;
   const ids = new Set<string>();
   if (Array.isArray(data.clubIds)) data.clubIds.forEach((id: string) => id && ids.add(id));
   if (data.clubId) ids.add(data.clubId);
@@ -794,7 +813,7 @@ export const getUserMemberships = async (
     out.push({
       club,
       membership: {
-        id: snap.docs[0].id,
+        id: userEmail,
         clubId,
         userEmail: normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail)),
         userName: getProfileDisplayName(data, normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail))),
@@ -829,16 +848,14 @@ export const switchActiveClub = async (userEmail: string, clubId: string): Promi
 };
 
 export const getUserMembership = async (userEmail: string): Promise<{ membership: Membership; club: Club } | null> => {
-  const q = query(collection(db, "userProfiles"), where("email", "==", userEmail));
-  const querySnapshot = await getDocs(q);
-  if (querySnapshot.empty) return null;
-  
-  const userProfileDoc = querySnapshot.docs[0];
-  const data = userProfileDoc.data();
+  const profile = await getUserProfile(userEmail);
+  if (!profile) return null;
+
+  const data = profile;
   if (!data.clubId) return null;
   
   const membership = {
-    id: userProfileDoc.id,
+    id: userEmail,
     clubId: data.clubId,
     userEmail: normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail)),
     userName: getProfileDisplayName(data, normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail))),
@@ -1489,16 +1506,18 @@ export const getAllSubmissions = async (): Promise<HoursSubmission[]> => {
 
 export const getAllUserProfiles = async (): Promise<UserProfile[]> => {
   const querySnapshot = await getDocs(collection(db, "userProfiles"));
-  return querySnapshot.docs.map(docSnap => {
+  const profilesByEmail = new Map<string, Record<string, any>>();
+  querySnapshot.docs.forEach(docSnap => {
     const data = docSnap.data();
     const email = normalizeProfileEmail(String(data.email || data.userEmail || data.userId || docSnap.id));
-    return {
-      ...data,
-      email,
-      createdAt: toDate(data.createdAt),
-      updatedAt: toDate(data.updatedAt),
-    };
-  }) as UserProfile[];
+    const key = email.toLowerCase();
+    profilesByEmail.set(key, mergeNonEmptyProfileData(profilesByEmail.get(key) || {}, data, { email }));
+  });
+  return Array.from(profilesByEmail.values()).map(data => ({
+    ...data,
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+  })) as UserProfile[];
 };
 
 export const getAdminProfiles = async (): Promise<UserProfile[]> => {
