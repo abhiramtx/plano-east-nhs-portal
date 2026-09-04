@@ -175,7 +175,6 @@ export default function EventCheckin() {
           <AuthPanel
             heading={`Sign in to ${isCheckin ? 'check in' : 'check out'}`}
             subheading="Sign in to record your attendance."
-            allowSignUp={true}
             onSignedIn={() => {
               // Advance immediately after the auth promise resolves. The
               // Firebase listener below still handles persisted sessions and

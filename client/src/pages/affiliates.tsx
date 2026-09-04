@@ -125,7 +125,7 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
         />
       </div>
 
-      <div className="flex-1 overflow-auto p-4 lg:p-6 space-y-8">
+      <div className="p-4 lg:p-6 space-y-8">
 
         {/* Leaderboard */}
         <Card className="bg-[#faf8f4] border-[#d9cdbd]">

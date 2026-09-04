@@ -91,7 +91,7 @@ export default function Dashboard({ club }: DashboardProps) {
         />
       </div>
 
-      <div className="flex-1 overflow-auto p-4 lg:p-6">
+      <div className="p-4 lg:p-6">
         {/* Stat cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-6 lg:mb-8">
           <Card className="bg-[#faf8f4] border-[#d9cdbd] shadow-[4px_4px_0_rgba(23,50,77,0.08)]">

@@ -95,7 +95,7 @@ export default function StudentHistory() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto p-4 lg:p-6">
+      <div className="p-4 lg:p-6">
         {yearlyHistory.length === 0 ? (
           <Card>
             <CardContent className="p-12">

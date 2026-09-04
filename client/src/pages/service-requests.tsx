@@ -329,7 +329,7 @@ export default function ServiceRequests({ club }: { club: Club }) {
   );
 
   return (
-    <div className="p-6 space-y-6 max-h-screen overflow-y-auto bg-[#faf8f4]">
+    <div className="p-6 space-y-6 bg-[#faf8f4]">
       <ClubPageHeader
         club={club}
         title="Service Requests"

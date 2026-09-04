@@ -278,7 +278,7 @@ export default function MyRequests({ club }: { club: Club }) {
   const completedCount = participants.filter(p => p.status === 'completed').length;
 
   return (
-    <div className="p-6 max-h-screen overflow-y-auto bg-[#faf8f4]">
+    <div className="p-6 bg-[#faf8f4]">
       <div className="mb-8">
         <ClubPageHeader
           club={club}

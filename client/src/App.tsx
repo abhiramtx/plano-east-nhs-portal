@@ -78,7 +78,7 @@ function VolunteerInterface({
   }, [location, setLocation]);
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <VolunteerSidebar
         user={user}
         club={club}
@@ -86,7 +86,7 @@ function VolunteerInterface({
         onSignOut={onSignOut}
         onLeaveClub={handleLeaveClubClick}
       />
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-0 overflow-auto paper-grid bg-background">
+      <div className="min-h-screen min-w-0 lg:ml-64 paper-grid bg-background">
         <Switch>
           <Route path="/volunteer/dashboard"><Dashboard club={club} /></Route>
           <Route path="/volunteer/hours"><Hours club={club} /></Route>
@@ -453,7 +453,8 @@ function App() {
     );
   }
 
-  if (initializing || (user && !clubChecked)) {
+  const isLoginPath = window.location.pathname.replace(/\/+$/, '') === '/login';
+  if (!isLoginPath && (initializing || (user && !clubChecked))) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
