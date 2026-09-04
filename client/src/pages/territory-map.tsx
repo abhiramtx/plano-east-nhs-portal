@@ -301,7 +301,7 @@ export default function TerritoryMap({ currentClubId, club }: TerritoryMapProps)
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-[#faf8f4]">
-      <div className="flex-shrink-0 p-6">
+      <div className="flex-shrink-0 border-b border-border p-6 paper-grid">
         <ClubPageHeader
           club={club}
           title="Territory Map"
