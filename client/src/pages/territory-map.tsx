@@ -300,7 +300,7 @@ export default function TerritoryMap({ currentClubId, club }: TerritoryMapProps)
   }, [mapLoaded, applyTerritoryLayers]);
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-[#faf8f4]">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-[#faf8f4]">
       <div className="flex-shrink-0 p-6">
         <ClubPageHeader
           club={club}
