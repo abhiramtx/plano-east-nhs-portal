@@ -176,6 +176,13 @@ export default function EventCheckin() {
             heading={`Sign in to ${isCheckin ? 'check in' : 'check out'}`}
             subheading="Sign in to record your attendance."
             allowSignUp={true}
+            onSignedIn={() => {
+              // Advance immediately after the auth promise resolves. The
+              // Firebase listener below still handles persisted sessions and
+              // redirect returns, but this avoids waiting on a second event
+              // on mobile browsers.
+              if (auth.currentUser) setStage({ type: 'loading' });
+            }}
           />
         </div>
       );

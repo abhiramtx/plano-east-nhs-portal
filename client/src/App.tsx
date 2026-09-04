@@ -434,7 +434,8 @@ function App() {
     setLocation('/clubs');
   };
 
-  if (window.location.pathname === '/event-checkin') {
+  const isEventCheckinPath = window.location.pathname.replace(/\/+$/, '') === '/event-checkin';
+  if (isEventCheckinPath) {
     return (
       <QueryClientProvider client={queryClient}>
         <EventCheckin />

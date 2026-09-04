@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
   signInWithPopup, 
+  signInWithRedirect,
   GoogleAuthProvider, 
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
@@ -291,6 +292,16 @@ export const onAuthStateChanged = (callback: (user: User | null) => void) => {
 
 export const signInWithGoogle = async () => {
   try {
+    // Mobile browsers commonly block or suspend popup auth flows. Redirect
+    // keeps the sign-in flow in the same tab and lets Firebase restore the
+    // session when the user returns to the original route.
+    const isMobileBrowser = typeof navigator !== 'undefined' &&
+      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if (isMobileBrowser) {
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
+
     const result = await signInWithPopup(auth, googleProvider);
     const user = firebaseUserToUser(result.user);
     if (user) {
