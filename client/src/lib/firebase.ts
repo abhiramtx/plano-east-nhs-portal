@@ -42,6 +42,37 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
+const USER_DATA_CACHE_TTL_MS = 30_000;
+type UserMembershipResult = { membership: Membership; club: Club } | null;
+
+const userProfileCache = new Map<string, { value: UserProfile | null; expiresAt: number }>();
+const userProfileRequests = new Map<string, Promise<UserProfile | null>>();
+const userMembershipCache = new Map<string, { value: UserMembershipResult; expiresAt: number }>();
+const userMembershipRequests = new Map<string, Promise<UserMembershipResult>>();
+
+const userDataCacheKey = (email: string) => email.trim().toLowerCase();
+
+const invalidateUserProfileCache = (email?: string) => {
+  if (email) {
+    userProfileCache.delete(userDataCacheKey(email));
+    return;
+  }
+  userProfileCache.clear();
+};
+
+const invalidateUserMembershipCache = (email?: string) => {
+  if (email) {
+    userMembershipCache.delete(userDataCacheKey(email));
+    return;
+  }
+  userMembershipCache.clear();
+};
+
+const invalidateAllUserDataCaches = () => {
+  invalidateUserProfileCache();
+  invalidateUserMembershipCache();
+};
+
 export interface User {
   email: string;
   name: string;
@@ -314,6 +345,7 @@ export const signInWithGoogle = async () => {
 export const handleSignOut = async () => {
   try {
     await firebaseSignOut(auth);
+    invalidateAllUserDataCaches();
     notifyAuthListeners(null);
   } catch (error) {
     console.error('Failed to sign out:', error);
@@ -432,6 +464,8 @@ export const updateClub = async (clubId: string, updates: Partial<Club>): Promis
     ...safeUpdates,
     updatedAt: Timestamp.fromDate(new Date()),
   });
+  // Membership results include the club document.
+  invalidateUserMembershipCache();
 };
 
 export const generateInviteCode = async (clubId: string): Promise<string> => {
@@ -746,6 +780,7 @@ export const deleteClub = async (clubId: string): Promise<void> => {
   ]);
 
   await deleteDoc(doc(db, "clubs", clubId));
+  invalidateUserMembershipCache();
 
   const formerSuperClubIds = outgoingAffiliations.docs
     .map(docSnap => docSnap.data())
@@ -852,31 +887,55 @@ export const switchActiveClub = async (userEmail: string, clubId: string): Promi
     clubIds: ids,
     updatedAt: Timestamp.fromDate(new Date()),
   });
+  invalidateUserProfileCache(userEmail);
+  invalidateUserMembershipCache(userEmail);
 };
 
 export const getUserMembership = async (userEmail: string): Promise<{ membership: Membership; club: Club } | null> => {
-  const profile = await getUserProfile(userEmail);
-  if (!profile) return null;
+  const cacheKey = userDataCacheKey(userEmail);
+  const cached = userMembershipCache.get(cacheKey);
+  if (cached) {
+    if (cached.expiresAt > Date.now()) return cached.value;
+    userMembershipCache.delete(cacheKey);
+  }
 
-  const data = profile;
-  if (!data.clubId) return null;
-  
-  const membership = {
-    id: userEmail,
-    clubId: data.clubId,
-    userEmail: normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail)),
-    userName: getProfileDisplayName(data, normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail))),
-    personalEmailAddress: data.personalEmailAddress || undefined,
-    role: data.role || 'member',
-    joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
-  } as Membership;
-  
-  console.log('getUserMembership - retrieved membership:', membership);
-  
-  const club = await getClub(membership.clubId);
-  if (!club) return null;
-  
-  return { membership, club };
+  const inFlight = userMembershipRequests.get(cacheKey);
+  if (inFlight) return inFlight;
+
+  const request = (async (): Promise<UserMembershipResult> => {
+    const profile = await getUserProfile(userEmail);
+    if (!profile || !profile.clubId) return null;
+
+    const data = profile;
+    const membership = {
+      id: userEmail,
+      clubId: data.clubId,
+      userEmail: normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail)),
+      userName: getProfileDisplayName(data, normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail))),
+      personalEmailAddress: data.personalEmailAddress || undefined,
+      role: data.role || 'member',
+      joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
+    } as Membership;
+
+    console.log('getUserMembership - retrieved membership:', membership);
+
+    const club = await getClub(membership.clubId);
+    if (!club) return null;
+
+    return { membership, club };
+  })();
+
+  userMembershipRequests.set(cacheKey, request);
+  try {
+    const result = await request;
+    userMembershipCache.set(cacheKey, {
+      value: result,
+      expiresAt: Date.now() + USER_DATA_CACHE_TTL_MS,
+    });
+    return result;
+  } finally {
+    userMembershipRequests.delete(cacheKey);
+  }
 };
 
 export const createMembership = async (data: { clubId: string; userEmail: string; userName: string; role: string }): Promise<Membership> => {
@@ -911,6 +970,8 @@ export const createMembership = async (data: { clubId: string; userEmail: string
     }, { merge: true });
   }
 
+  invalidateUserProfileCache(data.userEmail);
+  invalidateUserMembershipCache(data.userEmail);
   return {
     id: data.userEmail,
     ...data,
@@ -930,9 +991,13 @@ export const deleteMembership = async (membershipId: string): Promise<void> => {
       updatedAt: Timestamp.fromDate(new Date()),
     });
   }
+  invalidateUserProfileCache(membershipId);
+  invalidateUserMembershipCache(membershipId);
 };
 
 export const deleteMembershipByUserAndClub = async (userEmail: string, clubId: string): Promise<void> => {
+  invalidateUserProfileCache(userEmail);
+  invalidateUserMembershipCache(userEmail);
   const q = query(collection(db, "userProfiles"), where("email", "==", userEmail));
   const querySnapshot = await getDocs(q);
   if (querySnapshot.empty) return;
@@ -958,6 +1023,8 @@ export const updateMembershipRole = async (membershipId: string, role: string): 
       role,
       updatedAt: Timestamp.fromDate(new Date()),
     });
+    invalidateUserProfileCache(membershipId);
+    invalidateUserMembershipCache(membershipId);
   }
 };
 
@@ -1414,27 +1481,50 @@ export const updateAdminSettings = async (updates: Partial<AdminSettings>, updat
 // ============ USER PROFILES ============
 
 export const getUserProfile = async (email: string): Promise<UserProfile | null> => {
-  const docRef = doc(db, "userProfiles", email);
-  const docSnap = await getDoc(docRef);
-  const altId = email.includes(',') ? email.replace(/,/g, '.') : email.replace(/\./g, ',');
-  const altRef = doc(db, "userProfiles", altId);
-  const altSnap = await getDoc(altRef);
-  const primary = docSnap.exists() ? docSnap.data() : null;
-  const alt = altSnap.exists() ? altSnap.data() : null;
-  if (!primary && !alt) return null;
-  const merged: any = {};
-  for (const obj of [primary, alt]) {
-    if (!obj) continue;
-    for (const [k, v] of Object.entries(obj)) {
-      if (v !== undefined && v !== null && v !== '') merged[k] = v;
-    }
+  const cacheKey = userDataCacheKey(email);
+  const cached = userProfileCache.get(cacheKey);
+  if (cached) {
+    if (cached.expiresAt > Date.now()) return cached.value;
+    userProfileCache.delete(cacheKey);
   }
-  return {
-    email: email.replace(/,/g, '.'),
-    ...merged,
-    createdAt: toDate(merged.createdAt),
-    updatedAt: toDate(merged.updatedAt),
-  } as UserProfile;
+
+  const inFlight = userProfileRequests.get(cacheKey);
+  if (inFlight) return inFlight;
+
+  const request = (async () => {
+    const docRef = doc(db, "userProfiles", email);
+    const altId = email.includes(',') ? email.replace(/,/g, '.') : email.replace(/\./g, ',');
+    const altRef = doc(db, "userProfiles", altId);
+    const [docSnap, altSnap] = await Promise.all([getDoc(docRef), getDoc(altRef)]);
+    const primary = docSnap.exists() ? docSnap.data() : null;
+    const alt = altSnap.exists() ? altSnap.data() : null;
+    if (!primary && !alt) return null;
+    const merged: any = {};
+    for (const obj of [primary, alt]) {
+      if (!obj) continue;
+      for (const [k, v] of Object.entries(obj)) {
+        if (v !== undefined && v !== null && v !== '') merged[k] = v;
+      }
+    }
+    return {
+      email: email.replace(/,/g, '.'),
+      ...merged,
+      createdAt: toDate(merged.createdAt),
+      updatedAt: toDate(merged.updatedAt),
+    } as UserProfile;
+  })();
+
+  userProfileRequests.set(cacheKey, request);
+  try {
+    const profile = await request;
+    userProfileCache.set(cacheKey, {
+      value: profile,
+      expiresAt: Date.now() + USER_DATA_CACHE_TTL_MS,
+    });
+    return profile;
+  } finally {
+    userProfileRequests.delete(cacheKey);
+  }
 };
 
 export const createOrUpdateUserProfile = async (email: string, data: Partial<UserProfile>): Promise<void> => {
@@ -1459,6 +1549,8 @@ export const createOrUpdateUserProfile = async (email: string, data: Partial<Use
       ...data,
     });
   }
+  invalidateUserProfileCache(email);
+  invalidateUserMembershipCache(email);
 };
 
 // ============ LEADERBOARD ============
