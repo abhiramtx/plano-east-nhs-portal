@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { User, getMemberships, promoteToAdmin, removeAdminRole, Club, Membership, getUserProfile } from "@/lib/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,26 +38,42 @@ export function AdminManagement({ user, club }: AdminManagementProps) {
     gcTime: 0,
   });
 
-  const adminProfiles = allMembers.filter((m: Membership) => m.role === 'admin');
+  const adminProfiles = useMemo(
+    () => allMembers.filter((m: Membership) => m.role === 'admin'),
+    [allMembers],
+  );
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchNames = async () => {
-      const names: { [email: string]: string } = {};
-      for (const admin of adminProfiles) {
+      const entries = await Promise.all(adminProfiles.map(async (admin) => {
         const profile = await getUserProfile(admin.userEmail);
         if (profile) {
           const fullName = [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ');
-          if (fullName) {
-            names[admin.userEmail] = fullName;
-          }
+          return fullName ? [admin.userEmail, fullName] as const : null;
         }
+        return null;
+      }));
+
+      if (!cancelled) {
+        setAdminNames(Object.fromEntries(entries.filter(
+          (entry): entry is readonly [string, string] => entry !== null,
+        )));
       }
-      setAdminNames(names);
     };
 
     if (adminProfiles.length > 0) {
-      fetchNames();
+      fetchNames().catch(() => {
+        if (!cancelled) setAdminNames({});
+      });
+    } else {
+      setAdminNames({});
     }
+
+    return () => {
+      cancelled = true;
+    };
   }, [adminProfiles]);
 
   const addAdminMutation = useMutation({
