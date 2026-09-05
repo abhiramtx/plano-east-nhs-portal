@@ -36,7 +36,7 @@ function Landing({ onSignIn }: LandingProps) {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-[#121212] px-5 text-[#f3efe6]">
+    <main className="paper-grid min-h-[100dvh] bg-[#121212] px-5 text-[#f3efe6]">
       <div className="mx-auto flex min-h-[100dvh] max-w-6xl flex-col">
         <header className="flex items-center justify-between border-b border-[#343731] py-5">
           <div className="flex items-center gap-2.5">
