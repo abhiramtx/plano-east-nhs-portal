@@ -11,6 +11,7 @@ interface LandingProps {
 function Landing({ onSignIn }: LandingProps) {
   const [, setLocation] = useLocation();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -22,11 +23,13 @@ function Landing({ onSignIn }: LandingProps) {
   const handleGoogleSignIn = async () => {
     try {
       setIsSigningIn(true);
+      setSignInError(null);
       onSignIn();
       const signedInUser = await signInWithGoogle();
       if (signedInUser) setLocation("/clubs");
     } catch (error) {
       console.error("Google sign-in failed:", error);
+      setSignInError("Google sign-in could not be completed. Please try again.");
       setIsSigningIn(false);
     }
   };
@@ -51,6 +54,11 @@ function Landing({ onSignIn }: LandingProps) {
             )}
             {isSigningIn ? "Signing in..." : "Continue with Google"}
           </button>
+          {signInError && (
+            <p className="mt-3 max-w-xs text-right text-xs leading-5 text-[#d4785f]">
+              {signInError}
+            </p>
+          )}
         </header>
 
         <section className="flex flex-1 items-start py-24 sm:py-32 lg:py-40">

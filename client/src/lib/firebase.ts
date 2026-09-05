@@ -3,6 +3,9 @@ import {
   getAuth, 
   signInWithPopup, 
   signInWithRedirect,
+  getRedirectResult,
+  setPersistence,
+  browserLocalPersistence,
   GoogleAuthProvider, 
   signOut as firebaseSignOut,
   onAuthStateChanged as firebaseOnAuthStateChanged,
@@ -41,6 +44,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+let authInitializationPromise: Promise<void> | null = null;
 
 const USER_DATA_CACHE_TTL_MS = 30_000;
 type UserMembershipResult = { membership: Membership; club: Club } | null;
@@ -326,6 +330,7 @@ export const signInWithGoogle = async () => {
     const isMobileBrowser = typeof navigator !== 'undefined' &&
       /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     if (isMobileBrowser) {
+      await setPersistence(auth, browserLocalPersistence);
       await signInWithRedirect(auth, googleProvider);
       return null;
     }
@@ -358,11 +363,25 @@ export const getCurrentUser = (): User | null => {
 };
 
 export const initializeAuth = () => {
-  firebaseOnAuthStateChanged(auth, (fbUser) => {
-    const user = firebaseUserToUser(fbUser);
-    authInitialized = true;
-    notifyAuthListeners(user);
-  });
+  if (authInitializationPromise) return authInitializationPromise;
+
+  authInitializationPromise = (async () => {
+    try {
+      // Firebase does not apply a pending mobile redirect until the result is
+      // consumed after the browser returns from Google.
+      await getRedirectResult(auth);
+    } catch (error) {
+      console.error('Failed to complete Google redirect sign-in:', error);
+    }
+
+    firebaseOnAuthStateChanged(auth, (fbUser) => {
+      const user = firebaseUserToUser(fbUser);
+      authInitialized = true;
+      notifyAuthListeners(user);
+    });
+  })();
+
+  return authInitializationPromise;
 };
 
 // ============ FIRESTORE DATA OPERATIONS ============

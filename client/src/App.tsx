@@ -334,11 +334,17 @@ function ClubScope({
   );
 }
 
-function RootRedirect({ user }: { user: User | null }) {
+function RootRedirect({ user, selectedClub }: { user: User | null; selectedClub: Club | null }) {
   const [, setLocation] = useLocation();
   useEffect(() => {
-    setLocation(user ? '/clubs' : '/landing');
-  }, [user, setLocation]);
+    if (!user) {
+      setLocation('/landing');
+    } else if (selectedClub) {
+      setLocation(`/${clubSlug(selectedClub.name)}/volunteer/dashboard`);
+    } else {
+      setLocation('/clubs');
+    }
+  }, [user, selectedClub, setLocation]);
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
       <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary"></div>
@@ -473,7 +479,7 @@ function App() {
           <Route path="/event-checkin"><EventCheckin /></Route>
           <Route path="/join/:code">{() => <ClubJoin />}</Route>
           <Route path="/landing">
-            {user ? <RootRedirect user={user} /> : <Landing onSignIn={() => {}} />}
+            {user ? <RootRedirect user={user} selectedClub={selectedClub} /> : <Landing onSignIn={() => {}} />}
           </Route>
           <Route path="/login"><LoginPage /></Route>
           <Route path="/clubs">
@@ -483,7 +489,7 @@ function App() {
               <Landing onSignIn={() => {}} />
             )}
           </Route>
-          <Route path="/"><RootRedirect user={user} /></Route>
+          <Route path="/"><RootRedirect user={user} selectedClub={selectedClub} /></Route>
 
           {/* Backward-compat for old un-prefixed paths */}
           <Route path="/volunteer/:rest*">
