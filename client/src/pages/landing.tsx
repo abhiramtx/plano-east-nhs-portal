@@ -23,7 +23,8 @@ function Landing({ onSignIn }: LandingProps) {
     try {
       setIsSigningIn(true);
       onSignIn();
-      await signInWithGoogle();
+      const signedInUser = await signInWithGoogle();
+      if (signedInUser) setLocation("/clubs");
     } catch (error) {
       console.error("Google sign-in failed:", error);
       setIsSigningIn(false);

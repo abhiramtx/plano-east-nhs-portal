@@ -472,7 +472,9 @@ function App() {
         <Switch>
           <Route path="/event-checkin"><EventCheckin /></Route>
           <Route path="/join/:code">{() => <ClubJoin />}</Route>
-          <Route path="/landing"><Landing onSignIn={() => {}} /></Route>
+          <Route path="/landing">
+            {user ? <RootRedirect user={user} /> : <Landing onSignIn={() => {}} />}
+          </Route>
           <Route path="/login"><LoginPage /></Route>
           <Route path="/clubs">
             {user ? (
