@@ -3,8 +3,8 @@ name: Firebase mobile redirects
 description: The mobile Google authentication flow depends on completing Firebase's pending redirect after returning to the app.
 ---
 
-Mobile Google sign-in must persist auth locally before calling the redirect flow and consume the pending redirect result during app initialization before relying on the auth-state listener.
+Do not use Firebase redirect-based Google authentication from Replit's changing development domains on iOS Safari. Use a popup opened directly from the user's click, without awaiting other work first.
 
-**Why:** Mobile Safari can return to the app without an authenticated `currentUser` unless Firebase's pending redirect credential is explicitly resolved.
+**Why:** The app origin and Firebase auth handler use different domains. Safari can block or partition the cross-site storage Firebase needs to recover redirect state, leaving the user signed out after returning to the landing page.
 
-**How to apply:** Keep the redirect-result handling centralized in Firebase initialization, and keep initialization idempotent so multiple React mounts do not register competing auth flows.
+**How to apply:** Keep popup creation as the first asynchronous browser action in the sign-in click handler. For a future stable custom domain, redirect auth would require a same-origin Firebase auth handler setup.
