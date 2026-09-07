@@ -284,6 +284,34 @@ const mergeNonEmptyProfileData = (...records: Record<string, any>[]): Record<str
   return merged;
 };
 
+const profileDocumentIds = (email: string): string[] => {
+  const normalized = normalizeProfileEmail(email).trim();
+  const lower = normalized.toLowerCase();
+  const commaForm = normalized.replace(/\./g, ',');
+  const lowerCommaForm = lower.replace(/\./g, ',');
+  return Array.from(new Set([email, normalized, lower, commaForm, lowerCommaForm]));
+};
+
+const getUserProfileDocuments = async (email: string) => {
+  const candidateRefs = profileDocumentIds(email).map(id => doc(db, "userProfiles", id));
+  const [documentSnapshots, emailQuery] = await Promise.all([
+    Promise.all(candidateRefs.map(ref => getDoc(ref))),
+    getDocs(query(
+      collection(db, "userProfiles"),
+      where("email", "==", normalizeProfileEmail(email)),
+    )),
+  ]);
+
+  const byId = new Map<string, typeof documentSnapshots[number]>();
+  for (const snapshot of documentSnapshots) {
+    if (snapshot.exists()) byId.set(snapshot.id, snapshot);
+  }
+  for (const snapshot of emailQuery.docs) {
+    byId.set(snapshot.id, snapshot);
+  }
+  return Array.from(byId.values());
+};
+
 let currentUser: User | null = null;
 let authListeners: ((user: User | null) => void)[] = [];
 
@@ -844,19 +872,25 @@ export const getUserMemberships = async (
   const ids = new Set<string>();
   if (Array.isArray(data.clubIds)) data.clubIds.forEach((id: string) => id && ids.add(id));
   if (data.clubId) ids.add(data.clubId);
+  const clubs = await Promise.all(Array.from(ids).map(async clubId => ({
+    clubId,
+    club: await getClub(clubId),
+  })));
   const out: { membership: Membership; club: Club }[] = [];
-  for (const clubId of Array.from(ids)) {
-    const club = await getClub(clubId);
+  const profileEmail = normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail));
+  for (const { clubId, club } of clubs) {
     if (!club) continue;
     out.push({
       club,
       membership: {
         id: userEmail,
         clubId,
-        userEmail: normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail)),
-        userName: getProfileDisplayName(data, normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail))),
+        userEmail: profileEmail,
+        userName: getProfileDisplayName(data, profileEmail),
         personalEmailAddress: data.personalEmailAddress || undefined,
-        role: clubId === data.clubId ? (data.role || 'member') : 'member',
+        role: club.creatorEmail?.toLowerCase() === profileEmail.toLowerCase()
+          ? 'admin'
+          : (clubId === data.clubId ? (data.role || 'member') : 'member'),
         joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
       },
     });
@@ -900,25 +934,35 @@ export const getUserMembership = async (userEmail: string): Promise<{ membership
 
   const request = (async (): Promise<UserMembershipResult> => {
     const profile = await getUserProfile(userEmail);
-    if (!profile || !profile.clubId) return null;
+    if (!profile) return null;
 
     const data = profile;
+    const profileEmail = normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail));
+    const clubIds = Array.from(new Set([
+      ...(Array.isArray(data.clubIds) ? data.clubIds : []),
+      ...(data.clubId ? [data.clubId] : []),
+    ]));
+    const clubs = await Promise.all(clubIds.map(async clubId => ({
+      clubId,
+      club: await getClub(clubId),
+    })));
+    const selected = clubs.find(({ clubId }) => clubId === data.clubId && club) ||
+      clubs.find(({ club }) => club);
+    if (!selected?.club) return null;
+
     const membership = {
       id: userEmail,
-      clubId: data.clubId,
-      userEmail: normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail)),
-      userName: getProfileDisplayName(data, normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail))),
+      clubId: selected.clubId,
+      userEmail: profileEmail,
+      userName: getProfileDisplayName(data, profileEmail),
       personalEmailAddress: data.personalEmailAddress || undefined,
-      role: data.role || 'member',
+      role: selected.club.creatorEmail?.toLowerCase() === profileEmail.toLowerCase()
+        ? 'admin'
+        : (selected.clubId === data.clubId ? (data.role || 'member') : 'member'),
       joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
     } as Membership;
 
-    console.log('getUserMembership - retrieved membership:', membership);
-
-    const club = await getClub(membership.clubId);
-    if (!club) return null;
-
-    return { membership, club };
+    return { membership, club: selected.club };
   })();
 
   userMembershipRequests.set(cacheKey, request);
@@ -1025,12 +1069,18 @@ export const updateMembershipRole = async (membershipId: string, role: string): 
 };
 
 export const ensureClubCreatorIsAdmin = async (clubId: string, creatorEmail: string): Promise<void> => {
-  const docRef = doc(db, "userProfiles", creatorEmail);
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) return;
-  const data = docSnap.data();
-  if (data.clubId === clubId && data.role !== 'admin') {
-    await updateDoc(docRef, { role: 'admin', updatedAt: Timestamp.fromDate(new Date()) });
+  const profileDocs = await getUserProfileDocuments(creatorEmail);
+  const matchingDoc = profileDocs.find(snapshot => {
+    const data = snapshot.data();
+    const clubIds = Array.isArray(data.clubIds) ? data.clubIds : [];
+    return data.clubId === clubId || clubIds.includes(clubId);
+  });
+  if (!matchingDoc) return;
+  const data = matchingDoc.data();
+  if (data.role !== 'admin') {
+    await updateDoc(matchingDoc.ref, { role: 'admin', updatedAt: Timestamp.fromDate(new Date()) });
+    invalidateUserProfileCache(creatorEmail);
+    invalidateUserMembershipCache(creatorEmail);
   }
 };
 
@@ -1488,22 +1538,13 @@ export const getUserProfile = async (email: string): Promise<UserProfile | null>
   if (inFlight) return inFlight;
 
   const request = (async () => {
-    const docRef = doc(db, "userProfiles", email);
-    const altId = email.includes(',') ? email.replace(/,/g, '.') : email.replace(/\./g, ',');
-    const altRef = doc(db, "userProfiles", altId);
-    const [docSnap, altSnap] = await Promise.all([getDoc(docRef), getDoc(altRef)]);
-    const primary = docSnap.exists() ? docSnap.data() : null;
-    const alt = altSnap.exists() ? altSnap.data() : null;
-    if (!primary && !alt) return null;
-    const merged: any = {};
-    for (const obj of [primary, alt]) {
-      if (!obj) continue;
-      for (const [k, v] of Object.entries(obj)) {
-        if (v !== undefined && v !== null && v !== '') merged[k] = v;
-      }
-    }
+    const profileDocs = await getUserProfileDocuments(email);
+    if (profileDocs.length === 0) return null;
+    const merged = mergeNonEmptyProfileData(
+      ...profileDocs.map(snapshot => snapshot.data()),
+    );
     return {
-      email: email.replace(/,/g, '.'),
+      email: normalizeProfileEmail(email),
       ...merged,
       createdAt: toDate(merged.createdAt),
       updatedAt: toDate(merged.updatedAt),

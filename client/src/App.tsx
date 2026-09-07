@@ -113,7 +113,7 @@ function VolunteerInterface({
 }
 
 function AdminInterface({ user, club }: { user: User; club: Club }) {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const pageFromPath = (loc: string): string => {
     if (loc.includes('/admin/dashboard')) return 'dashboard';
     if (loc.includes('/admin/students')) return 'students';
@@ -460,7 +460,10 @@ function App() {
   }
 
   const isLoginPath = window.location.pathname.replace(/\/+$/, '') === '/login';
-  if (!isLoginPath && (initializing || (user && !clubChecked))) {
+  // Do not block the whole app on the optional active-club lookup. On mobile,
+  // one slow Firestore read should not leave the user staring at a spinner;
+  // /clubs can render its own loading state and recover when the query settles.
+  if (!isLoginPath && initializing) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
