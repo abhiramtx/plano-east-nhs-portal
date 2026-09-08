@@ -566,20 +566,19 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
           {/* Leaderboard — side column on desktop, below Your Clubs on mobile */}
           {!clubsLoading && clubs.length > 0 && (
-            <div className="order-3 mt-8 lg:order-1 lg:col-span-2 lg:mt-0">
-              <p className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#506477]">
-                <Trophy className="h-4 w-4 text-[#e5a72c]" />
-                Leaderboard
-              </p>
-              <div className="app-box p-5">
-                <div className="border border-[#d9cdbd] rounded-xl overflow-hidden">
+            <div className="order-3 mt-8 app-box p-5 lg:order-1 lg:col-span-2 lg:mt-0">
+              <div className="mb-4 flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-[#e5a72c]" />
+                <h2 className="text-xl font-semibold text-[#17324d]">Leaderboard</h2>
+              </div>
+              <div className="overflow-hidden rounded-xl border border-[#d9cdbd]">
                 {[...clubs]
                   .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours)
                   .map((club, index) => (
                     <div
                       key={club.id}
                       className={`flex items-center gap-3 px-4 py-3.5 ${
-                        index !== clubs.length - 1 ? 'border-b border-border/60' : ''
+                        index !== clubs.length - 1 ? 'border-b border-[#d9cdbd]' : ''
                       } ${club.id === currentClub?.id ? 'bg-[#f7f2e9]' : ''}`}
                     >
                       <div className="w-7 text-center flex-shrink-0">
@@ -594,25 +593,25 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         )}
                       </div>
                       <div
-                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg"
-                        style={{ backgroundColor: club.color }}
+                        className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center"
+                        style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
                       >
                         {club.logoUrl
-                          ? <img src={club.logoUrl} alt={club.name} className="h-full w-full object-cover" />
+                          ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
                           : <Trophy className="w-4 h-4 text-white" />}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex min-w-0 items-center gap-1.5">
-                          <p className="min-w-0 truncate font-semibold text-[#17324d] text-sm">{club.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-[#17324d] text-sm truncate">{club.name}</p>
                           {club.id === currentClub?.id && (
-                            <span className="flex-shrink-0 rounded-full bg-[#eee5d7] px-1.5 py-0.5 text-[10px] text-[#506477] whitespace-nowrap">
+                            <span className="text-[10px] bg-[#eee5d7] text-[#506477] px-1.5 py-0.5 rounded-full whitespace-nowrap">
                               You
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-shrink-0 items-center gap-2">
-                        <div className="flex-shrink-0 text-right">
+                      <div className="flex items-center gap-2">
+                        <div className="text-right flex-shrink-0">
                           <p className="font-bold text-[#17324d] text-sm">{club.totalApprovedHours.toFixed(0)}</p>
                           <p className="text-[10px] text-[#506477]">hrs</p>
                         </div>
@@ -624,7 +623,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                                 deleteClubMutation.mutate(club.id);
                               }
                             }}
-                            className="flex-shrink-0 rounded-lg p-1 text-[#d9cdbd] hover:bg-[#f7f2e9] hover:text-[#d85c45]"
+                            className="p-1 rounded-lg text-[#d9cdbd] hover:bg-[#f7f2e9] hover:text-[#d85c45] transition-colors flex-shrink-0"
                             title="Delete club"
                           >
                             <X className="w-4 h-4" />
@@ -635,7 +634,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                   ))}
                 </div>
               </div>
-            </div>
           )}
         </div>
       </div>
