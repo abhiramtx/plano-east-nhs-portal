@@ -45,6 +45,7 @@ export interface IStorage {
 
   createClub(club: InsertClub): Promise<Club>;
   getClub(id: string): Promise<Club | undefined>;
+  getClubByInviteCode(code: string): Promise<Club | undefined>;
   getClubByName(name: string): Promise<Club | undefined>;
   getAllClubs(): Promise<Club[]>;
   updateClub(id: string, updates: Partial<Club>): Promise<Club | undefined>;
@@ -380,6 +381,15 @@ export class FirestoreStorage implements IStorage {
     if (!doc.exists) return undefined;
     const data = doc.data();
     return { id: doc.id, ...data } as Club;
+  }
+
+  async getClubByInviteCode(code: string): Promise<Club | undefined> {
+    const snapshot = await db.collection("clubs")
+      .where("inviteCode", "==", code)
+      .limit(1)
+      .get();
+    if (snapshot.empty) return undefined;
+    return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Club;
   }
 
   async getClubByName(name: string): Promise<Club | undefined> {

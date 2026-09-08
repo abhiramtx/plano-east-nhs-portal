@@ -4,8 +4,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   User,
   Club,
+  ClubInviteSummary,
   auth,
   getClubByInviteCode,
+  verifyClubInvitePassword,
   getClubStats,
   getUserMembershipSummary,
   createMembership,
@@ -101,7 +103,7 @@ export default function ClubJoin() {
     return () => unsub();
   }, []);
 
-  const { data: club, isLoading: clubLoading, error: clubError } = useQuery<Club | null>({
+  const { data: club, isLoading: clubLoading, error: clubError } = useQuery<ClubInviteSummary | null>({
     queryKey: ["club-by-invite", code],
     queryFn: () => getClubByInviteCode(code!),
     enabled: !!code && !!authUser,
@@ -129,7 +131,9 @@ export default function ClubJoin() {
   const joinMutation = useMutation({
     mutationFn: async () => {
       if (!club || !authUser) throw new Error("Not ready");
-      if (club.isPrivate && club.password !== password) throw new Error("Incorrect password");
+      if (club.isPrivate) {
+        await verifyClubInvitePassword(code!, password);
+      }
       return createMembership({
         clubId: club.id,
         userEmail: authUser.email,

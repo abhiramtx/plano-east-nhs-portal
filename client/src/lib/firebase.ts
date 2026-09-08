@@ -117,6 +117,16 @@ export interface ClubSummary {
   lastActivityAt: Date;
 }
 
+export interface ClubInviteSummary {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  logoUrl?: string;
+  isPrivate: boolean;
+  totalApprovedHours: number;
+}
+
 export interface ClubMapSummary extends ClubSummary {
   bonusHours: number;
   decayedHours: number;
@@ -609,19 +619,27 @@ export const generateInviteCode = async (clubId: string): Promise<string> => {
   return code;
 };
 
-export const getClubByInviteCode = async (code: string): Promise<Club | null> => {
-  const q = query(collection(db, "clubs"), where("inviteCode", "==", code));
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  const d = snap.docs[0];
-  const data = d.data();
-  return {
-    id: d.id,
-    ...data,
-    lastActivityAt: toDate(data.lastActivityAt),
-    createdAt: toDate(data.createdAt),
-    updatedAt: toDate(data.updatedAt),
-  } as Club;
+export const getClubByInviteCode = async (code: string): Promise<ClubInviteSummary | null> => {
+  const response = await fetch(`/api/clubs/invite/${encodeURIComponent(code)}`, {
+    credentials: "include",
+  });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("Failed to load invite");
+  return response.json();
+};
+
+export const verifyClubInvitePassword = async (
+  code: string,
+  password: string,
+): Promise<void> => {
+  const response = await fetch(`/api/clubs/invite/${encodeURIComponent(code)}/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ password }),
+  });
+  if (response.status === 403) throw new Error("Incorrect password");
+  if (!response.ok) throw new Error("Failed to verify invite");
 };
 
 export const recalculateClubHours = async (clubId: string): Promise<void> => {

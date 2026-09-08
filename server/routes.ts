@@ -303,6 +303,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Invite pages only need display fields. Never send the full club document
+  // or the private-club password to the browser.
+  app.get("/api/clubs/invite/:code", async (req, res) => {
+    try {
+      const club = await storage.getClubByInviteCode(req.params.code);
+      if (!club) return res.status(404).json({ error: "Invite not found" });
+      res.json({
+        id: club.id,
+        name: club.name,
+        description: club.description,
+        color: club.color,
+        logoUrl: club.logoUrl,
+        isPrivate: Boolean(club.isPrivate),
+        totalApprovedHours: Number(club.totalApprovedHours || 0),
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch invite" });
+    }
+  });
+
+  app.post("/api/clubs/invite/:code/verify", async (req, res) => {
+    try {
+      const club = await storage.getClubByInviteCode(req.params.code);
+      if (!club) return res.status(404).json({ error: "Invite not found" });
+      if (club.isPrivate && club.password !== req.body.password) {
+        return res.status(403).json({ error: "Incorrect password" });
+      }
+      res.json({ valid: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to verify invite" });
+    }
+  });
+
   app.get("/api/clubs/map", async (req, res) => {
     try {
       const clubsList = await storage.getAllClubs();
