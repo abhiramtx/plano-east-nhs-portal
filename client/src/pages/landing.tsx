@@ -54,14 +54,16 @@ function Landing({ onSignIn }: LandingProps) {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={isSigningIn}
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-[#4a4b45] bg-[#f3efe6] px-4 text-sm font-semibold text-[#121212] transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-70"
+              aria-label={isSigningIn ? "Signing in" : "Continue with Google"}
+              title="Continue with Google"
+              className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-full border border-[#4a4b45] bg-[#f3efe6] px-0 text-sm font-semibold text-[#121212] transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-70 sm:w-auto sm:justify-start sm:px-4"
             >
               {isSigningIn ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#121212]/30 border-t-[#121212]" />
               ) : (
                 <SiGoogle className="h-4 w-4" />
               )}
-              {isSigningIn ? "Signing in..." : "Continue with Google"}
+              <span className="hidden sm:inline">{isSigningIn ? "Signing in..." : "Continue with Google"}</span>
             </button>
             {signInError && (
               <p className="mt-3 max-w-xs text-right text-xs leading-5 text-[#d4785f]">

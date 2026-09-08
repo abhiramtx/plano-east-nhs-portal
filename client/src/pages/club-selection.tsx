@@ -328,25 +328,30 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           <button
             className="flex items-center gap-3 text-left"
             onClick={() => setLocation('/landing')}
+            aria-label="Go to VolunteerClub home"
           >
             <img src={logoImg} alt="VolunteerClub" className="h-10 w-10 rounded-xl object-cover" />
-            <span className="text-[19px] font-bold tracking-[-.02em] text-foreground">VolunteerClub</span>
+            <span className="hidden text-[19px] font-bold tracking-[-.02em] text-foreground sm:inline">VolunteerClub</span>
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <span className="text-sm text-muted-foreground hidden sm:block">{user.email}</span>
             <button
               onClick={onSignOut}
-              className="rounded-full bg-secondary px-4 py-2 text-sm font-bold text-secondary-foreground hover:bg-accent transition-colors flex items-center gap-1.5"
+              aria-label="Sign out"
+              title="Sign out"
+              className="rounded-full bg-secondary px-3 py-2 text-sm font-bold text-secondary-foreground hover:bg-accent transition-colors flex items-center justify-center gap-1.5 sm:px-4"
             >
               <LogOut className="w-3.5 h-3.5" />
-              Sign Out
+              <span className="hidden sm:inline">Sign Out</span>
             </button>
             <button
               onClick={() => setCreateDialogOpen(true)}
-              className="rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-transform hover:-translate-y-0.5 flex items-center gap-1.5"
+              aria-label="Create a new club"
+              title="New club"
+              className="rounded-full bg-primary px-3 py-2.5 text-sm font-bold text-primary-foreground transition-transform hover:-translate-y-0.5 flex items-center justify-center gap-1.5 sm:px-5"
             >
               <Plus className="w-4 h-4" />
-              New Club
+              <span className="hidden sm:inline">New Club</span>
             </button>
           </div>
         </div>
