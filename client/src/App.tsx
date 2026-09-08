@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -24,29 +24,56 @@ import {
 import { VolunteerSidebar } from "@/components/volunteer-sidebar";
 import Landing from "@/pages/landing";
 import ClubSelection from "@/pages/club-selection";
-import ClubDashboard from "@/pages/club-dashboard";
-import TerritoryMap from "@/pages/territory-map";
-import Affiliates from "@/pages/affiliates";
-import ServiceRequests from "@/pages/service-requests";
-import MyRequests from "@/pages/my-requests";
-import Dashboard from "@/pages/dashboard";
-import Hours from "@/pages/hours";
-import Profile from "@/pages/profile";
-import StudentHistory from "@/pages/student-history";
 import NotFound from "@/pages/not-found";
-import { AdminDashboard } from "@/pages/admin-dashboard";
-import { AdminStudents } from "@/pages/admin-students";
-import { AdminManagement } from "@/pages/admin-management";
-import { AdminApproval } from "@/pages/admin-approval";
-import { AdminDatabase } from "@/pages/admin-database";
-import { AdminHistory } from "@/pages/admin-history";
-import { AdminCustomFields } from "@/pages/admin-custom-fields";
-import { AdminSettings } from "@/pages/admin-settings";
-import { AdminEvents } from "@/pages/admin-events";
-import { AdminQueryHistory } from "@/pages/admin-query-history";
 import ClubJoin from "@/pages/club-join";
 import EventCheckin from "@/pages/event-checkin";
 import LoginPage from "@/pages/login";
+
+// Keep heavy page code and its queries out of the initial authenticated shell.
+// These modules load only when their route is opened.
+const ClubDashboard = lazy(() => import("@/pages/club-dashboard"));
+const TerritoryMap = lazy(() => import("@/pages/territory-map"));
+const Affiliates = lazy(() => import("@/pages/affiliates"));
+const ServiceRequests = lazy(() => import("@/pages/service-requests"));
+const MyRequests = lazy(() => import("@/pages/my-requests"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Hours = lazy(() => import("@/pages/hours"));
+const Profile = lazy(() => import("@/pages/profile"));
+const AdminHistoryPage = lazy(() =>
+  import("@/pages/admin-history").then(module => ({ default: module.AdminHistory })),
+);
+const AdminDashboard = lazy(() =>
+  import("@/pages/admin-dashboard").then(module => ({ default: module.AdminDashboard })),
+);
+const AdminStudents = lazy(() =>
+  import("@/pages/admin-students").then(module => ({ default: module.AdminStudents })),
+);
+const AdminManagement = lazy(() =>
+  import("@/pages/admin-management").then(module => ({ default: module.AdminManagement })),
+);
+const AdminApproval = lazy(() =>
+  import("@/pages/admin-approval").then(module => ({ default: module.AdminApproval })),
+);
+const AdminDatabase = lazy(() =>
+  import("@/pages/admin-database").then(module => ({ default: module.AdminDatabase })),
+);
+const AdminSettings = lazy(() =>
+  import("@/pages/admin-settings").then(module => ({ default: module.AdminSettings })),
+);
+const AdminEvents = lazy(() =>
+  import("@/pages/admin-events").then(module => ({ default: module.AdminEvents })),
+);
+const AdminQueryHistory = lazy(() =>
+  import("@/pages/admin-query-history").then(module => ({ default: module.AdminQueryHistory })),
+);
+
+function PageLoading() {
+  return (
+    <div className="flex-1 flex items-center justify-center p-8 text-sm text-muted-foreground">
+      Loading page…
+    </div>
+  );
+}
 
 function VolunteerInterface({
   user,
@@ -88,26 +115,28 @@ function VolunteerInterface({
         onLeaveClub={handleLeaveClubClick}
       />
       <div className="min-h-screen min-w-0 lg:ml-64 paper-grid bg-background">
-        <Switch>
-          <Route path="/volunteer/dashboard"><Dashboard club={club} /></Route>
-          <Route path="/volunteer/hours"><Hours club={club} /></Route>
-          <Route path="/volunteer/map"><TerritoryMap currentClubId={club.id} club={club} /></Route>
-          <Route path="/volunteer/service-requests"><ServiceRequests club={club} /></Route>
-          <Route path="/volunteer/my-requests"><MyRequests club={club} /></Route>
-          <Route path="/volunteer/club">
-            <ClubDashboard
-              user={user}
-              club={club}
-              membership={membership}
-              onLeaveClub={handleLeaveClubClick}
-            />
-          </Route>
-          <Route path="/volunteer/profile"><Profile club={club} /></Route>
-          <Route path="/volunteer/history"><AdminHistory club={club} isVolunteerView={true} /></Route>
-          <Route path="/volunteer/affiliates"><Affiliates user={user} club={club} /></Route>
-          <Route path="/volunteer"><Dashboard club={club} /></Route>
-          <Route><NotFound /></Route>
-        </Switch>
+        <Suspense fallback={<PageLoading />}>
+          <Switch>
+            <Route path="/volunteer/dashboard"><Dashboard club={club} /></Route>
+            <Route path="/volunteer/hours"><Hours club={club} /></Route>
+            <Route path="/volunteer/map"><TerritoryMap currentClubId={club.id} club={club} /></Route>
+            <Route path="/volunteer/service-requests"><ServiceRequests club={club} /></Route>
+            <Route path="/volunteer/my-requests"><MyRequests club={club} /></Route>
+            <Route path="/volunteer/club">
+              <ClubDashboard
+                user={user}
+                club={club}
+                membership={membership}
+                onLeaveClub={handleLeaveClubClick}
+              />
+            </Route>
+            <Route path="/volunteer/profile"><Profile club={club} /></Route>
+            <Route path="/volunteer/history"><AdminHistoryPage club={club} isVolunteerView={true} /></Route>
+            <Route path="/volunteer/affiliates"><Affiliates user={user} club={club} /></Route>
+            <Route path="/volunteer"><Dashboard club={club} /></Route>
+            <Route><NotFound /></Route>
+          </Switch>
+        </Suspense>
       </div>
     </div>
   );
@@ -240,15 +269,17 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
       </div>
 
       <div className="flex-1 lg:ml-64 flex flex-col min-h-0">
-        {currentPage === 'approval' && <AdminApproval user={user} club={club} />}
-        {currentPage === 'dashboard' && <AdminDashboard user={user} club={club} />}
-        {currentPage === 'students' && <AdminStudents user={user} club={club} />}
-        {currentPage === 'admin-management' && <AdminManagement user={user} club={club} />}
-        {currentPage === 'database' && <AdminDatabase user={user} club={club} />}
-        {currentPage === 'history' && <AdminHistory user={user} club={club} />}
-        {currentPage === 'query-history' && <AdminQueryHistory user={user} club={club} />}
-        {currentPage === 'settings' && <AdminSettings user={user} club={club} />}
-        {currentPage === 'events' && <AdminEvents user={user} club={club} />}
+        <Suspense fallback={<PageLoading />}>
+          {currentPage === 'approval' && <AdminApproval user={user} club={club} />}
+          {currentPage === 'dashboard' && <AdminDashboard user={user} club={club} />}
+          {currentPage === 'students' && <AdminStudents user={user} club={club} />}
+          {currentPage === 'admin-management' && <AdminManagement user={user} club={club} />}
+          {currentPage === 'database' && <AdminDatabase user={user} club={club} />}
+          {currentPage === 'history' && <AdminHistoryPage user={user} club={club} />}
+          {currentPage === 'query-history' && <AdminQueryHistory user={user} club={club} />}
+          {currentPage === 'settings' && <AdminSettings user={user} club={club} />}
+          {currentPage === 'events' && <AdminEvents user={user} club={club} />}
+        </Suspense>
       </div>
     </div>
   );
