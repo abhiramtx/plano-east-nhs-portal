@@ -279,6 +279,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Lightweight public directory for the club picker. Keep passwords, logos,
+  // coordinates, and page-specific fields out of the mobile initial payload.
+  app.get("/api/clubs/directory", async (req, res) => {
+    try {
+      const clubsList = await storage.getAllClubs();
+      res.json(clubsList.map((club: any) => ({
+        id: club.id,
+        name: club.name,
+        description: club.description,
+        color: club.color,
+        isPrivate: Boolean(club.isPrivate),
+        inviteCode: club.inviteCode,
+        creatorEmail: club.creatorEmail,
+        totalApprovedHours: Number(club.totalApprovedHours || 0),
+        yearlyApprovedHours: Number(club.yearlyApprovedHours || 0),
+        lastActivityAt: club.lastActivityAt,
+      })));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch club directory" });
+    }
+  });
+
   app.get("/api/clubs/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

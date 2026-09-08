@@ -101,6 +101,21 @@ export interface Club {
   updatedAt: Date;
 }
 
+// The club directory intentionally excludes passwords, logos, coordinates,
+// and other page-level data. Use getClub() after a club has been selected.
+export interface ClubSummary {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  isPrivate: boolean;
+  inviteCode?: string;
+  creatorEmail: string;
+  totalApprovedHours: number;
+  yearlyApprovedHours: number;
+  lastActivityAt: Date;
+}
+
 export interface Membership {
   id: string;
   clubId: string;
@@ -293,6 +308,22 @@ const profileDocumentIds = (email: string): string[] => {
 };
 
 const getUserProfileDocuments = async (email: string) => {
+  // Membership writes use the exact Firebase email as the document id. Most
+  // users can therefore be resolved with one point read; only legacy records
+  // need the broader dotted/comma-form discovery below.
+  const primarySnapshot = await getDoc(doc(db, "userProfiles", email));
+  if (primarySnapshot.exists()) {
+    const primaryData = primarySnapshot.data();
+    if (
+      Array.isArray(primaryData.clubIds) ||
+      primaryData.clubId ||
+      primaryData.role ||
+      primaryData.email === email
+    ) {
+      return [primarySnapshot];
+    }
+  }
+
   const candidateRefs = profileDocumentIds(email).map(id => doc(db, "userProfiles", id));
   const [documentSnapshots, emailQuery] = await Promise.all([
     Promise.all(candidateRefs.map(ref => getDoc(ref))),
@@ -408,6 +439,14 @@ const toDate = (timestamp: any): Date => {
   if (timestamp instanceof Date) {
     return timestamp;
   }
+  if (timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate();
+  }
+  if (timestamp && typeof timestamp._seconds === 'number') {
+    return new Date(
+      timestamp._seconds * 1000 + Math.floor((timestamp._nanoseconds || 0) / 1_000_000),
+    );
+  }
   return new Date(timestamp);
 };
 
@@ -422,6 +461,28 @@ export const getClubs = async (): Promise<Club[]> => {
     createdAt: toDate(doc.data().createdAt),
     updatedAt: toDate(doc.data().updatedAt),
   })) as Club[];
+};
+
+const toClubSummary = (data: Record<string, any>, id: string): ClubSummary => ({
+  id,
+  name: String(data.name || ''),
+  description: data.description || undefined,
+  color: String(data.color || '#3B82F6'),
+  isPrivate: Boolean(data.isPrivate),
+  inviteCode: data.inviteCode || undefined,
+  creatorEmail: String(data.creatorEmail || ''),
+  totalApprovedHours: Number(data.totalApprovedHours || 0),
+  yearlyApprovedHours: Number(data.yearlyApprovedHours || 0),
+  lastActivityAt: toDate(data.lastActivityAt),
+});
+
+// Directory data is served by the backend so mobile clients do not download
+// full club documents (including base64 logos and map-related fields).
+export const getClubSummaries = async (): Promise<ClubSummary[]> => {
+  const response = await fetch('/api/clubs/directory', { credentials: 'include' });
+  if (!response.ok) throw new Error('Failed to fetch club directory');
+  const data = await response.json() as Record<string, any>[];
+  return data.map(club => toClubSummary(club, String(club.id)));
 };
 
 export const getClub = async (clubId: string): Promise<Club | null> => {
@@ -904,6 +965,30 @@ export const getUserMemberships = async (
   return out;
 };
 
+// Reads only the user's membership pointers and role. The selected club's
+// complete document is loaded separately when the user opens that club.
+export const getUserMembershipSummary = async (userEmail: string): Promise<Membership[]> => {
+  const profile = await getUserProfile(userEmail);
+  if (!profile) return [];
+
+  const profileEmail = normalizeProfileEmail(String(profile.email || profile.userEmail || profile.userId || userEmail));
+  const ids = new Set<string>();
+  if (profile.clubId) ids.add(profile.clubId);
+  if (Array.isArray(profile.clubIds)) profile.clubIds.forEach((id: string) => id && ids.add(id));
+
+  return Array.from(ids).map(clubId => ({
+    id: userEmail,
+    clubId,
+    userEmail: profileEmail,
+    userName: getProfileDisplayName(profile, profileEmail),
+    personalEmailAddress: profile.personalEmailAddress || undefined,
+    role: profile.clubId === clubId
+      ? (profile.role || 'member')
+      : 'member',
+    joinedAt: profile.joinedAt ? toDate(profile.joinedAt) : new Date(),
+  }));
+};
+
 // Switch the active (current) club for a user without touching their memberships.
 export const switchActiveClub = async (userEmail: string, clubId: string): Promise<void> => {
   const docRef = doc(db, "userProfiles", userEmail);
@@ -933,36 +1018,22 @@ export const getUserMembership = async (userEmail: string): Promise<{ membership
   if (inFlight) return inFlight;
 
   const request = (async (): Promise<UserMembershipResult> => {
-    const profile = await getUserProfile(userEmail);
-    if (!profile) return null;
+    const memberships = await getUserMembershipSummary(userEmail);
+    const selectedMembership = memberships[0];
+    if (!selectedMembership) return null;
 
-    const data = profile;
-    const profileEmail = normalizeProfileEmail(String(data.email || data.userEmail || data.userId || userEmail));
-    const clubIds = Array.from(new Set([
-      ...(Array.isArray(data.clubIds) ? data.clubIds : []),
-      ...(data.clubId ? [data.clubId] : []),
-    ]));
-    const clubs = await Promise.all(clubIds.map(async clubId => ({
-      clubId,
-      club: await getClub(clubId),
-    })));
-    const selected = clubs.find(({ clubId }) => clubId === data.clubId && club) ||
-      clubs.find(({ club }) => club);
-    if (!selected?.club) return null;
+    const club = await getClub(selectedMembership.clubId);
+    if (!club) return null;
 
-    const membership = {
-      id: userEmail,
-      clubId: selected.clubId,
-      userEmail: profileEmail,
-      userName: getProfileDisplayName(data, profileEmail),
-      personalEmailAddress: data.personalEmailAddress || undefined,
-      role: selected.club.creatorEmail?.toLowerCase() === profileEmail.toLowerCase()
-        ? 'admin'
-        : (selected.clubId === data.clubId ? (data.role || 'member') : 'member'),
-      joinedAt: data.joinedAt ? toDate(data.joinedAt) : new Date(),
-    } as Membership;
-
-    return { membership, club: selected.club };
+    return {
+      membership: {
+        ...selectedMembership,
+        role: club.creatorEmail?.toLowerCase() === selectedMembership.userEmail.toLowerCase()
+          ? 'admin'
+          : selectedMembership.role,
+      },
+      club,
+    };
   })();
 
   userMembershipRequests.set(cacheKey, request);

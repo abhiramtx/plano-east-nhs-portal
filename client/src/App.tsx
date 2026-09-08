@@ -12,11 +12,12 @@ import {
   handleSignOut,
   auth,
   getUserMembership,
-  getUserMemberships,
+  getUserMembershipSummary,
+  getClub,
+  getClubSummaries,
   ensureClubCreatorIsAdmin,
   leaveClubWithArchive,
   clubSlug,
-  getClubs,
   Club,
   Membership,
 } from "@/lib/firebase";
@@ -269,19 +270,42 @@ function ClubScope({
   onLeaveClub: () => void;
 }) {
   const { data: memberships = [], isLoading: membershipsLoading } = useQuery({
-    queryKey: ['firebase-user-memberships', user?.email],
-    queryFn: () => getUserMemberships(user!.email || ''),
+    queryKey: ['firebase-user-membership-summaries', user?.email],
+    queryFn: () => getUserMembershipSummary(user!.email || ''),
     enabled: !!user?.email,
   });
 
-  const match = memberships.find(m => clubSlug(m.club.name) === slug);
+  const { data: directory = [], isLoading: directoryLoading } = useQuery({
+    queryKey: ['firebase-club-directory'],
+    queryFn: getClubSummaries,
+    enabled: !!user && !membershipsLoading,
+    staleTime: 60000,
+  });
+  const directoryMatch = directory.find(club => memberships.some(m => m.clubId === club.id && clubSlug(club.name) === slug));
+  const matchingMembership = memberships.find(m => m.clubId === directoryMatch?.id);
+  const { data: matchedClub, isLoading: matchedClubLoading } = useQuery({
+    queryKey: ['firebase-club', directoryMatch?.id],
+    queryFn: () => getClub(directoryMatch!.id),
+    enabled: !!directoryMatch,
+  });
+  const match = matchingMembership && matchedClub
+    ? {
+        membership: {
+          ...matchingMembership,
+          role: matchedClub.creatorEmail?.toLowerCase() === matchingMembership.userEmail.toLowerCase()
+            ? 'admin'
+            : matchingMembership.role,
+        },
+        club: matchedClub,
+      }
+    : null;
 
   // If the user isn't a member (or isn't signed in), look up the club by slug
   // so we can bounce them through the join workflow.
-  const needsJoinLookup = !match && (!user || !membershipsLoading);
+  const needsJoinLookup = !matchingMembership && (!user || (!membershipsLoading && !directoryLoading));
   const { data: allClubs = [], isLoading: clubsLoading } = useQuery({
     queryKey: ['firebase-clubs-for-slug', slug],
-    queryFn: getClubs,
+    queryFn: getClubSummaries,
     enabled: needsJoinLookup,
   });
 
@@ -305,7 +329,7 @@ function ClubScope({
     }
   }, [match?.club.id, user?.email]);
 
-  if (!user || membershipsLoading || !match) {
+  if (!user || membershipsLoading || directoryLoading || matchedClubLoading || !match) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">

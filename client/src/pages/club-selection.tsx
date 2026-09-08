@@ -1,22 +1,23 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
   User, 
   UserProfile,
-  getClubs, 
-  getUserMemberships,
+  getClub,
+  getClubSummaries,
+  getUserMembershipSummary,
   getUserProfile,
   getProfileDisplayName,
   switchActiveClub,
   createClub, 
   createMembership,
   ensureClubCreatorIsAdmin,
-  recalculateClubHours,
   deleteClub,
   leaveClubWithArchive,
   Club as FirebaseClub,
   Membership as FirebaseMembership,
+  ClubSummary,
 } from "@/lib/firebase";
 
 import { useToast } from "@/hooks/use-toast";
@@ -59,7 +60,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const { toast } = useToast();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
-  const [selectedClub, setSelectedClub] = useState<FirebaseClub | null>(null);
+  const [selectedClub, setSelectedClub] = useState<ClubSummary | null>(null);
   const [joinPassword, setJoinPassword] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const logoFileRef = useRef<HTMLInputElement>(null);
@@ -87,21 +88,36 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
   const displayName = getProfileDisplayName(profile, userEmail);
 
-  const { data: userMemberships = [], isLoading: userClubLoading } = useQuery({
-    queryKey: ['firebase-user-memberships', userEmail],
-    queryFn: () => getUserMemberships(userEmail),
+  const { data: membershipRecords = [], isLoading: userClubLoading, isError: membershipsError } = useQuery<FirebaseMembership[]>({
+    queryKey: ['firebase-user-membership-summaries', userEmail],
+    queryFn: () => getUserMembershipSummary(userEmail),
     enabled: !!userEmail,
   });
-  // The active club is the first entry whose membership.role might be 'admin'
-  // — we just track it by sorting: active first if marked, otherwise first item.
-  const activeMembership = userMemberships[0];
-  const activeClub = activeMembership?.club;
-  const joinedClubIds = new Set(userMemberships.map(m => m.club.id));
 
-  const { data: clubs = [], isLoading: clubsLoading } = useQuery({
-    queryKey: ['firebase-clubs'],
-    queryFn: getClubs,
+  const { data: clubs = [], isLoading: clubsLoading } = useQuery<ClubSummary[]>({
+    queryKey: ['firebase-club-directory'],
+    queryFn: getClubSummaries,
+    staleTime: 60000,
   });
+
+  const activeMembership = membershipRecords.find(m => m.clubId === profile?.clubId) || membershipRecords[0];
+  const activeClub = clubs.find(club => club.id === activeMembership?.clubId);
+  const joinedClubIds = new Set(membershipRecords.map(m => m.clubId));
+  const userMemberships = membershipRecords
+    .map(membership => {
+      const club = clubs.find(club => club.id === membership.clubId);
+      if (!club) return { membership, club };
+      return {
+        membership: {
+          ...membership,
+          role: club.creatorEmail?.toLowerCase() === membership.userEmail.toLowerCase()
+            ? 'admin'
+            : membership.role,
+        },
+        club,
+      };
+    })
+    .filter((entry): entry is { membership: FirebaseMembership; club: ClubSummary } => Boolean(entry.club));
 
   const createDefaultLog = async (clubId: string) => {
     try {
@@ -140,7 +156,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       return { club, membership };
     },
     onSuccess: async ({ club, membership }) => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-directory'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-membership-summaries', userEmail] });
       queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
       setCreateDialogOpen(false);
       toast({ title: "Club created!", description: `${club.name} is ready to grow.` });
@@ -174,7 +191,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       return { club, membership };
     },
     onSuccess: ({ club, membership }) => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-directory'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-membership-summaries', userEmail] });
       queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
       toast({ title: "Welcome!", description: "Your personal hub is ready." });
       onClubSelected(club, membership);
@@ -185,20 +203,23 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   });
 
   const joinClubMutation = useMutation({
-    mutationFn: async ({ club, password }: { club: FirebaseClub; password?: string }) => {
-      if (club.isPrivate && club.password !== password) {
+    mutationFn: async ({ club, password }: { club: ClubSummary; password?: string }) => {
+      const fullClub = await getClub(club.id);
+      if (!fullClub) throw new Error("Club not found");
+      if (fullClub.isPrivate && fullClub.password !== password) {
         throw new Error("Incorrect password");
       }
       const membership = await createMembership({
-        clubId: club.id,
+        clubId: fullClub.id,
         userEmail: userEmail,
         userName: displayName,
         role: 'member',
       });
-      return { club, membership };
+      return { club: fullClub, membership };
     },
     onSuccess: async ({ club, membership }) => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-directory'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-membership-summaries', userEmail] });
       queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
       setJoinDialogOpen(false);
       toast({ title: "Joined club!", description: "Welcome to the team!" });
@@ -212,7 +233,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const deleteClubMutation = useMutation({
     mutationFn: (clubId: string) => deleteClub(clubId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-directory'] });
       toast({ title: "Club deleted" });
     },
     onError: (error: any) => {
@@ -247,7 +268,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     createClubMutation.mutate(newClub);
   };
 
-  const handleJoinClub = (club: FirebaseClub) => {
+  const handleJoinClub = (club: ClubSummary) => {
     setSelectedClub(club);
     if (club.isPrivate) {
       setJoinDialogOpen(true);
@@ -263,12 +284,13 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   };
 
   const currentClub = activeClub;
-  const currentMembership = activeMembership?.membership;
 
   const switchClubMutation = useMutation({
-    mutationFn: async (club: FirebaseClub) => {
+    mutationFn: async (club: ClubSummary) => {
       await switchActiveClub(userEmail, club.id);
-      const membership: FirebaseMembership = {
+      const fullClub = await getClub(club.id);
+      if (!fullClub) throw new Error("Club not found");
+      const membership = membershipRecords.find(record => record.clubId === club.id) || {
         id: userEmail,
         clubId: club.id,
         userEmail,
@@ -276,9 +298,10 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         role: 'member',
         joinedAt: new Date(),
       };
-      return { club, membership };
+      return { club: fullClub, membership };
     },
     onSuccess: ({ club, membership }) => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-membership-summaries', userEmail] });
       queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
       onClubSelected(club, membership);
     },
@@ -288,23 +311,15 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
     mutationFn: ({ clubId, clubName }: { clubId: string; clubName: string }) =>
       leaveClubWithArchive(userEmail, clubId, clubName),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['firebase-user-membership-summaries', userEmail] });
       queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
-      queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['firebase-club-directory'] });
       toast({ title: 'Left club', description: 'Your submissions in that club were archived.' });
     },
     onError: (err: any) => {
       toast({ title: 'Failed to leave club', description: err.message, variant: 'destructive' });
     },
   });
-
-  // Keep active club's totalApprovedHours in sync whenever this page loads
-  useEffect(() => {
-    if (currentClub?.id) {
-      recalculateClubHours(currentClub.id)
-        .then(() => queryClient.invalidateQueries({ queryKey: ['firebase-clubs'] }))
-        .catch(err => console.error('recalculateClubHours failed:', err));
-    }
-  }, [currentClub?.id]);
 
   return (
     <div className="min-h-screen bg-[#f7f2e9] text-[#17324d] paper-grid">
@@ -341,8 +356,8 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         {/* Your Clubs */}
         <div className="order-2 mt-10">
           {userClubLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#17324d]"></div>
+            <div className="rounded-2xl border border-[#d9cdbd] bg-[#faf8f4] px-5 py-8 text-center text-sm text-[#506477]">
+              Checking your memberships…
             </div>
           ) : userMemberships.length > 0 ? (
             <div>
@@ -360,12 +375,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       <div className="flex items-start gap-4">
                         <div
                           className="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0"
-                          style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
+                           style={{ backgroundColor: club.color }}
                         >
-                          {club.logoUrl
-                            ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
-                            : <Trophy className="w-6 h-6 text-white" />
-                          }
+                           <Trophy className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3">
@@ -412,7 +424,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         <div className="flex items-center gap-2">
                           <Button
                             size="sm"
-                            onClick={() => isActive ? onClubSelected(club, membership) : switchClubMutation.mutate(club)}
+                            onClick={() => switchClubMutation.mutate(club)}
                             disabled={switchClubMutation.isPending}
                             className="bg-[#17324d] text-[#f7f2e9] hover:bg-[#1e3f61]"
                           >
@@ -504,12 +516,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       <div className="flex items-center space-x-3">
                         <div
                           className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
-                          style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
+                           style={{ backgroundColor: club.color }}
                         >
-                          {club.logoUrl
-                            ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
-                            : <Trophy className="w-5 h-5 text-white" />
-                          }
+                           <Trophy className="w-5 h-5 text-white" />
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
@@ -537,12 +546,12 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         <Button
                           size="sm"
                           onClick={() => handleJoinClub(club)}
-                          disabled={joinClubMutation.isPending || joinedClubIds.has(club.id)}
+                           disabled={joinClubMutation.isPending || userClubLoading || membershipsError || joinedClubIds.has(club.id)}
                           className={joinedClubIds.has(club.id)
                             ? "bg-[#eee5d7] text-[#506477] cursor-default pointer-events-none"
                             : "bg-[#17324d] text-[#f7f2e9] hover:bg-[#1e3f61]"}
                         >
-                          {joinedClubIds.has(club.id) ? 'Joined' : 'Join'}
+                           {joinedClubIds.has(club.id) ? 'Joined' : userClubLoading ? 'Checking…' : 'Join'}
                         </Button>
                       </div>
                     </div>
@@ -582,11 +591,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       </div>
                       <div
                         className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden"
-                        style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
+                        style={{ backgroundColor: club.color }}
                       >
-                        {club.logoUrl
-                          ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
-                          : null}
+                        <Trophy className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
