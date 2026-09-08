@@ -25,11 +25,7 @@ export function ClubPageHeader({
           className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-16 sm:w-16"
           style={{ backgroundColor: club.color }}
         >
-          {club.logoUrl ? (
-            <img src={club.logoUrl} alt={club.name} className="h-full w-full object-cover" />
-          ) : (
-            <Icon className="h-7 w-7 text-white sm:h-8 sm:w-8" />
-          )}
+          <Icon className="h-7 w-7 text-white sm:h-8 sm:w-8" />
         </div>
         <div className="min-w-0">
           <h1 className="page-title break-words text-2xl font-bold text-foreground">{title}</h1>
