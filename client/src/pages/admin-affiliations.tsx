@@ -269,8 +269,10 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
                 return (
                   <div key={c.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden bg-secondary" style={{ backgroundColor: c.logoUrl ? undefined : c.color }}>
-                        {c.logoUrl && <img src={c.logoUrl} alt={c.name} className="w-full h-full object-cover" />}
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary" style={{ backgroundColor: c.logoUrl ? undefined : c.color }}>
+                        {c.logoUrl
+                          ? <img src={c.logoUrl} alt={c.name} className="h-full w-full object-cover" />
+                          : <Trophy className="h-4 w-4 text-white" />}
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-foreground truncate">{c.name}</p>

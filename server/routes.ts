@@ -279,8 +279,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Lightweight public directory for the club picker. Keep passwords, logos,
-  // coordinates, and page-specific fields out of the mobile initial payload.
+  // Lightweight public directory for the club picker. Keep passwords,
+  // coordinates, and page-specific fields out of the mobile initial payload,
+  // but include the optional logo for club identity surfaces.
   app.get("/api/clubs/directory", async (req, res) => {
     try {
       const clubsList = await storage.getAllClubs();
@@ -289,6 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: club.name,
         description: club.description,
         color: club.color,
+        logoUrl: club.logoUrl,
         isPrivate: Boolean(club.isPrivate),
         inviteCode: club.inviteCode,
         creatorEmail: club.creatorEmail,

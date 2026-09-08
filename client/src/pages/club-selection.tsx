@@ -382,7 +382,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                           className="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden flex-shrink-0"
                            style={{ backgroundColor: club.color }}
                         >
-                           <Trophy className="w-6 h-6 text-white" />
+                          {club.logoUrl
+                            ? <img src={club.logoUrl} alt={club.name} className="h-full w-full object-cover" />
+                            : <Trophy className="w-6 h-6 text-white" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-3">
@@ -517,7 +519,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                           className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0"
                            style={{ backgroundColor: club.color }}
                         >
-                           <Trophy className="w-5 h-5 text-white" />
+                           {club.logoUrl
+                             ? <img src={club.logoUrl} alt={club.name} className="h-full w-full object-cover" />
+                             : <Trophy className="w-5 h-5 text-white" />}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
@@ -590,10 +594,12 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         )}
                       </div>
                       <div
-                        className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden"
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg"
                         style={{ backgroundColor: club.color }}
                       >
-                        <Trophy className="w-4 h-4 text-white" />
+                        {club.logoUrl
+                          ? <img src={club.logoUrl} alt={club.name} className="h-full w-full object-cover" />
+                          : <Trophy className="w-4 h-4 text-white" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="min-w-0">

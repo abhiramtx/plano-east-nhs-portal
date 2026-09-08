@@ -22,10 +22,14 @@ export function ClubPageHeader({
     <div className="flex flex-col items-stretch gap-4 pt-10 sm:flex-row sm:items-center sm:justify-between lg:pt-0">
       <div className="flex min-w-0 items-center space-x-3 sm:space-x-4">
         <div
-          className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl sm:h-16 sm:w-16"
+          className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-16 sm:w-16"
           style={{ backgroundColor: club.color }}
         >
-          <Icon className="h-7 w-7 text-white sm:h-8 sm:w-8" />
+          {club.logoUrl ? (
+            <img src={club.logoUrl} alt={club.name} className="h-full w-full object-cover" />
+          ) : (
+            <Icon className="h-7 w-7 text-white sm:h-8 sm:w-8" />
+          )}
         </div>
         <div className="min-w-0">
           <h1 className="page-title break-words text-2xl font-bold text-foreground">{title}</h1>

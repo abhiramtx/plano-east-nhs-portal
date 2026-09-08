@@ -101,14 +101,14 @@ export interface Club {
   updatedAt: Date;
 }
 
-// The club directory intentionally excludes passwords, logos, coordinates,
-// and other page-level data. Page-specific screens fetch those fields only
-// when they need them.
+// The club directory excludes passwords, coordinates, and other page-level
+// data while retaining the optional logo needed by club identity surfaces.
 export interface ClubSummary {
   id: string;
   name: string;
   description?: string;
   color: string;
+  logoUrl?: string;
   isPrivate: boolean;
   inviteCode?: string;
   creatorEmail: string;
@@ -476,6 +476,7 @@ const toClubSummary = (data: Record<string, any>, id: string): ClubSummary => ({
   name: String(data.name || ''),
   description: data.description || undefined,
   color: String(data.color || '#3B82F6'),
+  logoUrl: data.logoUrl || undefined,
   isPrivate: Boolean(data.isPrivate),
   inviteCode: data.inviteCode || undefined,
   creatorEmail: String(data.creatorEmail || ''),
@@ -508,6 +509,7 @@ export const clubToShell = (club: Club): Club => clubSummaryToShell({
   name: club.name,
   description: club.description,
   color: club.color,
+  logoUrl: club.logoUrl,
   isPrivate: club.isPrivate,
   inviteCode: club.inviteCode,
   creatorEmail: club.creatorEmail,
@@ -517,7 +519,7 @@ export const clubToShell = (club: Club): Club => clubSummaryToShell({
 });
 
 // Directory data is served by the backend so mobile clients do not download
-// full club documents (including base64 logos and map-related fields).
+// full club documents (including passwords and map-related fields).
 export const getClubSummaries = async (): Promise<ClubSummary[]> => {
   const response = await fetch('/api/clubs/directory', { credentials: 'include' });
   if (!response.ok) throw new Error('Failed to fetch club directory');
