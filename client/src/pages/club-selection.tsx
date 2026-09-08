@@ -571,7 +571,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                 Leaderboard
               </p>
               <div className="app-box p-5">
-                <div className="mb-4 hidden items-center gap-2 lg:flex">
+                <div className="mb-4 flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-[#e5a72c]" />
                   <h2 className="text-xl font-semibold text-[#17324d]">Leaderboard</h2>
                 </div>
