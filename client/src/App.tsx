@@ -142,7 +142,7 @@ function VolunteerInterface({
 }
 
 function AdminInterface({ user, club }: { user: User; club: Club }) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const pageFromPath = (loc: string): string => {
     if (loc.includes('/admin/dashboard')) return 'dashboard';
     if (loc.includes('/admin/students')) return 'students';
