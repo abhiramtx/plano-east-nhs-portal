@@ -567,10 +567,14 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           {/* Leaderboard — side column on desktop, below Your Clubs on mobile */}
           {!clubsLoading && clubs.length > 0 && (
             <div className="order-3 mt-8 lg:order-1 lg:col-span-2 lg:mt-0">
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-[#506477]">
+              <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-[#506477] lg:hidden">
                 Leaderboard
               </p>
               <div className="app-box p-5">
+                <div className="mb-4 hidden items-center gap-2 lg:flex">
+                  <Trophy className="h-5 w-5 text-[#e5a72c]" />
+                  <h2 className="text-xl font-semibold text-[#17324d]">Leaderboard</h2>
+                </div>
                 <div className="overflow-hidden rounded-xl border border-[#d9cdbd]">
                 {[...clubs]
                   .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours)
