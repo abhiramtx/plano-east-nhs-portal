@@ -200,7 +200,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
   };
 
   return (
-    <div className="p-6 space-y-6 min-h-full">
+    <div className="min-h-full space-y-6 p-4 sm:p-6">
       <ClubPageHeader
         club={club}
         title={club.name}
@@ -309,23 +309,23 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
         </Card>
       )}
 
-      <Tabs defaultValue="members" className="space-y-4">
-        <TabsList className="border border-border bg-muted">
-          <TabsTrigger value="members" className="text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground">
-            <Users className="w-4 h-4 mr-2" />
+      <Tabs defaultValue="members" className="min-w-0 space-y-4">
+        <TabsList className="grid h-auto w-full grid-cols-4 border border-border bg-muted p-1">
+          <TabsTrigger value="members" className="min-w-0 gap-1 px-1.5 py-2 text-xs text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground sm:gap-2 sm:px-3 sm:text-sm">
+            <Users className="h-4 w-4 flex-shrink-0" />
             Members
           </TabsTrigger>
-          <TabsTrigger value="leaderboard" className="text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground">
-            <Trophy className="w-4 h-4 mr-2" />
+          <TabsTrigger value="leaderboard" className="min-w-0 gap-1 px-1.5 py-2 text-xs text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground sm:gap-2 sm:px-3 sm:text-sm">
+            <Trophy className="h-4 w-4 flex-shrink-0" />
             Leaderboard
           </TabsTrigger>
-          <TabsTrigger value="map" className="text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground">
-            <MapIcon className="w-4 h-4 mr-2" />
+          <TabsTrigger value="map" className="min-w-0 gap-1 px-1.5 py-2 text-xs text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground sm:gap-2 sm:px-3 sm:text-sm">
+            <MapIcon className="h-4 w-4 flex-shrink-0" />
             Map
           </TabsTrigger>
           {isAdmin && (
-            <TabsTrigger value="settings" className="text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground">
-              <Settings className="w-4 h-4 mr-2" />
+            <TabsTrigger value="settings" className="min-w-0 gap-1 px-1.5 py-2 text-xs text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground sm:gap-2 sm:px-3 sm:text-sm">
+              <Settings className="h-4 w-4 flex-shrink-0" />
               Settings
             </TabsTrigger>
           )}
@@ -342,15 +342,15 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                 {members.map((member) => (
                   <div 
                     key={member.id}
-                    className="flex items-center justify-between p-4 bg-background/60 rounded-lg border border-border/50"
+                    className="flex min-w-0 items-start justify-between gap-3 rounded-lg border border-border/50 bg-background/60 p-3 sm:p-4"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
+                    <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-muted">
                         <Users className="w-5 h-5 text-muted-foreground" />
                       </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <p className="font-medium text-foreground">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <p className="break-words font-medium text-foreground">
                             {member.userName || member.userEmail}
                           </p>
                           {member.role === 'admin' && (
@@ -364,7 +364,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                             </Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="break-all text-xs text-muted-foreground">
                           {member.personalEmailAddress || member.userEmail}
                         </p>
                         <p className="text-sm text-muted-foreground">
@@ -405,7 +405,7 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                   .map((member, index) => (
                     <div 
                       key={member.id}
-                      className={`flex items-center space-x-4 p-4 rounded-lg border ${
+                        className={`flex min-w-0 items-start gap-3 rounded-lg border p-3 sm:items-center sm:space-x-4 sm:p-4 ${
                         member.userEmail === userEmail
                           ? 'bg-background border-border'
                           : 'bg-background/60 border-border/50'
@@ -419,16 +419,16 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
                       }`}>
                         {index + 1}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">
+                      <div className="min-w-0 flex-1">
+                        <p className="break-words font-medium text-foreground">
                           {member.userName || member.userEmail}
                           {member.userEmail === userEmail && " (You)"}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="break-all text-xs text-muted-foreground">
                           {member.personalEmailAddress || member.userEmail}
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="flex-shrink-0 text-right">
                         <p className="font-bold text-foreground">
                           {getMemberApprovedHours(member.userEmail).toFixed(1)}
                         </p>

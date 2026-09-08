@@ -224,15 +224,32 @@ export default function Hours({ club }: HoursProps) {
 
         {hoursLogs.length > 0 && (
           <div className="mt-6 pb-2">
-            <div className="flex min-w-0 items-center gap-2 overflow-x-auto">
-              <div className="flex min-w-full gap-2">
+            <div className="sm:hidden">
+              <label htmlFor="hours-log-mobile" className="sr-only">Choose a log</label>
+              <select
+                id="hours-log-mobile"
+                value={selectedLogId || ''}
+                onChange={e => setSelectedLogId(e.target.value || null)}
+                className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground"
+              >
+                <option value="" disabled>Select a log</option>
+                {hoursLogs.map(log => {
+                  const isOpen = openLogs.some(l => String(l.id) === String(log.id));
+                  return <option key={log.id} value={String(log.id)}>
+                    {log.name} ({log.hoursRequired}h req){!isOpen ? ' · Closed' : ''}
+                  </option>;
+                })}
+              </select>
+            </div>
+            <div className="hidden min-w-0 items-center gap-2 overflow-x-auto sm:flex">
+              <div className="flex w-max min-w-full gap-2">
                 {hoursLogs.map(log => {
                   const isOpen = openLogs.some(l => String(l.id) === String(log.id));
                   return (
                     <button
                       key={log.id}
                       onClick={() => setSelectedLogId(String(log.id))}
-                      className={`flex min-w-[150px] flex-1 items-center justify-center rounded-lg px-4 py-2 text-center text-sm font-medium whitespace-nowrap transition-colors ${
+                      className={`flex flex-none items-center justify-center rounded-lg px-4 py-2 text-center text-sm font-medium whitespace-nowrap transition-colors ${
                         selectedLogId === String(log.id)
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-secondary text-secondary-foreground hover:bg-accent'

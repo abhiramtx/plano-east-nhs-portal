@@ -84,7 +84,7 @@ export default function Profile({ club }: { club: Club }) {
     }
   });
 
-  const { data: fieldValues = [] } = useQuery<CustomFieldValue[]>({
+  const { data: fieldValues } = useQuery<CustomFieldValue[]>({
     queryKey: ['/api/custom-field-values', user?.email, profile?.clubId],
     enabled: !!user?.email && !!profile?.clubId,
     queryFn: async () => {
@@ -104,13 +104,12 @@ export default function Profile({ club }: { club: Club }) {
   });
 
   useEffect(() => {
-    if (fieldValues) {
-      const values: { [key: string]: string } = {};
-      fieldValues.forEach((fv: CustomFieldValue) => {
-        values[fv.customFieldId] = fv.value || '';
-      });
-      setCustomFieldValues(values);
-    }
+    if (!fieldValues) return;
+    const values: { [key: string]: string } = {};
+    fieldValues.forEach((fv: CustomFieldValue) => {
+      values[fv.customFieldId] = fv.value || '';
+    });
+    setCustomFieldValues(values);
   }, [fieldValues]);
 
   const form = useForm<ProfileData>({

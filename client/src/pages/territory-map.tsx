@@ -300,8 +300,8 @@ export default function TerritoryMap({ currentClubId, club }: TerritoryMapProps)
   }, [mapLoaded, applyTerritoryLayers]);
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-[#faf8f4]">
-      <div className="flex-shrink-0 border-b border-border p-6 paper-grid">
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#faf8f4]">
+      <div className="flex-shrink-0 border-b border-border p-4 paper-grid sm:p-6">
         <ClubPageHeader
           club={club}
           title="Territory Map"
@@ -309,8 +309,8 @@ export default function TerritoryMap({ currentClubId, club }: TerritoryMapProps)
           icon={MapPin}
         />
       </div>
-      <div className="flex min-h-0 flex-1">
-      <div className="flex-1 relative">
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <div className="relative min-h-[42dvh] min-w-0 flex-1 lg:min-h-0">
         <MapGlComponent
           ref={mapRef}
           {...viewState}
@@ -462,8 +462,8 @@ export default function TerritoryMap({ currentClubId, club }: TerritoryMapProps)
           </div>
         )}
 
-        <div className="absolute top-4 left-4 right-80 z-10">
-          <div className="relative max-w-md">
+        <div className="absolute left-4 right-4 top-4 z-10 lg:right-80">
+          <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <Input
               placeholder="Search location..."
@@ -509,8 +509,8 @@ export default function TerritoryMap({ currentClubId, club }: TerritoryMapProps)
         </div>
       </div>
 
-      <div className="w-80 bg-[#faf8f4] border-l border-[#d9cdbd] flex flex-col">
-        <div className="p-4 border-b border-[#d9cdbd] space-y-3">
+      <div className="flex max-h-[58dvh] w-full flex-col border-t border-[#d9cdbd] bg-[#faf8f4] lg:max-h-none lg:w-80 lg:border-l lg:border-t-0">
+        <div className="space-y-3 border-b border-[#d9cdbd] p-4">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-yellow-500" />
             Leaderboard
