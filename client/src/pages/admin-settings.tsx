@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   User, Club,
   AdminSettings as AdminSettingsType,
-  getAdminSettings, updateAdminSettings, updateClub, recalculateClubHours,
+  getAdminSettings, getClub, updateAdminSettings, updateClub, recalculateClubHours,
   generateInviteCode,
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -31,21 +31,38 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
   const { toast } = useToast();
   const [innerPage, setInnerPage] = useState<'club' | 'members' | 'logs' | 'approvals' | 'territory' | 'affiliations'>('club');
 
-  const [clubName, setClubName] = useState(club.name || '');
-  const [clubDescription, setClubDescription] = useState(club.description || '');
-  const [showPasswordField, setShowPasswordField] = useState(Boolean(club.isPrivate));
+  // Settings is the one page that needs the club's private/configuration
+  // fields. Keep that read local to this route instead of making every club
+  // page wait for it.
+  const { data: clubDetails } = useQuery<Club | null>({
+    queryKey: ['firebase-club-settings', club.id],
+    queryFn: () => getClub(club.id),
+    enabled: !!club.id,
+  });
+  const editableClub = clubDetails || club;
+
+  const [clubName, setClubName] = useState(editableClub.name || '');
+  const [clubDescription, setClubDescription] = useState(editableClub.description || '');
+  const [showPasswordField, setShowPasswordField] = useState(Boolean(editableClub.isPrivate));
   const [clubPassword, setClubPassword] = useState('');
-  const [clubColor, setClubColor] = useState(club.color || '#000000');
-  const [clubLogoUrl, setClubLogoUrl] = useState(club.logoUrl || '');
-  const [clubLatitude, setClubLatitude] = useState(club.latitude?.toString() || '');
-  const [clubLongitude, setClubLongitude] = useState(club.longitude?.toString() || '');
-  const [currentInviteCode, setCurrentInviteCode] = useState(club.inviteCode || '');
+  const [clubColor, setClubColor] = useState(editableClub.color || '#000000');
+  const [clubLogoUrl, setClubLogoUrl] = useState(editableClub.logoUrl || '');
+  const [clubLatitude, setClubLatitude] = useState(editableClub.latitude?.toString() || '');
+  const [clubLongitude, setClubLongitude] = useState(editableClub.longitude?.toString() || '');
+  const [currentInviteCode, setCurrentInviteCode] = useState(editableClub.inviteCode || '');
   const clubLogoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setShowPasswordField(Boolean(club.isPrivate));
+    setClubName(editableClub.name || '');
+    setClubDescription(editableClub.description || '');
+    setShowPasswordField(Boolean(editableClub.isPrivate));
+    setClubColor(editableClub.color || '#000000');
+    setClubLogoUrl(editableClub.logoUrl || '');
+    setClubLatitude(editableClub.latitude?.toString() || '');
+    setClubLongitude(editableClub.longitude?.toString() || '');
+    setCurrentInviteCode(editableClub.inviteCode || '');
     setClubPassword('');
-  }, [club.id, club.isPrivate]);
+  }, [clubDetails]);
 
   const [showStudentId, setShowStudentId] = useState(true);
   const [showGradeLevel, setShowGradeLevel] = useState(true);
@@ -113,7 +130,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
     }
 
     // Existing passwords can be re-enabled without exposing them in the form.
-    if (club.password) {
+    if (editableClub.password) {
       updateClubMutation.mutate({ isPrivate: true });
     }
   };
@@ -436,7 +453,7 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
                       type="password"
                       value={clubPassword}
                       onChange={(e) => setClubPassword(e.target.value)}
-                      placeholder={club.password ? "Enter a new password to change it" : "Set a password"}
+                      placeholder={editableClub.password ? "Enter a new password to change it" : "Set a password"}
                     />
                     <Button
                       onClick={handleSavePassword}

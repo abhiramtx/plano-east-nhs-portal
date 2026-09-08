@@ -301,6 +301,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/clubs/map", async (req, res) => {
+    try {
+      const clubsList = await storage.getAllClubs();
+      res.json(clubsList.map(club => ({
+        id: club.id,
+        name: club.name,
+        description: club.description,
+        color: club.color,
+        isPrivate: club.isPrivate,
+        inviteCode: club.inviteCode,
+        creatorEmail: club.creatorEmail,
+        totalApprovedHours: club.totalApprovedHours,
+        yearlyApprovedHours: club.yearlyApprovedHours,
+        bonusHours: club.bonusHours,
+        decayedHours: club.decayedHours,
+        latitude: club.latitude,
+        longitude: club.longitude,
+        lastActivityAt: club.lastActivityAt,
+      })));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch map clubs" });
+    }
+  });
+
   app.get("/api/clubs/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

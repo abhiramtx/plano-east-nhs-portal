@@ -3,9 +3,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Club,
+  Club, ClubSummary,
   Affiliation,
-  getClubs,
+  getClubSummaries,
   getOutgoingAffiliations,
   getIncomingAffiliations,
   requestAffiliation,
@@ -30,9 +30,9 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
   const userEmail = user.email || '';
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: allClubs = [] } = useQuery<Club[]>({
-    queryKey: ['firebase-clubs'],
-    queryFn: getClubs,
+  const { data: allClubs = [] } = useQuery<ClubSummary[]>({
+    queryKey: ['firebase-club-directory'],
+    queryFn: getClubSummaries,
   });
 
   const { data: outgoing = [], isLoading: outLoading } = useQuery<Affiliation[]>({
@@ -46,7 +46,7 @@ export function AdminAffiliations({ user, club }: AdminAffiliationsProps) {
   });
 
   const requestMutation = useMutation({
-    mutationFn: (target: Club) =>
+    mutationFn: (target: ClubSummary) =>
       requestAffiliation(club.id, club.name, target.id, target.name, userEmail),
     onSuccess: (_d, target) => {
       queryClient.invalidateQueries({ queryKey: ['affiliations-outgoing', club.id] });

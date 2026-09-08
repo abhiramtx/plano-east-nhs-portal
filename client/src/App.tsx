@@ -11,10 +11,9 @@ import {
   initializeAuth,
   handleSignOut,
   auth,
-  getUserMembership,
   getUserMembershipSummary,
-  getClub,
   getClubSummaries,
+  clubSummaryToShell,
   ensureClubCreatorIsAdmin,
   leaveClubWithArchive,
   clubSlug,
@@ -314,11 +313,7 @@ function ClubScope({
   });
   const directoryMatch = directory.find(club => memberships.some(m => m.clubId === club.id && clubSlug(club.name) === slug));
   const matchingMembership = memberships.find(m => m.clubId === directoryMatch?.id);
-  const { data: matchedClub, isLoading: matchedClubLoading } = useQuery({
-    queryKey: ['firebase-club', directoryMatch?.id],
-    queryFn: () => getClub(directoryMatch!.id),
-    enabled: !!directoryMatch,
-  });
+  const matchedClub = directoryMatch ? clubSummaryToShell(directoryMatch) : null;
   const match = matchingMembership && matchedClub
     ? {
         membership: {
@@ -360,7 +355,7 @@ function ClubScope({
     }
   }, [match?.club.id, user?.email]);
 
-  if (!user || membershipsLoading || directoryLoading || matchedClubLoading || !match) {
+  if (!user || membershipsLoading || directoryLoading || !match) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
@@ -459,15 +454,23 @@ function App() {
 
   useEffect(() => {
     if (user?.email && !clubChecked) {
-      getUserMembership(user.email)
-        .then(async (data) => {
-          if (data && data.club && data.membership) {
-            setSelectedClub(data.club);
-            setMembership(data.membership);
-            if (data.club.creatorEmail === user.email) {
-              await ensureClubCreatorIsAdmin(data.club.id, user.email);
-            }
-          }
+      Promise.all([
+        getUserMembershipSummary(user.email),
+        getClubSummaries(),
+      ])
+        .then(([memberships, directory]) => {
+          const selectedMembership = memberships[0];
+          const selectedSummary = selectedMembership
+            ? directory.find(club => club.id === selectedMembership.clubId)
+            : undefined;
+          if (!selectedMembership || !selectedSummary) return;
+          setSelectedClub(clubSummaryToShell(selectedSummary));
+          setMembership({
+            ...selectedMembership,
+            role: selectedSummary.creatorEmail?.toLowerCase() === selectedMembership.userEmail.toLowerCase()
+              ? 'admin'
+              : selectedMembership.role,
+          });
         })
         .catch(() => {})
         .finally(() => setClubChecked(true));

@@ -6,6 +6,8 @@ import {
   UserProfile,
   getClub,
   getClubSummaries,
+  clubSummaryToShell,
+  clubToShell,
   getUserMembershipSummary,
   getUserProfile,
   getProfileDisplayName,
@@ -161,7 +163,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
       setCreateDialogOpen(false);
       toast({ title: "Club created!", description: `${club.name} is ready to grow.` });
-      onClubSelected(club, membership);
+      onClubSelected(clubToShell(club), membership);
     },
     onError: (error: any) => {
       toast({ title: "Failed to create club", description: error.message, variant: "destructive" });
@@ -195,7 +197,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       queryClient.invalidateQueries({ queryKey: ['firebase-user-membership-summaries', userEmail] });
       queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
       toast({ title: "Welcome!", description: "Your personal hub is ready." });
-      onClubSelected(club, membership);
+      onClubSelected(clubToShell(club), membership);
     },
     onError: (error: any) => {
       toast({ title: "Failed", description: error.message, variant: "destructive" });
@@ -215,7 +217,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         userName: displayName,
         role: 'member',
       });
-      return { club: fullClub, membership };
+      return { club: clubToShell(fullClub), membership };
     },
     onSuccess: async ({ club, membership }) => {
       queryClient.invalidateQueries({ queryKey: ['firebase-club-directory'] });
@@ -288,8 +290,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const switchClubMutation = useMutation({
     mutationFn: async (club: ClubSummary) => {
       await switchActiveClub(userEmail, club.id);
-      const fullClub = await getClub(club.id);
-      if (!fullClub) throw new Error("Club not found");
       const membership = membershipRecords.find(record => record.clubId === club.id) || {
         id: userEmail,
         clubId: club.id,
@@ -298,7 +298,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         role: 'member',
         joinedAt: new Date(),
       };
-      return { club: fullClub, membership };
+      return { club: clubSummaryToShell(club), membership };
     },
     onSuccess: ({ club, membership }) => {
       queryClient.invalidateQueries({ queryKey: ['firebase-user-membership-summaries', userEmail] });

@@ -3,8 +3,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
-  User, Club, ClubBookmark, Affiliation, HoursSubmission, ClubEvent,
-  getClubs,
+  User, Club, ClubSummary, ClubBookmark, Affiliation, HoursSubmission, ClubEvent,
+  getClubSummaries,
   getApprovedSubClubs,
   getSuperClubFedSubmissions,
   getUserBookmarks,
@@ -39,9 +39,9 @@ export default function Affiliates({ user, club }: AffiliatesProps) {
     queryFn: () => getSuperClubFedSubmissions(club.id),
   });
 
-  const { data: allClubs = [] } = useQuery<Club[]>({
-    queryKey: ['firebase-clubs'],
-    queryFn: getClubs,
+  const { data: allClubs = [] } = useQuery<ClubSummary[]>({
+    queryKey: ['firebase-club-directory'],
+    queryFn: getClubSummaries,
   });
 
   const { data: bookmarks = [] } = useQuery<ClubBookmark[]>({

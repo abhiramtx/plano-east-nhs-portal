@@ -7,7 +7,7 @@ import {
   auth,
   getClubByInviteCode,
   getClubStats,
-  getUserMembership,
+  getUserMembershipSummary,
   createMembership,
   getUserProfile,
   getProfileDisplayName,
@@ -113,9 +113,9 @@ export default function ClubJoin() {
     enabled: !!club?.id,
   });
 
-  const { data: userClubData, isLoading: membershipLoading } = useQuery({
+  const { data: userMemberships = [], isLoading: membershipLoading } = useQuery({
     queryKey: ["user-membership-join", authUser?.email],
-    queryFn: () => getUserMembership(authUser!.email),
+    queryFn: () => getUserMembershipSummary(authUser!.email),
     enabled: !!authUser?.email,
   });
 
@@ -224,8 +224,8 @@ export default function ClubJoin() {
     );
   }
 
-  const alreadyInThisClub = userClubData?.membership.clubId === club.id;
-  const alreadyInAnotherClub = !!userClubData && userClubData.membership.clubId !== club.id;
+  const alreadyInThisClub = userMemberships.some(membership => membership.clubId === club.id);
+  const alreadyInAnotherClub = userMemberships.length > 0 && !alreadyInThisClub;
 
   return pageShell(
     <div className="bg-[#faf8f4] border border-border rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">

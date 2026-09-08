@@ -8,8 +8,9 @@ import MapGlComponent, { Marker, NavigationControl, MapRef } from 'react-map-gl/
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { 
   getClubs, 
-  getLeaderboard, 
+  getClubMapSummaries,
   Club, 
+  ClubMapSummary,
   getCurrentUser,
   getAllSubmissions,
   HoursSubmission,
@@ -65,16 +66,16 @@ export default function TerritoryMap({ currentClubId, club }: TerritoryMapProps)
     zoom: 4
   });
 
-  const { data: clubs = [] } = useQuery<Club[]>({
-    queryKey: ['firebase-clubs'],
-    queryFn: getClubs,
+  const { data: clubs = [] } = useQuery<ClubMapSummary[]>({
+    queryKey: ['firebase-map-clubs'],
+    queryFn: getClubMapSummaries,
     refetchInterval: 30000,
   });
 
-  const { data: leaderboardClubs = [] } = useQuery<Club[]>({
-    queryKey: ['firebase-leaderboard'],
-    queryFn: getLeaderboard,
-  });
+  const leaderboardClubs = useMemo(
+    () => [...clubs].sort((a, b) => b.totalApprovedHours - a.totalApprovedHours),
+    [clubs],
+  );
 
   const { data: allOpenEvents = [] } = useQuery<ClubEvent[]>({
     queryKey: ['firebase-all-open-events'],

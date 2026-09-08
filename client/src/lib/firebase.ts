@@ -102,7 +102,8 @@ export interface Club {
 }
 
 // The club directory intentionally excludes passwords, logos, coordinates,
-// and other page-level data. Use getClub() after a club has been selected.
+// and other page-level data. Page-specific screens fetch those fields only
+// when they need them.
 export interface ClubSummary {
   id: string;
   name: string;
@@ -114,6 +115,13 @@ export interface ClubSummary {
   totalApprovedHours: number;
   yearlyApprovedHours: number;
   lastActivityAt: Date;
+}
+
+export interface ClubMapSummary extends ClubSummary {
+  bonusHours: number;
+  decayedHours: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Membership {
@@ -476,6 +484,38 @@ const toClubSummary = (data: Record<string, any>, id: string): ClubSummary => ({
   lastActivityAt: toDate(data.lastActivityAt),
 });
 
+const toClubMapSummary = (data: Record<string, any>, id: string): ClubMapSummary => ({
+  ...toClubSummary(data, id),
+  bonusHours: Number(data.bonusHours || 0),
+  decayedHours: Number(data.decayedHours || 0),
+  latitude: data.latitude == null ? undefined : Number(data.latitude),
+  longitude: data.longitude == null ? undefined : Number(data.longitude),
+});
+
+// Most club pages only need this shell. Keep the Club shape for existing
+// components while making it explicit that sensitive/page-specific fields are
+// not populated until a page asks for the full document.
+export const clubSummaryToShell = (summary: ClubSummary): Club => ({
+  ...summary,
+  bonusHours: 0,
+  decayedHours: 0,
+  createdAt: summary.lastActivityAt,
+  updatedAt: summary.lastActivityAt,
+});
+
+export const clubToShell = (club: Club): Club => clubSummaryToShell({
+  id: club.id,
+  name: club.name,
+  description: club.description,
+  color: club.color,
+  isPrivate: club.isPrivate,
+  inviteCode: club.inviteCode,
+  creatorEmail: club.creatorEmail,
+  totalApprovedHours: club.totalApprovedHours,
+  yearlyApprovedHours: club.yearlyApprovedHours,
+  lastActivityAt: club.lastActivityAt,
+});
+
 // Directory data is served by the backend so mobile clients do not download
 // full club documents (including base64 logos and map-related fields).
 export const getClubSummaries = async (): Promise<ClubSummary[]> => {
@@ -483,6 +523,13 @@ export const getClubSummaries = async (): Promise<ClubSummary[]> => {
   if (!response.ok) throw new Error('Failed to fetch club directory');
   const data = await response.json() as Record<string, any>[];
   return data.map(club => toClubSummary(club, String(club.id)));
+};
+
+export const getClubMapSummaries = async (): Promise<ClubMapSummary[]> => {
+  const response = await fetch('/api/clubs/map', { credentials: 'include' });
+  if (!response.ok) throw new Error('Failed to fetch map clubs');
+  const data = await response.json() as Record<string, any>[];
+  return data.map(club => toClubMapSummary(club, String(club.id)));
 };
 
 export const getClub = async (clubId: string): Promise<Club | null> => {
@@ -1663,8 +1710,8 @@ export const createOrUpdateUserProfile = async (email: string, data: Partial<Use
 
 // ============ LEADERBOARD ============
 
-export const getLeaderboard = async (): Promise<Club[]> => {
-  const clubs = await getClubs();
+export const getLeaderboard = async (): Promise<ClubMapSummary[]> => {
+  const clubs = await getClubMapSummaries();
   return clubs.sort((a, b) => b.totalApprovedHours - a.totalApprovedHours);
 };
 
@@ -2219,7 +2266,9 @@ export const getTerritoryCircles = async (clubId: string): Promise<TerritoryCirc
   }
 };
 
-export const getAllTerritoryCircles = async (clubs: Club[]): Promise<(TerritoryCircle & { clubName: string; clubColor: string })[]> => {
+export const getAllTerritoryCircles = async (
+  clubs: Array<Pick<Club, 'id' | 'name' | 'color'>>,
+): Promise<(TerritoryCircle & { clubName: string; clubColor: string })[]> => {
   try {
     const allCircles: (TerritoryCircle & { clubName: string; clubColor: string })[] = [];
     
