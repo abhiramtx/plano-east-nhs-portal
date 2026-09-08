@@ -602,31 +602,35 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                           : <Trophy className="w-4 h-4 text-white" />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-1.5">
                           <p className="min-w-0 truncate font-semibold text-[#17324d] text-sm">{club.name}</p>
                           {club.id === currentClub?.id && (
-                            <p className="mt-0.5 text-[10px] font-medium text-[#506477]">Your club</p>
+                            <span className="flex-shrink-0 rounded-full bg-[#eee5d7] px-1.5 py-0.5 text-[10px] text-[#506477] whitespace-nowrap">
+                              You
+                            </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-shrink-0 items-baseline gap-1 text-right">
-                        <p className="font-bold text-[#17324d] text-sm">{club.totalApprovedHours.toFixed(1)}</p>
-                        <p className="text-[10px] text-[#506477]">hrs</p>
+                      <div className="flex flex-shrink-0 items-center gap-2">
+                        <div className="flex-shrink-0 text-right">
+                          <p className="font-bold text-[#17324d] text-sm">{club.totalApprovedHours.toFixed(0)}</p>
+                          <p className="text-[10px] text-[#506477]">hrs</p>
+                        </div>
+                        {isSuperAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Delete "${club.name}" and all of its hours, events, logs, affiliations, and club data? This cannot be undone.`)) {
+                                deleteClubMutation.mutate(club.id);
+                              }
+                            }}
+                            className="flex-shrink-0 rounded-lg p-1 text-[#d9cdbd] hover:bg-[#f7f2e9] hover:text-[#d85c45]"
+                            title="Delete club"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
-                      {isSuperAdmin && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Delete "${club.name}" and all of its hours, events, logs, affiliations, and club data? This cannot be undone.`)) {
-                              deleteClubMutation.mutate(club.id);
-                            }
-                          }}
-                          className="flex-shrink-0 rounded-lg p-1 text-[#d9cdbd] hover:bg-[#f7f2e9] hover:text-[#d85c45]"
-                          title="Delete club"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
                   ))}
                 </div>
