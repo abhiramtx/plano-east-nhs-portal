@@ -357,7 +357,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto flex flex-col px-4 py-10">
+      <div className="max-w-7xl mx-auto flex flex-col px-4 py-10 pb-28 sm:pb-10">
         {/* Your Clubs */}
         <div className="order-2 mt-10">
           {userClubLoading ? (
@@ -405,7 +405,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         {club.description || "A place to organize your community impact."}
                       </p>
 
-                      <div className="mt-5 grid grid-cols-3 divide-x divide-border/60 border-y border-[#d9cdbd] py-4">
+                      <div className="mt-5 grid grid-cols-2 divide-x divide-border/60 border-y border-[#d9cdbd] py-4">
                         <div className="pr-3">
                           <p className="text-[10px] font-bold uppercase tracking-wide text-[#506477]">Total hours</p>
                           <p className="mt-1 text-lg font-bold text-[#17324d]">{club.totalApprovedHours.toFixed(1)}</p>
@@ -413,12 +413,6 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                         <div className="px-3">
                           <p className="text-[10px] font-bold uppercase tracking-wide text-[#506477]">This year</p>
                           <p className="mt-1 text-lg font-bold text-[#17324d]">{(club.yearlyApprovedHours || 0).toFixed(1)}</p>
-                        </div>
-                        <div className="pl-3">
-                          <p className="text-[10px] font-bold uppercase tracking-wide text-[#506477]">Last active</p>
-                          <p className="mt-1 truncate text-sm font-semibold text-[#17324d]" title={formatClubDate(club.lastActivityAt)}>
-                            {formatClubDate(club.lastActivityAt)}
-                          </p>
                         </div>
                       </div>
 
@@ -600,36 +594,32 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       >
                         <Trophy className="w-4 h-4 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="font-semibold text-[#17324d] text-sm truncate">{club.name}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="min-w-0">
+                          <p className="min-w-0 truncate font-semibold text-[#17324d] text-sm">{club.name}</p>
                           {club.id === currentClub?.id && (
-                            <span className="text-[10px] bg-[#eee5d7] text-[#506477] px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                              You
-                            </span>
+                            <p className="mt-0.5 text-[10px] font-medium text-[#506477]">Your club</p>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right flex-shrink-0">
-                          <p className="font-bold text-[#17324d] text-sm">{club.totalApprovedHours.toFixed(0)}</p>
-                          <p className="text-[10px] text-[#506477]">hrs</p>
-                        </div>
-                        {isSuperAdmin && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm(`Delete "${club.name}" and all of its hours, events, logs, affiliations, and club data? This cannot be undone.`)) {
-                                deleteClubMutation.mutate(club.id);
-                              }
-                            }}
-                            className="p-1 rounded-lg text-[#d9cdbd] hover:text-[#d85c45] hover:bg-[#f7f2e9] transition-colors flex-shrink-0"
-                            title="Delete club"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        )}
+                      <div className="flex flex-shrink-0 items-baseline gap-1 text-right">
+                        <p className="font-bold text-[#17324d] text-sm">{club.totalApprovedHours.toFixed(1)}</p>
+                        <p className="text-[10px] text-[#506477]">hrs</p>
                       </div>
+                      {isSuperAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete "${club.name}" and all of its hours, events, logs, affiliations, and club data? This cannot be undone.`)) {
+                              deleteClubMutation.mutate(club.id);
+                            }
+                          }}
+                          className="flex-shrink-0 rounded-lg p-1 text-[#d9cdbd] hover:bg-[#f7f2e9] hover:text-[#d85c45]"
+                          title="Delete club"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   ))}
               </div>
