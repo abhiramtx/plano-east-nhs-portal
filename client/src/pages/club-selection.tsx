@@ -357,9 +357,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto flex flex-col px-4 py-10 pb-28 sm:pb-10">
+      <div className="max-w-7xl mx-auto flex flex-col px-4 py-10 pb-28 sm:pb-10 lg:grid lg:grid-cols-5 lg:gap-8">
         {/* Your Clubs */}
-        <div className="order-2 mt-10">
+        <div className="order-2 mt-10 lg:order-2 lg:col-span-5 lg:mt-0">
           {userClubLoading ? (
             <div className="rounded-2xl border border-[#d9cdbd] bg-[#faf8f4] px-5 py-8 text-center text-sm text-[#506477]">
               Checking your memberships…
@@ -475,11 +475,11 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
           )}
         </div>
 
-        {/* Join + Leaderboard — side by side */}
-        <div className="order-1 grid grid-cols-1 lg:grid-cols-5 gap-8">
+        {/* Join + Leaderboard — side by side on desktop, reordered on mobile */}
+        <div className="contents">
 
           {/* Join a Club — wider column */}
-          <div className="lg:col-span-3 app-box p-5">
+          <div className="order-1 app-box p-5 lg:col-span-3">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-5 h-5 text-[#2d827d]" />
               <h2 className="text-xl font-semibold text-[#17324d]">Join a Club</h2>
@@ -560,14 +560,15 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
             </div>
           </div>
 
-          {/* Leaderboard — side column */}
+          {/* Leaderboard — side column on desktop, below Your Clubs on mobile */}
           {!clubsLoading && clubs.length > 0 && (
-            <div className="lg:col-span-2 app-box p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Trophy className="w-5 h-5 text-[#e5a72c]" />
-                <h2 className="text-xl font-semibold text-[#17324d]">Leaderboard</h2>
-              </div>
-              <div className="border border-[#d9cdbd] rounded-xl overflow-hidden">
+            <div className="order-3 mt-8 lg:order-1 lg:col-span-2 lg:mt-0">
+              <p className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#506477]">
+                <Trophy className="h-4 w-4 text-[#e5a72c]" />
+                Leaderboard
+              </p>
+              <div className="app-box p-5">
+                <div className="border border-[#d9cdbd] rounded-xl overflow-hidden">
                 {[...clubs]
                   .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours)
                   .map((club, index) => (
@@ -622,6 +623,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
                       )}
                     </div>
                   ))}
+                </div>
               </div>
             </div>
           )}
