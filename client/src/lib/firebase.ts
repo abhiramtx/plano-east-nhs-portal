@@ -2336,6 +2336,20 @@ export const getEventAttendance = async (eventId: string): Promise<EventAttendan
   return snap.docs.map(toAttendance);
 };
 
+export const getUserEventAttendance = async (
+  eventId: string,
+  userEmail: string,
+): Promise<EventAttendance | null> => {
+  // Query by user first so this does not require a new composite Firestore
+  // index. A volunteer's attendance history is much smaller than an event's
+  // full attendee list, and we still only return the requested event record.
+  const q = query(collection(db, "eventAttendance"), where("userEmail", "==", userEmail));
+  const snap = await getDocs(q);
+  return snap.docs
+    .map(toAttendance)
+    .find(record => record.eventId === eventId) || null;
+};
+
 export const removeEventAttendance = async (attendanceId: string): Promise<void> => {
   await deleteDoc(doc(db, "eventAttendance", attendanceId));
 };
@@ -2343,8 +2357,7 @@ export const removeEventAttendance = async (attendanceId: string): Promise<void>
 export const checkInUser = async (eventId: string, eventName: string, userEmail: string, userName: string, clubId?: string, submittedHours?: number): Promise<EventAttendance> => {
   const now = new Date();
   // Check if already checked in
-  const existing = await getEventAttendance(eventId);
-  const existingRecord = existing.find(a => a.userEmail === userEmail);
+  const existingRecord = await getUserEventAttendance(eventId, userEmail);
   if (existingRecord) {
     // Update minutesAttended if new hours submitted
     if (submittedHours != null) {
@@ -2516,8 +2529,7 @@ export const approveEventSubmissionsForAttendees = async (
 };
 
 export const checkInByQR = async (eventId: string, eventName: string, userEmail: string, clubId?: string): Promise<{ success: boolean; message: string; record?: EventAttendance }> => {
-  const existing = await getEventAttendance(eventId);
-  const rec = existing.find(a => a.userEmail === userEmail);
+  const rec = await getUserEventAttendance(eventId, userEmail);
   if (rec && !rec.checkOutTime) {
     return { success: false, message: `${userEmail} is already checked in` };
   }
@@ -2528,9 +2540,9 @@ export const checkInByQR = async (eventId: string, eventName: string, userEmail:
 };
 
 export const checkOutByQR = async (eventId: string, userEmail: string): Promise<{ success: boolean; message: string }> => {
-  const existing = await getEventAttendance(eventId);
-  const rec = existing.find(a => a.userEmail === userEmail && !a.checkOutTime);
+  const rec = await getUserEventAttendance(eventId, userEmail);
   if (!rec) return { success: false, message: `${userEmail} is not checked in` };
+  if (rec.checkOutTime) return { success: false, message: `${userEmail} has already checked out` };
   await checkOutUser(rec.id);
   const profile = await getUserProfile(userEmail);
   const userName = profile ? [profile.goByFirstName, profile.lastName].filter(Boolean).join(' ') || userEmail : userEmail;

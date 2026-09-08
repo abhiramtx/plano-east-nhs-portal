@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import {
   auth,
   getEventById,
-  getUserMembership,
-  getEventAttendance,
+  getUserMembershipSummary,
+  getUserEventAttendance,
   checkInByQR,
   checkOutByQR,
   getUserProfile,
@@ -81,30 +81,31 @@ export default function EventCheckin() {
     const clubId = event.clubId;
 
     const proceed = async () => {
-      const profile = await getUserProfile(email).catch(() => null);
+      // These are independent, user-scoped reads. Run them together so the
+      // QR flow never waits on a full club document or the event's attendee list.
+      const requiredClubId = clubId || event.targetClubId;
+      const [profile, memberships, myRecord] = await Promise.all([
+        getUserProfile(email).catch(() => null),
+        requiredClubId ? getUserMembershipSummary(email) : Promise.resolve([]),
+        getUserEventAttendance(event.id, email),
+      ]);
       setSignedInDisplayName(getProfileDisplayName(profile, email));
       setSignedInPersonalEmail(profile?.personalEmailAddress || email);
 
       // Membership check — must belong to the event's club
-      const requiredClubId = clubId || event.targetClubId;
       if (requiredClubId) {
-        const mem = await getUserMembership(email);
-        if (!mem || mem.membership.clubId !== requiredClubId) {
+        if (!memberships.some(membership => membership.clubId === requiredClubId)) {
           return setStage({ type: 'not-member', event });
         }
       }
 
       setStage({ type: 'processing', event, email });
 
-      // Check existing attendance
-      const existing = await getEventAttendance(event.id);
-      const myRecord = existing.find(a => a.userEmail === email);
-
       if (action === 'checkin') {
         if (myRecord && !myRecord.checkOutTime) {
           return setStage({ type: 'already-checked-in', event, record: myRecord });
         }
-        const result = await checkInByQR(event.id, event.name, email, clubId);
+        const result = await checkInByQR(event.id, event.name, email, requiredClubId);
         if (!result.success || !result.record) {
           return setStage({ type: 'error', event, message: result.message });
         }
@@ -121,8 +122,7 @@ export default function EventCheckin() {
           return setStage({ type: 'error', event, message: result.message });
         }
         // Refetch record to get checkout time
-        const updated = await getEventAttendance(event.id);
-        const updatedRecord = updated.find(a => a.userEmail === email) || myRecord;
+        const updatedRecord = await getUserEventAttendance(event.id, email) || myRecord;
         setStage({ type: 'success-checkout', event, record: updatedRecord });
       }
     };
