@@ -124,10 +124,13 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
           <div className="px-4 py-3 border-b border-[#d9cdbd]">
             <div className="flex items-center space-x-3">
               <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: club.color }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
+                style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
               >
-                <Trophy className="w-4 h-4 text-white" />
+                {club.logoUrl
+                  ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
+                  : <Trophy className="w-4 h-4 text-white" />
+                }
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-[#17324d] truncate">{club.name}</p>
