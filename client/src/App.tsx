@@ -356,7 +356,7 @@ function ClubScope({
 
   useEffect(() => {
     if (match) return;
-    if (user && membershipsLoading) return;
+    if (user && (membershipsLoading || directoryLoading)) return;
     if (needsJoinLookup && clubsLoading) return;
     const targetClub = allClubs.find(c => clubSlug(c.name) === slug);
     if (targetClub?.inviteCode) {
