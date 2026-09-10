@@ -5,7 +5,8 @@ import {
   getClubEvents, createEvent, updateEvent, deleteEvent,
   getEventAttendance, removeEventAttendance, checkInUser, checkOutUser, grantEventHours,
   approveEventSubmissionsForAttendees,
-  getApprovedSuperClubs, recalculateClubHours
+  getApprovedSuperClubs, recalculateClubHours, getUserProfile, getProfileDisplayName,
+  UserProfile
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus, Trash2, Save, Calendar, Users, Clock, QrCode, Award, ChevronRight,
-  Camera, ScanLine, RefreshCw, CheckCircle2, XCircle, AlertCircle, Edit2, X, Printer
+  Camera, ScanLine, RefreshCw, CheckCircle2, XCircle, AlertCircle, Edit2, X, Printer,
+  Download, Mail, Phone, GraduationCap, Hash
 } from "lucide-react";
 import QRCode from "react-qr-code";
 import { Html5Qrcode } from "html5-qrcode";
@@ -58,6 +60,13 @@ const formatMinutes = (minutes?: number) => {
   const m = minutes % 60;
   if (h === 0) return `${m}m`;
   return `${h}h ${m}m`;
+};
+
+const normalizeEmail = (email: string) => email.replace(/,/g, '.').trim().toLowerCase();
+
+const escapeCsvValue = (value: unknown) => {
+  const text = value == null ? '' : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
 };
 
 function QRScanner({ onScan, onError }: { onScan: (text: string) => void; onError?: (err: string) => void }) {
@@ -170,6 +179,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
   const [overrideHours, setOverrideHours] = useState<Record<string, string>>({});
   const [alsoGrantToSuper, setAlsoGrantToSuper] = useState(false);
   const [attendeeToRemove, setAttendeeToRemove] = useState<EventAttendance | null>(null);
+  const [selectedAttendee, setSelectedAttendee] = useState<EventAttendance | null>(null);
 
   const { data: events = [], isLoading } = useQuery<ClubEvent[]>({
     queryKey: ['firebase-club-events', club.id],
@@ -207,6 +217,85 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
     enabled: !!selectedEvent?.id,
     refetchInterval: activeTab === 'qrcode' ? 3000 : false,
   });
+
+  const attendeeEmailKey = attendance
+    .map(attendee => normalizeEmail(attendee.userEmail))
+    .filter(Boolean)
+    .sort()
+    .join('|');
+
+  const { data: attendeeProfiles = {} } = useQuery<Record<string, UserProfile | null>>({
+    queryKey: ['event-attendee-profiles', selectedEvent?.id, attendeeEmailKey],
+    queryFn: async () => {
+      const emails = Array.from(new Set(
+        attendance.map(attendee => attendee.userEmail).filter(Boolean).map(normalizeEmail)
+      ));
+      const profiles = await Promise.all(
+        emails.map(async email => [email, await getUserProfile(email)] as const)
+      );
+      return Object.fromEntries(profiles);
+    },
+    enabled: !!selectedEvent?.id && attendance.length > 0,
+    staleTime: 60000,
+  });
+
+  const getAttendeeProfile = (attendee: EventAttendance) =>
+    attendeeProfiles[normalizeEmail(attendee.userEmail)] || null;
+
+  const getAttendeeDisplayName = (attendee: EventAttendance) => {
+    const profile = getAttendeeProfile(attendee);
+    return getProfileDisplayName(profile, attendee.userName || attendee.userEmail);
+  };
+
+  const downloadAttendanceCsv = () => {
+    if (!selectedEvent || attendance.length === 0) return;
+
+    const headers = [
+      'Name',
+      'Google Email',
+      'Personal Email',
+      'Phone Number',
+      'Student ID',
+      'Grade Level',
+      'Event',
+      'Check-in',
+      'Check-out',
+      'Minutes Attended',
+      'Hours Granted',
+      'Grant Status',
+    ];
+    const rows = attendance.map(attendee => {
+      const profile = getAttendeeProfile(attendee);
+      return [
+        getAttendeeDisplayName(attendee),
+        attendee.userEmail,
+        profile?.personalEmailAddress || '',
+        profile?.cellPhoneNumber || profile?.phoneNumber || '',
+        profile?.studentId || '',
+        profile?.gradeLevel || '',
+        selectedEvent.name,
+        attendee.checkInTime?.toISOString() || '',
+        attendee.checkOutTime?.toISOString() || '',
+        attendee.minutesAttended ?? '',
+        attendee.hoursGranted ?? '',
+        attendee.grantStatus,
+      ];
+    });
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(escapeCsvValue).join(','))
+      .join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${selectedEvent.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'event'}-attendance.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast({ title: "Attendance CSV downloaded", description: `${attendance.length} participant${attendance.length === 1 ? '' : 's'} exported.` });
+  };
 
   useEffect(() => {
     if (selectedEvent) {
@@ -847,7 +936,17 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                           <div className="space-y-1 max-h-48 overflow-auto">
                             {attendance.map(a => (
                               <div key={a.id} className="flex items-center justify-between gap-2 text-xs py-1 px-2 bg-card rounded">
-                                <span className="font-medium text-foreground">{a.userEmail}</span>
+                                <button
+                                  type="button"
+                                  className="min-w-0 text-left hover:underline"
+                                  onClick={() => setSelectedAttendee(a)}
+                                  title="View participant profile"
+                                >
+                                  <span className="block font-medium text-foreground truncate">{getAttendeeDisplayName(a)}</span>
+                                  {getAttendeeDisplayName(a).toLowerCase() !== a.userEmail.toLowerCase() && (
+                                    <span className="block text-muted-foreground truncate">{a.userEmail}</span>
+                                  )}
+                                </button>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                   <span>In: {formatTime(a.checkInTime)}</span>
                                   {a.checkOutTime && <span>Out: {formatTime(a.checkOutTime)}</span>}
@@ -1069,9 +1168,20 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                               {selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'Select all'}
                             </span>
                           </div>
-                          <Button type="button" variant="outline" size="sm" onClick={() => refetchAttendance()}>
-                            <RefreshCw className="w-4 h-4 mr-1" /> Refresh
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={downloadAttendanceCsv}
+                              disabled={attendance.length === 0}
+                            >
+                              <Download className="w-4 h-4 mr-1" /> Download CSV
+                            </Button>
+                            <Button type="button" variant="outline" size="sm" onClick={() => refetchAttendance()}>
+                              <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+                            </Button>
+                          </div>
                         </div>
 
                         {/* Default hours — hidden when conditionals active */}
@@ -1134,8 +1244,17 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                                   }}
                                 />
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate">{a.userName || a.userEmail}</p>
-                                  <p className="text-xs text-muted-foreground truncate">{a.userEmail}</p>
+                                  <button
+                                    type="button"
+                                    className="text-left hover:underline"
+                                    onClick={() => setSelectedAttendee(a)}
+                                    title="View participant profile"
+                                  >
+                                    <p className="text-sm font-medium text-foreground truncate">{getAttendeeDisplayName(a)}</p>
+                                    {getAttendeeDisplayName(a).toLowerCase() !== a.userEmail.toLowerCase() && (
+                                      <p className="text-xs text-muted-foreground truncate">{a.userEmail}</p>
+                                    )}
+                                  </button>
                                 </div>
                                 <div className="text-xs text-muted-foreground space-y-0.5 text-right flex-shrink-0">
                                   {isPasswordEvent && a.minutesAttended != null && (
@@ -1193,6 +1312,126 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
           </div>
         </div>
       )}
+
+      <Dialog open={!!selectedAttendee} onOpenChange={open => !open && setSelectedAttendee(null)}>
+        <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <span className="flex items-center justify-center w-11 h-11 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+                {selectedAttendee
+                  ? getAttendeeDisplayName(selectedAttendee)
+                    .split(/\s+/)
+                    .map(part => part[0])
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase()
+                  : '??'}
+              </span>
+              <span>
+                <span className="block">{selectedAttendee ? getAttendeeDisplayName(selectedAttendee) : 'Participant profile'}</span>
+                <span className="block text-sm font-normal text-muted-foreground">Participant Profile</span>
+              </span>
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              View contact, academic, and attendance details for this event participant.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedAttendee && (() => {
+            const profile = getAttendeeProfile(selectedAttendee);
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-border p-4">
+                    <h3 className="font-semibold text-foreground mb-3">Contact Information</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
+                          <Mail className="w-3 h-3" /> Google Account
+                        </div>
+                        <p className="text-sm font-medium text-foreground break-all">{selectedAttendee.userEmail}</p>
+                      </div>
+                      {profile?.personalEmailAddress && (
+                        <div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
+                            <Mail className="w-3 h-3" /> Personal Email
+                          </div>
+                          <p className="text-sm font-medium text-foreground break-all">{profile.personalEmailAddress}</p>
+                        </div>
+                      )}
+                      {(profile?.cellPhoneNumber || profile?.phoneNumber) && (
+                        <div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
+                            <Phone className="w-3 h-3" /> Phone Number
+                          </div>
+                          <p className="text-sm font-medium text-foreground">
+                            {profile.cellPhoneNumber || profile.phoneNumber}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-border p-4">
+                    <h3 className="font-semibold text-foreground mb-3">Academic Information</h3>
+                    <div className="space-y-3">
+                      {profile?.gradeLevel && (
+                        <div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
+                            <GraduationCap className="w-3 h-3" /> Grade Level
+                          </div>
+                          <p className="text-sm font-medium text-foreground">Grade {profile.gradeLevel}</p>
+                        </div>
+                      )}
+                      {profile?.studentId && (
+                        <div>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-0.5">
+                            <Hash className="w-3 h-3" /> Student ID
+                          </div>
+                          <p className="text-sm font-medium text-foreground">{profile.studentId}</p>
+                        </div>
+                      )}
+                      {!profile?.gradeLevel && !profile?.studentId && (
+                        <p className="text-sm text-muted-foreground italic">No academic details available</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border p-4">
+                  <h3 className="font-semibold text-foreground mb-3">Event Attendance</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Check-in</p>
+                      <p className="font-medium text-foreground">{formatTime(selectedAttendee.checkInTime)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Check-out</p>
+                      <p className="font-medium text-foreground">{formatTime(selectedAttendee.checkOutTime)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Time attended</p>
+                      <p className="font-medium text-foreground">{formatMinutes(selectedAttendee.minutesAttended)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Hours granted</p>
+                      <p className="font-medium text-foreground">
+                        {selectedAttendee.hoursGranted != null ? `${selectedAttendee.hoursGranted}h` : '—'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {!profile && (
+                  <p className="text-xs text-muted-foreground">
+                    Additional profile fields are not available for this participant.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!attendeeToRemove} onOpenChange={open => !open && setAttendeeToRemove(null)}>
         <DialogContent>
