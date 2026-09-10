@@ -357,7 +357,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         </div>
       </nav>
 
-      <div className="w-full max-w-none mx-0 flex flex-col px-4 py-10 pb-28 sm:pb-10 lg:grid lg:grid-cols-[minmax(260px,1fr)_minmax(0,3fr)] lg:items-start lg:gap-6 lg:px-6">
+      <div className="w-full max-w-none mx-0 flex flex-col px-4 py-10 pb-28 sm:pb-10 lg:grid lg:grid-cols-[minmax(260px,23fr)_minmax(0,77fr)] lg:items-start lg:gap-6 lg:px-6">
         {/* Your Clubs */}
         <div className="order-2 mt-10 app-box p-5 lg:order-2 lg:col-span-1 lg:col-start-2 lg:row-start-2 lg:mt-0">
           {userClubLoading ? (
