@@ -194,7 +194,7 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
       >
         {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
-      <div className={`admin-sidebar-shell fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-border transform transition-transform duration-200 lg:static lg:z-auto lg:flex lg:flex-col lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`admin-sidebar-shell fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-border transform transition-transform duration-200 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col flex-1 min-h-0 bg-background">
           <div className="flex items-center flex-shrink-0 px-4 py-4 border-b border-[#d9cdbd]">
             <div className="flex items-center space-x-3">
