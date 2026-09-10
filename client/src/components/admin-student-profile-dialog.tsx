@@ -6,8 +6,8 @@ import {
   UserProfile,
   getProfileDisplayName,
   getSubClubHoursRules,
+  getAllUserProfiles,
   getSuperClubFedSubmissions,
-  getUserProfile,
   getUserSubmissionsAllClubs,
   setSuperClubApprovalStatus,
   updateSubmission,
@@ -52,6 +52,11 @@ interface HoursLog {
   id: string;
   name: string;
   hoursRequired: number;
+}
+
+interface CustomFieldValue {
+  customFieldId: string;
+  value: string;
 }
 
 export interface AdminStudentProfile {
@@ -116,12 +121,17 @@ export function AdminStudentProfileDialog({
   const email = student?.email || "";
   const normalizedEmail = normalizeEmail(email);
 
-  const { data: profile, isLoading: profileLoading } = useQuery<UserProfile | null>({
-    queryKey: ["admin-student-profile", normalizedEmail],
-    queryFn: () => getUserProfile(email),
+  const { data: profiles = [], isLoading: profileLoading } = useQuery<UserProfile[]>({
+    queryKey: ["firebase-user-profiles"],
+    queryFn: getAllUserProfiles,
     enabled: open && !!email,
     staleTime: 60000,
   });
+
+  const profile = useMemo(
+    () => profiles.find(item => normalizeEmail(item.email || "") === normalizedEmail) || null,
+    [profiles, normalizedEmail],
+  );
 
   const { data: directSubmissions = [], isLoading: submissionsLoading } = useQuery<HoursSubmission[]>({
     queryKey: ["admin-student-profile-submissions", normalizedEmail],
@@ -157,7 +167,7 @@ export function AdminStudentProfileDialog({
     staleTime: 60000,
   });
 
-  const { data: customFieldValues = {} } = useQuery<Record<string, string>>({
+  const { data: customFieldValues = [], isLoading: customFieldValuesLoading } = useQuery<CustomFieldValue[]>({
     queryKey: ["admin-student-profile-custom-field-values", normalizedEmail, club.id],
     queryFn: async () => {
       const response = await fetch(
@@ -165,11 +175,19 @@ export function AdminStudentProfileDialog({
         { credentials: "include" },
       );
       if (!response.ok) return {};
-      return response.json() as Promise<Record<string, string>>;
+      return response.json() as Promise<CustomFieldValue[]>;
     },
     enabled: open && !!email,
     staleTime: 60000,
   });
+
+  const customValuesById = useMemo(
+    () => customFieldValues.reduce<Record<string, string>>((values, fieldValue) => {
+      values[fieldValue.customFieldId] = fieldValue.value || "";
+      return values;
+    }, {}),
+    [customFieldValues],
+  );
 
   const { data: subClubRules = [] } = useQuery({
     queryKey: ["admin-student-profile-sub-club-rules", club.id],
@@ -349,11 +367,13 @@ export function AdminStudentProfileDialog({
               <div className="border border-border rounded-xl p-4">
                 <h4 className="font-semibold text-foreground mb-3">Custom Fields</h4>
                 <div className="space-y-3">
-                  {Object.entries(customFieldValues).length === 0 ? (
+                  {customFieldValuesLoading ? (
+                    <p className="text-sm text-muted-foreground/80 italic">Loading custom fields...</p>
+                  ) : Object.keys(customValuesById).length === 0 ? (
                     <p className="text-sm text-muted-foreground/80 italic">No custom fields set</p>
                   ) : (
-                    customFields.filter(field => customFieldValues[field.id]).map(field => {
-                      const value = customFieldValues[field.id];
+                    customFields.filter(field => customValuesById[field.id]).map(field => {
+                      const value = customValuesById[field.id];
                       let displayValue = value;
                       try {
                         const parsed = JSON.parse(value);
