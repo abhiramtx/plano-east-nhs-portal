@@ -561,22 +561,20 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
     <div className="flex-1 flex flex-col lg:flex-row bg-background min-h-0 overflow-hidden">
       {/* Left Panel: Event List */}
       <div className="w-full lg:w-80 max-h-[38vh] lg:max-h-none border-b lg:border-b-0 lg:border-r border-border flex flex-col flex-shrink-0">
-        <div className="bg-card px-4 py-3 sm:py-4 border-b border-border flex items-center justify-between gap-3">
+        <div className="bg-card px-4 py-3 sm:py-4 border-b border-border flex items-start gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-chart-3">
               <Calendar className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <h3 className="text-base font-bold text-foreground">Events</h3>
               <p className="text-xs text-muted-foreground truncate max-w-[58vw] lg:max-w-[13rem]">QR or password check-in · grant hours</p>
-            </div>
-          </div>
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-primary hover:bg-primary/85 text-primary-foreground flex-shrink-0">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </DialogTrigger>
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="mt-2 bg-primary hover:bg-primary/85 text-primary-foreground">
+                    New <Plus className="w-4 h-4 ml-1" />
+                  </Button>
+                </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Create Event</DialogTitle>
@@ -625,7 +623,9 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                 </Button>
               </div>
             </DialogContent>
-          </Dialog>
+              </Dialog>
+            </div>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto p-3 space-y-2">
