@@ -288,8 +288,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
   const currentClub = activeClub;
 
   const switchClubMutation = useMutation({
-    mutationFn: async (club: ClubSummary) => {
-      await switchActiveClub(userEmail, club.id);
+    mutationFn: (club: ClubSummary) => {
       const membership = membershipRecords.find(record => record.clubId === club.id) || {
         id: userEmail,
         clubId: club.id,
@@ -301,9 +300,21 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
       return { club: clubSummaryToShell(club), membership };
     },
     onSuccess: ({ club, membership }) => {
-      queryClient.invalidateQueries({ queryKey: ['firebase-user-membership-summaries', userEmail] });
-      queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
+      const saveActiveClub = switchActiveClub(userEmail, club.id);
       onClubSelected(club, membership);
+      void saveActiveClub
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['firebase-user-membership-summaries', userEmail] });
+          queryClient.invalidateQueries({ queryKey: ['firebase-user-memberships', userEmail] });
+        })
+        .catch((error) => {
+          console.error('Failed to save active club preference:', error);
+          toast({
+            title: 'Club opened',
+            description: 'Your active club preference could not be saved. Please try again when your connection is stable.',
+            variant: 'destructive',
+          });
+        });
     },
   });
 

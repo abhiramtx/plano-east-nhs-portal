@@ -22,6 +22,7 @@ import {
   Timestamp,
   writeBatch,
   setDoc,
+  arrayUnion,
   onSnapshot,
   deleteField
 } from "firebase/firestore";
@@ -1059,16 +1060,11 @@ export const getUserMembershipSummary = async (userEmail: string): Promise<Membe
 // Switch the active (current) club for a user without touching their memberships.
 export const switchActiveClub = async (userEmail: string, clubId: string): Promise<void> => {
   const docRef = doc(db, "userProfiles", userEmail);
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) return;
-  const data = docSnap.data();
-  const ids: string[] = Array.isArray(data.clubIds) ? data.clubIds.slice() : [];
-  if (!ids.includes(clubId)) ids.push(clubId);
-  await updateDoc(docRef, {
+  await setDoc(docRef, {
     clubId,
-    clubIds: ids,
+    clubIds: arrayUnion(clubId),
     updatedAt: Timestamp.fromDate(new Date()),
-  });
+  }, { merge: true });
   invalidateUserProfileCache(userEmail);
   invalidateUserMembershipCache(userEmail);
 };
