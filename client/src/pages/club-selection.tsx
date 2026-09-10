@@ -357,9 +357,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         </div>
       </nav>
 
-      <div className="w-full max-w-none mx-0 flex flex-col px-4 py-10 pb-28 sm:pb-10 lg:grid lg:grid-cols-[minmax(0,4fr)_minmax(260px,1fr)] lg:items-start lg:gap-6 lg:px-6">
+      <div className="w-full max-w-none mx-0 flex flex-col px-4 py-10 pb-28 sm:pb-10 lg:grid lg:grid-cols-[minmax(260px,1fr)_minmax(0,3fr)] lg:items-start lg:gap-6 lg:px-6">
         {/* Your Clubs */}
-        <div className="order-2 mt-10 app-box p-5 lg:order-2 lg:col-span-1 lg:col-start-1 lg:row-start-2 lg:mt-0">
+        <div className="order-2 mt-10 app-box p-5 lg:order-2 lg:col-span-1 lg:col-start-2 lg:row-start-2 lg:mt-0">
           {userClubLoading ? (
             <div className="rounded-2xl border border-[#d9cdbd] bg-[#faf8f4] px-5 py-8 text-center text-sm text-[#506477]">
               Checking your memberships…
@@ -481,7 +481,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         <div className="contents">
 
           {/* Join a Club — wider column */}
-          <div className="order-1 app-box p-5 lg:col-span-1 lg:col-start-1 lg:row-start-1">
+          <div className="order-1 app-box p-5 lg:col-span-1 lg:col-start-2 lg:row-start-1">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-5 h-5 text-[#2d827d]" />
               <h2 className="text-xl font-semibold text-[#17324d]">Join a Club</h2>
@@ -566,16 +566,16 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
           {/* Leaderboard — side column on desktop, below Your Clubs on mobile */}
           {!clubsLoading && clubs.length > 0 && (
-            <div className="order-3 mt-8 lg:order-3 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0 lg:self-start">
+            <div className="order-3 mt-8 min-h-0 lg:order-3 lg:col-span-1 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:mt-0 lg:self-stretch lg:h-full">
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-[#506477] lg:hidden">
                 Leaderboard
               </p>
-              <div className="app-box p-5">
+              <div className="app-box flex h-full min-h-0 flex-col p-5">
                 <div className="mb-4 flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-[#e5a72c]" />
                   <h2 className="text-xl font-semibold text-[#17324d]">Leaderboard</h2>
                 </div>
-                <div className="overflow-hidden rounded-xl border border-[#d9cdbd]">
+                <div className="min-h-0 flex-1 overflow-y-auto rounded-xl border border-[#d9cdbd]">
                 {[...clubs]
                   .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours)
                   .map((club, index) => (
