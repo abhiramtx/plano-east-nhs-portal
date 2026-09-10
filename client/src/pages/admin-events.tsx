@@ -1069,7 +1069,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                               {selectedAttendees.length > 0 ? `${selectedAttendees.length} selected` : 'Select all'}
                             </span>
                           </div>
-                          <Button variant="outline" size="sm" onClick={() => refetchAttendance()}>
+                          <Button type="button" variant="outline" size="sm" onClick={() => refetchAttendance()}>
                             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
                           </Button>
                         </div>
