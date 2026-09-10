@@ -763,7 +763,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
 
                     <div className="grid grid-cols-2 gap-4">
                       {/* Check-in */}
-                      <div className="rounded-2xl border border-chart-3/30 bg-chart-3/10 overflow-hidden">
+                      <div className="rounded-2xl border border-[#333333] bg-chart-3/10 overflow-hidden">
                         <div className="bg-chart-3 px-4 py-3 flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
                           <span className="text-sm font-semibold text-primary-foreground">Check-in</span>
@@ -780,7 +780,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                       </div>
 
                       {/* Check-out */}
-                      <div className="rounded-2xl border border-destructive/30 bg-destructive/10 overflow-hidden">
+                      <div className="rounded-2xl border border-[#333333] bg-destructive/10 overflow-hidden">
                         <div className="bg-destructive px-4 py-3 flex items-center gap-2">
                           <XCircle className="w-4 h-4 text-destructive-foreground" />
                           <span className="text-sm font-semibold text-destructive-foreground">Check-out</span>
