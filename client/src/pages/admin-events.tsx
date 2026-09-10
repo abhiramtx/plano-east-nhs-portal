@@ -26,6 +26,7 @@ import {
 import QRCode from "react-qr-code";
 import { Html5Qrcode } from "html5-qrcode";
 import type { HoursLog } from "@shared/schema";
+import { AdminStudentProfileDialog } from "@/components/admin-student-profile-dialog";
 
 interface AdminEventsProps {
   user: User;
@@ -557,17 +558,17 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
   const grantedCount = attendance.filter(a => a.grantStatus === 'granted').length;
 
   return (
-    <div className="flex-1 flex bg-background min-h-0 overflow-hidden">
+    <div className="flex-1 flex flex-col lg:flex-row bg-background min-h-0 overflow-hidden">
       {/* Left Panel: Event List */}
-      <div className="w-80 border-r border-border flex flex-col flex-shrink-0">
-        <div className="bg-card px-4 py-4 border-b border-border flex items-center justify-between">
+      <div className="w-full lg:w-80 max-h-[38vh] lg:max-h-none border-b lg:border-b-0 lg:border-r border-border flex flex-col flex-shrink-0">
+        <div className="bg-card px-4 py-3 sm:py-4 border-b border-border flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-chart-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-chart-3">
               <Calendar className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
               <h3 className="text-base font-bold text-foreground">Events</h3>
-              <p className="text-xs text-muted-foreground">QR or password check-in · grant hours</p>
+              <p className="text-xs text-muted-foreground truncate max-w-[58vw] lg:max-w-[13rem]">QR or password check-in · grant hours</p>
             </div>
           </div>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -676,21 +677,19 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden">
           {/* Event Header */}
-          <div className="px-6 py-4 border-b border-border bg-card flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-foreground">{selectedEvent.name}</h2>
+          <div className="px-4 sm:px-6 py-4 border-b border-border bg-card flex-shrink-0">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg sm:text-xl font-bold text-foreground break-words">{selectedEvent.name}</h2>
                   <Badge className={EVENT_TYPE_COLORS[selectedEvent.type]}>{EVENT_TYPE_LABELS[selectedEvent.type]}</Badge>
                 </div>
-                {selectedEvent.description && (
-                  <p className="text-sm text-muted-foreground mt-0.5">{selectedEvent.description}</p>
-                )}
+                {selectedEvent.description && <p className="text-sm text-muted-foreground mt-0.5 break-words">{selectedEvent.description}</p>}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mr-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground sm:mr-2">
                   <span className="flex items-center gap-1"><Users className="w-4 h-4" />{attendance.length} attended</span>
                   <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{checkedInCount} checked in</span>
                   <span className="flex items-center gap-1"><Award className="w-4 h-4" />{grantedCount} granted</span>
@@ -708,12 +707,12 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
             </div>
 
             {/* Tab Nav */}
-            <div className="flex gap-1 mt-3 border-b border-border -mb-4 pb-0">
+            <div className="flex gap-1 mt-3 -mx-1 px-1 border-b border-border -mb-4 pb-0 overflow-x-auto">
               {(['information', 'qrcode', 'grant'] as EventTab[]).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === tab
                       ? 'border-primary text-foreground'
                       : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -736,7 +735,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-auto p-6">
+          <div className="flex-1 overflow-auto p-4 sm:p-6">
 
             {/* ============ INFORMATION TAB ============ */}
             {activeTab === 'information' && (
@@ -850,7 +849,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Check-in */}
                       <div className="rounded-2xl border border-[#333333] bg-chart-3/10 overflow-hidden">
                         <div className="bg-chart-3 px-4 py-3 flex items-center gap-2">
@@ -1313,7 +1312,25 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
         </div>
       )}
 
-      <Dialog open={!!selectedAttendee} onOpenChange={open => !open && setSelectedAttendee(null)}>
+      <AdminStudentProfileDialog
+        student={selectedAttendee ? {
+          email: selectedAttendee.userEmail,
+          studentName: getAttendeeDisplayName(selectedAttendee),
+        } : null}
+        club={club}
+        adminEmail={user.email || ""}
+        open={!!selectedAttendee}
+        onOpenChange={open => !open && setSelectedAttendee(null)}
+        onGrantHours={() => {
+          if (!selectedAttendee) return;
+          setSelectedAttendees([selectedAttendee.id]);
+          setActiveTab("grant");
+          setSelectedAttendee(null);
+        }}
+      />
+
+      {false && (
+      <Dialog open={false}>
         <DialogContent className="max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
@@ -1432,6 +1449,7 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
           })()}
         </DialogContent>
       </Dialog>
+      )}
 
       <Dialog open={!!attendeeToRemove} onOpenChange={open => !open && setAttendeeToRemove(null)}>
         <DialogContent>

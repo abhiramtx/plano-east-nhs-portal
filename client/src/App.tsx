@@ -5,6 +5,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Menu, X } from "lucide-react";
 import {
   User,
   onAuthStateChanged,
@@ -143,6 +144,7 @@ function VolunteerInterface({
 
 function AdminInterface({ user, club }: { user: User; club: Club }) {
   const [location, setLocation] = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pageFromPath = (loc: string): string => {
     if (loc.includes('/admin/dashboard')) return 'dashboard';
     if (loc.includes('/admin/students')) return 'students';
@@ -163,6 +165,7 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
   const navTo = (page: string, path: string) => {
     setCurrentPage(page);
     setLocation(path);
+    setMobileMenuOpen(false);
   };
 
   const handleSignOutLocal = async () => {
@@ -174,8 +177,24 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
   };
 
   return (
-    <div className="admin-shell flex h-screen bg-background">
-      <div className="admin-sidebar-shell w-64 bg-background border-r border-border lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col">
+    <div className="admin-shell relative flex h-screen bg-background">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Close admin navigation"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+      <button
+        type="button"
+        aria-label={mobileMenuOpen ? "Close admin navigation" : "Open admin navigation"}
+        className="fixed left-3 top-3 z-[60] flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-foreground lg:hidden"
+        onClick={() => setMobileMenuOpen(open => !open)}
+      >
+        {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
+      <div className={`admin-sidebar-shell fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-border transform transition-transform duration-200 lg:static lg:z-auto lg:flex lg:flex-col lg:translate-x-0 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col flex-1 min-h-0 bg-background">
           <div className="flex items-center flex-shrink-0 px-4 py-4 border-b border-[#d9cdbd]">
             <div className="flex items-center space-x-3">
@@ -267,7 +286,7 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
         </div>
       </div>
 
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-0">
+      <div className="flex min-w-0 flex-1 flex-col min-h-0 pt-14 lg:ml-64 lg:pt-0">
         <Suspense fallback={<PageLoading />}>
           {currentPage === 'approval' && <AdminApproval user={user} club={club} />}
           {currentPage === 'dashboard' && <AdminDashboard user={user} club={club} />}
