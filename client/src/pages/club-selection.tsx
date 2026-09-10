@@ -357,9 +357,9 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto flex flex-col px-4 py-10 pb-28 sm:pb-10 lg:grid lg:grid-cols-5 lg:items-start lg:gap-8">
+      <div className="w-full max-w-none mx-0 flex flex-col px-4 py-10 pb-28 sm:pb-10 lg:grid lg:grid-cols-[minmax(0,4fr)_minmax(260px,1fr)] lg:items-start lg:gap-6 lg:px-6">
         {/* Your Clubs */}
-        <div className="order-2 mt-10 app-box p-5 lg:order-2 lg:col-span-3 lg:col-start-1 lg:row-start-2 lg:mt-0">
+        <div className="order-2 mt-10 app-box p-5 lg:order-2 lg:col-span-1 lg:col-start-1 lg:row-start-2 lg:mt-0">
           {userClubLoading ? (
             <div className="rounded-2xl border border-[#d9cdbd] bg-[#faf8f4] px-5 py-8 text-center text-sm text-[#506477]">
               Checking your memberships…
@@ -369,7 +369,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
               <p className="text-xs text-[#506477] uppercase tracking-[0.18em] font-bold mb-4">
               Your Clubs ({userMemberships.length})
               </p>
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-5">
                 {userMemberships.map(({ club, membership }) => {
                   const isActive = club.id === activeClub?.id;
                   return (
@@ -481,7 +481,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
         <div className="contents">
 
           {/* Join a Club — wider column */}
-          <div className="order-1 app-box p-5 lg:col-span-3 lg:col-start-1 lg:row-start-1">
+          <div className="order-1 app-box p-5 lg:col-span-1 lg:col-start-1 lg:row-start-1">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-5 h-5 text-[#2d827d]" />
               <h2 className="text-xl font-semibold text-[#17324d]">Join a Club</h2>
@@ -566,7 +566,7 @@ export default function ClubSelection({ user, onClubSelected, onSignOut }: ClubS
 
           {/* Leaderboard — side column on desktop, below Your Clubs on mobile */}
           {!clubsLoading && clubs.length > 0 && (
-            <div className="order-3 mt-8 lg:order-3 lg:col-span-2 lg:col-start-4 lg:row-start-1 lg:row-span-2 lg:mt-0 lg:self-start">
+            <div className="order-3 mt-8 lg:order-3 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-0 lg:self-start">
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-[#506477] lg:hidden">
                 Leaderboard
               </p>
