@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User, UserProfile, getCurrentUser, getUserProfile, getProfileDisplayName, getUserSubmissions, getUserSuperClubFedSubmissions, HoursSubmission, getClubsForUser, Club } from "@/lib/firebase";
+import { User, UserProfile, getCurrentUser, getProfileDisplayName, getUserSubmissions, getUserSuperClubFedSubmissions, HoursSubmission, getClubsForUser, Club } from "@/lib/firebase";
 import { Clock, TrendingUp, Calendar, Award, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,10 +23,18 @@ export default function Dashboard({ club }: DashboardProps) {
   }, []);
 
   const userEmail = user?.email || '';
+  const profileId = userEmail.replace(/\./g, ',');
 
   const { data: profile } = useQuery<UserProfile | null>({
-    queryKey: ['firebase-user-profile-dashboard', userEmail],
-    queryFn: () => getUserProfile(userEmail),
+    queryKey: ['/api/user-profile', profileId],
+    queryFn: async () => {
+      const response = await fetch(`/api/user-profile/${encodeURIComponent(profileId)}`, {
+        credentials: "include",
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error("Failed to fetch profile");
+      return response.json() as Promise<UserProfile>;
+    },
     enabled: !!userEmail,
     staleTime: 60000,
   });
