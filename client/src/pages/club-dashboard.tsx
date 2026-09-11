@@ -5,11 +5,8 @@ import {
   Club, 
   Membership, 
   HoursSubmission,
-  UserProfile,
   getMemberships,
   getClubSubmissions,
-  getAllUserProfiles,
-  getProfileDisplayName,
   leaveClubWithArchive,
   deleteMembership
 } from "@/lib/firebase";
@@ -70,19 +67,17 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
     queryFn: () => getMemberships(club.id),
   });
 
-  const { data: profiles = [] } = useQuery<UserProfile[]>({
-    queryKey: ['firebase-user-profiles'],
-    queryFn: getAllUserProfiles,
-    staleTime: 60000,
-  });
-
-  const profilesByEmail = useMemo(() => {
-    const byEmail = new Map<string, UserProfile>();
-    profiles.forEach(profile => {
-      if (profile.email) byEmail.set(profile.email.toLowerCase(), profile);
+  const memberNamesByEmail = useMemo(() => {
+    const byEmail = new Map<string, string>();
+    members.forEach(member => {
+      const email = member.userEmail.toLowerCase();
+      const name = member.userName || member.userEmail;
+      byEmail.set(email, name);
+      byEmail.set(email.replace(/,/g, '.'), name);
+      byEmail.set(email.replace(/\./g, ','), name);
     });
     return byEmail;
-  }, [profiles]);
+  }, [members]);
 
   const { data: clubSubmissions = [] } = useQuery<HoursSubmission[]>({
     queryKey: ['firebase-club-submissions', club.id],
@@ -92,18 +87,15 @@ export default function ClubDashboard({ user, club, membership, onLeaveClub }: C
   const { data: memberCircles = [] } = useQuery<MemberCircle[]>({
     queryKey: ['member-territories', club.id],
     queryFn: () => fetch(`/api/clubs/${club.id}/member-territories`).then(r => r.json()),
-    refetchInterval: 60000,
+    staleTime: 60000,
   });
 
   const namedMemberCircles = useMemo(
     () => memberCircles.map(circle => ({
       ...circle,
-      volunteerName: getProfileDisplayName(
-        profilesByEmail.get(circle.volunteerName.toLowerCase()),
-        circle.volunteerName,
-      ),
+      volunteerName: memberNamesByEmail.get(circle.volunteerName.toLowerCase()) || circle.volunteerName,
     })),
-    [memberCircles, profilesByEmail],
+    [memberCircles, memberNamesByEmail],
   );
 
   // Build a stable color map: sorted unique names → palette index
