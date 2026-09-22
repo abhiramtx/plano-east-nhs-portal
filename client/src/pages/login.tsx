@@ -15,11 +15,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (auth.currentUser) {
-      setLocation('/clubs');
+      setLocation('/volunteer/dashboard');
       return;
     }
     const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) setLocation('/clubs');
+      if (user) setLocation('/volunteer/dashboard');
     });
     return () => unsub();
   }, [setLocation]);
@@ -65,9 +65,9 @@ export default function LoginPage() {
 
         {/* Logo + heading */}
         <div className="flex flex-col items-center mb-8">
-          <img src={logoImg} alt="VolunteerClub" className="w-16 h-16 rounded-2xl mb-4 shadow-md" />
+          <img src={logoImg} alt="Plano East NHS" className="w-16 h-16 rounded-2xl mb-4 shadow-md" />
           <h1 className="text-2xl font-bold text-[#17324d]">Welcome back</h1>
-          <p className="text-[#506477] text-sm mt-1">Sign in to VolunteerClub</p>
+          <p className="text-[#506477] text-sm mt-1">Sign in to Plano East NHS</p>
         </div>
 
         {/* Card */}

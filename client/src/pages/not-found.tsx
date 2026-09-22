@@ -9,7 +9,7 @@ export default function NotFound() {
       <div className="w-full max-w-lg mx-4 text-center">
         <div className="bg-[#faf8f4] border border-[#d9cdbd] rounded-2xl shadow-sm p-12">
           <div className="mb-8">
-            <img src={logoImg} alt="VolunteerClub" className="w-16 h-16 mx-auto rounded-xl" />
+            <img src={logoImg} alt="Plano East NHS" className="w-16 h-16 mx-auto rounded-xl" />
           </div>
 
           <h1 className="text-8xl font-black mb-4 text-gray-900">
@@ -45,7 +45,7 @@ export default function NotFound() {
           <div className="mt-10 h-px bg-gray-200 w-full max-w-xs mx-auto"></div>
 
           <p className="mt-4 text-sm text-gray-500">
-            VolunteerClub
+            Plano East NHS
           </p>
         </div>
       </div>

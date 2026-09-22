@@ -1,19 +1,8 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { User, Club, Membership, getUserProfile, getProfileDisplayName, logClubLeave } from "@/lib/firebase";
+import { User, Club, Membership } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Globe, LayoutDashboard, Clock, Map, HandHeart, User as UserIcon, Settings, LogOut, Menu, X, ChevronLeft, ClipboardList, Trophy, Network } from "lucide-react";
+import { Globe, LayoutDashboard, Clock, Map, User as UserIcon, Settings, LogOut, Menu, X, ClipboardList, Trophy } from "lucide-react";
 import logoImg from "@assets/image_1772414281666.png";
 
 interface VolunteerSidebarProps {
@@ -21,25 +10,13 @@ interface VolunteerSidebarProps {
   club: Club;
   membership: Membership;
   onSignOut: () => void;
-  onLeaveClub: () => void;
 }
 
-export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClub }: VolunteerSidebarProps) {
+export function VolunteerSidebar({ user, club, membership, onSignOut }: VolunteerSidebarProps) {
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
-  const [leaving, setLeaving] = useState(false);
   const isAdmin = membership.role === 'admin';
-
-  const { data: profile } = useQuery({
-    queryKey: ['firebase-user-profile-sidebar', user.email],
-    queryFn: () => getUserProfile(user.email),
-    enabled: !!user.email,
-    staleTime: 60000,
-  });
-
-
-  const displayName = getProfileDisplayName(profile, user.email);
+  const displayName = user.name || user.email;
 
   const navGroups: { label: string; items: { path: string; icon: any; label: string }[] }[] = [
     {
@@ -52,9 +29,8 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
     {
       label: "Community",
       items: [
-        { path: "/volunteer/map", icon: Map, label: "Territory Map" },
-        { path: "/volunteer/club", icon: Globe, label: "My Club" },
-        { path: "/volunteer/affiliates", icon: Network, label: "Affiliates" },
+        { path: "/volunteer/map", icon: Map, label: "Volunteer Map" },
+        { path: "/volunteer/leaderboard", icon: Trophy, label: "Leaderboard" },
       ],
     },
     {
@@ -75,16 +51,6 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
   const handleNavigation = (path: string) => {
     setLocation(path);
     setMobileMenuOpen(false);
-  };
-
-  const handleLeaveConfirm = async () => {
-    setLeaving(true);
-    try {
-      await logClubLeave(user.email || '', club.id, club.name);
-    } catch {}
-    setLeaving(false);
-    setLeaveDialogOpen(false);
-    onLeaveClub();
   };
 
   return (
@@ -110,13 +76,13 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
         <div className="flex flex-col h-full">
           <div
             className="flex items-center justify-between px-4 py-4 border-b border-[#d9cdbd] cursor-pointer hover:bg-[#eee5d7]"
-            onClick={() => { setLocation('~/clubs'); setMobileMenuOpen(false); }}
+            onClick={() => { setLocation('/volunteer/dashboard'); setMobileMenuOpen(false); }}
           >
             <div className="flex items-center space-x-3">
-              <img src={logoImg} alt="VolunteerClub" className="w-10 h-10 rounded-xl" />
+              <img src={logoImg} alt="Plano East NHS" className="w-10 h-10 rounded-xl" />
               <div>
-                <h2 className="font-semibold text-[#17324d]">VolunteerClub</h2>
-                <p className="text-xs text-[#506477]">Volunteer Interface</p>
+                <h2 className="font-semibold text-[#17324d]">Plano East NHS</h2>
+                <p className="text-xs text-[#506477]">National Honor Society</p>
               </div>
             </div>
           </div>
@@ -189,16 +155,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
               <Button
                 variant="outline"
                 size="sm"
-                className="flex-1 text-xs border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]"
-                onClick={() => setLeaveDialogOpen(true)}
-              >
-                <ChevronLeft className="w-3 h-3 mr-1" />
-                Leave Club
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-xs border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]"
+                className="w-full text-xs border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]"
                 onClick={onSignOut}
               >
                 <LogOut className="w-3 h-3 mr-1" />
@@ -209,30 +166,6 @@ export function VolunteerSidebar({ user, club, membership, onSignOut, onLeaveClu
         </div>
       </div>
 
-      <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Leave {club.name}?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <span className="block">You are about to leave <strong>{club.name}</strong>.</span>
-              <span className="block mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
-                ⚠️ All your submissions will be <strong>archived to your History tab</strong> and your hours will reset to zero. If you rejoin, you start fresh.
-              </span>
-              <span className="block text-sm text-gray-500 mt-1">You can view your past contributions anytime under History.</span>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleLeaveConfirm}
-              disabled={leaving}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {leaving ? "Leaving..." : "Leave Club"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

@@ -3,3 +3,4 @@
 - [Duplicate profile records](duplicate-profile-records.md) — merge dotted and comma-form profile documents by normalized email before resolving names or contact details.
 - [Firebase mobile authentication](firebase-mobile-redirects.md) — use a direct popup on iOS when Replit and Firebase auth run on different domains.
 - [Mobile post-auth loading](mobile-post-auth-loading.md) — render the club selector while optional membership resolution continues; do not gate the whole app on Firestore.
+- [Duplicate source snapshots](duplicate-source-snapshots.md) — compare source halves when unrelated redeclaration errors appear; workspace snapshots can contain exact appended duplicates.

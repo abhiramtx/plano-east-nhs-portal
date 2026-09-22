@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, getCurrentUser, subscribeToUserSubmissions, getUserSuperClubFedSubmissions, deleteSubmission, HoursSubmission, Club, getAdminSettings, AdminSettings as AdminSettingsType, getSubClubHoursRules, SubClubHoursRule } from "@/lib/firebase";
+import { User, getCurrentUser, subscribeToUserSubmissions, deleteSubmission, HoursSubmission, Club, getAdminSettings, AdminSettings as AdminSettingsType } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,12 +43,6 @@ export default function Hours({ club }: HoursProps) {
     queryFn: getAdminSettings,
   });
 
-  const { data: subClubRules = [] } = useQuery<SubClubHoursRule[]>({
-    queryKey: ['sub-club-hours-rules', club.id],
-    queryFn: () => getSubClubHoursRules(club.id),
-    enabled: !!club.id,
-  });
-
   const requireProofImage = adminSettings?.requireProofImage ?? false;
 
   const openLogs = hoursLogs.filter(log => log.isOpen);
@@ -56,21 +50,7 @@ export default function Hours({ club }: HoursProps) {
   const selectedLogIsOpen = selectedLog ? openLogs.some(l => String(l.id) === selectedLogId) : false;
   const selectedLogIsSystem = selectedLog?.isSystem === true;
 
-  const getSubClubContributionForLog = (targetLogId: string): { hours: number; rules: SubClubHoursRule[] } => {
-    const matchingRules = subClubRules.filter(r => r.targetLogId === targetLogId);
-    if (matchingRules.length === 0) return { hours: 0, rules: [] };
-    const approvedFed = fedSubmissions.filter(s => s.status === 'approved');
-    let total = 0;
-    for (const rule of matchingRules) {
-      for (const sub of approvedFed) {
-        const subDate = sub.date;
-        if (subDate >= rule.fromDate && subDate <= rule.toDate) {
-          total += sub.hours;
-        }
-      }
-    }
-    return { hours: total, rules: matchingRules };
-  };
+  const getSubClubContributionForLog = (_targetLogId: string) => ({ hours: 0, rules: [] as any[] });
 
   const [directSubmissions, setDirectSubmissions] = useState<HoursSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,16 +65,7 @@ export default function Hours({ club }: HoursProps) {
     return unsub;
   }, [userEmail, club.id]);
 
-  // Fed submissions: this volunteer opted to also send these sub-club hours
-  // to THIS club (when this club is the super-club). Read-only here; editing
-  // and deletion must happen from the originating sub-club.
-  const { data: fedSubmissions = [] } = useQuery<HoursSubmission[]>({
-    queryKey: ['firebase-user-fed-submissions', userEmail, club.id],
-    queryFn: () => getUserSuperClubFedSubmissions(userEmail, club.id),
-    enabled: !!userEmail && !!club.id,
-  });
-
-  const submissions = [...directSubmissions, ...fedSubmissions];
+  const submissions = directSubmissions;
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {

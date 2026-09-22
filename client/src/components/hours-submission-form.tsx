@@ -9,7 +9,6 @@ import {
   getUserProfile, getProfileDisplayName,
   getClubEvents, ClubEvent,
   checkInUser,
-  getApprovedSuperClubs, Affiliation,
 } from "@/lib/firebase";
 import { extractProofImageMetadata } from "@/lib/proof-image-metadata";
 import type { HoursLog } from "@shared/schema";
@@ -123,24 +122,8 @@ export function HoursSubmissionForm({ user, onSuccess, onCancel, editingSubmissi
     enabled: !!clubId,
   });
 
-  // If this club has an approved super-club, allow opting in.
-  const { data: approvedSupers = [] } = useQuery<Affiliation[]>({
-    queryKey: ['affiliations-super-approved', clubId],
-    queryFn: () => getApprovedSuperClubs(clubId!),
-    enabled: !!clubId,
-  });
-  const superClub = approvedSupers[0]; // restricted to one
-
-  const { data: superHoursLogs = [] } = useQuery<HoursLog[]>({
-    queryKey: ['/api/hours-logs', superClub?.superClubId],
-    queryFn: async () => {
-      if (!superClub) return [];
-      const res = await fetch(`/api/hours-logs/${superClub.superClubId}`, { credentials: 'include' });
-      if (!res.ok) return [];
-      return res.json() as Promise<HoursLog[]>;
-    },
-    enabled: !!superClub,
-  });
+  const superClub: any = undefined;
+  const superHoursLogs: HoursLog[] = [];
   // Find the "Sub-Club Hours" system log in the superclub's logs
   const subClubHoursLog = superHoursLogs.find(l => (l as any).isSystem || l.name === 'Sub-Club Hours');
 

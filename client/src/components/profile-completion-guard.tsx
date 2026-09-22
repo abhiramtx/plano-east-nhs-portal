@@ -31,9 +31,9 @@ export function ProfileCompletionGuard({
         <div className="max-w-lg w-full">
           <div className="bg-[#faf8f4] rounded-2xl shadow-sm border border-[#d9cdbd] overflow-hidden">
             <div className="bg-black p-6 text-white text-center">
-              <img src={logoImg} alt="VolunteerClub" className="w-16 h-16 rounded-xl mx-auto mb-4" />
+              <img src={logoImg} alt="Plano East NHS" className="w-16 h-16 rounded-xl mx-auto mb-4" />
               <h3 className="text-2xl font-bold mb-2">
-                Welcome to VolunteerClub!
+                Welcome to Plano East NHS!
               </h3>
               <p className="text-gray-400">
                 Let's set up your profile to get started

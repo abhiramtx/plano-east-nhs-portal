@@ -50,6 +50,8 @@ const userProfileCache = new Map<string, { value: UserProfile | null; expiresAt:
 const userProfileRequests = new Map<string, Promise<UserProfile | null>>();
 const userMembershipCache = new Map<string, { value: UserMembershipResult; expiresAt: number }>();
 const userMembershipRequests = new Map<string, Promise<UserMembershipResult>>();
+let singleClubCache: { value: Club | null; expiresAt: number } | null = null;
+let singleClubRequest: Promise<Club | null> | null = null;
 
 const userDataCacheKey = (email: string) => email.trim().toLowerCase();
 
@@ -536,6 +538,37 @@ export const getClubSummaries = async (): Promise<ClubSummary[]> => {
   if (!response.ok) throw new Error('Failed to fetch club directory');
   const data = await response.json() as Record<string, any>[];
   return data.map(club => toClubSummary(club, String(club.id)));
+};
+
+// The product has one club. Keep this lookup behind a short-lived client
+// cache and let the server cache the Firestore collection read as well.
+export const getSingleClub = async (): Promise<Club | null> => {
+  if (singleClubCache && singleClubCache.expiresAt > Date.now()) {
+    return singleClubCache.value;
+  }
+  if (singleClubRequest) return singleClubRequest;
+  singleClubRequest = fetch('/api/club', { credentials: 'include' })
+    .then(async response => {
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error('Failed to fetch the club');
+      const data = await response.json();
+      return {
+        ...data,
+        name: "Plano East NHS",
+        id: String(data.id),
+        lastActivityAt: toDate(data.lastActivityAt),
+        createdAt: toDate(data.createdAt),
+        updatedAt: toDate(data.updatedAt),
+      } as Club;
+    })
+    .then(club => {
+      singleClubCache = { value: club, expiresAt: Date.now() + USER_DATA_CACHE_TTL_MS };
+      return club;
+    })
+    .finally(() => {
+      singleClubRequest = null;
+    });
+  return singleClubRequest;
 };
 
 export const getClubMapSummaries = async (): Promise<ClubMapSummary[]> => {
@@ -1068,12 +1101,38 @@ export const getUserMembership = async (userEmail: string): Promise<{ membership
   if (inFlight) return inFlight;
 
   const request = (async (): Promise<UserMembershipResult> => {
-    const memberships = await getUserMembershipSummary(userEmail);
-    const selectedMembership = memberships[0];
-    if (!selectedMembership) return null;
-
-    const club = await getClub(selectedMembership.clubId);
+    const [profile, club] = await Promise.all([
+      getUserProfile(userEmail),
+      getSingleClub(),
+    ]);
     if (!club) return null;
+
+    const profileEmail = normalizeProfileEmail(
+      String(profile?.email || profile?.userEmail || profile?.userId || userEmail),
+    );
+    const existingClubIds = new Set<string>([
+      ...(profile?.clubIds || []),
+      ...(profile?.clubId ? [profile.clubId] : []),
+    ]);
+    if (!existingClubIds.has(club.id)) {
+      await createMembership({
+        clubId: club.id,
+        userEmail,
+        userName: getProfileDisplayName(profile, userEmail),
+        role: 'member',
+      });
+    }
+    const selectedMembership: Membership = {
+      id: userEmail,
+      clubId: club.id,
+      userEmail: profileEmail,
+      userName: getProfileDisplayName(profile, profileEmail),
+      personalEmailAddress: profile?.personalEmailAddress || undefined,
+      role: club.creatorEmail?.toLowerCase() === profileEmail.toLowerCase()
+        ? 'admin'
+        : (profile?.clubId === club.id ? (profile.role || 'member') : 'member'),
+      joinedAt: profile?.joinedAt ? toDate(profile.joinedAt) : new Date(),
+    };
 
     return {
       membership: {
@@ -2267,6 +2326,14 @@ export const getTerritoryCircles = async (clubId: string): Promise<TerritoryCirc
     console.error('Error fetching territory circles:', error);
     return [];
   }
+};
+
+export const getVolunteerTerritories = async (): Promise<
+  { volunteerName: string; latitude: number; longitude: number; radiusKm: number; hours: number }[]
+> => {
+  const response = await fetch('/api/member-territories', { credentials: 'include' });
+  if (!response.ok) throw new Error('Failed to fetch volunteer locations');
+  return response.json();
 };
 
 export const getAllTerritoryCircles = async (

@@ -1,6 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -12,28 +11,20 @@ import {
   initializeAuth,
   handleSignOut,
   auth,
-  getUserMembershipSummary,
-  getClubSummaries,
-  clubSummaryToShell,
-  ensureClubCreatorIsAdmin,
-  leaveClubWithArchive,
-  clubSlug,
+  getUserMembership,
   Club,
   Membership,
 } from "@/lib/firebase";
 import { VolunteerSidebar } from "@/components/volunteer-sidebar";
 import Landing from "@/pages/landing";
-import ClubSelection from "@/pages/club-selection";
 import NotFound from "@/pages/not-found";
-import ClubJoin from "@/pages/club-join";
 import EventCheckin from "@/pages/event-checkin";
 import LoginPage from "@/pages/login";
 
 // Keep heavy page code and its queries out of the initial authenticated shell.
 // These modules load only when their route is opened.
-const ClubDashboard = lazy(() => import("@/pages/club-dashboard"));
-const TerritoryMap = lazy(() => import("@/pages/territory-map"));
-const Affiliates = lazy(() => import("@/pages/affiliates"));
+const VolunteerMap = lazy(() => import("@/pages/volunteer-map"));
+const Leaderboard = lazy(() => import("@/pages/leaderboard"));
 const ServiceRequests = lazy(() => import("@/pages/service-requests"));
 const MyRequests = lazy(() => import("@/pages/my-requests"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
@@ -80,24 +71,13 @@ function VolunteerInterface({
   club,
   membership,
   onSignOut,
-  onLeaveClub,
 }: {
   user: User;
   club: Club;
   membership: Membership;
   onSignOut: () => void;
-  onLeaveClub: () => void;
 }) {
   const [location, setLocation] = useLocation();
-
-  const handleLeaveClubClick = async () => {
-    try {
-      await leaveClubWithArchive(user.email || '', club.id, club.name);
-      onLeaveClub();
-    } catch (error) {
-      console.error('Failed to leave club:', error);
-    }
-  };
 
   useEffect(() => {
     if (!location.startsWith('/volunteer') && !location.startsWith('/admin')) {
@@ -112,28 +92,19 @@ function VolunteerInterface({
         club={club}
         membership={membership}
         onSignOut={onSignOut}
-        onLeaveClub={handleLeaveClubClick}
       />
       <div className="min-h-screen min-w-0 lg:ml-64 paper-grid bg-background">
         <Suspense fallback={<PageLoading />}>
           <Switch>
-            <Route path="/volunteer/dashboard"><Dashboard club={club} /></Route>
+            <Route path="/volunteer/dashboard"><Dashboard user={user} club={club} /></Route>
             <Route path="/volunteer/hours"><Hours club={club} /></Route>
-            <Route path="/volunteer/map"><TerritoryMap currentClubId={club.id} club={club} /></Route>
+            <Route path="/volunteer/map"><VolunteerMap club={club} /></Route>
+            <Route path="/volunteer/leaderboard"><Leaderboard club={club} /></Route>
             <Route path="/volunteer/service-requests"><ServiceRequests club={club} /></Route>
             <Route path="/volunteer/my-requests"><MyRequests club={club} /></Route>
-            <Route path="/volunteer/club">
-              <ClubDashboard
-                user={user}
-                club={club}
-                membership={membership}
-                onLeaveClub={handleLeaveClubClick}
-              />
-            </Route>
             <Route path="/volunteer/profile"><Profile club={club} /></Route>
             <Route path="/volunteer/history"><AdminHistoryPage club={club} isVolunteerView={true} /></Route>
-            <Route path="/volunteer/affiliates"><Affiliates user={user} club={club} /></Route>
-            <Route path="/volunteer"><Dashboard club={club} /></Route>
+            <Route path="/volunteer"><Dashboard user={user} club={club} /></Route>
             <Route><NotFound /></Route>
           </Switch>
         </Suspense>
@@ -303,115 +274,13 @@ function AdminInterface({ user, club }: { user: User; club: Club }) {
   );
 }
 
-// Renders the appropriate (volunteer / admin) interface for a resolved club.
-// Used inside a `<Route path="/:clubSlug" nest>` so wouter strips the slug
-// prefix from useLocation/Link inside, and all inner Switch routes can stay
-// as `/volunteer/...` and `/admin/...` unchanged.
-function ClubScope({
-  slug,
-  user,
-  onSignOutClick,
-  onLeaveClub,
-}: {
-  slug: string;
-  user: User | null;
-  onSignOutClick: () => void;
-  onLeaveClub: () => void;
-}) {
-  const { data: memberships = [], isLoading: membershipsLoading } = useQuery({
-    queryKey: ['firebase-user-membership-summaries', user?.email],
-    queryFn: () => getUserMembershipSummary(user!.email || ''),
-    enabled: !!user?.email,
-  });
-
-  const { data: directory = [], isLoading: directoryLoading } = useQuery({
-    queryKey: ['firebase-club-directory'],
-    queryFn: getClubSummaries,
-    enabled: !!user && !membershipsLoading,
-    staleTime: 60000,
-  });
-  const directoryMatch = directory.find(club => memberships.some(m => m.clubId === club.id && clubSlug(club.name) === slug));
-  const matchingMembership = memberships.find(m => m.clubId === directoryMatch?.id);
-  const matchedClub = directoryMatch ? clubSummaryToShell(directoryMatch) : null;
-  const match = matchingMembership && matchedClub
-    ? {
-        membership: {
-          ...matchingMembership,
-          role: matchedClub.creatorEmail?.toLowerCase() === matchingMembership.userEmail.toLowerCase()
-            ? 'admin'
-            : matchingMembership.role,
-        },
-        club: matchedClub,
-      }
-    : null;
-
-  // If the user isn't a member (or isn't signed in), look up the club by slug
-  // so we can bounce them through the join workflow.
-  const needsJoinLookup = !matchingMembership && (!user || (!membershipsLoading && !directoryLoading));
-  const { data: allClubs = [], isLoading: clubsLoading } = useQuery({
-    queryKey: ['firebase-clubs-for-slug', slug],
-    queryFn: getClubSummaries,
-    enabled: needsJoinLookup,
-  });
-
-  useEffect(() => {
-    if (match) return;
-    if (user && (membershipsLoading || directoryLoading)) return;
-    if (needsJoinLookup && clubsLoading) return;
-    const targetClub = allClubs.find(c => clubSlug(c.name) === slug);
-    if (targetClub?.inviteCode) {
-      window.location.href = `/join/${targetClub.inviteCode}`;
-    } else if (user) {
-      window.location.href = '/clubs';
-    } else {
-      window.location.href = '/landing';
-    }
-  }, [match, user, membershipsLoading, needsJoinLookup, clubsLoading, allClubs, slug]);
-
-  useEffect(() => {
-    if (match && user && match.club.creatorEmail === user.email) {
-      ensureClubCreatorIsAdmin(match.club.id, user.email).catch(() => {});
-    }
-  }, [match?.club.id, user?.email]);
-
-  if (!user || membershipsLoading || directoryLoading || !match) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading club…</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <Switch>
-      <Route path="/admin/:rest*">
-        <AdminInterface user={user} club={match.club} />
-      </Route>
-      <Route>
-        <VolunteerInterface
-          user={user}
-          club={match.club}
-          membership={match.membership}
-          onSignOut={onSignOutClick}
-          onLeaveClub={onLeaveClub}
-        />
-      </Route>
-    </Switch>
-  );
-}
-
 function RootRedirect({ user, selectedClub }: { user: User | null; selectedClub: Club | null }) {
   const [, setLocation] = useLocation();
   useEffect(() => {
     if (!user) {
       setLocation('/landing');
     } else if (selectedClub) {
-      setLocation(`/${clubSlug(selectedClub.name)}/volunteer/dashboard`);
-    } else {
-      setLocation('/clubs');
+      setLocation('/volunteer/dashboard');
     }
   }, [user, selectedClub, setLocation]);
   return (
@@ -419,32 +288,6 @@ function RootRedirect({ user, selectedClub }: { user: User | null; selectedClub:
       <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary"></div>
     </div>
   );
-}
-
-// Backward-compat: handle old un-prefixed /volunteer/* and /admin/* URLs.
-function LegacyRedirect({
-  user,
-  selectedClub,
-  prefix,
-  rest,
-}: {
-  user: User | null;
-  selectedClub: Club | null;
-  prefix: 'volunteer' | 'admin';
-  rest: string;
-}) {
-  const [, setLocation] = useLocation();
-  useEffect(() => {
-    if (!user) {
-      setLocation('/landing');
-    } else if (selectedClub) {
-      const tail = rest ? `/${rest}` : '';
-      setLocation(`/${clubSlug(selectedClub.name)}/${prefix}${tail}`);
-    } else {
-      setLocation('/clubs');
-    }
-  }, [user, selectedClub, prefix, rest, setLocation]);
-  return null;
 }
 
 function App() {
@@ -473,23 +316,11 @@ function App() {
 
   useEffect(() => {
     if (user?.email && !clubChecked) {
-      Promise.all([
-        getUserMembershipSummary(user.email),
-        getClubSummaries(),
-      ])
-        .then(([memberships, directory]) => {
-          const selectedMembership = memberships[0];
-          const selectedSummary = selectedMembership
-            ? directory.find(club => club.id === selectedMembership.clubId)
-            : undefined;
-          if (!selectedMembership || !selectedSummary) return;
-          setSelectedClub(clubSummaryToShell(selectedSummary));
-          setMembership({
-            ...selectedMembership,
-            role: selectedSummary.creatorEmail?.toLowerCase() === selectedMembership.userEmail.toLowerCase()
-              ? 'admin'
-              : selectedMembership.role,
-          });
+      getUserMembership(user.email)
+        .then((result) => {
+          if (!result) return;
+          setSelectedClub(result.club);
+          setMembership(result.membership);
         })
         .catch(() => {})
         .finally(() => setClubChecked(true));
@@ -505,18 +336,6 @@ function App() {
     setLocation('/landing');
   };
 
-  const handleClubSelected = (club: Club, clubMembership: Membership) => {
-    setSelectedClub(club);
-    setMembership(clubMembership);
-    setLocation(`/${clubSlug(club.name)}/volunteer/dashboard`);
-  };
-
-  const handleLeaveClub = () => {
-    setSelectedClub(null);
-    setMembership(null);
-    setLocation('/clubs');
-  };
-
   const isEventCheckinPath = window.location.pathname.replace(/\/+$/, '') === '/event-checkin';
   if (isEventCheckinPath) {
     return (
@@ -526,20 +345,9 @@ function App() {
     );
   }
 
-  if (window.location.pathname.startsWith('/join/')) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <Switch>
-          <Route path="/join/:code"><ClubJoin /></Route>
-        </Switch>
-      </QueryClientProvider>
-    );
-  }
-
   const isLoginPath = window.location.pathname.replace(/\/+$/, '') === '/login';
-  // Do not block the whole app on the optional active-club lookup. On mobile,
-  // one slow Firestore read should not leave the user staring at a spinner;
-  // /clubs can render its own loading state and recover when the query settles.
+  // Keep auth restoration separate from the single-club lookup so the login
+  // screen can render immediately while the dashboard resolves in parallel.
   if (!isLoginPath && initializing) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
@@ -557,45 +365,22 @@ function App() {
         <Toaster />
         <Switch>
           <Route path="/event-checkin"><EventCheckin /></Route>
-          <Route path="/join/:code">{() => <ClubJoin />}</Route>
           <Route path="/landing">
             {user ? <RootRedirect user={user} selectedClub={selectedClub} /> : <Landing onSignIn={() => {}} />}
           </Route>
           <Route path="/login"><LoginPage /></Route>
-          <Route path="/clubs">
-            {user ? (
-              <ClubSelection user={user} onClubSelected={handleClubSelected} onSignOut={handleSignOutClick} />
-            ) : (
-              <Landing onSignIn={() => {}} />
-            )}
-          </Route>
           <Route path="/"><RootRedirect user={user} selectedClub={selectedClub} /></Route>
 
-          {/* Backward-compat for old un-prefixed paths */}
-          <Route path="/volunteer/:rest*">
-            {(p: any) => (
-              <LegacyRedirect user={user} selectedClub={selectedClub} prefix="volunteer" rest={p.rest || ''} />
-            )}
-          </Route>
-          <Route path="/admin/:rest*">
-            {(p: any) => (
-              <LegacyRedirect user={user} selectedClub={selectedClub} prefix="admin" rest={p.rest || ''} />
-            )}
-          </Route>
-
-          {/* /:clubSlug/... -> resolve and render. `nest` strips the matched
-              prefix from useLocation/Link inside, so inner routes stay as
-              /volunteer/... and /admin/... unchanged. */}
-          <Route path="/:clubSlug" nest>
-            {(params: any) => (
-              <ClubScope
-                slug={params.clubSlug}
-                user={user}
-                onSignOutClick={handleSignOutClick}
-                onLeaveClub={handleLeaveClub}
-              />
-            )}
-          </Route>
+          {user && selectedClub && membership && (
+            <Route path="/volunteer/:rest*">
+              <VolunteerInterface user={user} club={selectedClub} membership={membership} onSignOut={handleSignOutClick} />
+            </Route>
+          )}
+          {user && selectedClub && (
+            <Route path="/admin/:rest*">
+              <AdminInterface user={user} club={selectedClub} />
+            </Route>
+          )}
 
           <Route><NotFound /></Route>
         </Switch>

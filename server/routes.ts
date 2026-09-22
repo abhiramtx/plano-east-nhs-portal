@@ -279,6 +279,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // This is a single-club app. Cache the resolved club in storage so every
+  // sign-in does not scan the club collection or download a directory.
+  app.get("/api/club", async (_req, res) => {
+    try {
+      const club = await storage.getSingleClub();
+      if (!club) return res.status(404).json({ error: "Club is not configured" });
+      res.json({ ...club, name: "Plano East NHS" });
+    } catch (error) {
+      console.error("Single club lookup error:", error);
+      res.status(500).json({ error: "Failed to fetch club" });
+    }
+  });
+
   // Lightweight public directory for the club picker. Keep passwords,
   // coordinates, and page-specific fields out of the mobile initial payload,
   // but include the optional logo for club identity surfaces.
@@ -516,6 +529,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching member territories:", error);
       res.status(500).json({ error: "Failed to fetch member territories" });
+    }
+  });
+
+  app.get("/api/member-territories", async (_req, res) => {
+    try {
+      const club = await storage.getSingleClub();
+      if (!club) return res.status(404).json({ error: "Club is not configured" });
+      res.json(await storage.calculateMemberTerritories(club.id));
+    } catch (error) {
+      console.error("Single-club member territories error:", error);
+      res.status(500).json({ error: "Failed to fetch volunteer locations" });
     }
   });
 

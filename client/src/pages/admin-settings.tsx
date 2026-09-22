@@ -4,13 +4,11 @@ import {
   User, Club,
   AdminSettings as AdminSettingsType,
   getAdminSettings, getClub, updateAdminSettings, updateClub, recalculateClubHours,
-  generateInviteCode,
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { AdminCustomFields } from "./admin-custom-fields";
 import { AdminLogs } from "./admin-logs";
-import { AdminAffiliations } from "./admin-affiliations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,8 +16,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Save, Settings, Eye, Clock, MapPin, Palette, Lock, BookOpen,
-  CheckCircle, Upload, Image, Link2, Copy, RefreshCw, Network,
+  Save, Settings, Eye, Clock, MapPin, Palette, BookOpen,
+  CheckCircle, Upload, Image,
 } from "lucide-react";
 
 interface AdminSettingsProps {
@@ -29,7 +27,7 @@ interface AdminSettingsProps {
 
 export function AdminSettings({ user, club }: AdminSettingsProps) {
   const { toast } = useToast();
-  const [innerPage, setInnerPage] = useState<'club' | 'members' | 'logs' | 'approvals' | 'territory' | 'affiliations'>('club');
+  const [innerPage, setInnerPage] = useState<'club' | 'members' | 'logs' | 'approvals' | 'territory'>('club');
 
   // Settings is the one page that needs the club's private/configuration
   // fields. Keep that read local to this route instead of making every club
@@ -43,25 +41,19 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
 
   const [clubName, setClubName] = useState(editableClub.name || '');
   const [clubDescription, setClubDescription] = useState(editableClub.description || '');
-  const [showPasswordField, setShowPasswordField] = useState(Boolean(editableClub.isPrivate));
-  const [clubPassword, setClubPassword] = useState('');
   const [clubColor, setClubColor] = useState(editableClub.color || '#000000');
   const [clubLogoUrl, setClubLogoUrl] = useState(editableClub.logoUrl || '');
   const [clubLatitude, setClubLatitude] = useState(editableClub.latitude?.toString() || '');
   const [clubLongitude, setClubLongitude] = useState(editableClub.longitude?.toString() || '');
-  const [currentInviteCode, setCurrentInviteCode] = useState(editableClub.inviteCode || '');
   const clubLogoRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setClubName(editableClub.name || '');
     setClubDescription(editableClub.description || '');
-    setShowPasswordField(Boolean(editableClub.isPrivate));
     setClubColor(editableClub.color || '#000000');
     setClubLogoUrl(editableClub.logoUrl || '');
     setClubLatitude(editableClub.latitude?.toString() || '');
     setClubLongitude(editableClub.longitude?.toString() || '');
-    setCurrentInviteCode(editableClub.inviteCode || '');
-    setClubPassword('');
   }, [clubDetails]);
 
   const [showStudentId, setShowStudentId] = useState(true);
@@ -121,33 +113,6 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
     }
   });
 
-  const handlePasswordProtectionChange = (enabled: boolean) => {
-    setShowPasswordField(enabled);
-    if (!enabled) {
-      setClubPassword('');
-      updateClubMutation.mutate({ isPrivate: false, password: '' });
-      return;
-    }
-
-    // Existing passwords can be re-enabled without exposing them in the form.
-    if (editableClub.password) {
-      updateClubMutation.mutate({ isPrivate: true });
-    }
-  };
-
-  const handleSavePassword = () => {
-    const password = clubPassword.trim();
-    if (!password) {
-      toast({
-        title: "Password required",
-        description: "Enter a password before enabling password-protected joining.",
-        variant: "destructive",
-      });
-      return;
-    }
-    updateClubMutation.mutate({ isPrivate: true, password });
-  };
-
   const syncHoursMutation = useMutation({
     mutationFn: () => recalculateClubHours(club.id),
     onSuccess: () => {
@@ -156,17 +121,6 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
     },
     onError: (error: any) => {
       toast({ title: "Sync failed", description: error.message, variant: "destructive" });
-    }
-  });
-
-  const generateInviteMutation = useMutation({
-    mutationFn: () => generateInviteCode(club.id),
-    onSuccess: (code) => {
-      setCurrentInviteCode(code);
-      toast({ title: "Invite link generated", description: "A new invite link has been created." });
-    },
-    onError: (error: any) => {
-      toast({ title: "Failed to generate link", description: error.message, variant: "destructive" });
     }
   });
 
@@ -218,8 +172,6 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
             { id: 'members', icon: Eye, label: 'Members', desc: 'Profile fields, custom forms' },
             { id: 'logs', icon: BookOpen, label: 'Logs', desc: 'Hours tracking periods' },
             { id: 'approvals', icon: CheckCircle, label: 'Approvals', desc: 'Hours approval workflow' },
-            { id: 'territory', icon: MapPin, label: 'Territory', desc: 'Map decay & bonuses' },
-            { id: 'affiliations', icon: Network, label: 'Affiliations', desc: 'Super / sub-club links' },
           ] as const).map(({ id, icon: Icon, label, desc }) => (
             <button
               key={id}
@@ -423,106 +375,6 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lock className="w-5 h-5" />
-                  Club Password
-                </CardTitle>
-                <CardDescription>Optional password that volunteers must enter to join your club. Leave blank to allow open joining.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-[#17324d]">Password-protect joining</p>
-                    <p className="text-xs text-[#506477]">
-                      {showPasswordField ? "Only volunteers who know the password can join" : "Anyone can join without a password"}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={showPasswordField}
-                    onCheckedChange={handlePasswordProtectionChange}
-                    disabled={updateClubMutation.isPending}
-                  />
-                </div>
-                {showPasswordField && (
-                  <div className="space-y-2">
-                    <Label htmlFor="clubPassword">New Password</Label>
-                    <Input
-                      id="clubPassword"
-                      type="password"
-                      value={clubPassword}
-                      onChange={(e) => setClubPassword(e.target.value)}
-                      placeholder={editableClub.password ? "Enter a new password to change it" : "Set a password"}
-                    />
-                    <Button
-                      onClick={handleSavePassword}
-                      disabled={updateClubMutation.isPending || !clubPassword.trim()}
-                      className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
-                    >
-                      <Save className="w-4 h-4 mr-2" />Save Password
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Link2 className="w-5 h-5" />
-                  Invite Link
-                </CardTitle>
-                <CardDescription>
-                  Share this link so volunteers can join your club directly — they'll be prompted to sign in with Google first.
-                  {club.isPrivate && " They'll also need to enter the club password."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {currentInviteCode ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        readOnly
-                        value={`${window.location.origin}/join/${currentInviteCode}`}
-                        className="font-mono text-sm bg-[#faf8f4] border-[#d9cdbd]"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-shrink-0 border-[#d9cdbd]"
-                        onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/join/${currentInviteCode}`);
-                          toast({ title: "Copied!", description: "Invite link copied to clipboard." });
-                        }}
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-[#d9cdbd] text-[#506477]"
-                      onClick={() => generateInviteMutation.mutate()}
-                      disabled={generateInviteMutation.isPending}
-                    >
-                      <RefreshCw className="w-3.5 h-3.5 mr-2" />
-                      {generateInviteMutation.isPending ? "Regenerating..." : "Regenerate Link"}
-                    </Button>
-                    <p className="text-xs text-[#8fa5b4]">Regenerating creates a new link — the old one will stop working immediately.</p>
-                  </div>
-                ) : (
-                  <Button
-                    className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
-                    onClick={() => generateInviteMutation.mutate()}
-                    disabled={generateInviteMutation.isPending}
-                  >
-                    <Link2 className="w-4 h-4 mr-2" />
-                    {generateInviteMutation.isPending ? "Generating..." : "Generate Invite Link"}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
           </div>
         )}
 
@@ -623,10 +475,6 @@ export function AdminSettings({ user, club }: AdminSettingsProps) {
               </CardContent>
             </Card>
           </div>
-        )}
-
-        {innerPage === 'affiliations' && (
-          <AdminAffiliations user={user} club={club} />
         )}
 
         </div>

@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  User, Club, ClubEvent, EventAttendance, EventConditional, Affiliation,
+  User, Club, ClubEvent, EventAttendance, EventConditional,
   getClubEvents, createEvent, updateEvent, deleteEvent,
   getEventAttendance, removeEventAttendance, checkInUser, checkOutUser, grantEventHours,
   approveEventSubmissionsForAttendees,
-  getApprovedSuperClubs, recalculateClubHours, getUserProfile, getProfileDisplayName,
+  recalculateClubHours, getUserProfile, getProfileDisplayName,
   UserProfile
 } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -195,18 +195,8 @@ export function AdminEvents({ user, club }: AdminEventsProps) {
     enabled: !!club.id,
   });
 
-  // Super-club affiliation for forwarding event hours
-  const { data: approvedSupers = [] } = useQuery<Affiliation[]>({
-    queryKey: ['affiliations-super-approved', club.id],
-    queryFn: () => getApprovedSuperClubs(club.id),
-    enabled: !!club.id,
-  });
-  const superClub = approvedSupers[0];
-
-  const { data: superHoursLogs = [] } = useQuery<HoursLog[]>({
-    queryKey: ['/api/hours-logs', superClub?.superClubId],
-    enabled: !!superClub,
-  });
+  const superClub: any = undefined;
+  const superHoursLogs: HoursLog[] = [];
   const subClubHoursLog = superHoursLogs.find((l: any) => l.isSystem || l.name === 'Sub-Club Hours');
 
   // Exclude system logs from event log assignment — they receive hours only via federation

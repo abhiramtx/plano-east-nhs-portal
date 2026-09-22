@@ -48,6 +48,7 @@ export interface IStorage {
   getClubByInviteCode(code: string): Promise<Club | undefined>;
   getClubByName(name: string): Promise<Club | undefined>;
   getAllClubs(): Promise<Club[]>;
+  getSingleClub(): Promise<Club | undefined>;
   updateClub(id: string, updates: Partial<Club>): Promise<Club | undefined>;
   deleteClub(id: string): Promise<boolean>;
   
@@ -114,6 +115,8 @@ export interface IStorage {
 }
 
 export class FirestoreStorage implements IStorage {
+  private singleClubCache: { club: Club | undefined; expiresAt: number } | null = null;
+
   private generateId(): string {
     return db.collection("_meta").doc().id;
   }
@@ -400,6 +403,16 @@ export class FirestoreStorage implements IStorage {
   async getAllClubs(): Promise<Club[]> {
     const snapshot = await db.collection("clubs").orderBy("totalApprovedHours", "desc").get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Club));
+  }
+
+  async getSingleClub(): Promise<Club | undefined> {
+    if (this.singleClubCache && this.singleClubCache.expiresAt > Date.now()) {
+      return this.singleClubCache.club;
+    }
+    const clubs = await this.getAllClubs();
+    const club = clubs[0];
+    this.singleClubCache = { club, expiresAt: Date.now() + 5 * 60 * 1000 };
+    return club;
   }
 
   async updateClub(id: string, updates: Partial<Club>): Promise<Club | undefined> {

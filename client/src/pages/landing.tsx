@@ -16,7 +16,7 @@ function Landing({ onSignIn }: LandingProps) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) setLocation("/clubs");
+      if (user) setLocation("/volunteer/dashboard");
     });
     return () => unsubscribe();
   }, [setLocation]);
@@ -27,7 +27,7 @@ function Landing({ onSignIn }: LandingProps) {
       setSignInError(null);
       onSignIn();
       const signedInUser = await signInWithGoogle();
-      if (signedInUser) setLocation("/clubs");
+      if (signedInUser) setLocation("/volunteer/dashboard");
     } catch (error) {
       console.error("Google sign-in failed:", error);
       setSignInError("Google sign-in could not be completed. Please try again.");
@@ -46,7 +46,7 @@ function Landing({ onSignIn }: LandingProps) {
               className="h-8 w-8 rounded-lg object-cover"
             />
             <span className="text-base font-semibold tracking-[-0.02em]">
-              VolunteerClub
+              Plano East NHS
             </span>
           </div>
           <div className="flex flex-col items-end">
@@ -79,10 +79,10 @@ function Landing({ onSignIn }: LandingProps) {
               A <span className="text-[#d4785f]">shared</span> record of showing up
             </p>
             <h1 className="max-w-2xl text-5xl font-semibold leading-[0.98] tracking-[-0.06em] text-[#d7a85a] sm:text-7xl lg:text-8xl">
-              VolunteerClub
+              Plano East NHS
             </h1>
             <p className="mt-8 max-w-xl text-lg leading-8 text-[#a8aa9f] sm:text-xl">
-              VolunteerClub gives student service clubs one calm place to plan events, approve hours, and see the shape of their work in the community.
+              Plano East National Honor Society gives students one calm place to log service, join events, and see the impact of their work in the community.
             </p>
           </div>
         </section>

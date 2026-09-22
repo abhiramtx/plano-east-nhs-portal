@@ -1,45 +1,21 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User, UserProfile, getCurrentUser, getProfileDisplayName, getUserSubmissions, getUserSuperClubFedSubmissions, HoursSubmission, getClubsForUser, Club } from "@/lib/firebase";
+import { User, getUserSubmissions, HoursSubmission, Club } from "@/lib/firebase";
 import { Clock, TrendingUp, Calendar, Award, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { ClubPageHeader } from "@/components/club-page-header";
+import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 
 interface DashboardProps {
+  user: User;
   club: Club;
 }
 
-export default function Dashboard({ club }: DashboardProps) {
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-    }
-  }, []);
-
-  const userEmail = user?.email || '';
-  const profileId = userEmail.replace(/\./g, ',');
-
-  const { data: profile } = useQuery<UserProfile | null>({
-    queryKey: ['/api/user-profile', profileId],
-    queryFn: async () => {
-      const response = await fetch(`/api/user-profile/${encodeURIComponent(profileId)}`, {
-        credentials: "include",
-      });
-      if (response.status === 404) return null;
-      if (!response.ok) throw new Error("Failed to fetch profile");
-      return response.json() as Promise<UserProfile>;
-    },
-    enabled: !!userEmail,
-    staleTime: 60000,
-  });
-
-  const displayName = getProfileDisplayName(profile, userEmail);
+export default function Dashboard({ user, club }: DashboardProps) {
+  const userEmail = user.email;
+  const displayName = user.name || user.email;
 
   const { data: submissions = [] } = useQuery<HoursSubmission[]>({
     queryKey: ['firebase-user-submissions', userEmail, club.id],
@@ -47,13 +23,7 @@ export default function Dashboard({ club }: DashboardProps) {
     enabled: !!userEmail && !!club.id,
   });
 
-  const { data: fedSubmissions = [] } = useQuery<HoursSubmission[]>({
-    queryKey: ['firebase-user-fed-submissions', userEmail, club.id],
-    queryFn: () => getUserSuperClubFedSubmissions(userEmail, club.id),
-    enabled: !!userEmail && !!club.id,
-  });
-
-  const allSubmissions = [...submissions, ...fedSubmissions];
+  const allSubmissions = submissions;
 
   const stats = {
     totalHours: allSubmissions.reduce((sum, sub) => sum + sub.hours, 0),
