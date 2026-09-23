@@ -82,7 +82,7 @@ function Landing({ onSignIn }: LandingProps) {
               Plano East NHS
             </h1>
             <p className="mt-8 max-w-xl text-lg leading-8 text-[#a8aa9f] sm:text-xl">
-              The Plano East National Honor Society Portal gives students one calm place to log service, join events, and see the impact of their work in the community.
+              The Plano East National Honor Society portal gives students one calm place to log service, join events, and see the impact of their work in the community.
             </p>
           </div>
         </section>
