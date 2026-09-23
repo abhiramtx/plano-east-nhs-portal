@@ -75,7 +75,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut }: Voluntee
       `}>
         <div className="flex flex-col h-full">
           <div
-            className="flex cursor-pointer items-center justify-between px-5 py-5 transition-colors hover:bg-white/[0.025]"
+            className="flex cursor-pointer items-center justify-between border-b border-white/[0.08] bg-[#111311] px-5 py-5"
             onClick={() => { setLocation('/volunteer/dashboard'); setMobileMenuOpen(false); }}
           >
             <div className="flex items-center gap-3.5">
