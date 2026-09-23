@@ -381,6 +381,11 @@ function App() {
           if (!result) return;
           setSelectedClub(result.club);
           setMembership(result.membership);
+           if (result.membership.userName) {
+             setUser(currentUser => currentUser
+               ? { ...currentUser, name: result.membership.userName }
+               : currentUser);
+           }
         })
         .catch((error) => {
           console.error('Failed to resolve club membership:', error);
@@ -408,6 +413,9 @@ function App() {
   }
 
   const isLoginPath = window.location.pathname.replace(/\/+$/, '') === '/login';
+  const isProtectedPath =
+    window.location.pathname.startsWith('/volunteer') ||
+    window.location.pathname.startsWith('/admin');
   // Keep auth restoration separate from the single-club lookup so the login
   // screen can render immediately while the dashboard resolves in parallel.
   if (!isLoginPath && initializing) {
@@ -416,6 +424,21 @@ function App() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">{user ? 'Loading your club...' : 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user && isProtectedPath) {
+    return <RootRedirect user={null} selectedClub={null} />;
+  }
+
+  if (user && !clubChecked) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-border border-t-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your club...</p>
         </div>
       </div>
     );
