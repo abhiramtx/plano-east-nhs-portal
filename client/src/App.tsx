@@ -381,9 +381,14 @@ function App() {
           if (!result) return;
           setSelectedClub(result.club);
           setMembership(result.membership);
-           if (result.membership.userName) {
+           const membershipName = result.membership.userName?.trim();
+           const isEmailValue = !!membershipName && (
+             membershipName.includes('@') ||
+             membershipName.toLowerCase() === user.email.toLowerCase().split('@')[0]
+           );
+           if (membershipName && !isEmailValue) {
              setUser(currentUser => currentUser
-               ? { ...currentUser, name: result.membership.userName }
+               ? { ...currentUser, name: membershipName }
                : currentUser);
            }
         })
