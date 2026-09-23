@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit, Zap, ArrowUpCircle, GitMerge } from "lucide-react";
+import { Plus, Clock, FileText, Calendar, CheckCircle, XCircle, AlertCircle, Trash2, Eye, Edit, Zap } from "lucide-react";
 import { HoursSubmissionForm } from "@/components/hours-submission-form";
 import { ProfileCompletionGuard } from "@/components/profile-completion-guard";
 import { ClubPageHeader } from "@/components/club-page-header";
@@ -33,9 +33,13 @@ export default function Hours({ club }: HoursProps) {
 
   const userEmail = user?.email || '';
 
-  const { data: hoursLogs = [] } = useQuery<HoursLog[]>({
+  const { data: fetchedHoursLogs = [] } = useQuery<HoursLog[]>({
     queryKey: ['/api/hours-logs', club.id],
     enabled: !!club.id,
+  });
+  const hoursLogs = fetchedHoursLogs.filter(log => {
+    const normalizedName = log.name.trim().toLowerCase().replace(/[\s-]+/g, '');
+    return !(log as any).isSystem && normalizedName !== 'subclubhours';
   });
 
   const { data: adminSettings } = useQuery<AdminSettingsType | null>({
@@ -48,10 +52,6 @@ export default function Hours({ club }: HoursProps) {
   const openLogs = hoursLogs.filter(log => log.isOpen);
   const selectedLog = hoursLogs.find(log => String(log.id) === selectedLogId) || null;
   const selectedLogIsOpen = selectedLog ? openLogs.some(l => String(l.id) === selectedLogId) : false;
-  const selectedLogIsSystem = selectedLog?.isSystem === true;
-
-  const getSubClubContributionForLog = (_targetLogId: string) => ({ hours: 0, rules: [] as any[] });
-
   const [directSubmissions, setDirectSubmissions] = useState<HoursSubmission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -147,8 +147,8 @@ export default function Hours({ club }: HoursProps) {
           description="Track and manage your service hours"
           icon={Clock}
           actions={
-              <Dialog open={isFormOpen} onOpenChange={(selectedLogIsSystem || !selectedLogIsOpen) ? undefined : setIsFormOpen}>
-                {(!selectedLogIsSystem && (selectedLogIsOpen || !selectedLogId)) && (
+              <Dialog open={isFormOpen} onOpenChange={!selectedLogIsOpen ? undefined : setIsFormOpen}>
+                {(selectedLogIsOpen || !selectedLogId) && (
                   <DialogTrigger asChild>
                     <Button 
                       className="bg-primary text-primary-foreground hover:bg-primary/85"
@@ -239,14 +239,12 @@ export default function Hours({ club }: HoursProps) {
           </div>
         )}
 
-        {selectedLog && !selectedLogIsSystem && (() => {
+        {selectedLog && (() => {
           const approvedHours = submissions
             .filter(s => s.logId === selectedLogId && s.status === 'approved')
             .reduce((sum, s) => sum + s.hours, 0);
-          const subContrib = getSubClubContributionForLog(selectedLogId!);
-          const totalHours = approvedHours + subContrib.hours;
-          const pct = Math.min(100, (totalHours / selectedLog.hoursRequired) * 100);
-          const met = totalHours >= selectedLog.hoursRequired;
+          const pct = Math.min(100, (approvedHours / selectedLog.hoursRequired) * 100);
+          const met = approvedHours >= selectedLog.hoursRequired;
           return (
             <div className="pb-2">
               <div className="w-full rounded-xl border border-border bg-background px-4 py-3">
@@ -257,7 +255,7 @@ export default function Hours({ club }: HoursProps) {
                   </span>
                 </div>
                 <div className="flex items-end gap-3 mb-2">
-                  <span className="text-2xl font-bold text-foreground leading-none">{totalHours.toFixed(1)}</span>
+                  <span className="text-2xl font-bold text-foreground leading-none">{approvedHours.toFixed(1)}</span>
                   <span className="text-sm text-muted-foreground mb-0.5">/ {selectedLog.hoursRequired}h required</span>
                 </div>
                 <div className="w-full bg-muted-foreground/20 rounded-full h-2">
@@ -266,14 +264,6 @@ export default function Hours({ club }: HoursProps) {
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                {subContrib.hours > 0 && (
-                  <div className="flex items-center gap-1.5 mt-2">
-                    <GitMerge className="w-3 h-3 text-amber-600 flex-shrink-0" />
-                    <span className="text-xs text-amber-800">
-                      Includes {subContrib.hours.toFixed(1)}h from Sub-Club contributions
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           );
@@ -287,47 +277,12 @@ export default function Hours({ club }: HoursProps) {
           </div>
         ) : (
           <>
-            {selectedLogIsSystem && (
-              <div className="mb-4 p-3 bg-background border border-border rounded-lg flex items-center gap-2 text-sm text-foreground/85">
-                <ArrowUpCircle className="w-4 h-4 text-[#63a89a] flex-shrink-0" />
-                <span>Hours in this log are added automatically from sub-club submissions — you cannot submit directly here.</span>
-              </div>
-            )}
-            {selectedLog && !selectedLogIsOpen && !selectedLogIsSystem && (
+            {selectedLog && !selectedLogIsOpen && (
               <div className="mb-3 flex items-center gap-2 rounded-lg border border-border bg-card p-3 text-sm text-foreground/85">
                 <AlertCircle className="w-4 h-4 text-gray-500 flex-shrink-0" />
                 <span>This log is closed — submissions are no longer accepted, but your recorded hours are shown below.</span>
               </div>
             )}
-            {selectedLogId && !selectedLogIsSystem && (() => {
-              const contrib = getSubClubContributionForLog(selectedLogId);
-              if (contrib.rules.length === 0) return null;
-              const fmtDate = (d: string) => {
-                if (!d) return '';
-                const [y, m, day] = d.split('-');
-                return `${m}/${day}/${y}`;
-              };
-              return (
-                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-900">
-                  <div className="flex items-start gap-2">
-                    <GitMerge className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium mb-1">Sub-Club Hours contribution</p>
-                      {contrib.rules.map(rule => (
-                        <p key={rule.id} className="text-amber-800">
-                          {fmtDate(rule.fromDate)} – {fmtDate(rule.toDate)}
-                          {rule.label ? ` (${rule.label})` : ''}
-                          {' '}→ this log's total
-                        </p>
-                      ))}
-                      {contrib.hours > 0 && (
-                        <p className="mt-1 font-semibold">{contrib.hours.toFixed(1)} hours from Sub-Club contributions count toward this log.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
             {filteredSubmissions.length === 0 ? (
               <Card className="bg-[#faf8f4] border-[#d9cdbd]">
                 <CardContent className="p-12">
@@ -341,8 +296,8 @@ export default function Hours({ club }: HoursProps) {
                     ) : (
                       <>
                         <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
-                        <p className="text-gray-500 mb-6">{selectedLogIsSystem ? 'Hours forwarded from sub-clubs will appear here once approved.' : 'Start by submitting your first service hours'}</p>
-                        {!selectedLogIsSystem && selectedLogIsOpen && (
+                        <p className="text-gray-500 mb-6">Start by submitting your first service hours</p>
+                        {selectedLogIsOpen && (
                           <Button 
                             onClick={() => setIsFormOpen(true)} 
                             className="bg-black hover:bg-gray-800 text-white"
