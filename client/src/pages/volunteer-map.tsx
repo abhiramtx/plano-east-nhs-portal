@@ -2,9 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import MapGlComponent, { NavigationControl, MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { MapPin } from "lucide-react";
-import { Club, getMemberships, getVolunteerTerritories, Membership } from "@/lib/firebase";
-import { ClubPageHeader } from "@/components/club-page-header";
+import { Clock, MapPin, Trophy, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Club,
+  getClubSubmissions,
+  getMemberships,
+  getVolunteerTerritories,
+  HoursSubmission,
+  Membership,
+} from "@/lib/firebase";
 
 const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 type VolunteerCircle = { volunteerName: string; latitude: number; longitude: number; radiusKm: number; hours: number };
@@ -31,11 +38,32 @@ export default function VolunteerMap({ club }: { club: Club }) {
     queryFn: () => getMemberships(club.id),
     staleTime: 60_000,
   });
+  const { data: submissions = [], isLoading: submissionsLoading } = useQuery<HoursSubmission[]>({
+    queryKey: ["single-club-submissions"],
+    queryFn: () => getClubSubmissions(club.id),
+    staleTime: 30_000,
+  });
   const names = useMemo(() => {
     const result = new Map<string, string>();
     members.forEach(member => result.set(member.userEmail.toLowerCase(), member.userName || member.userEmail));
     return result;
   }, [members]);
+  const leaderboardRows = useMemo(() => {
+    const totals = new Map<string, number>();
+    submissions.forEach((submission) => {
+      if (submission.status === "approved") {
+        const email = submission.userEmail.toLowerCase();
+        totals.set(email, (totals.get(email) || 0) + Number(submission.hours || 0));
+      }
+    });
+
+    return members
+      .map((member) => ({
+        ...member,
+        hours: totals.get(member.userEmail.toLowerCase()) || 0,
+      }))
+      .sort((a, b) => b.hours - a.hours || a.userName.localeCompare(b.userName));
+  }, [members, submissions]);
   const geoJson = useMemo(() => ({
     type: "FeatureCollection" as const,
     features: circles.map((circle, index) => ({
