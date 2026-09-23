@@ -78,19 +78,19 @@ export function VolunteerSidebar({ user, club, membership, onSignOut }: Voluntee
             className="flex cursor-pointer items-center justify-between px-5 py-5 transition-colors hover:bg-white/[0.025]"
             onClick={() => { setLocation('/volunteer/dashboard'); setMobileMenuOpen(false); }}
           >
-            <div className="flex items-center gap-3">
-              <img src={logoImg} alt="Plano East NHS" className="h-9 w-9 rounded-xl object-cover ring-1 ring-white/10" />
+            <div className="flex items-center gap-3.5">
+              <img src={logoImg} alt="Plano East NHS" className="h-11 w-11 rounded-xl object-cover ring-1 ring-white/10" />
               <div>
-                <h2 className="text-[13px] font-semibold tracking-tight text-[#f3efe6]">Plano East NHS</h2>
-                <p className="mt-0.5 text-[10px] text-[#a8aa9f]">National Honor Society</p>
+                <h2 className="text-[15px] font-semibold tracking-tight text-[#f3efe6]">Plano East NHS</h2>
+                <p className="mt-1 text-[11px] text-[#a8aa9f]">National Honor Society</p>
               </div>
             </div>
           </div>
 
           <nav className="flex-1 overflow-y-auto px-3 py-4">
             {navGroups.map((group, gi) => (
-              <div key={group.label} className={gi > 0 ? 'mt-6' : ''}>
-                <p className="px-3 pb-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#7f867d] select-none">
+              <div key={group.label} className={gi > 0 ? 'mt-7' : ''}>
+                <p className="px-3 pb-2.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8f948b] select-none">
                   {group.label}
                 </p>
                 {group.items.map((item) => {
@@ -101,14 +101,14 @@ export function VolunteerSidebar({ user, club, membership, onSignOut }: Voluntee
                       onClick={() => handleNavigation(item.path)}
                       aria-current={isActive ? 'page' : undefined}
                       className={`
-                        group mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all
+                        group mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all
                         ${isActive
                           ? 'bg-[#d7a85a]/[0.13] text-[#f3efe6] shadow-[inset_3px_0_0_#d7a85a]'
                           : 'text-[#a8aa9f] hover:bg-white/[0.05] hover:text-[#f3efe6]'
                         }
                       `}
                     >
-                      <item.icon className={`h-[17px] w-[17px] flex-shrink-0 transition-colors ${
+                      <item.icon className={`h-[18px] w-[18px] flex-shrink-0 transition-colors ${
                         isActive ? 'text-[#d7a85a]' : 'text-[#7f867d] group-hover:text-[#c8c6b8]'
                       }`} />
                       <span>{item.label}</span>
