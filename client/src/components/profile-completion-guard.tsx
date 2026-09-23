@@ -17,10 +17,8 @@ export function ProfileCompletionGuard({
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col bg-[#faf8f4] min-h-0">
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
+      <div className="paper-grid flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
       </div>
     );
   }
