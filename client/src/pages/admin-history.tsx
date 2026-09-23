@@ -389,7 +389,7 @@ function VolunteerHistory({ club }: { club: Club }) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
@@ -397,8 +397,8 @@ function VolunteerHistory({ club }: { club: Club }) {
 
   if (clubKeys.length === 0) {
     return (
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="p-6">
+      <div className="paper-grid flex min-h-screen flex-col overflow-auto bg-background">
+        <div className="border-b border-border px-4 py-5 sm:px-6">
           <ClubPageHeader
             club={club}
             title="My History"
@@ -406,11 +406,15 @@ function VolunteerHistory({ club }: { club: Club }) {
             icon={Archive}
           />
         </div>
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="bg-card border border-border rounded-xl px-10 py-10 text-center">
-            <Archive className="w-12 h-12 text-muted-foreground/60 mx-auto mb-4" />
-            <p className="font-medium text-foreground">No archived history yet</p>
-            <p className="text-sm text-muted-foreground/80 mt-1">Your submissions will appear here after an admin archives a school year</p>
+        <div className="flex flex-1 items-center justify-center p-6 sm:p-10">
+          <div className="w-full max-w-xl rounded-2xl border border-border bg-card/90 px-6 py-10 text-center sm:px-10">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+              <Archive className="h-8 w-8 text-[#DDA435]" />
+            </div>
+            <p className="mt-5 text-lg font-semibold text-foreground">No archived history yet</p>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+              Your approved submissions will appear here after an admin archives a school year.
+            </p>
           </div>
         </div>
       </div>
@@ -418,7 +422,7 @@ function VolunteerHistory({ club }: { club: Club }) {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className="paper-grid flex min-h-screen flex-col overflow-auto bg-background">
       {/* Header */}
       <div className="p-6 pb-0 flex-shrink-0">
         <ClubPageHeader
@@ -527,7 +531,7 @@ function AdminHistoryView({ club }: { club: Club }) {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
@@ -539,7 +543,7 @@ function AdminHistoryView({ club }: { club: Club }) {
       <div className="bg-card border-b border-border px-6 py-4 flex-shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-secondary">
-            <Archive className="w-7 h-7 text-secondary-foreground" />
+            <Archive className="w-7 h-7 text-white" />
           </div>
           <div>
               <h1 className="page-title text-xl lg:text-2xl font-bold text-foreground">Archived Submissions</h1>

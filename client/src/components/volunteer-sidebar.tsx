@@ -58,7 +58,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut }: Voluntee
         className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-[#f7f2e9] rounded-lg shadow-md border border-[#d9cdbd]"
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
       >
-        {mobileMenuOpen ? <X className="w-5 h-5 text-[#DDA435]" /> : <Menu className="w-5 h-5 text-[#DDA435]" />}
+        {mobileMenuOpen ? <X className="w-5 h-5 text-[#17324d]" /> : <Menu className="w-5 h-5 text-[#17324d]" />}
       </button>
 
       {mobileMenuOpen && (
@@ -106,7 +106,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut }: Voluntee
                         }
                       `}
                     >
-                      <item.icon className="w-5 h-5 text-[#DDA435]" />
+                      <item.icon className="w-5 h-5" />
                       <span>{item.label}</span>
                     </button>
                   );
@@ -121,7 +121,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut }: Voluntee
                 {user.photoURL ? (
                   <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full" />
                 ) : (
-                  <UserIcon className="w-4 h-4 text-[#DDA435]" />
+                  <UserIcon className="w-4 h-4 text-[#506477]" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -137,7 +137,7 @@ export function VolunteerSidebar({ user, club, membership, onSignOut }: Voluntee
                 className="w-full text-xs border-[#d9cdbd] text-[#506477] hover:bg-[#eee5d7] hover:text-[#17324d]"
                 onClick={onSignOut}
               >
-                <LogOut className="w-3 h-3 mr-1 text-[#DDA435]" />
+                <LogOut className="w-3 h-3 mr-1" />
                 Sign Out
               </Button>
             </div>

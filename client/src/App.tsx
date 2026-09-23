@@ -60,7 +60,7 @@ const AdminQueryHistory = lazy(() =>
 
 function PageLoading() {
   return (
-    <div className="flex-1 flex items-center justify-center p-8 text-sm text-muted-foreground">
+    <div className="flex min-h-screen w-full items-center justify-center p-8 text-sm text-muted-foreground">
       Loading page…
     </div>
   );
