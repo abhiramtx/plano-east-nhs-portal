@@ -332,26 +332,9 @@ const profileDocumentIds = (email: string): string[] => {
 };
 
 const getUserProfileDocuments = async (email: string) => {
-  // Membership writes use the exact Firebase email as the document id. Most
-  // users can therefore be resolved with one point read; only legacy records
-  // need the broader dotted/comma-form discovery below.
-  const primarySnapshot = await getDoc(doc(db, "userProfiles", email));
-  if (primarySnapshot.exists()) {
-    const primaryData = primarySnapshot.data();
-    if (
-      Array.isArray(primaryData.clubIds) ||
-      primaryData.clubId ||
-      primaryData.role ||
-      primaryData.email === email
-    ) {
-      return [primarySnapshot];
-    }
-  }
-
-  // Avoid a collection-wide email query here. New users have no profile yet,
-  // and security rules commonly allow point reads while rejecting list queries.
-  // The known dotted/comma document-ID variants cover the legacy records this
-  // lookup needs without requiring collection enumeration.
+  // Membership data and profile form data can live in different legacy
+  // document-ID formats. Read all known point-read variants and merge them so
+  // the profile name is available even when the membership record has none.
   const candidateRefs = profileDocumentIds(email).map(id => doc(db, "userProfiles", id));
   const documentSnapshots = await Promise.all(candidateRefs.map(ref => getDoc(ref)));
 
@@ -992,20 +975,21 @@ export const getMemberships = async (clubId: string): Promise<Membership[]> => {
     });
   }
 
-  const out: Membership[] = [];
-  for (const member of membersByEmail.values()) {
+  const out = await Promise.all(Array.from(membersByEmail.values()).map(async (member) => {
     const d = member.data;
     const userEmail = normalizeProfileEmail(String(d.email || d.userEmail || d.userId || member.id));
-    out.push({
+    const profile = await getUserProfile(userEmail);
+    const resolvedProfile = mergeNonEmptyProfileData(d, profile || {});
+    return {
       id: member.id,
       clubId,
       userEmail,
-      userName: getProfileDisplayName(d, userEmail),
-      personalEmailAddress: d.personalEmailAddress || undefined,
-      role: d.role || 'member',
-      joinedAt: d.joinedAt ? toDate(d.joinedAt) : new Date(),
-    });
-  }
+      userName: getProfileDisplayName(resolvedProfile, userEmail),
+      personalEmailAddress: resolvedProfile.personalEmailAddress || undefined,
+      role: resolvedProfile.role || 'member',
+      joinedAt: resolvedProfile.joinedAt ? toDate(resolvedProfile.joinedAt) : new Date(),
+    };
+  }));
   return out;
 };
 
