@@ -12,6 +12,7 @@ import {
   handleSignOut,
   auth,
   getUserMembership,
+  getUserProfile,
   Club,
   Membership,
 } from "@/lib/firebase";
@@ -342,6 +343,36 @@ function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const email = user?.email;
+    if (!email) return;
+
+    let active = true;
+    getUserProfile(email)
+      .then((profile) => {
+        if (!active) return;
+        const profileName = [profile?.goByFirstName, profile?.lastName]
+          .map(value => value?.trim())
+          .filter(Boolean)
+          .join(' ');
+        if (!profileName) return;
+
+        setUser(currentUser => {
+          if (!currentUser || currentUser.email !== email || currentUser.name === profileName) {
+            return currentUser;
+          }
+          return { ...currentUser, name: profileName };
+        });
+      })
+      .catch((error) => {
+        console.error('Failed to resolve account name:', error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user?.email]);
 
   useEffect(() => {
     if (user?.email && !clubChecked) {
