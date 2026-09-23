@@ -67,7 +67,15 @@ function PageLoading() {
   );
 }
 
-function ClubConnectionError({ onSignOut }: { onSignOut: () => void }) {
+function ClubConnectionError({
+  onRetry,
+  onSignOut,
+  timedOut,
+}: {
+  onRetry: () => void;
+  onSignOut: () => void;
+  timedOut: boolean;
+}) {
   return (
     <div className="min-h-screen bg-background px-6 py-12 text-foreground">
       <div className="mx-auto flex min-h-[70vh] max-w-xl items-center justify-center">
@@ -75,21 +83,37 @@ function ClubConnectionError({ onSignOut }: { onSignOut: () => void }) {
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
             <span className="text-2xl font-bold">!</span>
           </div>
-          <h1 className="text-2xl font-semibold">Plano East NHS is not connected yet</h1>
+          <h1 className="text-2xl font-semibold">
+            {timedOut ? "The club is taking too long to load" : "Plano East NHS is not connected yet"}
+          </h1>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Your Google sign-in worked, but the app could not reach the Plano East NHS Firestore database.
-            The Firebase project needs a Firestore Native-mode database, or the correct Native database ID must be configured.
+            {timedOut
+              ? "Your Google sign-in worked, but the club lookup did not finish. You can retry without signing in again."
+              : "Your Google sign-in worked, but the app could not reach the Plano East NHS Firestore database. The Firebase project needs a Firestore Native-mode database, or the correct Native database ID must be configured."}
           </p>
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
-            This is a Firebase database setup issue, not a missing dashboard page.
+            {timedOut
+              ? "If the retry fails, check the Firebase connection before trying again."
+              : "This is a Firebase database setup issue, not a missing dashboard page."}
           </p>
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="mt-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-          >
-            Return to sign in
-          </button>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            {timedOut && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Retry
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              Return to sign in
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -324,6 +348,8 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [initializing, setInitializing] = useState(true);
   const [clubChecked, setClubChecked] = useState(false);
+  const [clubLoadError, setClubLoadError] = useState<Error | null>(null);
+  const [membershipAttempt, setMembershipAttempt] = useState(0);
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   const [membership, setMembership] = useState<Membership | null>(null);
   const [, setLocation] = useLocation();
@@ -336,9 +362,11 @@ function App() {
       if (!authUser) {
         setSelectedClub(null);
         setMembership(null);
+        setClubLoadError(null);
         setClubChecked(true);
       } else {
         setClubChecked(false);
+        setClubLoadError(null);
       }
     });
     return () => unsubscribe();
@@ -376,28 +404,44 @@ function App() {
 
   useEffect(() => {
     if (user?.email && !clubChecked) {
+      let active = true;
+      setClubLoadError(null);
       getUserMembership(user.email)
         .then((result) => {
-          if (!result) return;
+          if (!active) return;
+          if (!result) {
+            setSelectedClub(null);
+            setMembership(null);
+            return;
+          }
           setSelectedClub(result.club);
           setMembership(result.membership);
-           const membershipName = result.membership.userName?.trim();
-           const isEmailValue = !!membershipName && (
-             membershipName.includes('@') ||
-             membershipName.toLowerCase() === user.email.toLowerCase().split('@')[0]
-           );
-           if (membershipName && !isEmailValue) {
+          const membershipName = result.membership.userName?.trim();
+          const isEmailValue = !!membershipName && (
+            membershipName.includes('@') ||
+            membershipName.toLowerCase() === user.email.toLowerCase().split('@')[0]
+          );
+          if (membershipName && !isEmailValue) {
              setUser(currentUser => currentUser
                ? { ...currentUser, name: membershipName }
                : currentUser);
            }
         })
         .catch((error) => {
+          if (!active) return;
           console.error('Failed to resolve club membership:', error);
+          setSelectedClub(null);
+          setMembership(null);
+          setClubLoadError(error instanceof Error ? error : new Error(String(error)));
         })
-        .finally(() => setClubChecked(true));
+        .finally(() => {
+          if (active) setClubChecked(true);
+        });
+      return () => {
+        active = false;
+      };
     }
-  }, [user?.email, clubChecked]);
+  }, [user?.email, clubChecked, membershipAttempt]);
 
   const handleSignOutClick = async () => {
     await handleSignOut();
@@ -452,7 +496,15 @@ function App() {
   if (user && clubChecked && !selectedClub) {
     return (
       <QueryClientProvider client={queryClient}>
-        <ClubConnectionError onSignOut={handleSignOutClick} />
+        <ClubConnectionError
+          onRetry={() => {
+            setClubLoadError(null);
+            setClubChecked(false);
+            setMembershipAttempt(attempt => attempt + 1);
+          }}
+          onSignOut={handleSignOutClick}
+          timedOut={Boolean(clubLoadError)}
+        />
       </QueryClientProvider>
     );
   }
@@ -466,7 +518,9 @@ function App() {
           <Route path="/landing">
             {user ? <RootRedirect user={user} selectedClub={selectedClub} /> : <Landing onSignIn={() => {}} />}
           </Route>
-          <Route path="/login"><LoginPage /></Route>
+          <Route path="/login">
+            {user ? <RootRedirect user={user} selectedClub={selectedClub} /> : <LoginPage />}
+          </Route>
           <Route path="/"><RootRedirect user={user} selectedClub={selectedClub} /></Route>
 
           {user && selectedClub && membership && (

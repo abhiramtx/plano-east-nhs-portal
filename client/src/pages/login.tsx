@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
 import { signInWithGoogle } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -12,17 +10,6 @@ import { SiGoogle } from "react-icons/si";
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (auth.currentUser) {
-      setLocation('/volunteer/dashboard');
-      return;
-    }
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) setLocation('/volunteer/dashboard');
-    });
-    return () => unsub();
-  }, [setLocation]);
 
   const [googleLoading, setGoogleLoading] = useState(false);
 

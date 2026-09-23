@@ -47,6 +47,7 @@ const googleProvider = new GoogleAuthProvider();
 let authListenerStarted = false;
 
 const USER_DATA_CACHE_TTL_MS = 30_000;
+const USER_DATA_READ_TIMEOUT_MS = 15_000;
 type UserMembershipResult = { membership: Membership; club: Club } | null;
 
 const userProfileCache = new Map<string, { value: UserProfile | null; expiresAt: number }>();
@@ -57,6 +58,16 @@ let singleClubCache: { value: Club | null; expiresAt: number } | null = null;
 let singleClubRequest: Promise<Club | null> | null = null;
 
 const userDataCacheKey = (email: string) => email.trim().toLowerCase();
+
+const withTimeout = <T>(promise: Promise<T>, message: string): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), USER_DATA_READ_TIMEOUT_MS);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
+};
 
 const invalidateUserProfileCache = (email?: string) => {
   if (email) {
@@ -385,11 +396,10 @@ export const signInWithGoogle = async () => {
     // Redirect auth cannot reliably recover cross-site state on iOS Safari
     // when the app and Firebase auth handler use different domains.
     const result = await signInWithPopup(auth, googleProvider);
-    const user = firebaseUserToUser(result.user);
-    if (user) {
-      notifyAuthListeners(user);
-    }
-    return user;
+    // The Firebase auth observer is the single source of truth for app state.
+    // A second notification here can reset post-login club resolution while
+    // its first request is still running.
+    return firebaseUserToUser(result.user);
   } catch (error) {
     console.error('Failed to sign in with Google:', error);
     throw error;
@@ -528,7 +538,7 @@ export const getSingleClub = async (): Promise<Club | null> => {
     return singleClubCache.value;
   }
   if (singleClubRequest) return singleClubRequest;
-  singleClubRequest = fetch('/api/club', { credentials: 'include' })
+  const request = fetch('/api/club', { credentials: 'include' })
     .then(async response => {
       if (response.status === 404) return null;
       if (!response.ok) throw new Error('Failed to fetch the club');
@@ -541,7 +551,8 @@ export const getSingleClub = async (): Promise<Club | null> => {
         createdAt: toDate(data.createdAt),
         updatedAt: toDate(data.updatedAt),
       } as Club;
-    })
+    });
+  singleClubRequest = withTimeout(request, 'The club lookup timed out. Please try again.')
     .then(club => {
       singleClubCache = { value: club, expiresAt: Date.now() + USER_DATA_CACHE_TTL_MS };
       return club;
@@ -1083,10 +1094,10 @@ export const getUserMembership = async (userEmail: string): Promise<{ membership
   if (inFlight) return inFlight;
 
   const request = (async (): Promise<UserMembershipResult> => {
-    const [profile, club] = await Promise.all([
+    const [profile, club] = await withTimeout(Promise.all([
       getUserProfile(userEmail),
       getSingleClub(),
-    ]);
+    ]), 'The club connection timed out. Please try again.');
     if (!club) return null;
 
     const profileEmail = normalizeProfileEmail(
@@ -1730,7 +1741,7 @@ export const getUserProfile = async (email: string): Promise<UserProfile | null>
 
   userProfileRequests.set(cacheKey, request);
   try {
-    const profile = await request;
+    const profile = await withTimeout(request, 'The profile lookup timed out. Please try again.');
     userProfileCache.set(cacheKey, {
       value: profile,
       expiresAt: Date.now() + USER_DATA_CACHE_TTL_MS,
