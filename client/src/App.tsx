@@ -66,6 +66,35 @@ function PageLoading() {
   );
 }
 
+function ClubConnectionError({ onSignOut }: { onSignOut: () => void }) {
+  return (
+    <div className="min-h-screen bg-background px-6 py-12 text-foreground">
+      <div className="mx-auto flex min-h-[70vh] max-w-xl items-center justify-center">
+        <div className="w-full rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+            <span className="text-2xl font-bold">!</span>
+          </div>
+          <h1 className="text-2xl font-semibold">Plano East NHS is not connected yet</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Your Google sign-in worked, but the app could not reach the Plano East NHS Firestore database.
+            The Firebase project needs a Firestore Native-mode database, or the correct Native database ID must be configured.
+          </p>
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            This is a Firebase database setup issue, not a missing dashboard page.
+          </p>
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="mt-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            Return to sign in
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function VolunteerInterface({
   user,
   club,
@@ -356,6 +385,14 @@ function App() {
           <p className="text-muted-foreground">{user ? 'Loading your club...' : 'Loading...'}</p>
         </div>
       </div>
+    );
+  }
+
+  if (user && clubChecked && !selectedClub) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ClubConnectionError onSignOut={handleSignOutClick} />
+      </QueryClientProvider>
     );
   }
 
