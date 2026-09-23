@@ -44,3 +44,15 @@ integrations = ["javascript_mem_db:1.0.0", "javascript_database:1.0.0"]
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 180000
+
+[userenv]
+
+[userenv.shared]
+FIREBASE_PROJECT_ID = "peshnhs-testing"
+VITE_FIREBASE_API_KEY = "AIzaSyCX9IRzrcOQfGy1--Az3zT3htFvYlPbmEk"
+VITE_FIREBASE_AUTH_DOMAIN = "peshnhs-testing.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID = "peshnhs-testing"
+VITE_FIREBASE_STORAGE_BUCKET = "peshnhs-testing.firebasestorage.app"
+VITE_FIREBASE_MESSAGING_SENDER_ID = "994611522299"
+VITE_FIREBASE_APP_ID = "1:994611522299:web:c00daadfd0226967395e5e"
+VITE_FIREBASE_MEASUREMENT_ID = "G-FQXPMPSLPJ"
