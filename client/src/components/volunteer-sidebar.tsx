@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { User, Club, Membership } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import { Globe, LayoutDashboard, Clock, Map, User as UserIcon, Settings, LogOut, Menu, X, ClipboardList, Trophy } from "lucide-react";
-import logoImg from "@assets/image_1772414281666.png";
+import { LayoutDashboard, Clock, Map, User as UserIcon, Settings, LogOut, Menu, X, ClipboardList } from "lucide-react";
+import logoImg from "@assets/image_1790127682492.png";
 
 interface VolunteerSidebarProps {
   user: User;
@@ -30,7 +30,6 @@ export function VolunteerSidebar({ user, club, membership, onSignOut }: Voluntee
       label: "Community",
       items: [
         { path: "/volunteer/map", icon: Map, label: "Volunteer Map" },
-        { path: "/volunteer/leaderboard", icon: Trophy, label: "Leaderboard" },
       ],
     },
     {
@@ -83,26 +82,6 @@ export function VolunteerSidebar({ user, club, membership, onSignOut }: Voluntee
               <div>
                 <h2 className="font-semibold text-[#17324d]">Plano East NHS</h2>
                 <p className="text-xs text-[#506477]">National Honor Society</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-4 py-3 border-b border-[#d9cdbd]">
-            <div className="flex items-center space-x-3">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: club.logoUrl ? undefined : club.color }}
-              >
-                {club.logoUrl
-                  ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" />
-                  : <Trophy className="w-4 h-4 text-white" />
-                }
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#17324d] truncate">{club.name}</p>
-                <p className="text-xs text-[#506477]">
-                  {club.totalApprovedHours.toFixed(1)} total hours
-                </p>
               </div>
             </div>
           </div>

@@ -6,7 +6,7 @@ import { signInWithGoogle } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import logoImg from "@assets/image_1772414281666.png";
+import logoImg from "@assets/image_1790127682492.png";
 import { SiGoogle } from "react-icons/si";
 
 export default function LoginPage() {

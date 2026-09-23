@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { onAuthStateChanged } from "firebase/auth";
 import { SiGoogle } from "react-icons/si";
 import { auth, signInWithGoogle } from "@/lib/firebase";
-import logoImg from "@assets/image_1772414281666.png";
+import logoImg from "@assets/image_1790127682492.png";
 
 interface LandingProps {
   onSignIn: () => void;

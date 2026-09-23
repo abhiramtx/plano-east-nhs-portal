@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { User } from "@/lib/firebase";
 import { useProfileCompletion } from "@/hooks/use-profile-completion";
 import { Link } from "wouter";
-import logoImg from "@assets/image_1772414281666.png";
+import logoImg from "@assets/image_1790127682492.png";
 
 interface ProfileCompletionGuardProps {
   user: User | null;
@@ -27,7 +27,7 @@ export function ProfileCompletionGuard({
 
   if (!isProfileComplete) {
     return (
-      <div className="min-h-screen bg-[#faf8f4] flex items-center justify-center p-4">
+      <div className="paper-grid min-h-screen bg-[#faf8f4] flex items-center justify-center p-4">
         <div className="max-w-lg w-full">
           <div className="bg-[#faf8f4] rounded-2xl shadow-sm border border-[#d9cdbd] overflow-hidden">
             <div className="bg-black p-6 text-white text-center">

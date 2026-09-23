@@ -34,7 +34,7 @@ import {
   ArrowRight,
   Trophy,
 } from "lucide-react";
-import logoImg from "@assets/image_1772414281666.png";
+import logoImg from "@assets/image_1790127682492.png";
 
 const QUOTES = [
   "The best way to find yourself is to lose yourself in the service of others.",

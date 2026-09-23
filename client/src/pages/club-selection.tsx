@@ -32,7 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Globe, Plus, Users, ArrowRight, Lock, Search, LogOut, Trophy, Upload, Image, ChevronRight, UserCircle, MapPin, X } from "lucide-react";
-import logoImg from "@assets/image_1772414281666.png";
+import logoImg from "@assets/image_1790127682492.png";
 import { LocationPicker } from "@/components/world-map";
 
 interface ClubSelectionProps {
