@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Club, getSubClubHoursRules, createSubClubHoursRule, updateSubClubHoursRule, deleteSubClubHoursRule, SubClubHoursRule } from "@/lib/firebase";
+import { User, Club } from "@/lib/firebase";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,6 @@ import {
   Edit2,
   Save,
   BookOpen,
-  ArrowUpCircle,
-  GitMerge,
 } from "lucide-react";
 import type { HoursLog } from "@shared/schema";
 
@@ -37,10 +35,6 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
     hoursRequired: 15,
   });
 
-  const [isAddRuleOpen, setIsAddRuleOpen] = useState(false);
-  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
-  const [ruleForm, setRuleForm] = useState(EMPTY_RULE_FORM);
-
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -53,11 +47,6 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
       if (!response.ok) throw new Error('Failed to fetch hours logs');
       return response.json() as Promise<HoursLog[]>;
     },
-  });
-
-  const { data: rules = [] } = useQuery<SubClubHoursRule[]>({
-    queryKey: ['sub-club-hours-rules', club.id],
-    queryFn: () => getSubClubHoursRules(club.id),
   });
 
   const createLogMutation = useMutation({
@@ -108,59 +97,6 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
     }
   });
 
-  const createRuleMutation = useMutation({
-    mutationFn: async (form: typeof EMPTY_RULE_FORM) => {
-      return createSubClubHoursRule(club.id, {
-        targetLogId: form.targetLogId,
-        targetLogName: form.targetLogName,
-        fromDate: form.fromDate,
-        toDate: form.toDate,
-        ...(form.label.trim() ? { label: form.label.trim() } : {}),
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sub-club-hours-rules', club.id] });
-      toast({ title: "Rule created", description: "Conditional rule saved." });
-      setRuleForm(EMPTY_RULE_FORM);
-      setIsAddRuleOpen(false);
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to save rule", variant: "destructive" });
-    }
-  });
-
-  const updateRuleMutation = useMutation({
-    mutationFn: async ({ id, form }: { id: string; form: typeof EMPTY_RULE_FORM }) => {
-      await updateSubClubHoursRule(id, {
-        targetLogId: form.targetLogId,
-        targetLogName: form.targetLogName,
-        fromDate: form.fromDate,
-        toDate: form.toDate,
-        label: form.label.trim() || undefined,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sub-club-hours-rules', club.id] });
-      toast({ title: "Rule updated" });
-      setEditingRuleId(null);
-      setRuleForm(EMPTY_RULE_FORM);
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to update rule", variant: "destructive" });
-    }
-  });
-
-  const deleteRuleMutation = useMutation({
-    mutationFn: (ruleId: string) => deleteSubClubHoursRule(ruleId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sub-club-hours-rules', club.id] });
-      toast({ title: "Rule deleted" });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to delete rule", variant: "destructive" });
-    }
-  });
-
   const handleAdd = () => {
     if (!formData.name.trim()) {
       toast({ title: "Error", description: "Please enter a log name", variant: "destructive" });
@@ -191,38 +127,6 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
     setFormData({ name: "", hoursRequired: 15 });
   };
 
-  const openEditRule = (rule: SubClubHoursRule) => {
-    setRuleForm({
-      targetLogId: rule.targetLogId,
-      targetLogName: rule.targetLogName,
-      fromDate: rule.fromDate,
-      toDate: rule.toDate,
-      label: rule.label || '',
-    });
-    setEditingRuleId(rule.id);
-  };
-
-  const handleSaveRule = () => {
-    if (!ruleForm.targetLogId || !ruleForm.fromDate || !ruleForm.toDate) {
-      toast({ title: "Missing fields", description: "Please fill in target log and date range.", variant: "destructive" });
-      return;
-    }
-    if (ruleForm.fromDate > ruleForm.toDate) {
-      toast({ title: "Invalid range", description: "From date must be before or equal to To date.", variant: "destructive" });
-      return;
-    }
-    if (editingRuleId) {
-      updateRuleMutation.mutate({ id: editingRuleId, form: ruleForm });
-    } else {
-      createRuleMutation.mutate(ruleForm);
-    }
-  };
-
-  const handleRuleTargetChange = (logId: string) => {
-    const log = regularLogs.find(l => l.id === logId);
-    setRuleForm(f => ({ ...f, targetLogId: logId, targetLogName: log?.name || '' }));
-  };
-
   const formatDate = (d: string) => {
     if (!d) return '';
     const [y, m, day] = d.split('-');
@@ -238,69 +142,6 @@ export function AdminLogs({ user, club }: AdminLogsProps) {
       </div>
     );
   }
-
-  const systemLogs = logs.filter(l => l.isSystem);
-  const regularLogs = logs.filter(l => !l.isSystem);
-  const hasSystemLog = systemLogs.length > 0;
-
-  const ruleDialog = (
-    <DialogContent className="max-w-md">
-      <DialogHeader>
-        <DialogTitle>{editingRuleId ? 'Edit Conditional Rule' : 'Add Conditional Rule'}</DialogTitle>
-      </DialogHeader>
-      <p className="text-sm text-[#506477]">
-        Approved Sub-Club Hours submissions whose date falls within this range will also be counted toward the selected log's total (no new entries are created).
-      </p>
-      <div className="space-y-4 mt-2">
-        <div>
-          <Label className="text-[#17324d]">Target Log</Label>
-          <Select value={ruleForm.targetLogId} onValueChange={handleRuleTargetChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a log…" />
-            </SelectTrigger>
-            <SelectContent>
-              {regularLogs.map(l => (
-                <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-[#17324d]">From Date</Label>
-            <Input
-              type="date"
-              value={ruleForm.fromDate}
-              onChange={e => setRuleForm(f => ({ ...f, fromDate: e.target.value }))}
-            />
-          </div>
-          <div>
-            <Label className="text-[#17324d]">To Date</Label>
-            <Input
-              type="date"
-              value={ruleForm.toDate}
-              onChange={e => setRuleForm(f => ({ ...f, toDate: e.target.value }))}
-            />
-          </div>
-        </div>
-        <div>
-          <Label className="text-[#17324d]">Label <span className="text-[#8fa5b4] font-normal">(optional)</span></Label>
-          <Input
-            placeholder="e.g., Fall 2024 campaign"
-            value={ruleForm.label}
-            onChange={e => setRuleForm(f => ({ ...f, label: e.target.value }))}
-          />
-        </div>
-        <Button
-          onClick={handleSaveRule}
-          disabled={createRuleMutation.isPending || updateRuleMutation.isPending}
-          className="w-full bg-[#17324d] hover:bg-[#1f3d5a] text-white"
-        >
-          {(createRuleMutation.isPending || updateRuleMutation.isPending) ? "Saving…" : (editingRuleId ? "Update Rule" : "Add Rule")}
-        </Button>
-      </div>
-    </DialogContent>
-  );
 
   return (
     <div className="flex flex-col min-h-0">
