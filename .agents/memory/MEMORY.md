@@ -4,3 +4,4 @@
 - [Firebase mobile authentication](firebase-mobile-redirects.md) — use a direct popup on iOS when Replit and Firebase auth run on different domains.
 - [Mobile post-auth loading](mobile-post-auth-loading.md) — render the club selector while optional membership resolution continues; do not gate the whole app on Firestore.
 - [Duplicate source snapshots](duplicate-source-snapshots.md) — compare source halves when unrelated redeclaration errors appear; workspace snapshots can contain exact appended duplicates.
+- [Firestore database mode](firestore-database-mode.md) — Firebase Web/Admin SDK access requires a Native-mode database; MongoDB compatibility can authenticate but native queries return NOT_FOUND.
