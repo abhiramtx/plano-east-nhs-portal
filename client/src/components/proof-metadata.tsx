@@ -93,10 +93,10 @@ export function ProofMetadata({ metadata, serviceDate, compact = false }: ProofM
 
   if (!metadata) {
     return (
-      <div className="flex items-start gap-2 rounded-lg border border-[#d9cdbd] bg-[#f7f2e9] p-3 text-sm text-[#506477]">
-        <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#8fa5b4]" />
+      <div className="flex items-start gap-2 rounded-lg border border-[#2d4542] bg-[#172321] p-3 text-sm text-[#b6c5c0]">
+        <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#8bb9ae]" />
         <div>
-          <p className="font-medium text-[#17324d]">Photo metadata not available</p>
+          <p className="font-medium text-[#f3efe6]">Photo metadata not available</p>
           <p className="mt-0.5 text-xs">This proof was uploaded before EXIF verification was added.</p>
         </div>
       </div>
@@ -105,30 +105,30 @@ export function ProofMetadata({ metadata, serviceDate, compact = false }: ProofM
 
   return (
     <div className={compact ? "space-y-3" : "space-y-4"}>
-      <div className={`rounded-lg border p-3 ${capturedDate ? "border-teal-200 bg-teal-50" : "border-amber-200 bg-amber-50"}`}>
+      <div className={`rounded-lg border p-3 ${capturedDate ? "border-[#2d625a] bg-[#132b28]" : "border-[#6c5226] bg-[#2b2415]"}`}>
         <div className="flex items-start gap-2">
-          <Clock3 className={`mt-0.5 h-4 w-4 flex-shrink-0 ${capturedDate ? "text-teal-700" : "text-amber-700"}`} />
+          <Clock3 className={`mt-0.5 h-4 w-4 flex-shrink-0 ${capturedDate ? "text-[#8bd0c1]" : "text-[#e4bd79]"}`} />
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#506477]">Photo captured / created</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#aab8b2]">Photo captured / created</p>
             {capturedDate ? (
               <>
-                <p className="mt-0.5 font-semibold text-[#17324d]">{capturedDate}</p>
-                <p className="text-xs text-[#506477]">From {sourceLabel(metadata.capturedAtSource)} metadata</p>
+                <p className="mt-0.5 font-semibold text-[#f3efe6]">{capturedDate}</p>
+                <p className="text-xs text-[#aab8b2]">From {sourceLabel(metadata.capturedAtSource)} metadata</p>
                 {enteredDate && (
-                  <p className={`mt-1 text-xs font-medium ${datesMatch ? "text-teal-800" : "text-amber-800"}`}>
+                  <p className={`mt-1 text-xs font-medium ${datesMatch ? "text-[#8bd0c1]" : "text-[#e4bd79]"}`}>
                     {datesMatch ? "Matches" : "Does not match"} entered service date ({enteredDate})
                   </p>
                 )}
               </>
             ) : (
-              <p className="mt-0.5 text-sm font-medium text-amber-800">No capture date found in this photo</p>
+              <p className="mt-0.5 text-sm font-medium text-[#e4bd79]">No capture date found in this photo</p>
             )}
           </div>
         </div>
       </div>
 
       {!metadata.metadataAvailable && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <div className="flex items-start gap-2 rounded-lg border border-[#6c5226] bg-[#2b2415] p-3 text-sm text-[#e4bd79]">
           <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <div>
             <p className="font-medium">EXIF metadata unavailable</p>
@@ -140,70 +140,70 @@ export function ProofMetadata({ metadata, serviceDate, compact = false }: ProofM
       {hasDetails && (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {(metadata.make || metadata.model) && (
-            <div className="flex items-start gap-2 rounded-md bg-[#f7f2e9] p-2.5">
-              <Camera className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#506477]" />
-              <div><p className="text-[11px] uppercase tracking-wide text-[#8fa5b4]">Camera</p><p className="text-sm text-[#17324d]">{[metadata.make, metadata.model].filter(Boolean).join(" ")}</p></div>
+            <div className="flex items-start gap-2 rounded-md bg-[#1b2725] p-2.5">
+              <Camera className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#aab8b2]" />
+              <div><p className="text-[11px] uppercase tracking-wide text-[#8b9d97]">Camera</p><p className="text-sm text-[#edf2ef]">{[metadata.make, metadata.model].filter(Boolean).join(" ")}</p></div>
             </div>
           )}
           {(metadata.width || metadata.height) && (
-            <div className="flex items-start gap-2 rounded-md bg-[#f7f2e9] p-2.5">
-              <Ruler className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#506477]" />
-              <div><p className="text-[11px] uppercase tracking-wide text-[#8fa5b4]">Image dimensions</p><p className="text-sm text-[#17324d]">{metadata.width ?? "?"} × {metadata.height ?? "?"} px</p></div>
+            <div className="flex items-start gap-2 rounded-md bg-[#1b2725] p-2.5">
+              <Ruler className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#aab8b2]" />
+              <div><p className="text-[11px] uppercase tracking-wide text-[#8b9d97]">Image dimensions</p><p className="text-sm text-[#edf2ef]">{metadata.width ?? "?"} × {metadata.height ?? "?"} px</p></div>
             </div>
           )}
           {metadata.orientation !== undefined && (
-            <div className="flex items-start gap-2 rounded-md bg-[#f7f2e9] p-2.5">
-              <Compass className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#506477]" />
-              <div><p className="text-[11px] uppercase tracking-wide text-[#8fa5b4]">Orientation</p><p className="text-sm text-[#17324d]">EXIF orientation {metadata.orientation}</p></div>
+            <div className="flex items-start gap-2 rounded-md bg-[#1b2725] p-2.5">
+              <Compass className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#aab8b2]" />
+              <div><p className="text-[11px] uppercase tracking-wide text-[#8b9d97]">Orientation</p><p className="text-sm text-[#edf2ef]">EXIF orientation {metadata.orientation}</p></div>
             </div>
           )}
           {(metadata.iso !== undefined || metadata.exposureTime !== undefined || metadata.fNumber !== undefined) && (
-            <div className="flex items-start gap-2 rounded-md bg-[#f7f2e9] p-2.5">
-              <Gauge className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#506477]" />
-              <div><p className="text-[11px] uppercase tracking-wide text-[#8fa5b4]">Exposure</p><p className="text-sm text-[#17324d]">{[metadata.iso !== undefined ? `ISO ${metadata.iso}` : null, formatExposure(metadata.exposureTime), metadata.fNumber !== undefined ? `ƒ/${formatNumber(metadata.fNumber, 1)}` : null].filter(Boolean).join(" · ")}</p></div>
+            <div className="flex items-start gap-2 rounded-md bg-[#1b2725] p-2.5">
+              <Gauge className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#aab8b2]" />
+              <div><p className="text-[11px] uppercase tracking-wide text-[#8b9d97]">Exposure</p><p className="text-sm text-[#edf2ef]">{[metadata.iso !== undefined ? `ISO ${metadata.iso}` : null, formatExposure(metadata.exposureTime), metadata.fNumber !== undefined ? `ƒ/${formatNumber(metadata.fNumber, 1)}` : null].filter(Boolean).join(" · ")}</p></div>
             </div>
           )}
           {metadata.focalLength !== undefined && (
-            <div className="flex items-start gap-2 rounded-md bg-[#f7f2e9] p-2.5">
-              <Focus className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#506477]" />
-              <div><p className="text-[11px] uppercase tracking-wide text-[#8fa5b4]">Focal length</p><p className="text-sm text-[#17324d]">{formatNumber(metadata.focalLength, 1)} mm</p></div>
+            <div className="flex items-start gap-2 rounded-md bg-[#1b2725] p-2.5">
+              <Focus className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#aab8b2]" />
+              <div><p className="text-[11px] uppercase tracking-wide text-[#8b9d97]">Focal length</p><p className="text-sm text-[#edf2ef]">{formatNumber(metadata.focalLength, 1)} mm</p></div>
             </div>
           )}
           {metadata.lensModel && (
-            <div className="flex items-start gap-2 rounded-md bg-[#f7f2e9] p-2.5">
-              <Aperture className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#506477]" />
-              <div><p className="text-[11px] uppercase tracking-wide text-[#8fa5b4]">Lens</p><p className="text-sm text-[#17324d]">{metadata.lensModel}</p></div>
+            <div className="flex items-start gap-2 rounded-md bg-[#1b2725] p-2.5">
+              <Aperture className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#aab8b2]" />
+              <div><p className="text-[11px] uppercase tracking-wide text-[#8b9d97]">Lens</p><p className="text-sm text-[#edf2ef]">{metadata.lensModel}</p></div>
             </div>
           )}
           {metadata.software && (
-            <div className="flex items-start gap-2 rounded-md bg-[#f7f2e9] p-2.5">
-              <Scan className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#506477]" />
-              <div><p className="text-[11px] uppercase tracking-wide text-[#8fa5b4]">Software</p><p className="text-sm text-[#17324d]">{metadata.software}</p></div>
+            <div className="flex items-start gap-2 rounded-md bg-[#1b2725] p-2.5">
+              <Scan className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#aab8b2]" />
+              <div><p className="text-[11px] uppercase tracking-wide text-[#8b9d97]">Software</p><p className="text-sm text-[#edf2ef]">{metadata.software}</p></div>
             </div>
           )}
           {gps && (
-            <div className="flex items-start gap-2 rounded-md bg-[#f7f2e9] p-2.5">
-              <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#506477]" />
-              <div><p className="text-[11px] uppercase tracking-wide text-[#8fa5b4]">GPS coordinates</p><p className="text-sm text-[#17324d]">{gps}</p><p className="text-[11px] text-[#8fa5b4]">Embedded by the camera</p></div>
+            <div className="flex items-start gap-2 rounded-md bg-[#1b2725] p-2.5">
+              <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#aab8b2]" />
+              <div><p className="text-[11px] uppercase tracking-wide text-[#8b9d97]">GPS coordinates</p><p className="text-sm text-[#edf2ef]">{gps}</p><p className="text-[11px] text-[#8b9d97]">Embedded by the camera</p></div>
             </div>
           )}
           {metadata.fileSizeBytes !== undefined && (
-            <div className="flex items-start gap-2 rounded-md bg-[#f7f2e9] p-2.5">
-              <FileImage className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#506477]" />
-              <div><p className="text-[11px] uppercase tracking-wide text-[#8fa5b4]">Original file</p><p className="text-sm text-[#17324d]">{formatFileSize(metadata.fileSizeBytes)}{metadata.mimeType ? ` · ${metadata.mimeType}` : ""}</p></div>
+            <div className="flex items-start gap-2 rounded-md bg-[#1b2725] p-2.5">
+              <FileImage className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#aab8b2]" />
+              <div><p className="text-[11px] uppercase tracking-wide text-[#8b9d97]">Original file</p><p className="text-sm text-[#edf2ef]">{formatFileSize(metadata.fileSizeBytes)}{metadata.mimeType ? ` · ${metadata.mimeType}` : ""}</p></div>
             </div>
           )}
         </div>
       )}
 
       {metadata.metadataAvailable && !hasDetails && (
-        <div className="flex items-start gap-2 text-xs text-[#506477]">
+        <div className="flex items-start gap-2 text-xs text-[#aab8b2]">
           <ImageIcon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
           <span>Readable EXIF was found, but no additional verification fields were available.</span>
         </div>
       )}
       {gps && (
-        <p className="flex items-center gap-1 text-[11px] text-[#8fa5b4]">
+        <p className="flex items-center gap-1 text-[11px] text-[#8b9d97]">
           <Globe2 className="h-3 w-3" /> GPS is shown only when the camera embedded it.
         </p>
       )}
