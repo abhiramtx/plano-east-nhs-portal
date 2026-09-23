@@ -28,13 +28,13 @@ import {
 } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBldNhs1GNNJtJtRgJqn1JuD0sYGFVMJWI",
-  authDomain: "volunteerio-893c1.firebaseapp.com",
-  projectId: "volunteerio-893c1",
-  storageBucket: "volunteerio-893c1.firebasestorage.app",
-  messagingSenderId: "1088273269747",
-  appId: "1:1088273269747:web:fd30fa3f6d2ced011e0886",
-  measurementId: "G-Z4J4ZJ4VMC"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || undefined,
 };
 
 const app = initializeApp(firebaseConfig);
