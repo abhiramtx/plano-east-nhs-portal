@@ -1,0 +1,111 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function currentEmail() {
+      return request.auth.token.email;
+    }
+
+    function isOwnEmail(email) {
+      return signedIn() && currentEmail() == email;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/userProfiles/$(currentEmail()))
+        && get(/databases/$(database)/documents/userProfiles/$(currentEmail())).data.role == 'admin';
+    }
+
+    match /userProfiles/{email} {
+      allow read, write: if isOwnEmail(email) || isAdmin();
+    }
+
+    match /clubs/{clubId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userEmail == currentEmail());
+      allow create: if signedIn()
+        && request.resource.data.userEmail == currentEmail();
+      allow update, delete: if isAdmin()
+        || (signedIn() && resource.data.userEmail == currentEmail());
+    }
+
+    match /submissionArchive/{archiveId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.userEmail == currentEmail());
+      allow create: if signedIn()
+        && request.resource.data.userEmail == currentEmail();
+      allow update, delete: if isAdmin()
+        || (signedIn() && resource.data.userEmail == currentEmail());
+    }
+
+    match /clubBookmarks/{bookmarkId} {
+      allow read, write: if isAdmin()
+        || (signedIn() && (
+          resource.data.userEmail == currentEmail()
+          || request.resource.data.userEmail == currentEmail()
+        ));
+    }
+
+    match /serviceRequests/{requestId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.creatorEmail == currentEmail();
+      allow update, delete: if isAdmin()
+        || (signedIn() && resource.data.creatorEmail == currentEmail());
+    }
+
+    match /serviceRequestParticipants/{participantId} {
+      allow read, write: if signedIn();
+    }
+
+    match /events/{eventId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /eventAttendance/{attendanceId} {
+      allow read, write: if signedIn();
+    }
+
+    match /affiliations/{affiliationId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /customFields/{fieldId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /customFieldValues/{valueId} {
+      allow read, write: if signedIn();
+    }
+
+    match /subClubHoursRules/{ruleId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /hoursLogs/{logId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /clubLeaveHistory/{historyId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /yearlyArchives/{archiveId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
