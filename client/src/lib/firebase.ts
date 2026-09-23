@@ -1259,6 +1259,21 @@ export const getClubSubmissions = async (clubId: string): Promise<HoursSubmissio
   })) as HoursSubmission[];
 };
 
+export const getPendingClubSubmissions = async (clubId: string): Promise<HoursSubmission[]> => {
+  const q = query(
+    collection(db, "submissions"),
+    where("clubId", "==", clubId),
+    where("status", "==", "pending"),
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    submittedAt: toDate(doc.data().submittedAt),
+    reviewedAt: doc.data().reviewedAt ? toDate(doc.data().reviewedAt) : undefined,
+  })) as HoursSubmission[];
+};
+
 export const getUserSubmissions = async (userEmail: string, clubId: string): Promise<HoursSubmission[]> => {
   const q = query(
     collection(db, "submissions"),
@@ -1888,8 +1903,7 @@ export const getAdminAssignment = async (adminEmail: string, skipEmails: string[
 };
 
 export const getAdminAssignmentForClub = async (clubId: string, adminEmail: string, skipEmails: string[] = []): Promise<UserProfile | null> => {
-  const submissions = await getClubSubmissions(clubId);
-  const pendingSubmissions = submissions.filter(s => s.status === "pending");
+  const pendingSubmissions = await getPendingClubSubmissions(clubId);
 
   // Also count volunteers with opted-in fed submissions awaiting this super-club's approval.
   const fed = await getSuperClubFedSubmissions(clubId);

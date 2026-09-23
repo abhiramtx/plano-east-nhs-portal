@@ -7,3 +7,4 @@
 - [Firestore database mode](firestore-database-mode.md) — Firebase Web/Admin SDK access requires a Native-mode database; MongoDB compatibility can authenticate but native queries return NOT_FOUND.
 - [Firestore rules deployment](firestore-rules-deployment.md) — Admin SDK credentials can read/write data without having IAM permission to publish Firestore security-rule releases.
 - [Auth name fallbacks](auth-name-fallbacks.md) — never let email-shaped membership fallbacks overwrite a valid Firebase or profile display name.
+- [Firestore read hotspots](firestore-read-hotspots.md) — avoid short-interval polling of whole submission collections; query only the pending subset and use listeners for active records.

@@ -98,9 +98,9 @@ export function AdminApproval({ user, club }: AdminApprovalProps) {
   const { data: assignment, isLoading: assignmentLoading, refetch: refetchAssignment } = useQuery({
     queryKey: ['firebase-admin-assignment', club.id, user.email, skippedEmails],
     queryFn: () => getAdminAssignmentForClub(club.id, user.email, skippedEmails),
-    refetchInterval: 5000,
-    staleTime: 0,
-    gcTime: 0,
+    refetchInterval: 30000,
+    staleTime: 15000,
+    gcTime: 60000,
   });
 
   const [studentSubmissions, setStudentSubmissions] = useState<HoursSubmission[]>([]);
