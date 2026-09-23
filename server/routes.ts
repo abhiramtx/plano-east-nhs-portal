@@ -896,24 +896,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/hours-logs/:clubId", async (req, res) => {
     try {
       const { clubId } = req.params;
-      let logs = await storage.getHoursLogs(clubId);
-
-      // Always ensure the non-deleteable Sub-Club Hours system log exists
-      const hasSystemLog = logs.some(l => (l as any).isSystem);
-      if (!hasSystemLog) {
-        await storage.createHoursLog({
-          clubId,
-          name: "Sub-Club Hours",
-          hoursRequired: 0,
-          isOpen: true,
-          isSystem: true,
-        });
-        logs = await storage.getHoursLogs(clubId);
-      }
+      let logs = (await storage.getHoursLogs(clubId)).filter(log => {
+        const normalizedName = log.name.trim().toLowerCase().replace(/[\s-]+/g, '');
+        return !(log as any).isSystem && normalizedName !== 'subclubhours';
+      });
 
       // Ensure at least one regular (non-system) log exists for new clubs
-      const hasRegularLog = logs.some(l => !(l as any).isSystem);
-      if (!hasRegularLog) {
+      if (logs.length === 0) {
         await storage.createHoursLog({
           clubId,
           name: "Log 1",
