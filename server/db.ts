@@ -1,6 +1,7 @@
 import "dotenv/config";
 import admin from "firebase-admin";
 import { cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
 // Initialize Firebase Admin
 if (!process.env.FIREBASE_PROJECT_ID) {
@@ -47,4 +48,6 @@ admin.initializeApp({
   credential: cert(serviceAccount as admin.ServiceAccount),
 });
 
-export const db = admin.firestore();
+export const db = process.env.FIREBASE_DATABASE_ID
+  ? getFirestore(admin.app(), process.env.FIREBASE_DATABASE_ID)
+  : admin.firestore();
