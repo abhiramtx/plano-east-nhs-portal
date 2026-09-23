@@ -348,21 +348,16 @@ const getUserProfileDocuments = async (email: string) => {
     }
   }
 
+  // Avoid a collection-wide email query here. New users have no profile yet,
+  // and security rules commonly allow point reads while rejecting list queries.
+  // The known dotted/comma document-ID variants cover the legacy records this
+  // lookup needs without requiring collection enumeration.
   const candidateRefs = profileDocumentIds(email).map(id => doc(db, "userProfiles", id));
-  const [documentSnapshots, emailQuery] = await Promise.all([
-    Promise.all(candidateRefs.map(ref => getDoc(ref))),
-    getDocs(query(
-      collection(db, "userProfiles"),
-      where("email", "==", normalizeProfileEmail(email)),
-    )),
-  ]);
+  const documentSnapshots = await Promise.all(candidateRefs.map(ref => getDoc(ref)));
 
   const byId = new Map<string, typeof documentSnapshots[number]>();
   for (const snapshot of documentSnapshots) {
     if (snapshot.exists()) byId.set(snapshot.id, snapshot);
-  }
-  for (const snapshot of emailQuery.docs) {
-    byId.set(snapshot.id, snapshot);
   }
   return Array.from(byId.values());
 };

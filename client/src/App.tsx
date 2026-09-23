@@ -351,7 +351,9 @@ function App() {
           setSelectedClub(result.club);
           setMembership(result.membership);
         })
-        .catch(() => {})
+        .catch((error) => {
+          console.error('Failed to resolve club membership:', error);
+        })
         .finally(() => setClubChecked(true));
     }
   }, [user?.email, clubChecked]);
